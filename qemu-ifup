@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+QEMU_BRIDGE='qemubr0'
+
+ip link set dev $1 up
+ip link set dev $1 master $QEMU_BRIDGE
