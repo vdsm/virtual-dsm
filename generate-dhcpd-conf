@@ -7,11 +7,10 @@ import re
 import socket
 import subprocess
 
-from typing import List
+from typing import List, Iterable
 
-DEFAULT_ROUTE = "default"
-NS_IP_RE = re.compile(r'^nameserver\s+(\S+)$')
-RESOLV_CONF_PATH = '/etc/resolv.conf'
+DEFAULT_ROUTE = 'default'
+DEFAULT_DNS_IPS = ('8.8.8.8', '8.8.4.4')
 
 DHCP_CONF_TEMPLATE = """
 start {host_addr}
@@ -28,16 +27,6 @@ option router   {gateway}
 option subnet   {subnet}
 option hostname {hostname}
 """
-
-def nameservers() -> List[str]:
-    """Returns the list of nameserver IPs in resolv.conf"""
-    result = []
-    with open(RESOLV_CONF_PATH) as resolv_f:
-        for line in resolv_f:
-            match = NS_IP_RE.match(line)
-            if match:
-                result.append(match.group(1))
-    return result
 
 def default_route(routes):
     """Returns the host's default route"""
@@ -57,7 +46,7 @@ def addr_of(addrs, dev : str) -> ipaddress.IPv4Interface:
         return ipaddress.IPv4Interface((info['local'], info['prefixlen']))
     raise ValueError('dev {0} not found'.format(dev))
 
-def generate_conf(intf_name : str) -> str:
+def generate_conf(intf_name : str, dns : Iterable[str]) -> str:
     """Generates a dhcpd config. `intf_name` is the interface to listen on."""
     with subprocess.Popen(['ip', '-json', 'route'],
                           stdout=subprocess.PIPE) as proc:
@@ -71,7 +60,7 @@ def generate_conf(intf_name : str) -> str:
 
     return DHCP_CONF_TEMPLATE.format(
         dhcp_intf = intf_name,
-        dns = ' '.join(nameservers()),
+        dns = ' '.join(dns),
         gateway = droute['gateway'],
         host_addr = host_addr.ip,
         hostname = socket.gethostname(),
@@ -81,6 +70,11 @@ def generate_conf(intf_name : str) -> str:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('intf_name')
+    parser.add_argument('dns_ips', nargs='*')
     args = parser.parse_args()
 
-    print(generate_conf(args.intf_name))
+    dns_ips = args.dns_ips
+    if not dns_ips:
+        dns_ips = DEFAULT_DNS_IPS
+
+    print(generate_conf(args.intf_name, dns_ips))
