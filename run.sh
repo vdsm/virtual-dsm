@@ -50,7 +50,7 @@ udhcpd -I $DUMMY_DHCPD_IP -f $DHCPD_CONF_FILE &
 # -serial mon:stdio: use "monitored stdio" as our serial output.
 # -nic: Use a TAP interface with our custom up/down scripts.
 # -drive: The VM image we're booting.
-qemu-system-x86_64 -enable-kvm -nographic -serial mon:stdio \
+exec qemu-system-x86_64 -enable-kvm -nographic -serial mon:stdio \
     -nic tap,id=qemu0,script=$QEMU_IFUP,downscript=$QEMU_IFDOWN \
     "$@" \
     -drive format=raw,file=/image

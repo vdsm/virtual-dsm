@@ -4,6 +4,7 @@ import argparse
 import ipaddress
 import json
 import re
+import socket
 import subprocess
 
 from typing import List
@@ -22,9 +23,10 @@ maxleases 1
 
 interface {dhcp_intf}
 
-option dns    {dns}
-option router {gateway}
-option subnet {subnet}
+option dns      {dns}
+option router   {gateway}
+option subnet   {subnet}
+option hostname {hostname}
 """
 
 def nameservers() -> List[str]:
@@ -70,8 +72,9 @@ def generate_conf(intf_name : str) -> str:
     return DHCP_CONF_TEMPLATE.format(
         dhcp_intf = intf_name,
         dns = ' '.join(nameservers()),
-        host_addr = host_addr.ip,
         gateway = droute['gateway'],
+        host_addr = host_addr.ip,
+        hostname = socket.gethostname(),
         subnet = host_addr.network.netmask,
     )
 
