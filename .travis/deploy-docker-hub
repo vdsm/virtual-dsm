@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -x
+set -e
+
+echo $DOCKER_HUB_PASSWORD | docker login -u $DOCKER_HUB_USER --password-stdin
+docker tag $IMAGE_NAME $IMAGE_NAME:latest
+docker tag $IMAGE_NAME $IMAGE_NAME:$TRAVIS_TAG
+docker push $IMAGE_NAME:latest
+docker push $IMAGE_NAME:$TRAVIS_TAG

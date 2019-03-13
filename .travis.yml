@@ -1,0 +1,15 @@
+language: minimal
+
+env:
+    - IMAGE_NAME=jkz0/qemu
+
+services:
+    - docker
+
+script: docker build -t $IMAGE_NAME .
+
+deploy:
+    provider: script
+    script: .travis/deploy-docker-hub
+    on:
+        tags: true
