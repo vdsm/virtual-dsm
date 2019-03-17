@@ -1,5 +1,7 @@
 # qemu-docker
 
+[![Build Status](https://travis-ci.org/joshkunz/qemu-docker.svg?branch=master)](https://travis-ci.org/joshkunz/qemu-docker)
+
 This repository contains a Docker container for running x86\_64 virtual
 machines using QEMU. It uses high-performance QEMU options
 (KVM, and TAP network driver).
