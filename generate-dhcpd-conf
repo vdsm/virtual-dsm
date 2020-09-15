@@ -18,7 +18,7 @@ end   {host_addr}
 
 # avoid dhcpd complaining that we have
 # too many addresses
-maxleases 1
+max_leases 1
 
 interface {dhcp_intf}
 
