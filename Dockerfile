@@ -1,4 +1,4 @@
-FROM debian:buster-20190228-slim
+FROM debian:bullseye-20211220-slim
 
 RUN apt-get update && apt-get -y upgrade && \
     apt-get --no-install-recommends -y install \
