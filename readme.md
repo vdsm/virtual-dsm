@@ -1,6 +1,6 @@
 # qemu-docker
 
-[![Build Status](https://travis-ci.org/joshkunz/qemu-docker.svg?branch=master)](https://travis-ci.org/joshkunz/qemu-docker)
+[![Test](https://github.com/joshkunz/qemu-docker/actions/workflows/test.yaml/badge.svg)](https://github.com/joshkunz/qemu-docker/actions/workflows/test.yaml)
 
 This repository contains a Docker container for running x86\_64 virtual
 machines using QEMU. It uses high-performance QEMU options
