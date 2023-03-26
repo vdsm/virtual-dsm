@@ -25,8 +25,8 @@ jobs:
         id: meta
         with:
           images: |
-            jkz0/qemu
-            ghcr.io/joshkunz/qemu-docker
+            kroese/virtual-dsm
+            ghcr.io/kroese/virtual-dsm
           tags: |
             type=ref,event=tag
           flavor: |
