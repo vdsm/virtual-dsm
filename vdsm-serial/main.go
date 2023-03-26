@@ -8,7 +8,6 @@ import (
 	"log"
 	"net"
 	"strconv"
-	"time"
 )
 
 type REQ struct {
@@ -44,13 +43,8 @@ var ListenAddr = flag.String("addr", "0.0.0.0:12345", "Listen address")
 func main() {
 	flag.Parse()
 	log.Println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-	log.Println("!!! Just for experimental, please delete it after 24 hour  !!!")
-	log.Println("!!! See https://jxcn.org for update.                       !!!")
-	log.Println("!!! This program will be unavailable after 2022-12-31      !!!")
+	log.Println("!!!  Synology Serial Emulator created by https://jxcn.org  !!!")
 	log.Println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-	if time.Now().Year() >= 2023 {
-		log.Panic("Expired")
-	}
 	listener, err := net.Listen("tcp", *ListenAddr)
 	if err != nil {
 		log.Println("Error listening", err.Error())

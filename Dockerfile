@@ -20,13 +20,13 @@ COPY generate-dhcpd-conf /run/
 COPY qemu-ifdown /run/
 COPY qemu-ifup /run/
 COPY run.sh /run/
-COPY --from=builder /src/vdsm-serial/main /run/
+COPY --from=builder /src/vdsm-serial/main /run/serial.bin
 
 RUN ["chmod", "+x", "/run/generate-dhcpd-conf"]
 RUN ["chmod", "+x", "/run/qemu-ifdown"]
 RUN ["chmod", "+x", "/run/qemu-ifup"]
 RUN ["chmod", "+x", "/run/run.sh"]
-RUN ["chmod", "+x", "/run/main"]
+RUN ["chmod", "+x", "/run/serial.bin"]
 
 VOLUME /images
 
