@@ -40,8 +40,8 @@ def addr_of(addrs, dev : str) -> ipaddress.IPv4Interface:
     for addr in addrs:
         if addr['ifname'] != dev:
             continue
-        if len(addr['addr_info']) != 1:
-            raise ValueError('only exactly one address on dev is supported')
+        #if len(addr['addr_info']) != 1:
+        #    raise ValueError('only exactly one address on dev is supported')
         info = addr['addr_info'][0]
         return ipaddress.IPv4Interface((info['local'], info['prefixlen']))
     raise ValueError('dev {0} not found'.format(dev))
@@ -50,11 +50,11 @@ def generate_conf(intf_name : str, dns : Iterable[str]) -> str:
     """Generates a dhcpd config. `intf_name` is the interface to listen on."""
     with subprocess.Popen(['ip', '-json', 'route'],
                           stdout=subprocess.PIPE) as proc:
-        routes = json.load(proc.stdout) 
+        routes = json.load(proc.stdout)
     with subprocess.Popen(['ip', '-json', 'addr'],
                           stdout=subprocess.PIPE) as proc:
         addrs = json.load(proc.stdout)
-    
+
     droute = default_route(routes)
     host_addr = addr_of(addrs, droute['dev'])
 
