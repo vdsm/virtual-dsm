@@ -40,7 +40,7 @@ services:
         restart: always
 ```
 
-## How to use
+## Prerequisites
 
 * a
 * b
