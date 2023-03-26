@@ -2,7 +2,7 @@
 
 [![Test](https://github.com/joshkunz/qemu-docker/actions/workflows/test.yaml/badge.svg)](https://github.com/joshkunz/qemu-docker/actions/workflows/test.yaml)
 
-This repository contains a Docker container for running Synology Virtual DSM.
+This repository contains a Docker container for running Synology's Virtual DSM.
 
 Docker Hub: [jkz0/qemu](https://hub.docker.com/r/jkz0/qemu)
 
