@@ -17,8 +17,6 @@
 
 A docker container for running Synology's Virtual DSM.
 
-Docker Hub: [kroese/virtual-dsm](https://hub.docker.com/r/kroese/virtual-dsm/)
-
 ## Prerequisites
 
 In order to use the container, you need two images called `boot.img` and `sys.img` from Synology containing the Virtual DSM 7 OS. 
