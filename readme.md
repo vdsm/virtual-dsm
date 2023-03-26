@@ -42,5 +42,7 @@ services:
 
 ## Prerequisites
 
+In order to use the container, you need two images called `boot.img` and `sys.img` from Synology containing the Virtual DSM OS.
+
 * a
 * b
