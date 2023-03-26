@@ -12,9 +12,12 @@ Via `docker run`:
 
 ```bash
 $ docker run --rm -it \
-    --device=/dev/kvm:/dev/kvm --device=/dev/net/tun:/dev/net/tun \
-    --cap-add NET_ADMIN -v $VM_IMAGE_FILE:/image \
-    jkz0/qemu:latest
+    --device=/dev/kvm:/dev/kvm \
+    --device=/dev/net/tun:/dev/net/tun \
+    --cap-add NET_ADMIN \
+    -p 5000:5000 -p 5001:5001 \
+    -v /home/user/images:/image \
+    kroese/virtual-dsm:latest
 ```
 
 Via `docker-compose.yml`:
@@ -23,14 +26,17 @@ Via `docker-compose.yml`:
 version: "3"
 services:
     vm:
-        image: jkz0/qemu:latest
+        image: kroese/virtual-dsm:latest
         cap_add:
             - NET_ADMIN
         devices:
-            - /dev/net/tun
             - /dev/kvm
+            - /dev/net/tun
+        ports:
+            - 5000:5000
+            - 5001:5001
         volumes:
-            - ${VM_IMAGE:?VM image must be supplied}:/image
+            - /home/user/images:/image
         restart: always
 ```
 
