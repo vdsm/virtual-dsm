@@ -24,7 +24,7 @@ function default_intf() {
 # with the interfaces. We start by generating the DHCPD config file based
 # on our current address/routes. We "steal" the container's IP, and lease
 # it to the VM once it starts up.
-/run/generate-dhcpd-conf $QEMU_BRIDGE > $DHCPD_CONF_FILE 
+/run/generate-dhcpd-conf $QEMU_BRIDGE > $DHCPD_CONF_FILE
 default_dev=`default_intf`
 
 # Now we start modifying the networking configuration. First we clear out
@@ -41,6 +41,9 @@ ip link set dev $default_dev master $QEMU_BRIDGE
 ip link set dev $default_dev up
 ip link set dev $QEMU_BRIDGE up
 
+# Prevent error about missing file
+touch /var/lib/misc/udhcpd.leases
+
 # Finally, start our DHCPD server
 udhcpd -I $DUMMY_DHCPD_IP -f $DHCPD_CONF_FILE &
 
@@ -51,6 +54,11 @@ udhcpd -I $DUMMY_DHCPD_IP -f $DHCPD_CONF_FILE &
 # -nic: Use a TAP interface with our custom up/down scripts.
 # -drive: The VM image we're booting.
 exec qemu-system-x86_64 -enable-kvm -nographic -serial mon:stdio \
-    -nic tap,id=qemu0,script=$QEMU_IFUP,downscript=$QEMU_IFDOWN \
     "$@" \
-    -drive format=raw,file=/image
+    -device virtio-net,netdev=tap0 -netdev tap,id=tap0,ifname=Tap,script=$QEMU_IFUP,downscript=$QEMU_IFDOWN \
+    -device virtio-scsi-pci,id=hw-synoboot,bus=pci.0,addr=0xa -drive file=/image/boot.img,if=none,id=drive-synoboot,format=raw,cache=none,aio=native,detect-zeroes=on \
+    -device scsi-hd,bus=hw-synoboot.0,channel=0,scsi-id=0,lun=0,drive=drive-synoboot,id=synoboot0,bootindex=1 \
+    -device virtio-scsi-pci,id=hw-synosys,bus=pci.0,addr=0xb -drive file=/image/sys.img,if=none,id=drive-synosys,format=raw,cache=none,aio=native,detect-zeroes=on \
+    -device scsi-hd,bus=hw-synosys.0,channel=0,scsi-id=0,lun=0,drive=drive-synosys,id=synosys0,bootindex=2 \
+    -device virtio-scsi-pci,id=hw-userdata,bus=pci.0,addr=0xc -drive file=/image/data.img,if=none,id=drive-userdata,format=raw,cache=none,aio=native,detect-zeroes=on \
+    -device scsi-hd,bus=hw-userdata.0,channel=0,scsi-id=0,lun=0,drive=drive-userdata,id=userdata0,bootindex=3
