@@ -1,0 +1,15 @@
+version: "3"
+services:
+    vm:
+        image: kroese/virtual-dsm:latest
+        cap_add:
+            - NET_ADMIN
+        devices:
+            - /dev/kvm
+            - /dev/net/tun
+        ports:
+            - 5000:5000
+            - 5001:5001
+        volumes:
+            - /home/user/images:/image
+        restart: always
