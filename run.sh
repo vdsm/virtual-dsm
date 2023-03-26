@@ -1,5 +1,28 @@
 #!/usr/bin/env bash
 
+FILE="/images/boot.img"
+if [ ! -f "$FILE" ]; then
+    echo "ERROR: Synology DSM boot-image does not exist ($FILE)"
+    exit 2
+fi
+
+FILE="/images/system.img"
+if [ ! -f "$FILE" ]; then
+    echo "ERROR: Synology DSM system-image does not exist ($FILE)"
+    exit 2
+fi
+
+FILE="/images/data.img"
+if [ ! -f "$FILE" ]; then
+    truncate -s 16G $FILE
+fi
+
+if [ ! -f "$FILE" ]; then
+    echo "ERROR: Synology DSM data-image does not exist ($FILE)"
+    exit 2
+fi
+
+
 # A bridge of this name will be created to host the TAP interface created for
 # the VM
 QEMU_BRIDGE='qemubr0'
@@ -51,14 +74,12 @@ udhcpd -I $DUMMY_DHCPD_IP -f $DHCPD_CONF_FILE &
 # -enable-kvm: Use KVM for this VM (much faster for our case).
 # -nographic: disable SDL graphics.
 # -serial mon:stdio: use "monitored stdio" as our serial output.
-# -nic: Use a TAP interface with our custom up/down scripts.
-# -drive: The VM image we're booting.
 exec qemu-system-x86_64 -enable-kvm -nographic -serial mon:stdio \
     "$@" \
     -device virtio-net,netdev=tap0 -netdev tap,id=tap0,ifname=Tap,script=$QEMU_IFUP,downscript=$QEMU_IFDOWN \
-    -device virtio-scsi-pci,id=hw-synoboot,bus=pci.0,addr=0xa -drive file=/image/boot.img,if=none,id=drive-synoboot,format=raw,cache=none,aio=native,detect-zeroes=on \
+    -device virtio-scsi-pci,id=hw-synoboot,bus=pci.0,addr=0xa -drive file=/images/boot.img,if=none,id=drive-synoboot,format=raw,cache=none,aio=native,detect-zeroes=on \
     -device scsi-hd,bus=hw-synoboot.0,channel=0,scsi-id=0,lun=0,drive=drive-synoboot,id=synoboot0,bootindex=1 \
-    -device virtio-scsi-pci,id=hw-synosys,bus=pci.0,addr=0xb -drive file=/image/sys.img,if=none,id=drive-synosys,format=raw,cache=none,aio=native,detect-zeroes=on \
+    -device virtio-scsi-pci,id=hw-synosys,bus=pci.0,addr=0xb -drive file=/images/system.img,if=none,id=drive-synosys,format=raw,cache=none,aio=native,detect-zeroes=on \
     -device scsi-hd,bus=hw-synosys.0,channel=0,scsi-id=0,lun=0,drive=drive-synosys,id=synosys0,bootindex=2 \
-    -device virtio-scsi-pci,id=hw-userdata,bus=pci.0,addr=0xc -drive file=/image/data.img,if=none,id=drive-userdata,format=raw,cache=none,aio=native,detect-zeroes=on \
+    -device virtio-scsi-pci,id=hw-userdata,bus=pci.0,addr=0xc -drive file=/images/data.img,if=none,id=drive-userdata,format=raw,cache=none,aio=native,detect-zeroes=on \
     -device scsi-hd,bus=hw-userdata.0,channel=0,scsi-id=0,lun=0,drive=drive-userdata,id=userdata0,bootindex=3
