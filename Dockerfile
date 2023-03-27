@@ -11,7 +11,14 @@ RUN apt-get update && apt-get -y upgrade && \
     apt-get --no-install-recommends -y install \
         iproute2 \
         jq \
+        netcat \
+        xz-utils \
+        unzip \
+        wget \
         python3 \
+        linux-image-generic \
+        libguestfs-tools \
+        ca-certificates \
         qemu-system-x86 \
         udhcpd \
     && apt-get clean
@@ -20,13 +27,23 @@ COPY generate-dhcpd-conf /run/
 COPY qemu-ifdown /run/
 COPY qemu-ifup /run/
 COPY run.sh /run/
+COPY server.sh /run/
 COPY --from=builder /src/vdsm-serial/main /run/serial.bin
 
 RUN ["chmod", "+x", "/run/generate-dhcpd-conf"]
 RUN ["chmod", "+x", "/run/qemu-ifdown"]
 RUN ["chmod", "+x", "/run/qemu-ifup"]
 RUN ["chmod", "+x", "/run/run.sh"]
+RUN ["chmod", "+x", "/run/server.sh"]
 RUN ["chmod", "+x", "/run/serial.bin"]
+
+COPY extractor/lib* /run
+#COPY extractor/libcurl.so.4 /usr/lib/x86_64-linux-gnu
+
+COPY extractor/scemd /run/syno_extract_system_patch
+RUN ["chmod", "+x", "/run/syno_extract_system_patch"]
+
+COPY disks/template.img.xz /data/
 
 VOLUME /images
 
