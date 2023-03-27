@@ -1,51 +1,35 @@
 name: Test
+
 on:
-  pull_request:
-    branches:
-      - master
   push:
-    branches:
-      - master
-    tags:
-      - v*
-  schedule:
-    - cron: 5 07 * * FRI
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 jobs:
-  release-build:
-    name: Release Build
+
+
+  build:
     runs-on: ubuntu-latest
-    steps:
-      - name: Clone
-        uses: actions/checkout@v3
-      - name: Set up Docker buildx
-        uses: docker/setup-buildx-action@v2 
-      - name: Generate docker tags
-        uses: docker/metadata-action@v4
-        id: meta
-        with:
-          images: |
-            kroese/virtual-dsm
-            ghcr.io/kroese/virtual-dsm
-          tags: |
-            type=ref,event=tag
-          flavor: |
-            latest=true
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Login to Github Registry
-        uses: docker/login-action@v2
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and Push
-        uses: docker/build-push-action@v3
-        with:
-          push: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
-          tags: ${{ steps.meta.outputs.tags }}
+    steps:    
+    - uses: actions/checkout@v2
+    -
+      name: Build the Docker image
+      run: docker build . --file Dockerfile --tag kroese/virtual-dsm:${{ secrets.MAJOR }}.${{ secrets.MINOR }}
+    -
+      name: Login to DockerHub
+      uses: docker/login-action@v1 
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    -
+      name: Push to DockerHub
+      run: docker push kroese/virtual-dsm:${{ secrets.MAJOR }}.${{ secrets.MINOR }}
+    -
+      name: Update Minor version
+      uses: hmanzur/actions-set-secret@v2.0.0
+      with:
+        name: 'MINOR'
+        value: $((${{ secrets.MINOR }}+1))
+        repository: kroese/virtual-dsm
+        token: ${{ secrets.REPO_ACCESS_TOKEN }}
