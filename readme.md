@@ -1,13 +1,10 @@
 virtual-dsm
 =============
 
-[![Build Status]][builds]
 [![Test]][test]
 [![gh_last_release_svg]][gh_last_release_url]
 [![Docker Pulls Count]][dsm-docker-hub]
 
-[Build Status]: https://github.com/kroese/virtual-dsm/workflows/Build%20&%20deploy%20on%20git%20tag%20push/badge.svg
-[builds]: https://github.com/kroese/virtual-dsm/actions?query=workflow%3A%22Build+%26+deploy+on+git+tag+push%22
 [test]: https://github.com/kroese/virtual-dsm/actions/workflows/test.yaml/badge.svg
 
 [gh_last_release_svg]: https://img.shields.io/github/v/release/kroese/virtual-dsm?sort=semver
