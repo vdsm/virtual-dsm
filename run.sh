@@ -2,6 +2,11 @@
 
 set -eu
 
+if [ ! -f "/run/server.sh" ]; then
+    echo "Script must run inside Docker container!"
+    exit 1
+fi
+
 /run/server.sh 5000 "<HTML><BODY><H1><CENTER>Please wait while Synology is installing...</CENTER></H1></BODY></HTML>" > /dev/null &
 
 [ ! -f "/images/boot.img" ] && rm -f /images/dsm.pat
@@ -94,7 +99,7 @@ fi
 
 FILE="/images/data.img"
 if [ ! -f "$FILE" ]; then
-    truncate -s $SPACE $FILE
+    truncate -s $DISK_SIZE $FILE
     mkfs.ext4 -q $FILE
 fi
 
@@ -148,7 +153,7 @@ ip link set dev $QEMU_BRIDGE up
 touch /var/lib/misc/udhcpd.leases
 
 # Finally, start our DHCPD server
-udhcpd -I $DUMMY_DHCPD_IP -f $DHCPD_CONF_FILE &
+udhcpd -I $DUMMY_DHCPD_IP -f $DHCPD_CONF_FILE 2>&1 &
 
 echo "Launching Synology Serial Emulator..."
 
@@ -184,4 +189,6 @@ exec qemu-system-x86_64 -name Synology -enable-kvm -nographic -serial mon:stdio 
     -device virtio-scsi-pci,id=hw-userdata,bus=pci.0,addr=0xc -drive file=/images/data.img,if=none,id=drive-userdata,format=raw,cache=none,aio=native,detect-zeroes=on \
     -device scsi-hd,bus=hw-userdata.0,channel=0,scsi-id=0,lun=0,drive=drive-userdata,id=userdata0,bootindex=3 \
     -device piix3-usb-uhci,id=usb,bus=pci.0,addr=0x1.0x2
+
+exit 0
 
