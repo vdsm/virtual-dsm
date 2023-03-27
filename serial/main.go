@@ -29,10 +29,10 @@ var GuestSN = flag.String("guestsn", "0000000000000", "Guest SN, 13 bytes")
 var GuestUUID = flag.String("guestuuid", "ba13a19a-c0c1-4fef-9346-915ed3b98341", "Guest UUID")
 var GuestCPUs = flag.Int("cpu", 1, "Num of Guest cpu")
 var GuestCPU_ARCH = flag.String("cpu_arch", "QEMU, Virtual CPU, X86_64", "CPU arch")
-var HostDSMBuildNumber = flag.Int("buildnumber", 42218, "Build Number of Host")
+var HostDSMBuildNumber = flag.Int("buildnumber", 42962, "Build Number of Host")
 var HostDSMfixNumber = flag.Int("fixNumber", 0, "Fix Number of Host")
-var VMMVersion = flag.String("vmmversion", "2.5.5-11487", "VMM version")
-var VMMTimestamp = flag.Int("vmmts", 1650802981032, "VMM Timestamp")
+var VMMVersion = flag.String("vmmversion", "2.6.1-12139", "VMM version")
+var VMMTimestamp = flag.Int("vmmts", 1679863686, "VMM Timestamp")
 
 // synowebapi --exec api=SYNO.Core.Package method=get id=Virtualization
 
