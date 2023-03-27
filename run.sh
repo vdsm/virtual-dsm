@@ -1,22 +1,105 @@
 #!/usr/bin/env bash
 
+set -eu
+
+/run/server.sh 5000 "<HTML><BODY><H1><CENTER>Please wait while Synology is installing...</CENTER></H1></BODY></HTML>" > /dev/null &
+
+[ ! -f "/images/boot.img" ] && rm -f /images/dsm.pat
+[ ! -f "/images/system.img" ] && rm -f /images/dsm.pat
+
+FILE="/images/dsm.pat"
+if [ ! -f "$FILE" ]; then
+    echo "Downloading Synology DSM..."
+
+    BASE="https://global.synologydownload.com/download/DSM"
+    PAT="$BASE/beta/7.2/64216/DSM_VirtualDSM_64216.pat"
+    #PAT="$BASE/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat"
+    #PAT="$BASE/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
+
+    wget $PAT -O $FILE -q --show-progress
+
+    echo "Extracting DSM boot image..."
+
+    rm -rf /images/out
+    mkdir -p /images/out
+
+    if { tar tf "$FILE"; } >/dev/null 2>&1; then
+       tar xf $FILE --checkpoint=.100 -C /images/out/.
+    else
+       export LD_LIBRARY_PATH="/run"
+       /run/syno_extract_system_patch $FILE /images/out/.
+       export LD_LIBRARY_PATH=""
+    fi
+
+    BOOT=$(find /images/out -name "*.bin.zip")
+    BOOT=$(echo $BOOT | head -c -5)
+
+    unzip -q $BOOT.zip -d /images/out
+    rm $BOOT.zip
+
+    echo "Extracting DSM system image..."
+
+    HDA="/images/out/hda1"
+    mv $HDA.tgz $HDA.xz
+    unxz $HDA.xz
+    mv $HDA $HDA.tar
+
+    echo "Extracting DSM disk template..."
+
+    TEMP="/images/temp.img"
+    PLATE="/data/template.img"
+
+    rm -f $PLATE
+    unxz $PLATE.xz
+    mv $PLATE $TEMP
+
+    echo "Mounting disk template..."
+
+    rm -rf /mnt/tmp
+    mkdir -p /mnt/tmp
+    guestmount -a $TEMP -m /dev/sda1:/ --rw /mnt/tmp
+
+    echo "Preparing disk template..."
+
+    rm -rf /mnt/tmp/{,.[!.],..?}*
+
+    echo "Installing system partition..."
+
+    tar -xf $HDA.tar --absolute-names --checkpoint=.100 -C /mnt/tmp/
+
+    echo "Unmounting disk template..."
+
+    rm $HDA.tar
+
+    guestunmount /mnt/tmp
+    rm -rf /mnt/tmp
+
+    mv -f $BOOT /images/boot.img
+    mv -f $TEMP /images/system.img
+
+    rm -rf /images/out
+fi
+
 echo "Booting Synology DSM for Docker..."
 
 FILE="/images/boot.img"
 if [ ! -f "$FILE" ]; then
     echo "ERROR: Synology DSM boot-image does not exist ($FILE)"
+    rm -f /images/dsm.pat
     exit 2
 fi
 
 FILE="/images/system.img"
 if [ ! -f "$FILE" ]; then
     echo "ERROR: Synology DSM system-image does not exist ($FILE)"
+    rm -f /images/dsm.pat
     exit 2
 fi
 
 FILE="/images/data.img"
 if [ ! -f "$FILE" ]; then
     truncate -s 16G $FILE
+    mkfs.ext4 -q $FILE
 fi
 
 if [ ! -f "$FILE" ]; then
@@ -74,7 +157,17 @@ udhcpd -I $DUMMY_DHCPD_IP -f $DHCPD_CONF_FILE &
 echo "Launching Synology Serial Emulator..."
 
 # Start the Synology Serial Emulator
-./run/serial.bin -vmmversion "2.6.1-12139" -buildnumber 42962 -vmmts 1650802981032 -cpu 1 -cpu_arch string "QEMU, Virtual CPU, X86_64" -guestsn "0000000000000" -hostsn "0000000000000" -guestuuid "ba13a19a-c0c1-4fef-9346-915ed3b98341" &
+./run/serial.bin -cpu 1 \
+                 -vmmversion "2.6.1-12139" \
+                 -buildnumber 42962 \
+                 -vmmts 1650802981032 \
+                 -cpu_arch string "QEMU, Virtual CPU, X86_64" \
+                 -guestsn "0000000000000" \
+                 -hostsn "0000000000000" \
+                 -guestuuid "ba13a19a-c0c1-4fef-9346-915ed3b98341" > /dev/null &
+
+# Stop the webserver
+pkill -f server.sh
 
 echo "Booting OS..."
 
