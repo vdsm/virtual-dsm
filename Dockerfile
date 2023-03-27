@@ -37,9 +37,7 @@ RUN ["chmod", "+x", "/run/run.sh"]
 RUN ["chmod", "+x", "/run/server.sh"]
 RUN ["chmod", "+x", "/run/serial.bin"]
 
-COPY extractor/lib* /run
-#COPY extractor/libcurl.so.4 /usr/lib/x86_64-linux-gnu
-
+COPY extractor/lib* /run/
 COPY extractor/scemd /run/syno_extract_system_patch
 RUN ["chmod", "+x", "/run/syno_extract_system_patch"]
 
@@ -54,4 +52,6 @@ ENTRYPOINT ["/run/run.sh"]
 
 # Mostly users will probably want to configure memory usage.
 CMD ["-m", "512M"]
+
+
 
