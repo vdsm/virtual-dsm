@@ -9,14 +9,9 @@ set -eu
 
 FILE="/images/dsm.pat"
 if [ ! -f "$FILE" ]; then
-    echo "Downloading Synology DSM..."
+    echo "Downloading Synology DSM from $URL..."
 
-    BASE="https://global.synologydownload.com/download/DSM"
-    #PAT="$BASE/beta/7.2/64216/DSM_VirtualDSM_64216.pat"
-    #PAT="$BASE/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat"
-    PAT="$BASE/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
-
-    wget $PAT -O $FILE -q --show-progress
+    wget $URL -O $FILE -q --show-progress
 
     echo "Extracting DSM boot image..."
 
@@ -24,7 +19,7 @@ if [ ! -f "$FILE" ]; then
     mkdir -p /images/out
 
     if { tar tf "$FILE"; } >/dev/null 2>&1; then
-       tar xf $FILE -C /images/out/.
+       tar xpf $FILE -C /images/out/.
     else
        export LD_LIBRARY_PATH="/run"
        /run/syno_extract_system_patch $FILE /images/out/.
@@ -65,9 +60,10 @@ if [ ! -f "$FILE" ]; then
 
     echo -n "Installing system partition..."
 
-    tar -xf $HDA.tar --absolute-names --checkpoint=.1000 -C /mnt/tmp/
+    tar xpf $HDA.tar --absolute-names --checkpoint=.2000 -C /mnt/tmp/
 
-    echo "\nUnmounting disk template..."
+    echo ""
+    echo "Unmounting disk template..."
 
     rm $HDA.tar
 
@@ -98,7 +94,7 @@ fi
 
 FILE="/images/data.img"
 if [ ! -f "$FILE" ]; then
-    truncate -s 16G $FILE
+    truncate -s $SPACE $FILE
     mkfs.ext4 -q $FILE
 fi
 
