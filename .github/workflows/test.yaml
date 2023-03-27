@@ -22,7 +22,7 @@ jobs:
         password: ${{ secrets.DOCKERHUB_TOKEN }}
     -
       name: Push to DockerHub
-      run: docker push kroese/virtual-dsm:latest
+      run: docker push kroese/virtual-dsm:${{ secrets.MAJOR }}.${{ secrets.MINOR }} && docker push kroese/virtual-dsm:latest
     -
       name: Update Minor version
       uses: hmanzur/actions-set-secret@v2.0.0
