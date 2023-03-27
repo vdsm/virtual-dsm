@@ -8,8 +8,8 @@ virtual-dsm
 [test_img]: https://github.com/kroese/virtual-dsm/actions/workflows/test.yaml/badge.svg
 [test_url]: https://github.com/kroese/virtual-dsm/actions
 
-[gh_last_release_svg]: https://img.shields.io/github/v/release/kroese/virtual-dsm?sort=semver
-[gh_last_release_url]: https://github.com/kroese/virtual-dsm/releases/latest
+[gh_last_release_svg]: https://img.shields.io/docker/v/kroese/virtual-dsm?arch=amd64&sort=date
+[gh_last_release_url]: https://hub.docker.com/r/kroese/virtual-dsm
 
 [Docker Pulls Count]: https://img.shields.io/docker/pulls/kroese/virtual-dsm.svg?style=flat
 [dsm-docker-hub]: https://hub.docker.com/r/kroese/virtual-dsm
