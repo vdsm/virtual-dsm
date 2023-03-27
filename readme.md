@@ -22,8 +22,10 @@ Via `docker run`:
 
 ```bash
 $ docker run --rm -it \
+    --name virtual-dsm \
     -p 5000:5000 \
     -e DISK_SIZE=16G \
+    -e RAM_SIZE=512M \
     --cap-add NET_ADMIN \
     --cap-add SYS_ADMIN \
     --device=/dev/kvm:/dev/kvm \
@@ -38,6 +40,7 @@ Via `docker-compose.yml`:
 version: "3"
 services:
     vm:
+        container_name: virtual-dsm
         image: kroese/virtual-dsm:latest
         cap_add:
             - NET_ADMIN
@@ -49,7 +52,8 @@ services:
         ports:
             - 5000:5000
         environment:
-            DISK_SIZE: 16G
+            DISK_SIZE: "16G"
+            RAM_SIZE: "512M"
         restart: always
 ```
 
