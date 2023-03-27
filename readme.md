@@ -23,6 +23,7 @@ Via `docker run`:
 ```bash
 $ docker run --rm -it \
     -p 5000:5000 \
+    -e SPACE=16G \
     --cap-add NET_ADMIN \
     --cap-add SYS_ADMIN \
     --device=/dev/kvm:/dev/kvm \
@@ -47,6 +48,8 @@ services:
             - /dev/net/tun
         ports:
             - 5000:5000
+        environment:
+            SPACE: 16G
         restart: always
 ```
 
