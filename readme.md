@@ -18,22 +18,18 @@ virtual-dsm
 
 A docker container for running Synology's Virtual DSM.
 
-## Prerequisites
-
-In order to use the container, you need two images called `boot.img` and `system.img` from Synology containing the Virtual DSM 7 OS. 
-
-Place them in the `/home/user/images` folder. A third empty image, called `data.img` will be automaticly generated with a size of 16GB. If you need more space for your DSM instance, you can manually generate a larger file by running `truncate -s 100G data.img` on your host OS.
-
 ## Using the container
 
 Via `docker run`:
 
 ```bash
 $ docker run --rm -it \
-    --device=/dev/kvm:/dev/kvm \
-    --device=/dev/net/tun:/dev/net/tun \
+    -p 5000:5000 \
     --cap-add NET_ADMIN \
-    -p 5000:5000 -p 5001:5001 \
+    --cap-add SYS_ADMIN \
+    --device=/dev/kvm:/dev/kvm \
+    --device=/dev/fuse:/dev/fuse \
+    --device=/dev/net/tun:/dev/net/tun \    
     -v /home/user/images:/images \
     kroese/virtual-dsm:latest
 ```
@@ -47,12 +43,13 @@ services:
         image: kroese/virtual-dsm:latest
         cap_add:
             - NET_ADMIN
+            - SYS_ADMIN
         devices:
             - /dev/kvm
+            - /dev/fuse
             - /dev/net/tun
         ports:
             - 5000:5000
-            - 5001:5001
         volumes:
             - /home/user/images:/images
         restart: always
