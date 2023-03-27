@@ -176,7 +176,7 @@ echo "Booting OS..."
 # -enable-kvm: Use KVM for this VM (much faster for our case).
 # -nographic: disable SDL graphics.
 # -serial mon:stdio: use "monitored stdio" as our serial output.
-exec qemu-system-x86_64 -name Synology -enable-kvm -nographic -serial mon:stdio \
+exec qemu-system-x86_64 -name Synology -m $RAM_SIZE -enable-kvm -nographic -serial mon:stdio \
     "$@" \
     -device virtio-serial-pci,id=virtio-serial0,bus=pci.0,addr=0x3 -chardev pty,id=charserial0 \
     -device isa-serial,chardev=charserial0,id=serial0 -chardev socket,id=charchannel0,host=127.0.0.1,port=12345,reconnect=10 \

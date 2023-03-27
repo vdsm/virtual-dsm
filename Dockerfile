@@ -1,9 +1,9 @@
 FROM golang:1.16 AS builder
 
-COPY vdsm-serial/ /src/vdsm-serial/
-WORKDIR /src/vdsm-serial
+COPY serial/ /src/serial/
+WORKDIR /src/serial
 RUN go get -d -v golang.org/x/net/html  
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /src/vdsm-serial/main .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /src/serial/main .
 
 FROM debian:bullseye-20230109-slim
 
@@ -28,7 +28,7 @@ COPY qemu-ifdown /run/
 COPY qemu-ifup /run/
 COPY run.sh /run/
 COPY server.sh /run/
-COPY --from=builder /src/vdsm-serial/main /run/serial.bin
+COPY --from=builder /src/serial/main /run/serial.bin
 
 RUN ["chmod", "+x", "/run/generate-dhcpd-conf"]
 RUN ["chmod", "+x", "/run/qemu-ifdown"]
@@ -48,6 +48,7 @@ VOLUME /images
 EXPOSE 5000
 EXPOSE 5001
 
+ENV RAM_SIZE 512M
 ENV DISK_SIZE 16G
 ENV URL https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat
 
@@ -56,7 +57,4 @@ ENV URL https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM
 #ENV URL https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat
 
 ENTRYPOINT ["/run/run.sh"]
-
-# Mostly users will probably want to configure memory usage.
-CMD ["-m", "512M"]
 
