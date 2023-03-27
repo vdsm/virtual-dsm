@@ -28,7 +28,6 @@ $ docker run --rm -it \
     --device=/dev/kvm:/dev/kvm \
     --device=/dev/fuse:/dev/fuse \
     --device=/dev/net/tun:/dev/net/tun \    
-    -v /home/user/images:/images \
     kroese/virtual-dsm:latest
 ```
 
@@ -48,8 +47,6 @@ services:
             - /dev/net/tun
         ports:
             - 5000:5000
-        volumes:
-            - /home/user/images:/images
         restart: always
 ```
 
