@@ -14,7 +14,7 @@ virtual-dsm
 [Docker Pulls Count]: https://img.shields.io/docker/pulls/kroese/virtual-dsm.svg?style=flat
 [dsm-docker-hub]: https://hub.docker.com/r/kroese/virtual-dsm
 
-A docker container with Synology's Virtual DSM v7.1 
+A docker container of Synology DSM v7.1 
 
 ## Using the container
 
