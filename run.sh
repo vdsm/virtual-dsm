@@ -9,95 +9,96 @@ fi
 
 /run/server.sh 5000 "<HTML><BODY><H1><CENTER>Please wait while Synology is installing...</CENTER></H1></BODY></HTML>" > /dev/null &
 
-[ ! -f "/images/boot.img" ] && rm -f /images/dsm.pat
-[ ! -f "/images/system.img" ] && rm -f /images/dsm.pat
+IMG="/storage"
 
-FILE="/images/dsm.pat"
-if [ ! -f "$FILE" ]; then
+[ ! -f "$IMG/boot.img" ] && rm -f $IMG/system.img
+
+if [ ! -f "$IMG/system.img" ]; then
+
     echo "Downloading Synology DSM from $URL..."
 
+    TMP="$IMG/tmp"
+    rm -rf $TMP
+    mkdir -p $TMP
+
+    FILE="$TMP/dsm.pat"
+    rm -rf $FILE
     wget $URL -O $FILE -q --show-progress
 
     echo "Extracting DSM boot image..."
 
-    rm -rf /images/out
-    mkdir -p /images/out
-
     if { tar tf "$FILE"; } >/dev/null 2>&1; then
-       tar xpf $FILE -C /images/out/.
+       tar xpf $FILE -C $TMP/.
     else
        export LD_LIBRARY_PATH="/run"
-       /run/syno_extract_system_patch $FILE /images/out/.
+       /run/syno_extract_system_patch $FILE $TMP/.
        export LD_LIBRARY_PATH=""
     fi
 
-    BOOT=$(find /images/out -name "*.bin.zip")
+    rm $FILE
+
+    BOOT=$(find $TMP -name "*.bin.zip")
     BOOT=$(echo $BOOT | head -c -5)
 
-    unzip -q $BOOT.zip -d /images/out
+    unzip -q $BOOT.zip -d $TMP
     rm $BOOT.zip
 
     echo "Extracting DSM system image..."
 
-    HDA="/images/out/hda1"
+    HDA="$TMP/hda1"
     mv $HDA.tgz $HDA.xz
     unxz $HDA.xz
     mv $HDA $HDA.tar
 
     echo "Extracting DSM disk template..."
 
-    TEMP="/images/temp.img"
+    SYSTEM="$TMP/temp.img"
     PLATE="/data/template.img"
 
     rm -f $PLATE
     unxz $PLATE.xz
-    mv $PLATE $TEMP
+    mv -f $PLATE $SYSTEM
 
     echo "Mounting disk template..."
+    MOUNT="/mnt/tmp"
 
-    rm -rf /mnt/tmp
-    mkdir -p /mnt/tmp
-    guestmount -a $TEMP -m /dev/sda1:/ --rw /mnt/tmp
+    rm -rf $MOUNT
+    mkdir -p $MOUNT
+    guestmount -a $SYSTEM -m /dev/sda1:/ --rw $MOUNT
+    rm -rf $MOUNT/{,.[!.],..?}*
 
-    echo "Preparing disk template..."
+    echo -n "Installing system partition.."
 
-    rm -rf /mnt/tmp/{,.[!.],..?}*
-
-    echo -n "Installing system partition..."
-
-    tar xpf $HDA.tar --absolute-names --checkpoint=.2000 -C /mnt/tmp/
+    tar xpf $HDA.tar --absolute-names --checkpoint=.5000 -C $MOUNT/
 
     echo ""
     echo "Unmounting disk template..."
 
     rm $HDA.tar
+    guestunmount $MOUNT
+    rm -rf $MOUNT
 
-    guestunmount /mnt/tmp
-    rm -rf /mnt/tmp
+    mv -f $BOOT $IMG/boot.img
+    mv -f $SYSTEM $IMG/system.img
 
-    mv -f $BOOT /images/boot.img
-    mv -f $TEMP /images/system.img
-
-    rm -rf /images/out
+    rm -rf $TMP
 fi
 
 echo "Booting Synology DSM for Docker..."
 
-FILE="/images/boot.img"
+FILE="$IMG/boot.img"
 if [ ! -f "$FILE" ]; then
     echo "ERROR: Synology DSM boot-image does not exist ($FILE)"
-    rm -f /images/dsm.pat
     exit 2
 fi
 
-FILE="/images/system.img"
+FILE="$IMG/system.img"
 if [ ! -f "$FILE" ]; then
     echo "ERROR: Synology DSM system-image does not exist ($FILE)"
-    rm -f /images/dsm.pat
     exit 2
 fi
 
-FILE="/images/data.img"
+FILE="$IMG/data.img"
 if [ ! -f "$FILE" ]; then
     truncate -s $DISK_SIZE $FILE
     mkfs.ext4 -q $FILE
@@ -157,38 +158,71 @@ udhcpd -I $DUMMY_DHCPD_IP -f $DHCPD_CONF_FILE 2>&1 &
 
 echo "Launching Synology Serial Emulator..."
 
-# Start the Synology Serial Emulator
-./run/serial.bin -cpu 1 \
-                 -vmmversion "2.6.1-12139" \
-                 -buildnumber 42962 \
-                 -vmmts 1650802981032 \
-                 -cpu_arch string "QEMU, Virtual CPU, X86_64" \
-                 -guestsn "0000000000000" \
-                 -hostsn "0000000000000" \
-                 -guestuuid "ba13a19a-c0c1-4fef-9346-915ed3b98341" > /dev/null 2>&1 &
+# Start the Serial Emulator
+
+HOST_SERIAL=$(/run/serial.sh)
+GUEST_SERIAL=$(/run/serial.sh)
+
+./run/serial.bin -cpu=1 \
+		-vmmversion="2.6.1-12139" \
+		-buildnumber=42962 \
+		-vmmts="1679863686" \
+		-cpu_arch string="VirtualDSM" \
+		-guestsn="$GUEST_SERIAL" \
+		-hostsn="$HOST_SERIAL" \
+		-guestuuid="ba13a19a-c0c1-4fef-9346-915ed3b98341" > /dev/null 2>&1 &
 
 # Stop the webserver
 pkill -f server.sh
 
 echo "Booting OS..."
 
+# Configure QEMU for graceful shutdown
+
+QEMU_MONPORT=7100
+QEMU_POWERDOWN_TIMEOUT=30
+
+_graceful_shutdown() {
+
+  local COUNT=0
+  local QEMU_MONPORT="${QEMU_MONPORT:-7100}"
+  local QEMU_POWERDOWN_TIMEOUT="${QEMU_POWERDOWN_TIMEOUT:-120}"
+
+  set +e
+  echo "Trying to shut down the VM gracefully"
+  echo 'system_powerdown' | nc -q 1 localhost ${QEMU_MONPORT}>/dev/null 2>&1
+  echo ""
+  while echo 'info version'|nc -q 1 localhost ${QEMU_MONPORT:-7100}>/dev/null 2>&1 && [ "${COUNT}" -lt "${QEMU_POWERDOWN_TIMEOUT}" ]; do
+    let COUNT++
+    echo "QEMU still running. Retrying... (${COUNT}/${QEMU_POWERDOWN_TIMEOUT})"
+    sleep 1
+  done
+
+  if echo 'info version'|nc -q 1 localhost ${QEMU_MONPORT:-7100}>/dev/null 2>&1; then
+    echo "Killing the VM"
+    echo 'quit' | nc -q 1 localhost ${QEMU_MONPORT}>/dev/null 2>&1 || true
+  fi
+  echo "Exiting..."
+}
+
+trap _graceful_shutdown SIGINT SIGTERM SIGHUP
+
 # And run the VM! A brief explaination of the options here:
 # -enable-kvm: Use KVM for this VM (much faster for our case).
 # -nographic: disable SDL graphics.
 # -serial mon:stdio: use "monitored stdio" as our serial output.
-exec qemu-system-x86_64 -name Synology -m $RAM_SIZE -enable-kvm -nographic -serial mon:stdio \
-    "$@" \
+exec qemu-system-x86_64 -name Synology -m $RAM_SIZE -machine accel=kvm -cpu host -nographic -serial mon:stdio \
+    -monitor telnet:localhost:${QEMU_MONPORT:-7100},server,nowait,nodelay \
     -device virtio-serial-pci,id=virtio-serial0,bus=pci.0,addr=0x3 -chardev pty,id=charserial0 \
     -device isa-serial,chardev=charserial0,id=serial0 -chardev socket,id=charchannel0,host=127.0.0.1,port=12345,reconnect=10 \
     -device virtserialport,bus=virtio-serial0.0,nr=1,chardev=charchannel0,id=channel0,name=vchannel \
     -device virtio-net,netdev=tap0 -netdev tap,id=tap0,ifname=Tap,script=$QEMU_IFUP,downscript=$QEMU_IFDOWN \
-    -device virtio-scsi-pci,id=hw-synoboot,bus=pci.0,addr=0xa -drive file=/images/boot.img,if=none,id=drive-synoboot,format=raw,cache=none,aio=native,detect-zeroes=on \
+    -device virtio-scsi-pci,id=hw-synoboot,bus=pci.0,addr=0xa -drive file=$IMG/boot.img,if=none,id=drive-synoboot,format=raw,cache=none,aio=native,detect-zeroes=on \
     -device scsi-hd,bus=hw-synoboot.0,channel=0,scsi-id=0,lun=0,drive=drive-synoboot,id=synoboot0,bootindex=1 \
-    -device virtio-scsi-pci,id=hw-synosys,bus=pci.0,addr=0xb -drive file=/images/system.img,if=none,id=drive-synosys,format=raw,cache=none,aio=native,detect-zeroes=on \
+    -device virtio-scsi-pci,id=hw-synosys,bus=pci.0,addr=0xb -drive file=$IMG/system.img,if=none,id=drive-synosys,format=raw,cache=none,aio=native,detect-zeroes=on \
     -device scsi-hd,bus=hw-synosys.0,channel=0,scsi-id=0,lun=0,drive=drive-synosys,id=synosys0,bootindex=2 \
-    -device virtio-scsi-pci,id=hw-userdata,bus=pci.0,addr=0xc -drive file=/images/data.img,if=none,id=drive-userdata,format=raw,cache=none,aio=native,detect-zeroes=on \
+    -device virtio-scsi-pci,id=hw-userdata,bus=pci.0,addr=0xc -drive file=$IMG/data.img,if=none,id=drive-userdata,format=raw,cache=none,aio=native,detect-zeroes=on \
     -device scsi-hd,bus=hw-userdata.0,channel=0,scsi-id=0,lun=0,drive=drive-userdata,id=userdata0,bootindex=3 \
-    -device piix3-usb-uhci,id=usb,bus=pci.0,addr=0x1.0x2
+    -device piix3-usb-uhci,id=usb,bus=pci.0,addr=0x1.0x2 &
 
-exit 0
-
+wait $!
