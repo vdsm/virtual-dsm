@@ -1,29 +1,22 @@
 #!/usr/bin/env bash
 
 set -eu
-
-if [ ! -f "/run/server.sh" ]; then
-    echo "Script must run inside Docker container!"
-    exit 1
-fi
-
 IMG="/storage"
 
+[ ! -f "/run/server.sh" ] && echo "Script must run inside Docker container!" && exit 1
 [ ! -f "$IMG/boot.img" ] && rm -f $IMG/system.img
 
 if [ ! -f "$IMG/system.img" ]; then
 
-    echo "Downloading Synology DSM from $URL..."
+    echo "Downloading $URL..."
 
     TMP="$IMG/tmp"
     FILE="$TMP/dsm.pat"
 
-    rm -rf $TMP
-    mkdir -p $TMP
-
+    rm -rf $TMP && mkdir -p $TMP
     wget $URL -O $FILE -q --show-progress
 
-    echo "Extracting DSM boot image..."
+    echo "Extracting boot image..."
 
     if { tar tf "$FILE"; } >/dev/null 2>&1; then
        tar xpf $FILE -C $TMP/.
@@ -41,14 +34,14 @@ if [ ! -f "$IMG/system.img" ]; then
     unzip -q $BOOT.zip -d $TMP
     rm $BOOT.zip
 
-    echo "Extracting DSM system image..."
+    echo "Extracting system image..."
 
     HDA="$TMP/hda1"
     mv $HDA.tgz $HDA.xz
     unxz $HDA.xz
     mv $HDA $HDA.tar
 
-    echo "Extracting DSM disk template..."
+    echo "Extracting data image..."
 
     SYSTEM="$TMP/temp.img"
     PLATE="/data/template.img"
@@ -67,7 +60,7 @@ if [ ! -f "$IMG/system.img" ]; then
 
     echo -n "Installing system partition.."
 
-    tar xpf $HDA.tar --absolute-names --checkpoint=.5000 -C $MOUNT/
+    tar xpf $HDA.tar --absolute-names --checkpoint=.6000 -C $MOUNT/
 
     echo ""
     echo "Unmounting disk template..."
@@ -83,16 +76,10 @@ if [ ! -f "$IMG/system.img" ]; then
 fi
 
 FILE="$IMG/boot.img"
-if [ ! -f "$FILE" ]; then
-    echo "ERROR: Synology DSM boot-image does not exist ($FILE)"
-    exit 2
-fi
+[ ! -f "$FILE" ] && echo "ERROR: Synology DSM boot-image does not exist ($FILE)" && exit 2
 
 FILE="$IMG/system.img"
-if [ ! -f "$FILE" ]; then
-    echo "ERROR: Synology DSM system-image does not exist ($FILE)"
-    exit 2
-fi
+[ ! -f "$FILE" ] && echo "ERROR: Synology DSM system-image does not exist ($FILE)" && exit 2
 
 FILE="$IMG/data.img"
 if [ ! -f "$FILE" ]; then
@@ -100,9 +87,6 @@ if [ ! -f "$FILE" ]; then
     mkfs.ext4 -q $FILE
 fi
 
-if [ ! -f "$FILE" ]; then
-    echo "ERROR: Synology DSM data-image does not exist ($FILE)"
-    exit 2
-fi
+[ ! -f "$FILE" ] && echo "ERROR: Synology DSM data-image does not exist ($FILE)" && exit 2
 
 exit 0
