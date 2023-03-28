@@ -60,6 +60,6 @@ services:
             - 443:5001
             - 5000:5000
             - 5001:5001
-        restart: always
+        restart: on-failure
 ```
 
