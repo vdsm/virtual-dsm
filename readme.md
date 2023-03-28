@@ -2,17 +2,17 @@ virtual-dsm
 =============
 
 [![test_img]][test_url]
-[![gh_last_release_svg]][gh_last_release_url]
+[![gh_last_release_svg]][dsm-docker-hub]
+[![Docker Image Size]][dsm-docker-hub]
 [![Docker Pulls Count]][dsm-docker-hub]
 
-[test_img]: https://github.com/kroese/virtual-dsm/actions/workflows/test.yaml/badge.svg
 [test_url]: https://github.com/kroese/virtual-dsm/actions
+[test_img]: https://github.com/kroese/virtual-dsm/actions/workflows/test.yaml/badge.svg
 
-[gh_last_release_svg]: https://img.shields.io/docker/v/kroese/virtual-dsm?arch=amd64&sort=date
-[gh_last_release_url]: https://hub.docker.com/r/kroese/virtual-dsm
-
-[Docker Pulls Count]: https://img.shields.io/docker/pulls/kroese/virtual-dsm.svg?style=flat
 [dsm-docker-hub]: https://hub.docker.com/r/kroese/virtual-dsm
+[Docker Image Size]: https://img.shields.io/docker/image-size/kroese/virtual-dsm/latest
+[Docker Pulls Count]: https://img.shields.io/docker/pulls/kroese/virtual-dsm.svg?style=flat
+[gh_last_release_svg]: https://img.shields.io/docker/v/kroese/virtual-dsm?arch=amd64&sort=date
 
 A docker container of Synology DSM v7.1 
 
