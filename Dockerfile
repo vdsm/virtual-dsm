@@ -29,6 +29,7 @@ COPY qemu-ifup /run/
 COPY run.sh /run/
 COPY serial.sh /run/
 COPY server.sh /run/
+COPY install.sh /run/
 COPY --from=builder /src/serial/main /run/serial.bin
 
 RUN ["chmod", "+x", "/run/generate-dhcpd-conf"]
@@ -38,6 +39,7 @@ RUN ["chmod", "+x", "/run/run.sh"]
 RUN ["chmod", "+x", "/run/serial.sh"]
 RUN ["chmod", "+x", "/run/server.sh"]
 RUN ["chmod", "+x", "/run/serial.bin"]
+RUN ["chmod", "+x", "/run/install.sh"]
 
 COPY extractor/lib* /run/
 COPY extractor/scemd /run/syno_extract_system_patch
