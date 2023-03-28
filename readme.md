@@ -14,7 +14,7 @@ virtual-dsm
 [Docker Pulls Count]: https://img.shields.io/docker/pulls/kroese/virtual-dsm.svg?style=flat
 [dsm-docker-hub]: https://hub.docker.com/r/kroese/virtual-dsm
 
-A docker container that runs Synology's Virtual DSM v7.
+A docker container with Synology's Virtual DSM v7.1 
 
 ## Using the container
 
@@ -24,6 +24,7 @@ Via `docker run`:
 $ docker run --rm -it \
     --name virtual-dsm \
     -p 5000:5000 \
+    -p 5001:5001 \
     -e DISK_SIZE=16G \
     -e RAM_SIZE=512M \
     --cap-add NET_ADMIN \
@@ -51,6 +52,7 @@ services:
             - /dev/net/tun
         ports:
             - 5000:5000
+            - 5001:5001
         environment:
             DISK_SIZE: "16G"
             RAM_SIZE: "512M"
