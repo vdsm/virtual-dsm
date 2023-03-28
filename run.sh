@@ -2,14 +2,13 @@
 
 set -eu
 
-/run/server.sh 5000 "<HTML><BODY><H1><CENTER>Please wait while Synology is installing...</CENTER></H1></BODY></HTML>" > /dev/null &
+/run/server.sh 5000 > /dev/null &
 
-if [ ! /run/install.sh ]; then
-    echo "Installation failed!"
-    exit 2
+if /run/install.sh; then
+  echo "Starting DSM for Docker..."
+else
+  echo "Installation failed (code $?)" && exit 2
 fi
-
-echo "Booting Synology DSM for Docker..."
 
 # A bridge of this name will be created to host the TAP interface created for
 # the VM
@@ -75,8 +74,16 @@ GUEST_SERIAL=$(/run/serial.sh)
 # Stop the webserver
 pkill -f server.sh
 
+[ ! -e /dev/fuse ] && echo "Error: FUSE interface not available..." && exit 2
+[ ! -e /dev/net/tun ] && echo "Error: TUN interface not available..." && exit 2
+
+if [ -e /dev/kvm ] && sh -c 'echo -n > /dev/kvm' &> /dev/null; then
+  echo "Booting DSM image..."
+else
+  echo "Error: KVM not available..." && exit 2
+fi
+
 IMG="/storage"
-echo "Booting OS..."
 
 # Configure QEMU for graceful shutdown
 
