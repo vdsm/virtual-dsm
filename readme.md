@@ -22,7 +22,7 @@ Via `docker run`:
 
 ```bash
 $ docker run --rm -it \
-    --name virtual-dsm \
+    --name dsm \
     -p 5000:5000 \
     -p 5001:5001 \
     -e DISK_SIZE=16G \
@@ -41,7 +41,7 @@ Via `docker-compose.yml`:
 version: "3"
 services:
     vm:
-        container_name: virtual-dsm
+        container_name: dsm
         image: kroese/virtual-dsm:latest
         cap_add:
             - NET_ADMIN
