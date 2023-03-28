@@ -7,8 +7,23 @@ set -eu
 if /run/install.sh; then
   echo "Starting DSM for Docker..."
 else
-  echo "Installation failed (code $?)" && exit 2
+  echo "Installation failed (code $?)" && exit 80
 fi
+
+IMG="/storage"
+FILE="$IMG/boot.img"
+[ ! -f "$FILE" ] && echo "ERROR: Synology DSM boot-image does not exist ($FILE)" && exit 81
+
+FILE="$IMG/system.img"
+[ ! -f "$FILE" ] && echo "ERROR: Synology DSM system-image does not exist ($FILE)" && exit 82
+
+FILE="$IMG/data.img"
+if [ ! -f "$FILE" ]; then
+    truncate -s $DISK_SIZE $FILE
+    mkfs.ext4 -q $FILE
+fi
+
+[ ! -f "$FILE" ] && echo "ERROR: Synology DSM data-image does not exist ($FILE)" && exit 83
 
 # A bridge of this name will be created to host the TAP interface created for
 # the VM
@@ -74,16 +89,14 @@ GUEST_SERIAL=$(/run/serial.sh)
 # Stop the webserver
 pkill -f server.sh
 
-[ ! -e /dev/fuse ] && echo "Error: FUSE interface not available..." && exit 2
-[ ! -e /dev/net/tun ] && echo "Error: TUN interface not available..." && exit 2
+[ ! -e /dev/fuse ] && echo "Error: FUSE interface not available..." && exit 84
+[ ! -e /dev/net/tun ] && echo "Error: TUN interface not available..." && exit 85
 
 if [ -e /dev/kvm ] && sh -c 'echo -n > /dev/kvm' &> /dev/null; then
   echo "Booting DSM image..."
 else
-  echo "Error: KVM not available..." && exit 2
+  echo "Error: KVM not available..." && exit 86
 fi
-
-IMG="/storage"
 
 # Configure QEMU for graceful shutdown
 
