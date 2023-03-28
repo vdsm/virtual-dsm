@@ -23,12 +23,12 @@ Via `docker run`:
 ```bash
 $ docker run --rm -it \
     --name dsm \
+    -e DISK_SIZE=16G \
+    -e RAM_SIZE=512M \
     -p 80:5000 \
     -p 443:5001 \
     -p 5000:5000 \
     -p 5001:5001 \
-    -e DISK_SIZE=16G \
-    -e RAM_SIZE=512M \
     --cap-add NET_ADMIN \
     --cap-add SYS_ADMIN \
     --device=/dev/kvm:/dev/kvm \
@@ -45,6 +45,9 @@ services:
     vm:
         container_name: dsm
         image: kroese/virtual-dsm:latest
+        environment:
+            DISK_SIZE: "16G"
+            RAM_SIZE: "512M"
         cap_add:
             - NET_ADMIN
             - SYS_ADMIN
@@ -57,9 +60,6 @@ services:
             - 443:5001
             - 5000:5000
             - 5001:5001
-        environment:
-            DISK_SIZE: "16G"
-            RAM_SIZE: "512M"
         restart: always
 ```
 
