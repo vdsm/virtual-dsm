@@ -23,6 +23,8 @@ Via `docker run`:
 ```bash
 $ docker run --rm -it \
     --name dsm \
+    -p 80:5000 \
+    -p 443:5001 \
     -p 5000:5000 \
     -p 5001:5001 \
     -e DISK_SIZE=16G \
@@ -51,6 +53,8 @@ services:
             - /dev/fuse
             - /dev/net/tun
         ports:
+            - 80:5000
+            - 443:5001
             - 5000:5000
             - 5001:5001
         environment:
