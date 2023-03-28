@@ -18,11 +18,11 @@ if [ ! -f "$IMG/system.img" ]; then
     echo "Downloading Synology DSM from $URL..."
 
     TMP="$IMG/tmp"
+    FILE="$TMP/dsm.pat"
+
     rm -rf $TMP
     mkdir -p $TMP
 
-    FILE="$TMP/dsm.pat"
-    rm -rf $FILE
     wget $URL -O $FILE -q --show-progress
 
     echo "Extracting DSM boot image..."
@@ -156,8 +156,6 @@ touch /var/lib/misc/udhcpd.leases
 # Finally, start our DHCPD server
 udhcpd -I $DUMMY_DHCPD_IP -f $DHCPD_CONF_FILE 2>&1 &
 
-echo "Launching Synology Serial Emulator..."
-
 # Start the Serial Emulator
 
 HOST_SERIAL=$(/run/serial.sh)
@@ -208,7 +206,7 @@ _graceful_shutdown() {
 trap _graceful_shutdown SIGINT SIGTERM SIGHUP
 
 # And run the VM! A brief explaination of the options here:
-# -enable-kvm: Use KVM for this VM (much faster for our case).
+# -accel=kvm: use KVM for this VM (much faster for our case).
 # -nographic: disable SDL graphics.
 # -serial mon:stdio: use "monitored stdio" as our serial output.
 exec qemu-system-x86_64 -name Synology -m $RAM_SIZE -machine accel=kvm -cpu host -nographic -serial mon:stdio \
