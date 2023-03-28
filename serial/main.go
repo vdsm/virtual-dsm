@@ -33,18 +33,13 @@ var HostDSMBuildNumber = flag.Int("buildnumber", 42962, "Build Number of Host")
 var HostDSMfixNumber = flag.Int("fixNumber", 0, "Fix Number of Host")
 var VMMVersion = flag.String("vmmversion", "2.6.1-12139", "VMM version")
 var VMMTimestamp = flag.Int("vmmts", 1679863686, "VMM Timestamp")
-
-// synowebapi --exec api=SYNO.Core.Package method=get id=Virtualization
-
 var Cluster_UUID = "3bdea92b-68f4-4fe9-aa4b-d645c3c63864"
 
 var ListenAddr = flag.String("addr", "0.0.0.0:12345", "Listen address")
 
 func main() {
 	flag.Parse()
-	log.Println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-	log.Println("!!!  Synology Serial Emulator created by https://jxcn.org  !!!")
-	log.Println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+
 	listener, err := net.Listen("tcp", *ListenAddr)
 	if err != nil {
 		log.Println("Error listening", err.Error())
