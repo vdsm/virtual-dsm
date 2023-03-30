@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-
 set -eu
+
 IMG="/storage"
 
 [ ! -f "/run/server.sh" ] && echo "Script must run inside Docker container!" && exit 60
-[ ! -f "$IMG/boot.img" ] && rm -f $IMG/system.img
 
-if [ ! -f "$IMG/system.img" ]; then
+[ ! -f "$IMG/boot.img" ] && rm -f $IMG/system.img
+[ -f "$IMG/system.img" ] && exit 0
 
     echo "Downloading $URL..."
 
@@ -24,44 +24,36 @@ if [ ! -f "$IMG/system.img" ]; then
       echo "Invalid PAT file: File is an update pack which contains no OS image." && exit 62
     fi
 
-    echo "Extracting boot image..."
+    echo "Extracting downloaded system image..."
 
     if { tar tf "$FILE"; } >/dev/null 2>&1; then
        tar xpf $FILE -C $TMP/.
     else
-       export LD_LIBRARY_PATH="/run"
-       if ! /run/syno_extract_system_patch $FILE $TMP/. ; then
+       export LD_LIBRARY_PATH="/run/extract"
+       if ! /run/extract/syno_extract_system_patch $FILE $TMP/. ; then
          echo "Invalid PAT file: File is an update pack which contains no OS image." && exit 63
        fi
        export LD_LIBRARY_PATH=""
     fi
 
-    rm $FILE
-
     HDA="$TMP/hda1"
-    HDP="$TMP/synohdpack_img"
     IDB="$TMP/indexdb"
+    HDP="$TMP/synohdpack_img"
 
     [ ! -f "$HDA.tgz" ] && echo "Invalid PAT file: File contains no OS image." && exit 64
     [ ! -f "$HDP.txz" ] && echo "Invalid PAT file: HD pack not found." && exit 65
     [ ! -f "$IDB.txz" ] && echo "Invalid PAT file: IndexDB file not found." && exit 66
+
+    echo "Extracting downloaded boot image..."
 
     BOOT=$(find $TMP -name "*.bin.zip")
 
     [ ! -f "$BOOT" ] && echo "Invalid PAT file: boot file not found." && exit 67
 
     BOOT=$(echo $BOOT | head -c -5)
+    unzip -q -o $BOOT.zip -d $TMP
 
-    unzip -q $BOOT.zip -d $TMP
-    rm $BOOT.zip
-
-    echo "Extracting system image..."
-
-    mv $HDA.tgz $HDA.xz
-    unxz $HDA.xz
-    mv $HDA $HDA.tar
-
-    echo "Extracting disk image..."
+    echo "Extracting prepared disk image..."
 
     SYSTEM="$TMP/temp.img"
     PLATE="/data/template.img"
@@ -70,34 +62,35 @@ if [ ! -f "$IMG/system.img" ]; then
     unxz $PLATE.xz
     mv -f $PLATE $SYSTEM
 
-    echo "Mounting disk image..."
-    MOUNT="/mnt/tmp"
+    echo "Installing system partition..."
 
-    rm -rf $MOUNT
-    mkdir -p $MOUNT
-    guestmount -a $SYSTEM -m /dev/sda1:/ --rw $MOUNT
+    MOUNT="/mnt/tmp"
+    rm -rf $MOUNT && mkdir -p $MOUNT
+
+    OFFSET=$(parted -s $SYSTEM unit B print | sed 's/^ //g' | grep "^1 " | tr -s ' ' | cut -d ' ' -f2 | sed 's/[^0-9]*//g')
+
+    if [ "$OFFSET" != "1048576" ]; then
+      echo "Invalid disk image, wrong offset: $OFFSET" && exit 68
+    fi
+
+    if ! mount -t ext4 -o loop,offset=$OFFSET $SYSTEM $MOUNT ; then
+      echo "Failed to mount disk image. Docker container needs to be in privileged mode during installation." && exit 69
+    fi
+
     rm -rf $MOUNT/{,.[!.],..?}*
 
-    echo -n "Installing system partition.."
+    mv $HDA.tgz $HDA.txz
 
-    tar xpf $HDP.txz --absolute-names -C $MOUNT/
-    tar xpf $HDA.tar --absolute-names --checkpoint=.6000 -C $MOUNT/
-    tar xpf $IDB.txz --absolute-names -C $MOUNT/usr/syno/synoman/indexdb/
+    tar xpfJ $HDP.txz --absolute-names -C $MOUNT/
+    tar xpfJ $HDA.txz --absolute-names -C $MOUNT/
+    tar xpfJ $IDB.txz --absolute-names -C $MOUNT/usr/syno/synoman/indexdb/
 
-    echo ""
-    echo "Unmounting disk template..."
-
-    rm $HDA.tar
-    rm $HDP.txz
-    rm $IDB.txz
-
-    guestunmount $MOUNT
+    umount $MOUNT
     rm -rf $MOUNT
 
     mv -f $BOOT $IMG/boot.img
     mv -f $SYSTEM $IMG/system.img
 
     rm -rf $TMP
-fi
 
 exit 0
