@@ -29,10 +29,8 @@ $ docker run --rm -it \
     -p 443:5001 \ 
     -p 5000:5000 \ 
     -p 5001:5001 \ 
-    --privileged \ 
     --cap-add NET_ADMIN \ 
     --device=/dev/kvm:/dev/kvm \ 
-    --device=/dev/fuse:/dev/fuse \ 
     --device=/dev/net/tun:/dev/net/tun \ 
     kroese/virtual-dsm:latest
 ```
@@ -52,13 +50,11 @@ services:
             - NET_ADMIN
         devices:
             - /dev/kvm
-            - /dev/fuse
             - /dev/net/tun
         ports:
             - 80:5000
             - 443:5001
             - 5000:5000
             - 5001:5001
-        privileged: true
         restart: on-failure
 ```
