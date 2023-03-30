@@ -23,9 +23,9 @@ RUN apt-get update && apt-get -y upgrade && \
     && apt-get clean
 
 COPY run.sh /run/
-COPY serial.sh /run/
 COPY server.sh /run/
 COPY install.sh /run/
+COPY serial/serial.sh /run/
 COPY qemu-ifup /run/
 COPY qemu-ifdown /run/
 COPY generate-dhcpd-conf /run/
