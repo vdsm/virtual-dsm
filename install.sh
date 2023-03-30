@@ -72,7 +72,7 @@ rm -rf $MOUNT && mkdir -p $MOUNT
 
 mount -t ext4 -o loop,offset=$OFFSET $SYSTEM $MOUNT 2>/dev/null && PRIVILEGED=true
 
-rm -rf $MOUNT/{,.[!.],..?}*
+rm -rf ${MOUNT:?}/{,.[!.],..?}*
 
 mv -f $HDA.tgz $HDA.txz
 tar xpfJ $HDP.txz --absolute-names -C $MOUNT/
