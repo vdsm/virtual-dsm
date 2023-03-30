@@ -70,7 +70,7 @@ NUMBLOCKS="622560" # 2550005760 / 4096
 MOUNT="/mnt/tmp"
 rm -rf $MOUNT && mkdir -p $MOUNT
 
-[ mount -t ext4 -o loop,offset=$OFFSET $SYSTEM $MOUNT 2>/dev/null ] && PRIVILEGED=true
+mount -t ext4 -o loop,offset=$OFFSET $SYSTEM $MOUNT 2>/dev/null && PRIVILEGED=true
 
 rm -rf $MOUNT/{,.[!.],..?}*
 
@@ -88,7 +88,7 @@ if [ "$PRIVILEGED" = false ]; then
 
 else
 
- umount $MOUNT
+  umount $MOUNT
 
 fi
 

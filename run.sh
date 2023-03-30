@@ -49,7 +49,7 @@ function default_intf() {
 # on our current address/routes. We "steal" the container's IP, and lease
 # it to the VM once it starts up.
 /run/generate-dhcpd-conf $QEMU_BRIDGE > $DHCPD_CONF_FILE
-default_dev=`default_intf`
+default_dev=$(default_intf)
 
 # Now we start modifying the networking configuration. First we clear out
 # the IP address of the default device (will also have the side-effect of
@@ -113,7 +113,7 @@ _graceful_shutdown() {
   echo 'system_powerdown' | nc -q 1 localhost ${QEMU_MONPORT}>/dev/null 2>&1
   echo ""
   while echo 'info version'|nc -q 1 localhost ${QEMU_MONPORT:-7100}>/dev/null 2>&1 && [ "${COUNT}" -lt "${QEMU_POWERDOWN_TIMEOUT}" ]; do
-    let COUNT++
+    (( COUNT++ )) || true
     echo "QEMU still running. Retrying... (${COUNT}/${QEMU_POWERDOWN_TIMEOUT})"
     sleep 1
   done
