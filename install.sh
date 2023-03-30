@@ -14,7 +14,7 @@ TMP="$IMG/tmp"
 FILE="$TMP/dsm.pat"
 
 rm -rf $TMP && mkdir -p $TMP
-wget $URL -O $FILE -q --show-progress
+wget "$URL" -O "$FILE" -q --show-progress
 
 [ ! -f "$FILE" ] && echo "Download failed" && exit 61
 
@@ -48,8 +48,8 @@ BOOT=$(find $TMP -name "*.bin.zip")
 
 [ ! -f "$BOOT" ] && echo "Invalid PAT file: boot file not found." && exit 67
 
-BOOT=$(echo $BOOT | head -c -5)
-unzip -q -o $BOOT.zip -d $TMP
+BOOT=$(echo "$BOOT" | head -c -5)
+unzip -q -o "$BOOT".zip -d $TMP
 
 echo "Install: Extracting prepared disk image..."
 
@@ -94,8 +94,8 @@ fi
 
 rm -rf $MOUNT
 
-mv -f $BOOT $IMG/boot.img
-mv -f $SYSTEM $IMG/system.img
+mv -f $BOOT "$IMG"/boot.img
+mv -f $SYSTEM "$IMG"/system.img
 
 rm -rf $TMP
 
