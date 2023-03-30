@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [ master ]
 
-name: "Shellcheck"
+name: "Test"
 permissions: {}
 
 jobs:
