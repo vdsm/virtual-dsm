@@ -14,7 +14,7 @@ virtual-dsm
 [Docker Pulls Count]: https://img.shields.io/docker/pulls/kroese/virtual-dsm.svg?style=flat
 [gh_last_release_svg]: https://img.shields.io/docker/v/kroese/virtual-dsm?arch=amd64&sort=date
 
-A docker container of Synology DSM v7.1 
+A docker container of Synology DSM v7.2 
 
 ## Using the container
 
@@ -29,8 +29,8 @@ $ docker run --rm -it \
     -p 443:5001 \
     -p 5000:5000 \
     -p 5001:5001 \
+    --privileged \
     --cap-add NET_ADMIN \
-    --cap-add SYS_ADMIN \
     --device=/dev/kvm:/dev/kvm \
     --device=/dev/fuse:/dev/fuse \
     --device=/dev/net/tun:/dev/net/tun \    
@@ -43,14 +43,13 @@ Via `docker-compose.yml`:
 version: "3"
 services:
     vm:
-        container_name: dsm
+        container_name: dsm       
         image: kroese/virtual-dsm:latest
         environment:
             DISK_SIZE: "16G"
             RAM_SIZE: "512M"
         cap_add:
             - NET_ADMIN
-            - SYS_ADMIN
         devices:
             - /dev/kvm
             - /dev/fuse
@@ -60,6 +59,6 @@ services:
             - 443:5001
             - 5000:5000
             - 5001:5001
+        privileged: true            
         restart: on-failure
 ```
-
