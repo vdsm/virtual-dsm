@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 set -eu
 
 /run/server.sh 5000 > /dev/null &
