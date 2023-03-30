@@ -21,19 +21,19 @@ A docker container of Synology DSM v7.2
 Via `docker run`:
 
 ```bash
-$ docker run --rm -it \
-    --name dsm \
-    -e DISK_SIZE=16G \
-    -e RAM_SIZE=512M \
-    -p 80:5000 \
-    -p 443:5001 \
-    -p 5000:5000 \
-    -p 5001:5001 \
-    --privileged \
-    --cap-add NET_ADMIN \
-    --device=/dev/kvm:/dev/kvm \
-    --device=/dev/fuse:/dev/fuse \
-    --device=/dev/net/tun:/dev/net/tun \    
+$ docker run --rm -it \ 
+    --name dsm \ 
+    -e DISK_SIZE=16G \ 
+    -e RAM_SIZE=512M \ 
+    -p 80:5000 \ 
+    -p 443:5001 \ 
+    -p 5000:5000 \ 
+    -p 5001:5001 \ 
+    --privileged \ 
+    --cap-add NET_ADMIN \ 
+    --device=/dev/kvm:/dev/kvm \ 
+    --device=/dev/fuse:/dev/fuse \ 
+    --device=/dev/net/tun:/dev/net/tun \ 
     kroese/virtual-dsm:latest
 ```
 
@@ -43,7 +43,7 @@ Via `docker-compose.yml`:
 version: "3"
 services:
     vm:
-        container_name: dsm       
+        container_name: dsm
         image: kroese/virtual-dsm:latest
         environment:
             DISK_SIZE: "16G"
@@ -59,6 +59,6 @@ services:
             - 443:5001
             - 5000:5000
             - 5001:5001
-        privileged: true            
+        privileged: true
         restart: on-failure
 ```
