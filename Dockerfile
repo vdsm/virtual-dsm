@@ -13,7 +13,6 @@ RUN apt-get update && apt-get -y upgrade && \
 	jq \
 	wget \
 	unzip \
-	parted \
 	procps \
 	python3 \
 	xz-utils \
@@ -23,26 +22,27 @@ RUN apt-get update && apt-get -y upgrade && \
 	udhcpd \
     && apt-get clean
 
-COPY generate-dhcpd-conf /run/
-COPY qemu-ifdown /run/
-COPY qemu-ifup /run/
 COPY run.sh /run/
 COPY serial.sh /run/
 COPY server.sh /run/
 COPY install.sh /run/
+COPY qemu-ifup /run/
+COPY qemu-ifdown /run/
+COPY generate-dhcpd-conf /run/
+
 COPY --from=builder /src/serial/main /run/serial.bin
 
-RUN ["chmod", "+x", "/run/generate-dhcpd-conf"]
-RUN ["chmod", "+x", "/run/qemu-ifdown"]
-RUN ["chmod", "+x", "/run/qemu-ifup"]
 RUN ["chmod", "+x", "/run/run.sh"]
 RUN ["chmod", "+x", "/run/serial.sh"]
 RUN ["chmod", "+x", "/run/server.sh"]
 RUN ["chmod", "+x", "/run/install.sh"]
+RUN ["chmod", "+x", "/run/qemu-ifup"]
+RUN ["chmod", "+x", "/run/qemu-ifdown"]
+RUN ["chmod", "+x", "/run/generate-dhcpd-conf"]
 
 COPY extractor/lib* /run/extract/
 COPY extractor/scemd /run/extract/syno_extract_system_patch
- 
+
 COPY disks/template.img.xz /data/
 
 VOLUME /storage
@@ -63,4 +63,3 @@ ENV URL https://global.synologydownload.com/download/DSM/beta/7.2/64216/DSM_Virt
 #ENV URL https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat
 
 ENTRYPOINT ["/run/run.sh"]
-
