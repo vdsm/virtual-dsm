@@ -88,7 +88,7 @@ GUEST_SERIAL=$(/run/serial.sh)
 # Stop the webserver
 pkill -f server.sh
 
-[ ! -e /dev/fuse ] && echo "Error: FUSE interface not available..." && exit 84
+#[ ! -e /dev/fuse ] && echo "Error: FUSE interface not available..." && exit 84
 [ ! -e /dev/net/tun ] && echo "Error: TUN interface not available..." && exit 85
 
 if [ -e /dev/kvm ] && sh -c 'echo -n > /dev/kvm' &> /dev/null; then
