@@ -94,8 +94,8 @@ fi
 
 rm -rf $MOUNT
 
-mv -f $BOOT "$IMG"/boot.img
-mv -f $SYSTEM "$IMG"/system.img
+mv -f "$BOOT" "$IMG"/boot.img
+mv -f "$SYSTEM" "$IMG"/system.img
 
 rm -rf $TMP
 
