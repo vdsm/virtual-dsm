@@ -40,8 +40,8 @@ RUN ["chmod", "+x", "/run/qemu-ifup"]
 RUN ["chmod", "+x", "/run/qemu-ifdown"]
 RUN ["chmod", "+x", "/run/generate-dhcpd-conf"]
 
-COPY extractor/lib* /run/extract/
-COPY extractor/scemd /run/extract/syno_extract_system_patch
+COPY extract/lib* /run/extract/
+COPY extract/scemd /run/extract/syno_extract_system_patch
 
 COPY disks/template.img.xz /data/
 
