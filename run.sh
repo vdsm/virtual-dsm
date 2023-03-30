@@ -18,7 +18,7 @@ FILE="$IMG/system.img"
 
 FILE="$IMG/data.img"
 if [ ! -f "$FILE" ]; then
-    truncate -s $DISK_SIZE $FILE
+    truncate -s "$DISK_SIZE" "$FILE"
     mkfs.ext4 -q $FILE
 fi
 
@@ -54,16 +54,16 @@ default_dev=$(default_intf)
 # Now we start modifying the networking configuration. First we clear out
 # the IP address of the default device (will also have the side-effect of
 # removing the default route)
-ip addr flush dev $default_dev
+ip addr flush dev "$default_dev"
 
 # Next, we create our bridge, and add our container interface to it.
-ip link add $QEMU_BRIDGE type bridge
-ip link set dev $default_dev master $QEMU_BRIDGE
+ip link add "$QEMU_BRIDGE" type bridge
+ip link set dev "$default_dev" master "$QEMU_BRIDGE"
 
 # Then, we toggle the interface and the bridge to make sure everything is up
 # and running.
-ip link set dev $default_dev up
-ip link set dev $QEMU_BRIDGE up
+ip link set dev "$default_dev" up
+ip link set dev "$QEMU_BRIDGE" up
 
 # Prevent error about missing file
 touch /var/lib/misc/udhcpd.leases
@@ -110,17 +110,17 @@ _graceful_shutdown() {
 
   set +e
   echo "Trying to shut down the VM gracefully"
-  echo 'system_powerdown' | nc -q 1 localhost ${QEMU_MONPORT}>/dev/null 2>&1
+  echo 'system_powerdown' | nc -q 1 localhost "${QEMU_MONPORT}">/dev/null 2>&1
   echo ""
-  while echo 'info version'|nc -q 1 localhost ${QEMU_MONPORT:-7100}>/dev/null 2>&1 && [ "${COUNT}" -lt "${QEMU_POWERDOWN_TIMEOUT}" ]; do
+  while echo 'info version'|nc -q 1 localhost "${QEMU_MONPORT:-7100}">/dev/null 2>&1 && [ "${COUNT}" -lt "${QEMU_POWERDOWN_TIMEOUT}" ]; do
     (( COUNT++ )) || true
     echo "QEMU still running. Retrying... (${COUNT}/${QEMU_POWERDOWN_TIMEOUT})"
     sleep 1
   done
 
-  if echo 'info version'|nc -q 1 localhost ${QEMU_MONPORT:-7100}>/dev/null 2>&1; then
+  if echo 'info version'|nc -q 1 localhost "${QEMU_MONPORT:-7100}">/dev/null 2>&1; then
     echo "Killing the VM"
-    echo 'quit' | nc -q 1 localhost ${QEMU_MONPORT}>/dev/null 2>&1 || true
+    echo 'quit' | nc -q 1 localhost "${QEMU_MONPORT}">/dev/null 2>&1 || true
   fi
   echo "Exiting..."
 }
@@ -131,17 +131,17 @@ trap _graceful_shutdown SIGINT SIGTERM SIGHUP
 # -accel=kvm: use KVM for this VM (much faster for our case).
 # -nographic: disable SDL graphics.
 # -serial mon:stdio: use "monitored stdio" as our serial output.
-exec qemu-system-x86_64 -name Synology -m $RAM_SIZE -machine accel=kvm -cpu host -nographic -serial mon:stdio \
-    -monitor telnet:localhost:${QEMU_MONPORT:-7100},server,nowait,nodelay \
+exec qemu-system-x86_64 -name Synology -m "$RAM_SIZE" -machine accel=kvm -cpu host -nographic -serial mon:stdio \
+    -monitor telnet:localhost:"${QEMU_MONPORT:-7100}",server,nowait,nodelay \
     -device virtio-serial-pci,id=virtio-serial0,bus=pci.0,addr=0x3 -chardev pty,id=charserial0 \
     -device isa-serial,chardev=charserial0,id=serial0 -chardev socket,id=charchannel0,host=127.0.0.1,port=12345,reconnect=10 \
     -device virtserialport,bus=virtio-serial0.0,nr=1,chardev=charchannel0,id=channel0,name=vchannel \
-    -device virtio-net,netdev=tap0 -netdev tap,id=tap0,ifname=Tap,script=$QEMU_IFUP,downscript=$QEMU_IFDOWN \
-    -device virtio-scsi-pci,id=hw-synoboot,bus=pci.0,addr=0xa -drive file=$IMG/boot.img,if=none,id=drive-synoboot,format=raw,cache=none,aio=native,detect-zeroes=on \
+    -device virtio-net,netdev=tap0 -netdev tap,id=tap0,ifname=Tap,script="$QEMU_IFUP",downscript="$QEMU_IFDOWN" \
+    -device virtio-scsi-pci,id=hw-synoboot,bus=pci.0,addr=0xa -drive file="$IMG"/boot.img,if=none,id=drive-synoboot,format=raw,cache=none,aio=native,detect-zeroes=on \
     -device scsi-hd,bus=hw-synoboot.0,channel=0,scsi-id=0,lun=0,drive=drive-synoboot,id=synoboot0,bootindex=1 \
-    -device virtio-scsi-pci,id=hw-synosys,bus=pci.0,addr=0xb -drive file=$IMG/system.img,if=none,id=drive-synosys,format=raw,cache=none,aio=native,detect-zeroes=on \
+    -device virtio-scsi-pci,id=hw-synosys,bus=pci.0,addr=0xb -drive file="$IMG"/system.img,if=none,id=drive-synosys,format=raw,cache=none,aio=native,detect-zeroes=on \
     -device scsi-hd,bus=hw-synosys.0,channel=0,scsi-id=0,lun=0,drive=drive-synosys,id=synosys0,bootindex=2 \
-    -device virtio-scsi-pci,id=hw-userdata,bus=pci.0,addr=0xc -drive file=$IMG/data.img,if=none,id=drive-userdata,format=raw,cache=none,aio=native,detect-zeroes=on \
+    -device virtio-scsi-pci,id=hw-userdata,bus=pci.0,addr=0xc -drive file="$IMG"/data.img,if=none,id=drive-userdata,format=raw,cache=none,aio=native,detect-zeroes=on \
     -device scsi-hd,bus=hw-userdata.0,channel=0,scsi-id=0,lun=0,drive=drive-userdata,id=userdata0,bootindex=3 \
     -device piix3-usb-uhci,id=usb,bus=pci.0,addr=0x1.0x2 &
 
