@@ -30,8 +30,8 @@ $ docker run --rm -it \
     -p 5000:5000 \ 
     -p 5001:5001 \ 
     --cap-add NET_ADMIN \ 
-    --device=/dev/kvm:/dev/kvm \ 
-    --device=/dev/net/tun:/dev/net/tun \ 
+    --device="/dev/kvm:/dev/kvm" \ 
+    --device="/dev/net/tun:/dev/net/tun" \ 
     kroese/virtual-dsm:latest
 ```
 
