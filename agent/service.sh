@@ -5,14 +5,14 @@ LOGFILE="/var/log/agent.log"
 SCRIPT="/usr/local/bin/agent.sh" 
 
 status() {
-  if [ -f $PIDFILE ]; then
+  if [ -f "$PIDFILE" ]; then
     echo 'Service running' >&2
     return 1
   fi
 }
 
 start() {
-  if [ -f $PIDFILE ] && kill -0 $(cat $PIDFILE); then
+  if [ -f "$PIDFILE" ] && kill -0 $(cat "$PIDFILE"); then
     echo 'Service already running' >&2
     return 1
   fi
