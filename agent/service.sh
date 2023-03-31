@@ -12,7 +12,7 @@ status() {
 }
 
 start() {
-  if [ -f "$PIDFILE" ] && kill -0 $(cat "$PIDFILE"); then
+  if [ -f "$PIDFILE" ] && kill -0 $("cat $PIDFILE"); then
     echo 'Service already running' >&2
     return 1
   fi
@@ -21,12 +21,12 @@ start() {
 }
 
 stop() {
-  if [ ! -f "$PIDFILE" ] || ! kill -0 $(cat "$PIDFILE"); then
+  if [ ! -f "$PIDFILE" ] || ! kill -0 $("cat $PIDFILE"); then
     echo 'Service not running' >&2
     return 1
   fi
   echo 'Stopping agent service' >&2
-  kill -15 $(cat "$PIDFILE") && rm -f "$PIDFILE"
+  kill -15 $("cat $PIDFILE") && rm -f "$PIDFILE"
   echo 'Service stopped' >&2
 }
 
