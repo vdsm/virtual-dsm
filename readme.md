@@ -21,7 +21,7 @@ A docker container of Synology DSM v7.2 using KVM.
 Via `docker run`:
 
 ```bash
-$ docker run -it \ 
+$ docker run --rm -it \ 
     --name dsm \ 
     -e DISK_SIZE=16G \ 
     -e RAM_SIZE=512M \ 
