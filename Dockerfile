@@ -44,6 +44,7 @@ RUN ["chmod", "+x", "/run/generate-dhcpd-conf"]
 
 COPY extract/lib* /run/extract/
 COPY extract/scemd /run/extract/syno_extract_system_patch
+RUN ["chmod", "+x", "/run/extract/syno_extract_system_patch"]
 
 COPY disks/template.img.xz /data/
 
