@@ -23,6 +23,8 @@ RUN apt-get update && apt-get -y upgrade && \
     && apt-get clean
 
 COPY run.sh /run/
+COPY agent/agent.sh /agent/
+COPY agent/service.sh /agent/
 COPY server.sh /run/
 COPY install.sh /run/
 COPY serial/serial.sh /run/

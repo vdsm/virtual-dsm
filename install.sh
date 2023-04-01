@@ -75,16 +75,27 @@ mount -t ext4 -o loop,offset=$OFFSET $SYSTEM $MOUNT 2>/dev/null && PRIVILEGED=tr
 rm -rf ${MOUNT:?}/{,.[!.],..?}*
 
 mv -f $HDA.tgz $HDA.txz
+
 tar xpfJ $HDP.txz --absolute-names -C $MOUNT/
 tar xpfJ $HDA.txz --absolute-names -C $MOUNT/
 tar xpfJ $IDB.txz --absolute-names -C $MOUNT/usr/syno/synoman/indexdb/
+
+LOC="$MOUNT/usr/local/bin"
+mkdir -p $LOC
+mv /agent/agent.sh $LOC/agent.sh
+chmod +x $LOC/agent.sh
+
+LOC="$MOUNT/usr/local/etc/rc.d"
+mkdir -p $LOC
+mv /agent/service.sh $LOC/agent.sh
+chmod +x $LOC/agent.sh
 
 if [ "$PRIVILEGED" = false ]; then
 
   echo "Install: Installing system partition..."
 
   # Workaround for containers that are not privileged to mount loop devices
-  mke2fs -q -t ext4 -b 4096 -d $MOUNT/ -L $LABEL -E offset=$OFFSET $SYSTEM $NUMBLOCKS
+  mke2fs -q -t ext4 -b 4096 -d $MOUNT/ -L $LABEL -F -E offset=$OFFSET $SYSTEM $NUMBLOCKS
 
 else
 
