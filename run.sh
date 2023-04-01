@@ -77,18 +77,17 @@ HOST_SERIAL=$(/run/serial.sh)
 GUEST_SERIAL=$(/run/serial.sh)
 
 ./run/serial.bin -cpu=1 \
-		-vmmversion="2.6.1-12139" \
 		-buildnumber=42962 \
 		-vmmts="1679863686" \
-		-cpu_arch string="VirtualDSM" \
-		-guestsn="$GUEST_SERIAL" \
 		-hostsn="$HOST_SERIAL" \
+		-guestsn="$GUEST_SERIAL" \
+		-vmmversion="2.6.1-12139" \
+		-cpu_arch="QEMU, Virtual CPU, X86_64" \
 		-guestuuid="ba13a19a-c0c1-4fef-9346-915ed3b98341" > /dev/null 2>&1 &
 
 # Stop the webserver
 pkill -f server.sh
 
-#[ ! -e /dev/fuse ] && echo "Error: FUSE interface not available..." && exit 84
 [ ! -e /dev/net/tun ] && echo "Error: TUN interface not available..." && exit 85
 
 if [ -e /dev/kvm ] && sh -c 'echo -n > /dev/kvm' &> /dev/null; then
@@ -109,19 +108,25 @@ _graceful_shutdown() {
   local QEMU_POWERDOWN_TIMEOUT="${QEMU_POWERDOWN_TIMEOUT:-120}"
 
   set +e
-  echo "Trying to shut down the VM gracefully"
-  echo 'system_powerdown' | nc -q 1 localhost "${QEMU_MONPORT}">/dev/null 2>&1
+  echo "Trying to shutdown gracefully.."
+
+  # Send a NMI interrupt which will be detected by the agent
+  echo 'nmi' | nc -q 1 localhost "${QEMU_MONPORT}">/dev/null 2>&1
+
+  #echo 'system_powerdown' | nc -q 1 localhost "${QEMU_MONPORT}">/dev/null 2>&1
   echo ""
+
   while echo 'info version'|nc -q 1 localhost "${QEMU_MONPORT:-7100}">/dev/null 2>&1 && [ "${COUNT}" -lt "${QEMU_POWERDOWN_TIMEOUT}" ]; do
     (( COUNT++ )) || true
-    echo "QEMU still running. Retrying... (${COUNT}/${QEMU_POWERDOWN_TIMEOUT})"
+    echo "Shutting down, waiting... (${COUNT}/${QEMU_POWERDOWN_TIMEOUT})"
     sleep 1
   done
 
   if echo 'info version'|nc -q 1 localhost "${QEMU_MONPORT:-7100}">/dev/null 2>&1; then
-    echo "Killing the VM"
+    echo "Killing the VM.."
     echo 'quit' | nc -q 1 localhost "${QEMU_MONPORT}">/dev/null 2>&1 || true
   fi
+
   echo "Exiting..."
 }
 
@@ -131,18 +136,24 @@ trap _graceful_shutdown SIGINT SIGTERM SIGHUP
 # -accel=kvm: use KVM for this VM (much faster for our case).
 # -nographic: disable SDL graphics.
 # -serial mon:stdio: use "monitored stdio" as our serial output.
-exec qemu-system-x86_64 -name Synology -m "$RAM_SIZE" -machine accel=kvm -cpu host -nographic -serial mon:stdio \
+
+exec qemu-system-x86_64 -name Synology -m "$RAM_SIZE" -enable-kvm -cpu host -nographic \
+    -serial mon:stdio \
     -monitor telnet:localhost:"${QEMU_MONPORT:-7100}",server,nowait,nodelay \
-    -device virtio-serial-pci,id=virtio-serial0,bus=pci.0,addr=0x3 -chardev pty,id=charserial0 \
-    -device isa-serial,chardev=charserial0,id=serial0 -chardev socket,id=charchannel0,host=127.0.0.1,port=12345,reconnect=10 \
+    -device virtio-serial-pci,id=virtio-serial0,bus=pci.0,addr=0x3 \
+    -chardev pty,id=charserial0 \
+    -device isa-serial,chardev=charserial0,id=serial0 \
+    -chardev socket,id=charchannel0,host=127.0.0.1,port=12345,reconnect=10 \
     -device virtserialport,bus=virtio-serial0.0,nr=1,chardev=charchannel0,id=channel0,name=vchannel \
     -device virtio-net,netdev=tap0 -netdev tap,id=tap0,ifname=Tap,script="$QEMU_IFUP",downscript="$QEMU_IFDOWN" \
-    -device virtio-scsi-pci,id=hw-synoboot,bus=pci.0,addr=0xa -drive file="$IMG"/boot.img,if=none,id=drive-synoboot,format=raw,cache=none,aio=native,detect-zeroes=on \
+    -device virtio-scsi-pci,id=hw-synoboot,bus=pci.0,addr=0xa \
+    -drive file="$IMG"/boot.img,if=none,id=drive-synoboot,format=raw,cache=none,aio=native,detect-zeroes=on \
     -device scsi-hd,bus=hw-synoboot.0,channel=0,scsi-id=0,lun=0,drive=drive-synoboot,id=synoboot0,bootindex=1 \
-    -device virtio-scsi-pci,id=hw-synosys,bus=pci.0,addr=0xb -drive file="$IMG"/system.img,if=none,id=drive-synosys,format=raw,cache=none,aio=native,detect-zeroes=on \
+    -device virtio-scsi-pci,id=hw-synosys,bus=pci.0,addr=0xb \
+    -drive file="$IMG"/system.img,if=none,id=drive-synosys,format=raw,cache=none,aio=native,detect-zeroes=on \
     -device scsi-hd,bus=hw-synosys.0,channel=0,scsi-id=0,lun=0,drive=drive-synosys,id=synosys0,bootindex=2 \
-    -device virtio-scsi-pci,id=hw-userdata,bus=pci.0,addr=0xc -drive file="$IMG"/data.img,if=none,id=drive-userdata,format=raw,cache=none,aio=native,detect-zeroes=on \
-    -device scsi-hd,bus=hw-userdata.0,channel=0,scsi-id=0,lun=0,drive=drive-userdata,id=userdata0,bootindex=3 \
-    -device piix3-usb-uhci,id=usb,bus=pci.0,addr=0x1.0x2 &
+    -device virtio-scsi-pci,id=hw-userdata,bus=pci.0,addr=0xc \
+    -drive file="$IMG"/data.img,if=none,id=drive-userdata,format=raw,cache=none,aio=native,detect-zeroes=on \
+    -device scsi-hd,bus=hw-userdata.0,channel=0,scsi-id=0,lun=0,drive=drive-userdata,id=userdata0,bootindex=3 &
 
 wait $!
