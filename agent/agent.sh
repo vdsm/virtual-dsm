@@ -11,8 +11,8 @@ while true; do
   sleep 1
 
   result=$(cat /proc/interrupts | grep NMI)
-  result=$(echo $result | sed 's/[^0-9]*//g')
-  result=$(echo $result | sed 's/^0*//')
+  result=$(echo "$result" | sed 's/[^0-9]*//g')
+  result=$(echo "$result" | sed 's/^0*//')
 
   if [ "$result" != "" ]; then
 
