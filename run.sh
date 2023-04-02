@@ -16,7 +16,7 @@ FILE="$IMG/boot.img"
 FILE="$IMG/system.img"
 [ ! -f "$FILE" ] && echo "ERROR: Synology DSM system-image does not exist ($FILE)" && exit 82
 
-FILE="$IMG/data.img"
+FILE="$IMG/data$DISK_SIZE.img"
 if [ ! -f "$FILE" ]; then
     truncate -s "$DISK_SIZE" "$FILE"
     mkfs.btrfs -q -L data -d single -m single "$FILE" > /dev/null
@@ -154,7 +154,7 @@ exec qemu-system-x86_64 -name Synology -m "$RAM_SIZE" -enable-kvm -cpu host -nog
     -drive file="$IMG"/system.img,if=none,id=drive-synosys,format=raw,cache=none,aio=native,detect-zeroes=on \
     -device scsi-hd,bus=hw-synosys.0,channel=0,scsi-id=0,lun=0,drive=drive-synosys,id=synosys0,bootindex=2 \
     -device virtio-scsi-pci,id=hw-userdata,bus=pci.0,addr=0xc \
-    -drive file="$IMG"/data.img,if=none,id=drive-userdata,format=raw,cache=none,aio=native,detect-zeroes=on \
+    -drive file="$IMG"/data"$DISK_SIZE".img,if=none,id=drive-userdata,format=raw,cache=none,aio=native,detect-zeroes=on \
     -device scsi-hd,bus=hw-userdata.0,channel=0,scsi-id=0,lun=0,drive=drive-userdata,id=userdata0,bootindex=3 &
 
 wait $!

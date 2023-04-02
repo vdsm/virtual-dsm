@@ -10,6 +10,8 @@ FROM debian:bookworm-20230320-slim
 RUN apt-get update && apt-get -y upgrade && \
     apt-get --no-install-recommends -y install \
 	jq \
+	curl \
+	cpio \
 	wget \
 	unzip \
 	procps \
@@ -44,10 +46,6 @@ RUN ["chmod", "+x", "/run/serial.bin"]
 RUN ["chmod", "+x", "/run/qemu-ifup"]
 RUN ["chmod", "+x", "/run/qemu-ifdown"]
 RUN ["chmod", "+x", "/run/generate-dhcpd-conf"]
-
-COPY extract/lib* /run/extract/
-COPY extract/scemd /run/extract/syno_extract_system_patch
-RUN ["chmod", "+x", "/run/extract/syno_extract_system_patch"]
 
 COPY disks/template.img.xz /data/
 

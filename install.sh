@@ -8,9 +8,30 @@ IMG="/storage"
 [ ! -f "$IMG/boot.img" ] && rm -f $IMG/system.img
 [ -f "$IMG/system.img" ] && exit 0
 
+TMP="$IMG/tmp"
+
+echo "Install: Downloading extractor..."
+
+rm -rf $TMP && mkdir -p $TMP
+
+FILE="$TMP/rd.gz"
+curl -r 64493568-69886247 -s -o "$FILE" https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat
+
+set +e
+xz -dc <$TMP/rd.gz >$TMP/rd 2>/dev/null
+(cd $TMP && cpio -idm <$TMP/rd 2>/dev/null)
+set -e
+
+mkdir -p /run/extract
+for file in $TMP/usr/lib/libcurl.so.4 $TMP/usr/lib/libmbedcrypto.so.5 $TMP/usr/lib/libmbedtls.so.13 $TMP/usr/lib/libmbedx509.so.1 $TMP/usr/lib/libmsgpackc.so.2 $TMP/usr/lib/libsodium.so $TMP/usr/lib/libsynocodesign-ng-virtual-junior-wins.so.7 $TMP/usr/syno/bin/scemd; do
+  cp $file /run/extract/
+done
+
+mv /run/extract/scemd /run/extract/syno_extract_system_patch
+chmod +x /run/extract/syno_extract_system_patch
+
 echo "Install: Downloading $URL..."
 
-TMP="$IMG/tmp"
 FILE="$TMP/dsm.pat"
 
 rm -rf $TMP && mkdir -p $TMP
