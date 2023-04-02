@@ -12,6 +12,8 @@ done
 
 if [ "$first_run" = true ]; then
 
+  echo "Installing packages..." > /dev/ttyS0
+
   for filename in /usr/local/packages/*.spk; do
 
     /usr/syno/bin/synopkg install "$filename" > /dev/null
@@ -19,7 +21,7 @@ if [ "$first_run" = true ]; then
     BASE=$(basename "$filename" .spk)
     BASE=$(echo "${BASE%%-*}")
 
-    /usr/syno/bin/synopkg start $BASE > /dev/null
+    /usr/syno/bin/synopkg start "$BASE" > /dev/null
 
     rm "$filename"
 
@@ -27,7 +29,7 @@ if [ "$first_run" = true ]; then
 
 else
 
-  sleep 2
+  sleep 3
 
 fi
 
