@@ -29,6 +29,7 @@ RUN apt-get update && apt-get -y upgrade && \
 COPY run.sh /run/
 COPY server.sh /run/
 COPY install.sh /run/
+COPY network.sh /run/
 COPY qemu-ifup /run/
 COPY qemu-ifdown /run/
 COPY generate-dhcpd-conf /run/
@@ -42,6 +43,7 @@ RUN ["chmod", "+x", "/run/run.sh"]
 RUN ["chmod", "+x", "/run/serial.sh"]
 RUN ["chmod", "+x", "/run/server.sh"]
 RUN ["chmod", "+x", "/run/install.sh"]
+RUN ["chmod", "+x", "/run/network.sh"]
 RUN ["chmod", "+x", "/run/serial.bin"]
 RUN ["chmod", "+x", "/run/qemu-ifup"]
 RUN ["chmod", "+x", "/run/qemu-ifdown"]
