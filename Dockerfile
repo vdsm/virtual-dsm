@@ -9,28 +9,30 @@ FROM debian:bookworm-20230320-slim
 
 RUN apt-get update && apt-get -y upgrade && \
     apt-get --no-install-recommends -y install \
-	iproute2 \
 	jq \
 	wget \
 	unzip \
 	procps \
-	python3 \
-	xz-utils \
-	ca-certificates \
-	netcat-openbsd \
-	qemu-system-x86 \
 	udhcpd \
+	python3 \
+	iproute2 \
+	xz-utils \
+	qemu-utils \
+	btrfs-progs \
+	netcat-openbsd \
+	ca-certificates \
+	qemu-system-x86 \
     && apt-get clean
 
 COPY run.sh /run/
-COPY agent/agent.sh /agent/
-COPY agent/service.sh /agent/
 COPY server.sh /run/
 COPY install.sh /run/
-COPY serial/serial.sh /run/
 COPY qemu-ifup /run/
 COPY qemu-ifdown /run/
 COPY generate-dhcpd-conf /run/
+COPY serial/serial.sh /run/
+COPY agent/agent.sh /agent/
+COPY agent/service.sh /agent/
 
 COPY --from=builder /src/serial/main /run/serial.bin
 

@@ -38,11 +38,13 @@ fi
 
 HDA="$TMP/hda1"
 IDB="$TMP/indexdb"
+PKG="$TMP/packages"
 HDP="$TMP/synohdpack_img"
 
 [ ! -f "$HDA.tgz" ] && echo "Invalid PAT file: File contains no OS image." && exit 64
 [ ! -f "$HDP.txz" ] && echo "Invalid PAT file: HD pack not found." && exit 65
 [ ! -f "$IDB.txz" ] && echo "Invalid PAT file: IndexDB file not found." && exit 66
+[ ! -d "$PKG" ] && echo "Invalid PAT file: File contains no packages." && exit 68
 
 BOOT=$(find $TMP -name "*.bin.zip")
 
@@ -79,6 +81,10 @@ mv -f $HDA.tgz $HDA.txz
 tar xpfJ $HDP.txz --absolute-names -C $MOUNT/
 tar xpfJ $HDA.txz --absolute-names -C $MOUNT/
 tar xpfJ $IDB.txz --absolute-names -C $MOUNT/usr/syno/synoman/indexdb/
+
+LOC="$MOUNT/usr/local"
+mkdir -p $LOC
+mv $PKG/ $LOC/
 
 LOC="$MOUNT/usr/local/bin"
 mkdir -p $LOC
