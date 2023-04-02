@@ -27,7 +27,7 @@ A docker container of Virtual DSM v7.2
  - MacOS (untested)
  - Windows (untested)
 
-## How to use
+## Usage
 
 Via `docker-compose.yml`:
 
