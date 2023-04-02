@@ -7,29 +7,29 @@ chmod 666 /dev/ttyS0
 first_run=false
 
 for filename in /usr/local/packages/*.spk; do
-  first_run=true
+  if [ -f "$filename" ]; then
+    first_run=true
+  fi
 done
 
 if [ "$first_run" = true ]; then
-
-  echo "Installing packages..." > /dev/ttyS0
-
   for filename in /usr/local/packages/*.spk; do
+    if [ -f "$filename" ]; then
 
-    /usr/syno/bin/synopkg install "$filename" > /dev/null
+      /usr/syno/bin/synopkg install "$filename" > /dev/null
 
-    BASE=$(basename "$filename" .spk)
-    BASE=$(echo "${BASE%%-*}")
+      BASE=$(basename "$filename" .spk)
+      BASE=$(echo "${BASE%%-*}")
 
-    /usr/syno/bin/synopkg start "$BASE" > /dev/null
+      /usr/syno/bin/synopkg start "$BASE" > /dev/null
 
-    rm "$filename"
+      rm "$filename"
 
+    fi
   done
-
 else
 
-  sleep 3
+  sleep 4
 
 fi
 
