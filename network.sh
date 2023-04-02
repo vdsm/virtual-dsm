@@ -11,10 +11,6 @@ QEMU_BRIDGE='qemubr0'
 # be valid. This is the dummy address dhcpd is configured to use.
 DUMMY_DHCPD_IP='10.0.0.1'
 
-# These scripts configure/deconfigure the VM interface on the bridge.
-QEMU_IFUP='/run/qemu-ifup'
-QEMU_IFDOWN='/run/qemu-ifdown'
-
 # The name of the dhcpd config file we make
 DHCPD_CONF_FILE='dhcpd.conf'
 
