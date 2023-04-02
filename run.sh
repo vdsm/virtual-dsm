@@ -10,10 +10,12 @@ else
 fi
 
 IMG="/storage"
-FILE="$IMG/boot.img"
+BASE=$(basename $URL .pat)
+
+FILE="$IMG/$BASE.boot.img"
 [ ! -f "$FILE" ] && echo "ERROR: Synology DSM boot-image does not exist ($FILE)" && exit 81
 
-FILE="$IMG/system.img"
+FILE="$IMG/$BASE.system.img"
 [ ! -f "$FILE" ] && echo "ERROR: Synology DSM system-image does not exist ($FILE)" && exit 82
 
 FILE="$IMG/data$DISK_SIZE.img"
@@ -148,10 +150,10 @@ exec qemu-system-x86_64 -name Synology -m "$RAM_SIZE" -enable-kvm -cpu host -nog
     -device virtserialport,bus=virtio-serial0.0,nr=1,chardev=charchannel0,id=channel0,name=vchannel \
     -device virtio-net,netdev=tap0 -netdev tap,id=tap0,ifname=Tap,script="$QEMU_IFUP",downscript="$QEMU_IFDOWN" \
     -device virtio-scsi-pci,id=hw-synoboot,bus=pci.0,addr=0xa \
-    -drive file="$IMG"/boot.img,if=none,id=drive-synoboot,format=raw,cache=none,aio=native,detect-zeroes=on \
+    -drive file="$IMG"/"$BASE".boot.img,if=none,id=drive-synoboot,format=raw,cache=none,aio=native,detect-zeroes=on \
     -device scsi-hd,bus=hw-synoboot.0,channel=0,scsi-id=0,lun=0,drive=drive-synoboot,id=synoboot0,bootindex=1 \
     -device virtio-scsi-pci,id=hw-synosys,bus=pci.0,addr=0xb \
-    -drive file="$IMG"/system.img,if=none,id=drive-synosys,format=raw,cache=none,aio=native,detect-zeroes=on \
+    -drive file="$IMG"/"$BASE".system.img,if=none,id=drive-synosys,format=raw,cache=none,aio=native,detect-zeroes=on \
     -device scsi-hd,bus=hw-synosys.0,channel=0,scsi-id=0,lun=0,drive=drive-synosys,id=synosys0,bootindex=2 \
     -device virtio-scsi-pci,id=hw-userdata,bus=pci.0,addr=0xc \
     -drive file="$IMG"/data"$DISK_SIZE".img,if=none,id=drive-userdata,format=raw,cache=none,aio=native,detect-zeroes=on \
