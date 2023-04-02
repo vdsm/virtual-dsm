@@ -29,12 +29,12 @@ RUN apt-get update && apt-get -y upgrade && \
     && apt-get clean
 
 COPY run.sh /run/
+COPY disk.sh /run/
 COPY power.sh /run/
+COPY serial.sh /run/
 COPY server.sh /run/
 COPY install.sh /run/
 COPY network.sh /run/
-COPY disks/disk.sh /run/
-COPY serial/serial.sh /run/
 COPY agent/agent.sh /agent/
 COPY agent/service.sh /agent/
 
