@@ -2,11 +2,12 @@
 set -eu
 
 IMG="/storage"
+BASE=$(basename $URL .pat)
 
 [ ! -f "/run/server.sh" ] && echo "Script must run inside Docker container!" && exit 60
 
-[ ! -f "$IMG/boot.img" ] && rm -f $IMG/system.img
-[ -f "$IMG/system.img" ] && exit 0
+[ ! -f "$IMG/$BASE.boot.img" ] && rm -f "$IMG"/"$BASE".system.img
+[ -f "$IMG/$BASE.system.img" ] && exit 0
 
 TMP="$IMG/tmp"
 
@@ -132,8 +133,8 @@ fi
 
 rm -rf $MOUNT
 
-mv -f "$BOOT" "$IMG"/boot.img
-mv -f "$SYSTEM" "$IMG"/system.img
+mv -f "$BOOT" "$IMG"/"$BASE".boot.img
+mv -f "$SYSTEM" "$IMG"/"$BASE".system.img
 
 rm -rf $TMP
 
