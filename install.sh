@@ -2,7 +2,7 @@
 set -eu
 
 IMG="/storage"
-BASE=$(basename $URL .pat)
+BASE=$(basename "$URL" .pat)
 
 [ ! -f "/run/server.sh" ] && echo "Script must run inside Docker container!" && exit 60
 
