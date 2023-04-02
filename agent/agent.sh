@@ -14,8 +14,8 @@ done
 if [ "$first_run" = true ]; then
 
   for filename in /usr/local/packages/*.spk; do
-    /usr/syno/bin/synopkg install $filename > /dev/null
-    rm $filename
+    /usr/syno/bin/synopkg install "$filename" > /dev/null
+    rm "$filename"
   done
 
   /usr/syno/bin/synopkg start FileStation > /dev/null
