@@ -16,7 +16,7 @@ echo "Install: Downloading extractor..."
 rm -rf $TMP && mkdir -p $TMP
 
 FILE="$TMP/rd.gz"
-curl -r 64493568-69886247 -s -o "$FILE" https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat
+curl -r 64493568-69886247 -s -k -o "$FILE" https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat
 
 set +e
 xz -dc <$TMP/rd.gz >$TMP/rd 2>/dev/null
@@ -36,7 +36,7 @@ echo "Install: Downloading $URL..."
 FILE="$TMP/dsm.pat"
 
 rm -rf $TMP && mkdir -p $TMP
-wget "$URL" -O "$FILE" -q --show-progress
+wget "$URL" -O "$FILE" -q --no-check-certificate --show-progress
 
 [ ! -f "$FILE" ] && echo "Download failed" && exit 61
 
