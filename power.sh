@@ -37,4 +37,4 @@ _graceful_shutdown() {
 
 trap _graceful_shutdown SIGINT SIGTERM SIGHUP
 
-KVM_MON_OPTS="-monitor telnet:localhost:"${QEMU_MONPORT:-7100}",server,nowait,nodelay"
+KVM_MON_OPTS="-monitor telnet:localhost:${QEMU_MONPORT:-7100},server,nowait,nodelay"
