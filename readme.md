@@ -27,24 +27,7 @@ A docker container of Virtual DSM v7.2
  - MacOS (untested)
  - Windows (untested)
 
-## Using the container
-
-Via `docker run`:
-
-```bash
-$ docker run --rm -it \ 
-    --name dsm \ 
-    -e DISK_SIZE=16G \ 
-    -e RAM_SIZE=512M \ 
-    -p 80:5000 \ 
-    -p 443:5001 \ 
-    -p 5000:5000 \ 
-    -p 5001:5001 \ 
-    --cap-add NET_ADMIN \ 
-    --device="/dev/kvm:/dev/kvm" \ 
-    --device="/dev/net/tun:/dev/net/tun" \ 
-    kroese/virtual-dsm:latest
-```
+## How to use
 
 Via `docker-compose.yml`:
 
@@ -68,4 +51,21 @@ services:
             - 5000:5000
             - 5001:5001
         restart: on-failure
+```
+
+Via `docker run`:
+
+```bash
+$ docker run --rm -it \ 
+    --name dsm \ 
+    -e DISK_SIZE=16G \ 
+    -e RAM_SIZE=512M \ 
+    -p 80:5000 \ 
+    -p 443:5001 \ 
+    -p 5000:5000 \ 
+    -p 5001:5001 \ 
+    --cap-add NET_ADMIN \ 
+    --device="/dev/kvm:/dev/kvm" \ 
+    --device="/dev/net/tun:/dev/net/tun" \ 
+    kroese/virtual-dsm:latest
 ```
