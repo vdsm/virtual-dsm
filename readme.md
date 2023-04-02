@@ -14,7 +14,18 @@ virtual-dsm
 [Docker Pulls Count]: https://img.shields.io/docker/pulls/kroese/virtual-dsm.svg?style=flat
 [gh_last_release_svg]: https://img.shields.io/docker/v/kroese/virtual-dsm?arch=amd64&sort=date
 
-A docker container of Virtual DSM v7.2 using KVM.
+A docker container of Virtual DSM v7.2
+
+## Features
+
+ - Upgrades supported
+ - KVM acceleration (optional)
+
+## Platforms
+
+ - Linux x86-64
+ - MacOS (untested)
+ - Windows (untested)
 
 ## Using the container
 
