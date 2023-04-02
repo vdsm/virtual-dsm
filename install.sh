@@ -4,6 +4,7 @@ set -eu
 IMG="/storage"
 BASE=$(basename "$URL" .pat)
 
+[ ! -d "$IMG" ] && echo "Storage folder (${IMG}) not found!" && exit 69
 [ ! -f "/run/server.sh" ] && echo "Script must run inside Docker container!" && exit 60
 
 [ ! -f "$IMG/$BASE.boot.img" ] && rm -f "$IMG"/"$BASE".system.img

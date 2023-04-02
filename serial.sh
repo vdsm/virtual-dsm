@@ -3,8 +3,22 @@
 permanent="DSM"
 serialstart="2000"
 
-HOST_SERIAL=="$(echo "$serialstart" | tr ' ' '\n' | sort -R | tail -1)$permanent"$(printf "%06d" $((RANDOM % 30000 + 1)))
-GUEST_SERIAL=="$(echo "$serialstart" | tr ' ' '\n' | sort -R | tail -1)$permanent"$(printf "%06d" $((RANDOM % 30000 + 1)))
+IMG="/storage"
+[ ! -d "$IMG" ] && echo "Storage folder (${IMG}) not found!" && exit 69
+
+FILE="${IMG}/host.serial"
+if [ ! -f "$FILE" ]; then
+  SERIAL="$(echo "$serialstart" | tr ' ' '\n' | sort -R | tail -1)$permanent"$(printf "%06d" $((RANDOM % 30000 + 1)))
+  echo $SERIAL > "$FILE"
+fi
+HOST_SERIAL=$(cat "${FILE}")
+
+FILE="${IMG}/guest.serial"
+if [ ! -f "$FILE" ]; then
+  SERIAL="$(echo "$serialstart" | tr ' ' '\n' | sort -R | tail -1)$permanent"$(printf "%06d" $((RANDOM % 30000 + 1)))
+  echo $SERIAL > "$FILE"
+fi
+GUEST_SERIAL=$(cat "${FILE}")
 
 ./run/serial.bin -cpu=1 \
                 -buildnumber=42962 \
