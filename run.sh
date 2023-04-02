@@ -19,7 +19,8 @@ FILE="$IMG/system.img"
 FILE="$IMG/data.img"
 if [ ! -f "$FILE" ]; then
     truncate -s "$DISK_SIZE" "$FILE"
-    mkfs.ext4 -q $FILE
+    mkfs.btrfs -q -L data -d single -m single "$FILE" > /dev/null
+    #qemu-img convert -f raw -O qcow2 -o extended_l2=on,cluster_size=128k,compression_type=zstd,preallocation=metadata "$TMP" "$FILE"
 fi
 
 [ ! -f "$FILE" ] && echo "ERROR: Synology DSM data-image does not exist ($FILE)" && exit 83
