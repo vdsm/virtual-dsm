@@ -15,24 +15,25 @@ RUN apt-get update && apt-get -y upgrade && \
 	wget \
 	unzip \
 	procps \
-	udhcpd \
-	python3 \
+	ethtool \
+	dnsmasq \
+	iptables \
 	iproute2 \
 	xz-utils \
 	qemu-utils \
 	btrfs-progs \
+	bridge-utils \
 	netcat-openbsd \
 	ca-certificates \
 	qemu-system-x86 \
     && apt-get clean
 
 COPY run.sh /run/
+COPY power.sh /run/
 COPY server.sh /run/
 COPY install.sh /run/
 COPY network.sh /run/
-COPY qemu-ifup /run/
-COPY qemu-ifdown /run/
-COPY generate-dhcpd-conf /run/
+COPY disks/disk.sh /run/
 COPY serial/serial.sh /run/
 COPY agent/agent.sh /agent/
 COPY agent/service.sh /agent/
@@ -40,14 +41,13 @@ COPY agent/service.sh /agent/
 COPY --from=builder /src/serial/main /run/serial.bin
 
 RUN ["chmod", "+x", "/run/run.sh"]
+RUN ["chmod", "+x", "/run/disk.sh"]
+RUN ["chmod", "+x", "/run/power.sh"]
 RUN ["chmod", "+x", "/run/serial.sh"]
 RUN ["chmod", "+x", "/run/server.sh"]
 RUN ["chmod", "+x", "/run/install.sh"]
 RUN ["chmod", "+x", "/run/network.sh"]
 RUN ["chmod", "+x", "/run/serial.bin"]
-RUN ["chmod", "+x", "/run/qemu-ifup"]
-RUN ["chmod", "+x", "/run/qemu-ifdown"]
-RUN ["chmod", "+x", "/run/generate-dhcpd-conf"]
 
 COPY disks/template.img.xz /data/
 
