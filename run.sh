@@ -10,7 +10,7 @@ else
 fi
 
 IMG="/storage"
-BASE=$(basename $URL .pat)
+BASE=$(basename "$URL" .pat)
 
 FILE="$IMG/$BASE.boot.img"
 [ ! -f "$FILE" ] && echo "ERROR: Synology DSM boot-image does not exist ($FILE)" && exit 81
