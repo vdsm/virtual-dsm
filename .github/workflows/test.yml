@@ -1,8 +1,18 @@
 on:
   push:
     branches: [ master ]
+    paths-ignore:
+      - '**/test.yml'
+      - '**/build.yml'
+      - '**/README.md'
+      - '**/docker-compose.yml'
   pull_request:
     branches: [ master ]
+    paths-ignore:
+      - '**/test.yml'
+      - '**/build.yml'
+      - '**/README.md'
+      - '**/docker-compose.yml'
 
 name: "Test"
 permissions: {}
