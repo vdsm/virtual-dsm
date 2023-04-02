@@ -13,10 +13,10 @@ IMG="/storage"
 BASE=$(basename "$URL" .pat)
 
 FILE="$IMG/$BASE.boot.img"
-[ ! -f "$FILE" ] && echo "ERROR: Synology DSM boot-image does not exist ($FILE)" && exit 81
+[ ! -f "$FILE" ] && echo "ERROR: Virtual DSM boot-image does not exist ($FILE)" && exit 81
 
 FILE="$IMG/$BASE.system.img"
-[ ! -f "$FILE" ] && echo "ERROR: Synology DSM system-image does not exist ($FILE)" && exit 82
+[ ! -f "$FILE" ] && echo "ERROR: Virtual DSM system-image does not exist ($FILE)" && exit 82
 
 FILE="$IMG/data$DISK_SIZE.img"
 if [ ! -f "$FILE" ]; then
@@ -25,54 +25,11 @@ if [ ! -f "$FILE" ]; then
     #qemu-img convert -f raw -O qcow2 -o extended_l2=on,cluster_size=128k,compression_type=zstd,preallocation=metadata "$TMP" "$FILE"
 fi
 
-[ ! -f "$FILE" ] && echo "ERROR: Synology DSM data-image does not exist ($FILE)" && exit 83
+[ ! -f "$FILE" ] && echo "ERROR: Virtual DSM data-image does not exist ($FILE)" && exit 83
 
-# A bridge of this name will be created to host the TAP interface created for
-# the VM
-QEMU_BRIDGE='qemubr0'
-
-# DHCPD must have an IP address to run, but that address doesn't have to
-# be valid. This is the dummy address dhcpd is configured to use.
-DUMMY_DHCPD_IP='10.0.0.1'
-
-# These scripts configure/deconfigure the VM interface on the bridge.
-QEMU_IFUP='/run/qemu-ifup'
-QEMU_IFDOWN='/run/qemu-ifdown'
-
-# The name of the dhcpd config file we make
-DHCPD_CONF_FILE='dhcpd.conf'
-
-function default_intf() {
-    ip -json route show |
-        jq -r '.[] | select(.dst == "default") | .dev'
-}
-
-# First step, we run the things that need to happen before we start mucking
-# with the interfaces. We start by generating the DHCPD config file based
-# on our current address/routes. We "steal" the container's IP, and lease
-# it to the VM once it starts up.
-/run/generate-dhcpd-conf $QEMU_BRIDGE > $DHCPD_CONF_FILE
-default_dev=$(default_intf)
-
-# Now we start modifying the networking configuration. First we clear out
-# the IP address of the default device (will also have the side-effect of
-# removing the default route)
-ip addr flush dev "$default_dev"
-
-# Next, we create our bridge, and add our container interface to it.
-ip link add "$QEMU_BRIDGE" type bridge
-ip link set dev "$default_dev" master "$QEMU_BRIDGE"
-
-# Then, we toggle the interface and the bridge to make sure everything is up
-# and running.
-ip link set dev "$default_dev" up
-ip link set dev "$QEMU_BRIDGE" up
-
-# Prevent error about missing file
-touch /var/lib/misc/udhcpd.leases
-
-# Finally, start our DHCPD server
-udhcpd -I $DUMMY_DHCPD_IP -f $DHCPD_CONF_FILE 2>&1 &
+if ! /run/network.sh; then
+  echo "Network setup failed (code $?)" && exit 84
+fi
 
 # Start the Serial Emulator
 
@@ -91,8 +48,6 @@ GUEST_SERIAL=$(/run/serial.sh)
 # Stop the webserver
 pkill -f server.sh
 
-[ ! -e /dev/net/tun ] && echo "Error: TUN interface not available..." && exit 85
-
 if [ -e /dev/kvm ] && sh -c 'echo -n > /dev/kvm' &> /dev/null; then
   echo "Booting DSM image..."
 else
@@ -103,6 +58,8 @@ fi
 
 QEMU_MONPORT=7100
 QEMU_POWERDOWN_TIMEOUT=30
+QEMU_IFUP='/run/qemu-ifup'
+QEMU_IFDOWN='/run/qemu-ifdown'
 
 _graceful_shutdown() {
 
@@ -115,8 +72,7 @@ _graceful_shutdown() {
 
   # Send a NMI interrupt which will be detected by the agent
   echo 'nmi' | nc -q 1 localhost "${QEMU_MONPORT}">/dev/null 2>&1
-
-  #echo 'system_powerdown' | nc -q 1 localhost "${QEMU_MONPORT}">/dev/null 2>&1
+  echo 'system_powerdown' | nc -q 1 localhost "${QEMU_MONPORT}">/dev/null 2>&1
   echo ""
 
   while echo 'info version'|nc -q 1 localhost "${QEMU_MONPORT:-7100}">/dev/null 2>&1 && [ "${COUNT}" -lt "${QEMU_POWERDOWN_TIMEOUT}" ]; do
@@ -140,9 +96,10 @@ trap _graceful_shutdown SIGINT SIGTERM SIGHUP
 # -nographic: disable SDL graphics.
 # -serial mon:stdio: use "monitored stdio" as our serial output.
 
-exec qemu-system-x86_64 -name Synology -m "$RAM_SIZE" -enable-kvm -cpu host -nographic \
+exec qemu-system-x86_64 -name Synology -m "$RAM_SIZE" -enable-kvm -machine accel=kvm,usb=off -cpu host -nographic \
     -serial mon:stdio \
     -monitor telnet:localhost:"${QEMU_MONPORT:-7100}",server,nowait,nodelay \
+    -device virtio-balloon-pci,id=balloon0,bus=pci.0,addr=0x4 \
     -device virtio-serial-pci,id=virtio-serial0,bus=pci.0,addr=0x3 \
     -chardev pty,id=charserial0 \
     -device isa-serial,chardev=charserial0,id=serial0 \
