@@ -88,7 +88,7 @@ $ docker run --rm -it -p 5000:5000 --cap-add NET_ADMIN --device=/dev/kvm kroese/
 
     ```
     environment:
-        URL: "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
+       URL: "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
     ```
 
     You can also switch back and forth between versions this way without loosing your file data.
