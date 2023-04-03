@@ -94,7 +94,7 @@ $ docker run --rm -it \
 
   * ### How do I install a specific version of vDSM? ###
 
-    By default it installs vDSM 7.2, but if you want to use an older version you can add these lines to your compose file:
+    By default it installs vDSM 7.2, but if you want to use an older version you can add its URL to your compose file:
 
     ```
     environment:
