@@ -79,9 +79,7 @@ $ docker run --rm -it \
             DISK_SIZE: "16G"
     ```
 
-     to make it any size you want.
-
-     To create an empty disk with a maximum capacity of 8 terabyte you would use a value of `"8T"` for example.
+    To create an empty disk with a maximum capacity of 8 terabyte you would use a value of `"8T"` for example.
 
   * ### How do I change the location of the virtual disk? ###
 
@@ -92,9 +90,7 @@ $ docker run --rm -it \
       - /home/user/data:/storage
     ```
 
-    to map `/storage` to any local folder you want to use.
-    
-    Just replace `/home/user/data` with the correct path.
+    Just replace `/home/user/data` with the folder path you want to use for storage.
 
   * ### How do I install a specific version of vDSM? ###
 
@@ -104,8 +100,6 @@ $ docker run --rm -it \
             environment:
                 URL: "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
     ```
-
-    to install version 7.01 for example.
 
     You can also switch back and forth between versions this way without loosing your file data.
 
