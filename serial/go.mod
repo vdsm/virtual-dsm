@@ -1,4 +1,4 @@
 module vdsm-serial
 
-go 1.20
+go 1.16
 
