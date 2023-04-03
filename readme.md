@@ -75,8 +75,8 @@ $ docker run --rm -it \
     By default it is 16GB, but you can modify the `DISK_SIZE` setting in your compose file:
 
     ```
-        environment:
-            DISK_SIZE: "16G"
+    environment:
+        DISK_SIZE: "16G"
     ```
 
     To create an empty disk with a maximum capacity of 8 terabyte you would use a value of `"8T"` for example.
@@ -87,7 +87,7 @@ $ docker run --rm -it \
 
     ```
     volumes:
-      - /home/user/data:/storage
+        - /home/user/data:/storage
     ```
 
     Just replace `/home/user/data` with the folder path you want to use for storage.
@@ -97,8 +97,8 @@ $ docker run --rm -it \
     By default it installs vDSM 7.2, but if you want to use an older version you can add these lines to your compose file:
 
     ```
-            environment:
-                URL: "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
+    environment:
+        URL: "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
     ```
 
     You can also switch back and forth between versions this way without loosing your file data.
