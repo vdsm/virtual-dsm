@@ -90,7 +90,9 @@ By default it installs vDSM 7.2, but if you want to use an older version you can
             URL: "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 ```
 
-to install version 7.01 for example. You can also switch back and forth between versions this way without loosing your file data.
+to install version 7.01 for example.
+
+You can also switch back and forth between versions this way without loosing your file data.
 
   - What are the differences compared to standard DSM?
 
