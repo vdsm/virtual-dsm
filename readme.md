@@ -79,4 +79,4 @@ volumes:
   - /home/user/data:/storage
 ```
 
-to map `/storage` to any local directory you want to use. Just replace `/home/user/data` with the correct path.
+to map `/storage` to any local folder you want to use. Just replace `/home/user/data` with the correct path.
