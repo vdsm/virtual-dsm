@@ -55,17 +55,7 @@ services:
 Via `docker run`:
 
 ```bash
-$ docker run --rm -it \ 
-    --name dsm \ 
-    -e DISK_SIZE=16G \ 
-    -e RAM_SIZE=512M \ 
-    -p 80:5000 \ 
-    -p 443:5001 \ 
-    -p 5000:5000 \ 
-    -p 5001:5001 \ 
-    --cap-add NET_ADMIN \ 
-    --device="/dev/kvm:/dev/kvm" \ 
-    kroese/virtual-dsm:latest
+$ docker run --rm -it --name dsm -p 5000:5000 --cap-add NET_ADMIN --device="/dev/kvm:/dev/kvm" kroese/virtual-dsm:latest
 ```
 
 ## FAQ
