@@ -6,10 +6,10 @@ services:
         environment:
             DISK_SIZE: "16G"
             RAM_SIZE: "512M"
-        cap_add:
-            - NET_ADMIN
         devices:
             - /dev/kvm
+        cap_add:
+            - NET_ADMIN                       
         ports:
             - 80:5000
             - 443:5001
