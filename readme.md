@@ -80,3 +80,19 @@ volumes:
 ```
 
 to map `/storage` to any local folder you want to use. Just replace `/home/user/data` with the correct path.
+
+  - How do I install a specific version of vDSM?
+
+By default it installs vDSM 7.2, but if you want to use an older version you can add these lines to your compose file:
+
+```
+        environment:
+            URL: "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
+```
+
+to install version 7.01 for example. You can also switch back and forth between versions this way without loosing your file data.
+
+  - What are the differences compared to standard DSM?
+
+There are only two minor differences: the Virtual Machine Manager package is not available and Surveillance Station is available, but does not include any free licenses.
+ 
