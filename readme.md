@@ -7,8 +7,9 @@ virtual-dsm
 [![Docker Pulls Count]][dsm-docker-hub]
 
 [build_url]: https://github.com/kroese/virtual-dsm/actions
-[build_img]: https://github.com/kroese/virtual-dsm/actions/workflows/build.yml/badge.svg
 [dsm-docker-hub]: https://hub.docker.com/r/kroese/virtual-dsm
+
+[build_img]: https://github.com/kroese/virtual-dsm/actions/workflows/build.yml/badge.svg
 [Docker Image Size]: https://img.shields.io/docker/image-size/kroese/virtual-dsm/latest
 [Docker Pulls Count]: https://img.shields.io/docker/pulls/kroese/virtual-dsm.svg?style=flat
 [gh_last_release_svg]: https://img.shields.io/docker/v/kroese/virtual-dsm?arch=amd64&sort=date
