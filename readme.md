@@ -67,3 +67,16 @@ $ docker run --rm -it \
     --device="/dev/net/tun:/dev/net/tun" \ 
     kroese/virtual-dsm:latest
 ```
+
+## FAQ
+
+  - How do I change the location of the virtual disk?
+
+By default it resides inside a docker volume, but you can add a bind mount to your compose file like this:
+
+```
+volumes:
+  - /home/user/data:/storage
+```
+
+to map `/storage` to any local directory you want to use. Just replace `/home/user/data` with the path you want to use.
