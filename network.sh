@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -eu
 
+if [ ! -e /dev/net/tun ]; then
+
+   mkdir -p /dev/net
+   mknod /dev/net/tun c 10 200
+   chmod 600 /dev/net/tun
+
+fi
+
 [ ! -e /dev/net/tun ] && echo "Error: TUN network interface not available..." && exit 85
 
 : ${INFO:='N'}

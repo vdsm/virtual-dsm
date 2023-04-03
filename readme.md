@@ -24,6 +24,8 @@ A docker container of Virtual DSM v7.2
 ## Platforms
 
  - Linux x86-64
+ - Windows 10/11
+ - MacOS (untested)
 
 ## Usage
 
@@ -42,7 +44,6 @@ services:
             - NET_ADMIN
         devices:
             - /dev/kvm
-            - /dev/net/tun
         ports:
             - 80:5000
             - 443:5001
@@ -64,7 +65,6 @@ $ docker run --rm -it \
     -p 5001:5001 \ 
     --cap-add NET_ADMIN \ 
     --device="/dev/kvm:/dev/kvm" \ 
-    --device="/dev/net/tun:/dev/net/tun" \ 
     kroese/virtual-dsm:latest
 ```
 
