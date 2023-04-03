@@ -9,12 +9,6 @@ else
   echo "Installation failed (code $?)" && exit 81
 fi
 
-KVM_NET_OPTS=""
-KVM_MON_OPTS=""
-KVM_ACC_OPTS=""
-KVM_DISK_OPTS=""
-KVM_SERIAL_OPTS=""
-
 source /run/disk.sh
 
 [ -z "${KVM_DISK_OPTS}" ] && echo "Error: Failed to setup disks..." && exit 83
