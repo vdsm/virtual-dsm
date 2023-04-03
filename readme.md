@@ -90,7 +90,7 @@ $ docker run --rm -it \
         - /home/user/data:/storage
     ```
 
-    Just replace `/home/user/data` with the folder path you want to use for storage.
+    Just replace `/home/user/data` with the path to the folder you want to use for storage.
 
   * ### How do I install a specific version of vDSM? ###
 
