@@ -1,4 +1,4 @@
-name: Update Docker Hub Description
+name: Update
 on:
   push:
     branches:
@@ -26,4 +26,4 @@ jobs:
         password: ${{ secrets.DOCKERHUB_TOKEN }}
         repository: kroese/virtual-dsm
         short-description: ${{ github.event.repository.description }}
- 
+        readme-filepath: ./readme.md
