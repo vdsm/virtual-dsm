@@ -91,17 +91,11 @@ MAJOR=""
 _DhcpIP=""
 
 # Create the necessary file structure for /dev/net/tun
-if ( [ ! -c /dev/net/tun ] ); then
-  if ( [ ! -d /dev/net ] ); then
-    mkdir -m 755 /dev/net
-  fi
+# Create the necessary file structure for /dev/net/tun
+if [ ! -c /dev/net/tun ]; then
+  [ ! -d /dev/net ] && mkdir -m 755 /dev/net
   mknod /dev/net/tun c 10 200
   chmod 666 /dev/net/tun
-fi
-
-# Load the tun module if not already loaded
-if ( !(lsmod | grep -q "^tun\s") ); then
-  [ -f /lib/modules/tun.ko ] && insmod /lib/modules/tun.ko
 fi
 
 [ ! -c /dev/net/tun ] && echo "Error: TUN network interface not available..." && exit 85
