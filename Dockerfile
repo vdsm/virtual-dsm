@@ -12,6 +12,7 @@ RUN apt-get update && apt-get -y upgrade && \
 	jq \
 	curl \
 	cpio \
+	kmod \
 	wget \
 	unzip \
 	procps \

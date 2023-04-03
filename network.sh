@@ -1,16 +1,6 @@
 #!/usr/bin/env bash
 set -eu
 
-if [ ! -e /dev/net/tun ]; then
-
-   mkdir -p /dev/net
-   mknod /dev/net/tun c 10 200
-   chmod 600 /dev/net/tun
-
-fi
-
-[ ! -e /dev/net/tun ] && echo "Error: TUN network interface not available..." && exit 85
-
 : ${INFO:='N'}
 : ${DEBUG:='N'}
 
@@ -99,6 +89,22 @@ configureNatNetworks () {
 
 MAJOR=""
 _DhcpIP=""
+
+# Create the necessary file structure for /dev/net/tun
+if ( [ ! -c /dev/net/tun ] ); then
+  if ( [ ! -d /dev/net ] ); then
+    mkdir -m 755 /dev/net
+  fi
+  mknod /dev/net/tun c 10 200
+  chmod 0755 /dev/net/tun
+fi
+
+# Load the tun module if not already loaded
+if ( !(lsmod | grep -q "^tun\s") ); then
+  [ -f /lib/modules/tun.ko ] && insmod /lib/modules/tun.ko
+fi
+
+[ ! -c /dev/net/tun ] && echo "Error: TUN network interface not available..." && exit 85
 
 #log "INFO" "Little dirty trick ..."
 update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
