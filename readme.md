@@ -81,7 +81,7 @@ $ docker run --rm -it \
 
      to make it any size you want.
 
-     To create an empty disk with a maximum capacity of 8 terabyte you would use a value of `8T` for example.
+     To create an empty disk with a maximum capacity of 8 terabyte you would use a value of `"8T"` for example.
 
   * ### How do I change the location of the virtual disk? ###
 
