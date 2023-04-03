@@ -70,31 +70,46 @@ $ docker run --rm -it \
 
 ## FAQ
 
-  - How do I change the location of the virtual disk?
+  * ### How do I change the size of the virtual disk? ###
 
-By default it resides inside a docker volume, but you can add these lines to your compose file:
+    By default it is 16GB, but you can modify the `DISK_SIZE` setting in your compose file:
 
-```
-volumes:
-  - /home/user/data:/storage
-```
-
-to map `/storage` to any local folder you want to use. Just replace `/home/user/data` with the correct path.
-
-  - How do I install a specific version of vDSM?
-
-By default it installs vDSM 7.2, but if you want to use an older version you can add these lines to your compose file:
-
-```
+    ```
         environment:
-            URL: "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
-```
+            DISK_SIZE: "16G"
+    ```
 
-to install version 7.01 for example.
+     to make it any size you want.
 
-You can also switch back and forth between versions this way without loosing your file data.
+     To create an empty disk with a maximum capacity of 8 terabyte you would use a value of `8T` for example.
 
-  - What are the differences compared to standard DSM?
+  * ### How do I change the location of the virtual disk? ###
 
-There are only two minor differences: the Virtual Machine Manager package is not available and Surveillance Station is available, but does not include any free licenses.
+    By default it resides inside a docker volume, but you can add these lines to your compose file:
+
+    ```
+    volumes:
+      - /home/user/data:/storage
+    ```
+
+    to map `/storage` to any local folder you want to use.
+    
+    Just replace `/home/user/data` with the correct path.
+
+  * ### How do I install a specific version of vDSM? ###
+
+    By default it installs vDSM 7.2, but if you want to use an older version you can add these lines to your compose file:
+
+    ```
+            environment:
+                URL: "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
+    ```
+
+    to install version 7.01 for example.
+
+    You can also switch back and forth between versions this way without loosing your file data.
+
+  * ### What are the differences compared to standard DSM? ###
+
+    There are only two minor differences: the Virtual Machine Manager package is not available and Surveillance Station does not include any free licenses.
  
