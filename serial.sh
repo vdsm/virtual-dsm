@@ -31,7 +31,7 @@ GUEST_SERIAL=$(cat "${FILE}")
 
 KVM_SERIAL_OPTS="\
     -serial mon:stdio \
-    -device virtio-serial-pci,id=virtio-serial0,bus=pci.0,addr=0x3 \
+    -device virtio-serial-pci,id=virtio-serial0,bus=pcie.0,addr=0x3 \
     -chardev pty,id=charserial0 \
     -device isa-serial,chardev=charserial0,id=serial0 \
     -chardev socket,id=charchannel0,host=127.0.0.1,port=12345,reconnect=10 \

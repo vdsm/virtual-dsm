@@ -33,7 +33,7 @@ source /run/power.sh
 
 if [ -e /dev/kvm ] && sh -c 'echo -n > /dev/kvm' &> /dev/null; then
   if [[ $(grep -e vmx -e svm /proc/cpuinfo) ]]; then
-    KVM_ACC_OPTS="-enable-kvm -machine accel=kvm,usb=off -cpu host"
+    KVM_ACC_OPTS=",accel=kvm,usb=off -cpu host -enable-kvm"
   fi
 fi
 
@@ -41,8 +41,8 @@ fi
 
 pkill -f server.sh
 
-KVM_EXTRA_OPTS="-nographic -device virtio-balloon-pci,id=balloon0,bus=pci.0,addr=0x4"
-ARGS="-m ${RAM_SIZE} ${KVM_ACC_OPTS} ${KVM_EXTRA_OPTS} ${KVM_MON_OPTS} ${KVM_SERIAL_OPTS} ${KVM_NET_OPTS} ${KVM_DISK_OPTS}"
+EXTRA_OPTS="-nographic -object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0 -device virtio-balloon-pci,id=balloon0,bus=pcie.0,addr=0x4"
+ARGS="-m ${RAM_SIZE} -machine type=q35${KVM_ACC_OPTS} ${EXTRA_OPTS} ${KVM_MON_OPTS} ${KVM_SERIAL_OPTS} ${KVM_NET_OPTS} ${KVM_DISK_OPTS}"
 
 eval "qemu-system-x86_64 ${ARGS}" &
 
