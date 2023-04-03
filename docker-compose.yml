@@ -10,7 +10,6 @@ services:
             - NET_ADMIN
         devices:
             - /dev/kvm
-            - /dev/net/tun
         ports:
             - 80:5000
             - 443:5001
