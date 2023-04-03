@@ -15,11 +15,14 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:    
+    permissions:
+      packages: write
+      contents: read
+    steps: 
     - uses: actions/checkout@v3
     -
       name: Build the Docker image
-      run: docker build . --file Dockerfile --label "version=${{ secrets.MAJOR }}.${{ secrets.MINOR }}" --tag "kroese/virtual-dsm:latest" --tag "kroese/virtual-dsm:${{ secrets.MAJOR }}.${{ secrets.MINOR }}"
+      run: docker build . --file Dockerfile --label "id=${GITHUB_RUN_ID}" --label "version=${{ secrets.MAJOR }}.${{ secrets.MINOR }}" --tag "${{ github.repository }}:latest" --tag "${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}"
     -
       name: Login to Docker Hub
       uses: docker/login-action@v2
@@ -28,12 +31,22 @@ jobs:
         password: ${{ secrets.DOCKERHUB_TOKEN }}
     -
       name: Push to DockerHub
-      run: docker push "kroese/virtual-dsm:${{ secrets.MAJOR }}.${{ secrets.MINOR }}" && docker push "kroese/virtual-dsm:latest"
+      run: docker push "${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}" && docker push "${{ github.repository }}:latest"
+    -
+      name: Login to GitHub Container Registry
+      uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+    -
+      name: Push image to Github Container Registry
+      run: docker push "ghcr.io/${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}" && docker push "ghcr.io/${{ github.repository }}:latest"
     -
       name: Update Minor version
       uses: hmanzur/actions-set-secret@v2.0.0
       with:
         name: 'MINOR'
         value: $((${{ secrets.MINOR }}+1))
-        repository: kroese/virtual-dsm
+        repository: ${{ github.repository }}
         token: ${{ secrets.REPO_ACCESS_TOKEN }}
