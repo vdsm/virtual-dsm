@@ -4,17 +4,13 @@ on:
   push:
     branches: [ master ]
     paths-ignore:
-      - '**/test.yml'
-      - '**/build.yml'
-      - '**/README.md'
-      - '**/docker-compose.yml'
+      - '**/*.md'
+      - '**/*.yml'     
   pull_request:
     branches: [ master ]
     paths-ignore:
-      - '**/test.yml'
-      - '**/build.yml'
-      - '**/README.md'
-      - '**/docker-compose.yml'
+      - '**/*.md'
+      - '**/*.yml'     
 
 jobs:
   build:
