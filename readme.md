@@ -24,8 +24,6 @@ A docker container of Virtual DSM v7.2
 ## Platforms
 
  - Linux x86-64
- - MacOS (untested)
- - Windows (untested)
 
 ## Usage
 
