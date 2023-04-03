@@ -72,7 +72,7 @@ $ docker run --rm -it \
 
   - How do I change the location of the virtual disk?
 
-By default it resides inside a docker volume, but you can add a bind mount to your compose file like this:
+By default it resides inside a docker volume, but you can add these lines to your compose file:
 
 ```
 volumes:
