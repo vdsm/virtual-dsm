@@ -6,12 +6,6 @@ on:
     paths:
       - readme.md
       - .github/workflows/hub.yml
-  pull_request:
-    branches:
-      - master
-    paths:
-      - readme.md
-      - .github/workflows/hub.yml
 
 jobs:
   dockerHubDescription:
