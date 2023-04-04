@@ -50,7 +50,7 @@ services:
 Via `docker run`:
 
 ```bash
-$ docker run --rm -it -p 5000:5000 --cap-add NET_ADMIN --device=/dev/kvm kroese/virtual-dsm:latest
+$ docker run -p 5000:5000 --cap-add NET_ADMIN --device=/dev/kvm kroese/virtual-dsm:latest
 ```
 
 ## FAQ
