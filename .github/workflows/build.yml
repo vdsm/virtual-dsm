@@ -6,11 +6,6 @@ on:
     paths-ignore:
       - '**/*.md'
       - '**/*.yml'     
-  pull_request:
-    branches: [ master ]
-    paths-ignore:
-      - '**/*.md'
-      - '**/*.yml'     
 
 jobs:
   build:
