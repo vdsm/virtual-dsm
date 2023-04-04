@@ -91,7 +91,6 @@ MAJOR=""
 _DhcpIP=""
 
 # Create the necessary file structure for /dev/net/tun
-# Create the necessary file structure for /dev/net/tun
 if [ ! -c /dev/net/tun ]; then
   [ ! -d /dev/net ] && mkdir -m 755 /dev/net
   mknod /dev/net/tun c 10 200
