@@ -94,4 +94,4 @@ $ docker run --rm -it -p 5000:5000 --cap-add NET_ADMIN --device=/dev/kvm kroese/
  
 ## Acknowledgments
 
-Code is based on an [article](https://jxcn.org/2022/04/vdsm-first-try/) by JXCN.
+Partly based on an [article](https://jxcn.org/2022/04/vdsm-first-try/) by JXCN.
