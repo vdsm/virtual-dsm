@@ -6,7 +6,7 @@ services:
         environment:
             DISK_SIZE: "16G"
             RAM_SIZE: "512M"
-            CPU_CORES: "2"
+            CPU_CORES: "1"
         devices:
             - /dev/kvm
         cap_add:
