@@ -25,6 +25,8 @@ source /run/power.sh
 
 [ -z "${KVM_MON_OPTS}" ] && echo "Error: Failed to setup monitor..." && exit 87
 
+KVM_ACC_OPTS=""
+
 if [ -e /dev/kvm ] && sh -c 'echo -n > /dev/kvm' &> /dev/null; then
   if [[ $(grep -e vmx -e svm /proc/cpuinfo) ]]; then
     KVM_ACC_OPTS=",accel=kvm,usb=off -cpu host -enable-kvm"
