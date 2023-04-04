@@ -20,7 +20,7 @@ if [ ! -f "$FILE" ]; then
 fi
 GUEST_SERIAL=$(cat "${FILE}")
 
-./run/serial.bin -cpu=1 \
+./run/serial.bin -cpu=$CPU_CORES \
                 -buildnumber=42962 \
                 -vmmts="1679863686" \
                 -hostsn="$HOST_SERIAL" \
