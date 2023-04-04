@@ -92,3 +92,6 @@ $ docker run --rm -it -p 5000:5000 --cap-add NET_ADMIN --device=/dev/kvm kroese/
 
     There are only two minor differences: the Virtual Machine Manager package is not available and Surveillance Station does not include any free licenses.
  
+## Acknowledgments
+
+Code is based on an [article](https://jxcn.org/2022/04/vdsm-first-try/) by JXCN.
