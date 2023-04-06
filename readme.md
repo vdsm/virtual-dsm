@@ -34,8 +34,6 @@ services:
         image: kroese/virtual-dsm:latest
         environment:
             DISK_SIZE: "16G"
-            RAM_SIZE: "512M"
-            CPU_CORES: "1"
         devices:
             - /dev/kvm
         cap_add:
@@ -95,4 +93,4 @@ $ docker run -p 5000:5000 --cap-add NET_ADMIN --device=/dev/kvm kroese/virtual-d
  
 ## Acknowledgments
 
-Partly based on an [article](https://jxcn.org/2022/04/vdsm-first-try/) by JXCN.
+Based on an [article](https://jxcn.org/2022/04/vdsm-first-try/) by JXCN.
