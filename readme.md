@@ -20,7 +20,6 @@ A docker container of Virtual DSM v7.2
 
  - Upgrades supported
  - KVM acceleration (optional)
- - Runs on Linux/Windows/MacOS 
 
 ## Usage
 
