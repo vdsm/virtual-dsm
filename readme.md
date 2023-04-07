@@ -94,3 +94,7 @@ $ docker run -p 5000:5000 --cap-add NET_ADMIN --device=/dev/kvm kroese/virtual-d
 ## Acknowledgments
 
 Based on an [article](https://jxcn.org/2022/04/vdsm-first-try/) by JXCN.
+
+## Disclaimer
+
+You're only allowed to run this container on original Synology hardware, any other use is not permitted and might not be legal.
