@@ -4,16 +4,14 @@ services:
         container_name: dsm
         image: kroese/virtual-dsm:latest
         environment:
-            DISK_SIZE: "16G"
-            RAM_SIZE: "512M"
             CPU_CORES: "1"
+            RAM_SIZE: "512M"            
+            DISK_SIZE: "16G"            
         devices:
             - /dev/kvm
         cap_add:
             - NET_ADMIN                       
         ports:
-            - 80:5000
-            - 443:5001
             - 5000:5000
             - 5001:5001
         restart: on-failure
