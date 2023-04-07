@@ -38,8 +38,6 @@ services:
         cap_add:
             - NET_ADMIN                       
         ports:
-            - 80:5000
-            - 443:5001
             - 5000:5000
             - 5001:5001
         restart: on-failure
