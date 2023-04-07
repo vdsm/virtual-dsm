@@ -1,24 +1,34 @@
 #!/bin/bash
 
+# Docker environment variabeles
+: ${HOST_SERIAL:=''}
+: ${GUEST_SERIAL:=''}
+
 permanent="DSM"
 serialstart="2000"
 
 IMG="/storage"
 [ ! -d "$IMG" ] && echo "Storage folder (${IMG}) not found!" && exit 69
 
-FILE="${IMG}/host.serial"
-if [ ! -f "$FILE" ]; then
-  SERIAL="$(echo "$serialstart" | tr ' ' '\n' | sort -R | tail -1)$permanent"$(printf "%06d" $((RANDOM % 30000 + 1)))
-  echo $SERIAL > "$FILE"
+#If environment variabele not set fall back to file
+if [ -z "$HOST_SERIAL" ]; then
+  FILE="${IMG}/host.serial"
+  if [ ! -f "$FILE" ]; then
+    SERIAL="$(echo "$serialstart" | tr ' ' '\n' | sort -R | tail -1)$permanent"$(printf "%06d" $((RANDOM % 30000 + 1)))
+    echo $SERIAL > "$FILE"
+  fi
+  HOST_SERIAL=$(cat "${FILE}")
 fi
-HOST_SERIAL=$(cat "${FILE}")
 
-FILE="${IMG}/guest.serial"
-if [ ! -f "$FILE" ]; then
-  SERIAL="$(echo "$serialstart" | tr ' ' '\n' | sort -R | tail -1)$permanent"$(printf "%06d" $((RANDOM % 30000 + 1)))
-  echo $SERIAL > "$FILE"
+#If environment variabele not set fall back to file
+if [ -z "$GUEST_SERIAL" ]; then
+  FILE="${IMG}/guest.serial"
+  if [ ! -f "$FILE" ]; then
+    SERIAL="$(echo "$serialstart" | tr ' ' '\n' | sort -R | tail -1)$permanent"$(printf "%06d" $((RANDOM % 30000 + 1)))
+    echo $SERIAL > "$FILE"
+  fi
+  GUEST_SERIAL=$(cat "${FILE}")
 fi
-GUEST_SERIAL=$(cat "${FILE}")
 
 ./run/serial.bin -cpu=$CPU_CORES \
                 -buildnumber=42962 \
