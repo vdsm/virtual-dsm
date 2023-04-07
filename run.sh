@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -eu
 
-/run/server.sh 5000 > /dev/null &
-
 if /run/install.sh; then
   echo "Starting Virtual DSM..."
 else
@@ -34,8 +32,6 @@ if [ -e /dev/kvm ] && sh -c 'echo -n > /dev/kvm' &> /dev/null; then
 fi
 
 [ -z "${KVM_ACC_OPTS}" ] && echo "WARNING: KVM acceleration is disabled..."
-
-pkill -f server.sh
 
 EXTRA_OPTS="-nographic -object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0 -device virtio-balloon-pci,id=balloon0,bus=pcie.0,addr=0x4"
 ARGS="-m ${RAM_SIZE} -smp $CPU_CORES -machine type=q35${KVM_ACC_OPTS} ${EXTRA_OPTS} ${KVM_MON_OPTS} ${KVM_SERIAL_OPTS} ${KVM_NET_OPTS} ${KVM_DISK_OPTS}"
