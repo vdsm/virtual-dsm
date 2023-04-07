@@ -96,4 +96,4 @@ Based on an [article](https://jxcn.org/2022/04/vdsm-first-try/) by JXCN.
 
 ## Disclaimer
 
-Run this container on original Synology hardware, any other use is not permitted and might not be legal.
+Only run this container on original Synology hardware, any other use is not permitted and might not be legal.
