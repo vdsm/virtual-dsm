@@ -10,6 +10,9 @@ BASE=$(basename "$URL" .pat)
 [ ! -f "$IMG/$BASE.boot.img" ] && rm -f "$IMG"/"$BASE".system.img
 [ -f "$IMG/$BASE.system.img" ] && exit 0
 
+# Display wait message on port 5000
+/run/server.sh 5000 > /dev/null &
+
 TMP="$IMG/tmp"
 
 echo "Install: Downloading extractor..."
