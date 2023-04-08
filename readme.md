@@ -73,6 +73,27 @@ $ docker run -p 5000:5000 --cap-add NET_ADMIN --device=/dev/kvm kroese/virtual-d
 
     Just replace `/home/user/data` with the path to the folder you want to use for storage.
 
+  * ### How do I give the container a dedicated IP address?
+
+    By default the container uses bridge networking, and is reachable by the IP of the docker host. 
+
+    If you want to give it a seperate IP address, create a MACVLAN network that matches your local subnet:
+
+    ```
+    $ docker network create -d macvlan \
+        --subnet=192.168.0.0/24 \
+        --gateway=192.168.0.1 \
+        --ip-range=192.168.0.100/28 \
+        -o parent=eth0 macvlan0
+    ```
+    And change the network of the container to `macvlan0` in your run command:
+
+    ```
+     --network macvlan0 --ip=192.168.0.100
+    ```
+
+    This has the advantage that you don't need to do any portmapping anymore.
+    
   * ### How do I install a specific version of vDSM? ###
 
     By default it installs vDSM 7.2, but if you want to use an older version you can add its URL to your compose file:
