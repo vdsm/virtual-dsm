@@ -94,9 +94,9 @@ $ docker run -p 5000:5000 --cap-add NET_ADMIN --device=/dev/kvm kroese/virtual-d
 
     This has the advantage that you don't need to do any portmapping anymore.
 
-  * ### How do I change the allocated amount of CPU/RAM? ###
+  * ### How do I change the amount of CPU/RAM? ###
 
-    By default an amount of 512MB RAM and 1 CPU core is used by the container.
+    By default an amount of 512MB RAM and 1 vCPU is allocated to the container.
 
     To increase this you can add the following environment variabeles:
 
