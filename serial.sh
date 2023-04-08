@@ -32,7 +32,7 @@ fi
 
 CPU=$(lscpu | sed -nr '/Model name/ s/.*:\s*(.*) @ .*/\1/p' | sed ':a;s/  / /;ta' | sed s/"(R)"//g | sed s/"-"//g | sed 's/[^[:alnum:] ]\+//g')
 
-if [ ! -z "$CPU" ]; then
+if [ -n "$CPU" ]; then
   CPU="$CPU,,"
 else
   CPU="QEMU, Virtual CPU, X86_64"
