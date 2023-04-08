@@ -31,8 +31,12 @@ if [ -z "$GUEST_SERIAL" ]; then
 fi
 
 CPU=$(lscpu | sed -nr '/Model name/ s/.*:\s*(.*) @ .*/\1/p' | sed ':a;s/  / /;ta' | sed s/"(R)"//g | sed s/"-"//g | sed 's/[^[:alnum:] ]\+//g')
-[ -z "$CPU" ] && CPU="QEMU"
-CPU="$CPU, Virtual CPU, X86_64"
+
+if [ ! -z "$CPU" ]; then
+  CPU="$CPU,,"
+else
+  CPU="QEMU, Virtual CPU, X86_64"
+fi
 
 ./run/serial.bin -cpu="${CPU_CORES}" \
                 -cpu_arch="${CPU}" \
