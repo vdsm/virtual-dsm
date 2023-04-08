@@ -19,7 +19,7 @@ A docker container of Virtual DSM v7.2
 ## Features
 
  - Upgrades supported
- - KVM acceleration (optional)
+ - KVM acceleration (required)
 
 ## Usage
 
