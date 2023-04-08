@@ -86,7 +86,7 @@ $ docker run -p 5000:5000 --cap-add NET_ADMIN --device=/dev/kvm kroese/virtual-d
 
   * ### What are the differences compared to standard DSM? ###
 
-    There are only three minor differences: the Virtual Machine Manager package is not available, Surveillance Station does not include any free licenses, and logging in to your Synology account does not work.
+    There are only three minor differences: the Virtual Machine Manager package is not available, Surveillance Station does not include any free licenses, and logging in to your Synology account is not supported.
  
 ## Acknowledgments
 
