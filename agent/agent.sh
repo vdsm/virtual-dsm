@@ -19,7 +19,7 @@ if [ "$first_run" = true ]; then
       /usr/syno/bin/synopkg install "$filename" > /dev/null
 
       BASE=$(basename "$filename" .spk)
-      BASE=$(echo "${BASE%%-*}")
+      BASE="${BASE%%-*}"
 
       /usr/syno/bin/synopkg start "$BASE" > /dev/null
 
