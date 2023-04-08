@@ -33,9 +33,9 @@ else
 
 fi
 
-echo "" > /dev/ttyS0
-echo "You can now login to DSM at http://localhost:5000/" > /dev/ttyS0
-echo "" > /dev/ttyS0
+echo "-------------------------------------------" > /dev/ttyS0
+echo " You can now login to DSM at port 5000" > /dev/ttyS0
+echo "-------------------------------------------" > /dev/ttyS0
 
 while true; do
 
