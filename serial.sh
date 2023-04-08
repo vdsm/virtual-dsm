@@ -30,8 +30,9 @@ if [ -z "$GUEST_SERIAL" ]; then
   GUEST_SERIAL=$(cat "${FILE}")
 fi
 
-CPU=$(lscpu | sed -nr '/Model name/ s/.*:\s*(.*) @ .*/\1/p' | sed ':a;s/  / /;ta' | sed s/"(R)"//g | sed s/"-"//g | sed 's/[^[:alnum:]]\+//g')
-[ -z "$CPU" ] && CPU="QEMU, Virtual CPU, X86_64"
+CPU=$(lscpu | sed -nr '/Model name/ s/.*:\s*(.*) @ .*/\1/p' | sed ':a;s/  / /;ta' | sed s/"(R)"//g | sed s/"-"//g | sed 's/[^[:alnum:] ]\+//g')
+[ -z "$CPU" ] && CPU="QEMU"
+CPU="$CPU, Virtual CPU, X86_64"
 
 ./run/serial.bin -cpu="${CPU_CORES}" \
                 -cpu_arch="${CPU}" \
