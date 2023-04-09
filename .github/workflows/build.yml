@@ -44,4 +44,4 @@ jobs:
         name: 'MINOR'
         value: $((${{ secrets.MINOR }}+1))
         repository: ${{ github.repository }}
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.REPO_ACCESS_TOKEN }}
