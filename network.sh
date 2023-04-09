@@ -75,7 +75,7 @@ searchdomains=$(grep '^search' /etc/resolv.conf | sed 's/search //' | sed 's/ /,
 domainname=$(echo $searchdomains | awk -F"," '{print $1}')
 
 for nameserver in "${nameservers[@]}"; do
-  if [ ! [ $nameserver =~ .*:.* ] ]; then
+  if [ ! $nameserver =~ .*:.* ]; then
     [[ -z $DNS_SERVERS ]] && DNS_SERVERS=$nameserver || DNS_SERVERS="$DNS_SERVERS,$nameserver"
   fi
 done
