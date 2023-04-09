@@ -15,9 +15,9 @@ set -eu
 # ######################################
 
 setupLocalDhcp () {
-  CIDR="24"
-  MAC="$1"
   IP="$2"
+  MAC="$1"
+  CIDR="24"
   HOSTNAME="VirtualDSM"
   # dnsmasq configuration:
   DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-range=$IP,$IP --dhcp-host=$MAC,,$IP,$HOSTNAME,infinite --dhcp-option=option:netmask,255.255.255.0"
@@ -75,9 +75,7 @@ searchdomains=$(grep '^search' /etc/resolv.conf | sed 's/search //' | sed 's/ /,
 domainname=$(echo $searchdomains | awk -F"," '{print $1}')
 
 for nameserver in "${nameservers[@]}"; do
-  if [[ $nameserver =~ .*:.* ]]; then
-    echo "Skipping IPv6 nameserver: $nameserver"
-  else
+  if [ ! [ $nameserver =~ .*:.* ] ]; then
     [[ -z $DNS_SERVERS ]] && DNS_SERVERS=$nameserver || DNS_SERVERS="$DNS_SERVERS,$nameserver"
   fi
 done
