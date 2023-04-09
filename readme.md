@@ -77,19 +77,19 @@ $ docker run -p 5000:5000 --cap-add NET_ADMIN --device=/dev/kvm kroese/virtual-d
 
     By default the container uses bridge networking, and is reachable by the IP of the docker host. 
 
-    If you want to give it a seperate IP address, create a MACVLAN network that matches your local subnet:
+    If you want to give it a seperate IP address, create a macvlan network that matches your local subnet:
 
     ```
     $ docker network create -d macvlan \
         --subnet=192.168.0.0/24 \
         --gateway=192.168.0.1 \
         --ip-range=192.168.0.100/28 \
-        -o parent=eth0 macvlan0
+        -o parent=eth0 vlan
     ```
-    And change the network of the container to `macvlan0` in your run command:
+    And change the network of the container to `vlan` in your run command:
 
     ```
-     --network macvlan0 --ip=192.168.0.100
+     --network vlan --ip=192.168.0.100
     ```
 
     This has the advantage that you don't need to do any portmapping anymore.
