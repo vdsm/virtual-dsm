@@ -26,8 +26,7 @@ setupLocalDhcp () {
   chmod 644 /var/lib/misc/dnsmasq.leases
 }
 
-# Setup macvtap device to connect later the VM and setup a new macvlan devide
-# to connect the host machine to the network
+# Setup macvtap device to connect later the VM and setup a new macvlan device to connect the host machine to the network
 configureNatNetworks () {
 
   #Create bridge with static IP for the VM guest 
