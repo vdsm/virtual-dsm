@@ -38,7 +38,7 @@ ARGS="-m ${RAM_SIZE} -smp ${CPU_CORES} -machine type=q35${KVM_ACC_OPTS} ${EXTRA_
 
 set -m
 (
-  for _SIGNAL in {1..64}; do trap "echo Caught trap ${_SIGNAL} for the QEMU process" "${_SIGNAL}"; done
+  for _SIGNAL in {1..64}; do trap 'echo Caught trap ${_SIGNAL} for the QEMU process' "${_SIGNAL}"; done
   qemu-system-x86_64 ${ARGS} & echo $! > ${_QEMU_PID}
 )
 set +m
