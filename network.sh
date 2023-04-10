@@ -29,7 +29,7 @@ setupLocalDhcp () {
 # Setup macvtap device to connect later the VM and setup a new macvlan device to connect the host machine to the network
 configureNatNetworks () {
 
-  #Create bridge with static IP for the VM guest 
+  #Create bridge with static IP for the VM guest
   brctl addbr dockerbridge
   ip addr add ${VM_NET_IP%.*}.1/24 broadcast ${VM_NET_IP%.*}.255 dev dockerbridge
   ip link set dockerbridge up
@@ -89,8 +89,8 @@ DNSMASQ_OPTS="$DNSMASQ_OPTS \
 [[ -z $(hostname -d) ]] || DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-name,$(hostname -d)"
 
 $DNSMASQ $DNSMASQ_OPTS
-	
-KVM_NET_OPTS="${KVM_NET_OPTS} -device virtio-net-pci,netdev=hostnet0,mac=${VM_NET_MAC},id=net0" 
+
+KVM_NET_OPTS="${KVM_NET_OPTS} -device virtio-net-pci,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
 
 # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
-iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill 
+iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill
