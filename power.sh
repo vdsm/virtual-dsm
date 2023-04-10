@@ -12,7 +12,7 @@ _QEMU_SHUTDOWN_COUNTER=/run/qemu.counter
 _trap(){
     func="$1" ; shift
     for sig ; do
-        trap "$func $sig" "$sig"
+        trap '$func $sig' "$sig"
     done
 }
 
