@@ -1,8 +1,27 @@
 #!/usr/bin/env bash
 set -u
 
-echo "Starting agent.."
+declare nmi
+
+function checkNMI {
+
+  nmi=$(cat /proc/interrupts | grep NMI)
+  nmi=$(echo "$nmi" | sed 's/[^0-9]*//g')
+  nmi=$(echo "$nmi" | sed 's/^0*//')
+
+  if [ "$nmi" != "" ]; then
+
+    echo "Received shutdown request through NMI.." > /dev/ttyS0
+
+    /usr/syno/sbin/synoshutdown -s > /dev/null
+    exit 0
+
+  fi
+
+}
+
 chmod 666 /dev/ttyS0
+checkNMI
 
 first_run=false
 
@@ -29,30 +48,18 @@ if [ "$first_run" = true ]; then
   done
 else
 
-  sleep 4
+  sleep 5
 
 fi
 
 echo "-------------------------------------------" > /dev/ttyS0
-echo " You can now login to DSM at port 5000" > /dev/ttyS0
+echo " You can now login to DSM at port 5000     " > /dev/ttyS0
 echo "-------------------------------------------" > /dev/ttyS0
 
 while true; do
 
+  checkNMI
   sleep 1
 
-  #result=$(cat /proc/interrupts | grep NMI)
-  #result=$(echo "$result" | sed 's/[^0-9]*//g')
-  #result=$(echo "$result" | sed 's/^0*//')
-  #
-  #if [ "$result" != "" ]; then
-  #
-  #  echo "Received shutdown request.."
-  #  echo "Received shutdown request.." > /dev/ttyS0
-  #
-  #  /usr/syno/sbin/synopoweroff
-  #  exit
-  #
-  #fi
-
 done
+
