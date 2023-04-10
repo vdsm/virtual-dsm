@@ -114,12 +114,12 @@ mv $PKG/ $LOC/
 
 LOC="$MOUNT/usr/local/bin"
 mkdir -p $LOC
-mv /agent/agent.sh $LOC/agent.sh
+cp /agent/agent.sh $LOC/agent.sh
 chmod +x $LOC/agent.sh
 
 LOC="$MOUNT/usr/local/etc/rc.d"
 mkdir -p $LOC
-mv /agent/service.sh $LOC/agent.sh
+cp /agent/service.sh $LOC/agent.sh
 chmod +x $LOC/agent.sh
 
 if [ "$PRIVILEGED" = false ]; then
