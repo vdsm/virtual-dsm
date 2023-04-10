@@ -7,7 +7,6 @@
 permanent="DSM"
 serialstart="2000"
 
-IMG="/storage"
 [ ! -d "$IMG" ] && echo "Storage folder (${IMG}) not found!" && exit 69
 
 #If environment variabele not set fall back to file
