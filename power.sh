@@ -58,6 +58,7 @@ _graceful_shutdown(){
     fi
   done
 
+  echo "Killing VM.."
   echo 'quit' | nc -q 1 -w 1 localhost "${QEMU_MONPORT}">/dev/null || true
 
   return
