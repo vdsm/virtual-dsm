@@ -36,7 +36,7 @@ _graceful_shutdown(){
   # Don't send the powerdown signal because Synology ignores it
   # echo 'system_powerdown' | nc -q 1 -w 1 localhost "${QEMU_MONPORT}">/dev/null
 
-  if (($AGENT_VERSION < 2)); then
+  if ((AGENT_VERSION < 2)); then
      echo "Please update the agent to allow gracefull shutdowns..."
      pkill -f qemu-system-x86_64
   else
