@@ -36,6 +36,14 @@ fi
 EXTRA_OPTS="-nographic -object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0 -device virtio-balloon-pci,id=balloon0,bus=pcie.0,addr=0x4"
 ARGS="-m ${RAM_SIZE} -smp ${CPU_CORES} -machine type=q35${KVM_ACC_OPTS} ${EXTRA_OPTS} ${KVM_MON_OPTS} ${KVM_SERIAL_OPTS} ${KVM_NET_OPTS} ${KVM_DISK_OPTS}"
 
-qemu-system-x86_64 ${ARGS} &
+set -m
+(
+  for _SIGNAL in {1..64}; do trap "echo Caught trap ${_SIGNAL} for the QEMU process" "${_SIGNAL}"; done
+  qemu-system-x86_64 ${ARGS} & echo $! > ${_QEMU_PID}
+)
+set +m
 
-wait $!
+# Since we have to start the process with -m, we need to poll every intervall if it's still running
+while [ -d "/proc/$(cat ${_QEMU_PID})"  ]; do
+  sleep 1
+done
