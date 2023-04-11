@@ -19,7 +19,8 @@ A docker container of Virtual DSM v7.2
 ## Features
 
  - Upgrades supported
- - KVM acceleration (required)
+ - KVM acceleration
+ - Graceful shutdown
 
 ## Usage
 
@@ -47,7 +48,7 @@ services:
 Via `docker run`:
 
 ```bash
-$ docker run run --rm -it -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-timeout 60 kroese/virtual-dsm:latest
+$ docker run --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-timeout 60 kroese/virtual-dsm:latest
 ```
 
 ## FAQ
@@ -113,7 +114,7 @@ $ docker run run --rm -it -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --s
 
     ```
     environment:
-       URL: "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
+      URL: "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
     ```
 
     You can also switch back and forth between versions this way without loosing your file data.
