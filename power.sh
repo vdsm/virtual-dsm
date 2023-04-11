@@ -12,7 +12,7 @@ _QEMU_SHUTDOWN_COUNTER=/run/qemu.counter
 _trap(){
     func="$1" ; shift
     for sig ; do
-        trap '$func $sig' "$sig"
+        trap "$func $sig" "$sig"
     done
 }
 
@@ -22,16 +22,12 @@ _graceful_shutdown(){
   local QEMU_POWERDOWN_TIMEOUT="${QEMU_POWERDOWN_TIMEOUT:-120}"
 
   set +e
-  echo "Trapped $1 signal"
+  echo "Received $1 signal.."
   echo 0 > "${_QEMU_SHUTDOWN_COUNTER}"
 
   FILE="${IMG}/agent.ver"
-  if [ ! -f "$FILE" ]; then
-    AGENT_VERSION="1"
-    echo "$AGENT_VERSION" > "$IMG"/agent.ver
-  else
-    AGENT_VERSION=$(cat "${FILE}")
-  fi
+  [ ! -f "$FILE" ] && echo "1" > "$FILE"
+  AGENT_VERSION=$(cat "${FILE}")
 
   # Don't send the powerdown signal because Synology ignores it
   # echo 'system_powerdown' | nc -q 1 -w 1 localhost "${QEMU_MONPORT}">/dev/null
