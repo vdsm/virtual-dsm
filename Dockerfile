@@ -15,12 +15,10 @@ RUN apt-get update && apt-get -y upgrade && \
 	wget \
 	unzip \
 	procps \
-	ethtool \
 	dnsmasq \
 	iptables \
 	iproute2 \
 	xz-utils \
-	qemu-utils \
 	btrfs-progs \
 	bridge-utils \
 	netcat-openbsd \
@@ -35,6 +33,7 @@ COPY serial.sh /run/
 COPY server.sh /run/
 COPY install.sh /run/
 COPY network.sh /run/
+
 COPY agent/agent.sh /agent/
 COPY agent/service.sh /agent/
 
@@ -61,9 +60,9 @@ EXPOSE 445
 EXPOSE 5000
 EXPOSE 5001
 
-ENV RAM_SIZE 512M
-ENV DISK_SIZE 16G
 ENV CPU_CORES 1
+ENV DISK_SIZE 16G
+ENV RAM_SIZE 512M
 
 #ENV URL https://global.synologydownload.com/download/DSM/beta/7.2/64216/DSM_VirtualDSM_64216.pat
 #ENV URL https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat
