@@ -122,6 +122,9 @@ mkdir -p $LOC
 cp /agent/service.sh $LOC/agent.sh
 chmod +x $LOC/agent.sh
 
+# Store agent version
+echo "2" > "$IMG"/agent.ver
+
 if [ "$PRIVILEGED" = false ]; then
 
   echo "Install: Installing system partition..."
@@ -136,9 +139,6 @@ else
 fi
 
 rm -rf $MOUNT
-
-# Store agent version
-echo "2" > "$IMG"/agent.ver
 
 mv -f "$BOOT" "$IMG"/"$BASE".boot.img
 mv -f "$SYSTEM" "$IMG"/"$BASE".system.img

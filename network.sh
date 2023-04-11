@@ -5,10 +5,10 @@ set -eu
 : ${VM_NET_MAC:=''}
 : ${VM_NET_IP:='20.20.20.21'}
 
+: ${DNS_SERVERS:=''}
 : ${DNSMASQ:='/usr/sbin/dnsmasq'}
 : ${DNSMASQ_OPTS:=''}
 : ${DNSMASQ_CONF_DIR:='/etc/dnsmasq.d'}
-: ${DNS_SERVERS:=''}
 
 # ######################################
 #  Functions
@@ -66,9 +66,7 @@ fi
 #If environment variabele not set fall back to file
 if [ -z "$VM_NET_MAC" ]; then
   FILE="${IMG}/guest.mac"
-  if [ ! -f "$FILE" ]; then
-    echo "00:11:32:2C:A7:85" > "$FILE"
-  fi
+  [ ! -f "$FILE" ] && echo "00:11:32:2C:A7:85" > "$FILE"
   VM_NET_MAC=$(cat "${FILE}")
 fi
 
