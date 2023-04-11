@@ -24,7 +24,7 @@ A docker container of Virtual DSM v7.2
 
 ## Usage
 
-Via `docker-compose.yml`:
+Via `docker-compose.yml`
 
 ```yaml
 version: "3"
@@ -45,7 +45,7 @@ services:
         stop_grace_period: 60s
 ```
 
-Via `docker run`:
+Via `docker run`
 
 ```bash
 docker run -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-timeout 60 kroese/virtual-dsm:latest
