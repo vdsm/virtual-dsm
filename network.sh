@@ -2,8 +2,8 @@
 set -eu
 
 : ${VM_NET_TAP:=''}
-: ${VM_NET_MAC:=''}
 : ${VM_NET_IP:='20.20.20.21'}
+: ${VM_NET_MAC:='82:cf:d0:5e:57:66'}
 
 : ${DNS_SERVERS:=''}
 : ${DNSMASQ:='/usr/sbin/dnsmasq'}
