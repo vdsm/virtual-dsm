@@ -11,7 +11,6 @@ FROM debian:bookworm-20230320-slim
 
 RUN apt-get update && apt-get -y upgrade && \
     apt-get --no-install-recommends -y install \
-	jq \
 	curl \
 	cpio \
 	wget \
@@ -42,12 +41,8 @@ COPY agent/service.sh /agent/
 COPY --from=builder /src/serial/main /run/serial.bin
 
 RUN ["chmod", "+x", "/run/run.sh"]
-RUN ["chmod", "+x", "/run/disk.sh"]
-RUN ["chmod", "+x", "/run/power.sh"]
-RUN ["chmod", "+x", "/run/serial.sh"]
 RUN ["chmod", "+x", "/run/server.sh"]
 RUN ["chmod", "+x", "/run/install.sh"]
-RUN ["chmod", "+x", "/run/network.sh"]
 RUN ["chmod", "+x", "/run/serial.bin"]
 
 COPY disks/template.img.xz /data/
