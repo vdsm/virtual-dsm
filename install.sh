@@ -40,7 +40,13 @@ echo "Install: Downloading $URL..."
 FILE="$TMP/dsm.pat"
 
 rm -rf $TMP && mkdir -p $TMP
-wget "$URL" -O "$FILE" -q --no-check-certificate --show-progress
+
+# Check if running with interactive TTY or redirected to docker log
+if [ -t 1 ]; then
+  wget "$URL" -O "$FILE" -q --no-check-certificate --show-progress
+else
+  wget "$URL" -O "$FILE" -q --no-check-certificate --show-progress --progress=dot:giga
+fi
 
 [ ! -f "$FILE" ] && echo "Download failed" && exit 61
 
