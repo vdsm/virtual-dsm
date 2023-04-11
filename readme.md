@@ -59,7 +59,7 @@ $ docker run --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-time
 
     ```
     environment:
-        DISK_SIZE: "16G"
+      DISK_SIZE: "16G"
     ```
 
     To create an empty disk with a maximum capacity of 8 terabyte you would use a value of `"8T"` for example.
@@ -70,7 +70,7 @@ $ docker run --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-time
 
     ```
     volumes:
-        - /home/user/data:/storage
+      - /home/user/data:/storage
     ```
 
     Just replace `/home/user/data` with the path to the folder you want to use for storage.
@@ -104,8 +104,8 @@ $ docker run --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-time
 
     ```
     environment:
-        CPU_CORES: "4"
-        RAM_SIZE: "2048M"
+      CPU_CORES: "4"
+      RAM_SIZE: "2048M"
     ```
     
   * ### How do I install a specific version of vDSM? ###
