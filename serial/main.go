@@ -8,6 +8,9 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"net/http"
+	"math/rand"
+	"github.com/gorilla/mux"
 )
 
 type REQ struct {
@@ -35,16 +38,27 @@ var VMMVersion = flag.String("vmmversion", "2.6.1-12139", "VMM version")
 var VMMTimestamp = flag.Int("vmmts", 1679863686, "VMM Timestamp")
 var Cluster_UUID = "3bdea92b-68f4-4fe9-aa4b-d645c3c63864"
 
+var ApiPort = flag.String("api", ":2210", "API port")
 var ListenAddr = flag.String("addr", "0.0.0.0:12345", "Listen address")
 
+var LastConnection net.Conn
+
 func main() {
+
 	flag.Parse()
 
+	r := mux.NewRouter()
+	r.HandleFunc("/", home)
+	r.HandleFunc("/write", write)
+	go http.ListenAndServe(*ApiPort, r)
+
 	listener, err := net.Listen("tcp", *ListenAddr)
+
 	if err != nil {
 		log.Println("Error listening", err.Error())
 		return
 	}
+
 	log.Println("Start listen on " + *ListenAddr)
 
 	for {
@@ -54,11 +68,15 @@ func main() {
 			return
 		}
 		log.Printf("New connection from %s\n", conn.RemoteAddr().String())
+
 		go incoming_conn(conn)
 	}
 }
 
 func incoming_conn(conn net.Conn) {
+
+	LastConnection = conn
+
 	for {
 		buf := make([]byte, 4096)
 		len, err := conn.Read(buf)
@@ -172,4 +190,74 @@ func process_req(buf []byte, conn net.Conn) {
 		copy(buf, res)
 		conn.Write(buf)
 	}
+}
+
+func home(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte(`{"status": "error", "data": null, "message": "No command specified"}`))
+}
+
+
+func write(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json")
+
+	var err error
+	var commandID int
+
+	query := r.URL.Query()
+	commandID, err = strconv.Atoi(query.Get("command"))
+
+	if (err != nil || commandID < 1) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"status": "error", "data": null, "message": "Invalid command ID"}`))
+		return
+	}
+
+	if (send_command((int32)(commandID), 1) == false) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"status": "error", "data": null, "message": "Failed to send command"}`))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status": "success", "data": null, "message": null}`))
+	return
+}
+
+func send_command(CommandID int32, SubCommand int32) bool {
+
+	var req REQ
+
+	req.CommandID = CommandID
+	req.SubCommand = SubCommand
+
+	req.IsReq = 1
+	req.IsResp = 0
+	req.ReqLength = 0
+	req.RespLength = 0
+	req.NeedResponse = 0
+	req.GuestID = 10000000
+	req.RandID = rand.Int63()
+
+	var buf = make([]byte, 0, 4096)
+	var writer = bytes.NewBuffer(buf)
+
+	// write to buf
+	binary.Write(writer, binary.LittleEndian, &req)
+	res := writer.Bytes()
+
+	// full fill 4096
+	buf = make([]byte, 4096, 4096)
+	copy(buf, res)
+
+	//log.Printf("Writing command %d\n", CommandID)
+
+	if (LastConnection == nil) { return false }
+
+	LastConnection.Write(buf)
+	return true
+
 }

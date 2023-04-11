@@ -2,7 +2,9 @@ FROM golang:1.20 AS builder
 
 COPY serial/ /src/serial/
 WORKDIR /src/serial
-RUN go get -d -v golang.org/x/net/html  
+
+RUN go get -d -v golang.org/x/net/html
+RUN go get -d -v github.com/gorilla/mux
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /src/serial/main .
 
 FROM debian:bookworm-20230320-slim
