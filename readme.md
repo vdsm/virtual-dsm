@@ -50,7 +50,7 @@ services:
 Via `docker run`
 
 ```bash
-$ docker run --name dsm -it -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN -v "/var/dsm:/storage" --stop-timeout 60 kroese/virtual-dsm:latest
+$ docker run --name dsm -it -p 5000:5000 -e "DISK_SIZE=16GB" -v "/var/dsm:/storage" --device=/dev/kvm --cap-add NET_ADMIN --stop-timeout 60 kroese/virtual-dsm:latest
 ```
 
 ## FAQ
