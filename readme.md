@@ -41,6 +41,8 @@ services:
         ports:
             - 5000:5000
             - 5001:5001
+        volumes:
+            - /var/dsm:/storage
         restart: on-failure
         stop_grace_period: 60s
 ```
