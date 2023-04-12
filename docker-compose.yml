@@ -5,14 +5,16 @@ services:
         image: kroese/virtual-dsm:latest
         environment:
             CPU_CORES: "1"
-            RAM_SIZE: "512M"            
-            DISK_SIZE: "16G"            
+            DISK_SIZE: "16G"
+            RAM_SIZE: "512M"
         devices:
             - /dev/kvm
         cap_add:
-            - NET_ADMIN                       
+            - NET_ADMIN        
         ports:
             - 5000:5000
             - 5001:5001
+        volumes:
+            - /var/dsm:/storage
         restart: on-failure
         stop_grace_period: 60s
