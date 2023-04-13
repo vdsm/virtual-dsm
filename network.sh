@@ -81,14 +81,14 @@ if [ -z $DNS_SERVERS ]; then
 else
   COMMAS=${DNS_SERVERS//[^,]/}
   COMMAS=${#COMMAS}
-  (($COMMAS < 1)) && DNS_SERVERS="$DNS_SERVERS,1.1.1.1"
+  ((COMMAS < 1)) && DNS_SERVERS="$DNS_SERVERS,1.1.1.1"
 fi
 
 DNSMASQ_OPTS="$DNSMASQ_OPTS \
 	--dhcp-option=option:dns-server,$DNS_SERVERS \
 	--dhcp-option=option:router,${VM_NET_IP%.*}.1"
 
-if [ ! -z "$searchdomains" -a "$searchdomains" != "." ]; then
+if [ -n "$searchdomains" ] && [ -a "$searchdomains" != "." ]; then
   DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-search,$searchdomains"
   DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-name,$domainname"
 else
