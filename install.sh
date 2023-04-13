@@ -14,7 +14,7 @@ BASE=$(basename "$URL" .pat)
 [ ! -f "/run/server.sh" ] && echo "Script must run inside Docker container!" && exit 60
 
 [ ! -f "$IMG/$BASE.boot.img" ] && rm -f "$IMG"/"$BASE".system.img
-[ -f "$IMG/$BASE.system.img" ] && exit 0
+[ -f "$IMG/$BASE.system.img" ] && return
 
 # Display wait message on port 5000
 /run/server.sh 5000 > /dev/null &
@@ -156,5 +156,3 @@ mv -f "$BOOT" "$IMG"/"$BASE".boot.img
 mv -f "$SYSTEM" "$IMG"/"$BASE".system.img
 
 rm -rf $TMP
-
-exit 0
