@@ -16,28 +16,32 @@ NEW_SIZE=$(numfmt --from=iec "${DISK_SIZE}")
 FILE="$IMG/data$DISK_SIZE.img"
 
 if [ ! -f "$FILE" ]; then
+    # Create an empty file
     truncate -s "${NEW_SIZE}" "${FILE}"
+    # Format as BTRFS filesystem
     mkfs.btrfs -q -L data -d single -m dup "${FILE}" > /dev/null
-    #qemu-img convert -f raw -O qcow2 -o extended_l2=on,cluster_size=128k,compression_type=zstd,preallocation=metadata "$TMP" "$FILE"
 fi
 
 [ ! -f "$FILE" ] && echo "ERROR: Virtual DSM data-image does not exist ($FILE)" && exit 83
 
-#OLD_SIZE=$(stat -c%s "${FILE}")
+# Resizing requires mounting a loop device which in turn requires
+# the container to be privileged, so we must disable it for now.
 #
-#if [ "$NEW_SIZE" -ne "$OLD_SIZE" ]; then
-#  echo "Resizing data disk from $OLD_SIZE to $NEW_SIZE bytes"
+# OLD_SIZE=$(stat -c%s "${FILE}")
 #
-#  if [ "$NEW_SIZE" -gt "$OLD_SIZE" ]; then
-#    truncate -s "${NEW_SIZE}" "${FILE}"
-#    btrfs filesystem resize "${NEW_SIZE}" "${FILE}"
-#  fi
+# if [ "$NEW_SIZE" -ne "$OLD_SIZE" ]; then
+#   echo "Resizing data disk from $OLD_SIZE to $NEW_SIZE bytes"
 #
-#  if [ "$NEW_SIZE" -lt "$OLD_SIZE" ]; then
-#    btrfs filesystem resize "${NEW_SIZE}" "${FILE}"
-#    truncate -s "${NEW_SIZE}" "${FILE}"
-#  fi
-#fi
+#   if [ "$NEW_SIZE" -gt "$OLD_SIZE" ]; then
+#     truncate -s "${NEW_SIZE}" "${FILE}"
+#     btrfs filesystem resize "${NEW_SIZE}" "${FILE}"
+#   fi
+#
+#   if [ "$NEW_SIZE" -lt "$OLD_SIZE" ]; then
+#     btrfs filesystem resize "${NEW_SIZE}" "${FILE}"
+#     truncate -s "${NEW_SIZE}" "${FILE}"
+#   fi
+# fi
 
 KVM_DISK_OPTS="\
     -device virtio-scsi-pci,id=hw-synoboot,bus=pcie.0,addr=0xa \

@@ -1,25 +1,22 @@
 #!/usr/bin/env bash
 set -eu
 
-if /run/install.sh; then
-  echo "Starting Virtual DSM..."
-else
-  echo "Installation failed (code $?)" && exit 81
-fi
+echo "Starting Virtual DSM..."
 
-source /run/disk.sh
+. /run/install.sh
+. /run/disk.sh
 
 [ -z "${KVM_DISK_OPTS}" ] && echo "Error: Failed to setup disks..." && exit 83
 
-source /run/network.sh
+. /run/network.sh
 
 [ -z "${KVM_NET_OPTS}" ] && echo "Error: Failed to setup network..." && exit 84
 
-source /run/serial.sh
+. /run/serial.sh
 
 [ -z "${KVM_SERIAL_OPTS}" ] && echo "Error: Failed to setup serial..." && exit 85
 
-source /run/power.sh
+. /run/power.sh
 
 [ -z "${KVM_MON_OPTS}" ] && echo "Error: Failed to setup monitor..." && exit 87
 
@@ -39,7 +36,9 @@ ARGS="-m ${RAM_SIZE} -smp ${CPU_CORES} ${KVM_ACC_OPTS} ${EXTRA_OPTS} ${KVM_MON_O
 
 set -m
 (
-  for _SIGNAL in {1..64}; do trap "echo Caught trap ${_SIGNAL} for the QEMU process" "${_SIGNAL}"; done
+  for _SIGNAL in {1..64}; do
+    trap "echo Caught trap ${_SIGNAL} for the QEMU process" "${_SIGNAL}";
+  done
   qemu-system-x86_64 ${ARGS} & echo $! > ${_QEMU_PID}
 )
 set +m
