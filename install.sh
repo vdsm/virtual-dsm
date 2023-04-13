@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -eu
 
+if [ -z $URL ]; then
+  #URL="https://global.synologydownload.com/download/DSM/beta/7.2/64216/DSM_VirtualDSM_64216.pat"
+  #URL="https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
+  URL="https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat"
+fi
+
 IMG="/storage"
 BASE=$(basename "$URL" .pat)
 
@@ -8,7 +14,7 @@ BASE=$(basename "$URL" .pat)
 [ ! -f "/run/server.sh" ] && echo "Script must run inside Docker container!" && exit 60
 
 [ ! -f "$IMG/$BASE.boot.img" ] && rm -f "$IMG"/"$BASE".system.img
-[ -f "$IMG/$BASE.system.img" ] && exit 0
+[ -f "$IMG/$BASE.system.img" ] && return
 
 # Display wait message on port 5000
 /run/server.sh 5000 > /dev/null &
@@ -150,5 +156,3 @@ mv -f "$BOOT" "$IMG"/"$BASE".boot.img
 mv -f "$SYSTEM" "$IMG"/"$BASE".system.img
 
 rm -rf $TMP
-
-exit 0

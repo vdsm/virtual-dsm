@@ -57,12 +57,9 @@ EXPOSE 445
 EXPOSE 5000
 EXPOSE 5001
 
+ENV URL ""
 ENV CPU_CORES 1
 ENV DISK_SIZE 16G
 ENV RAM_SIZE 512M
-
-#ENV URL https://global.synologydownload.com/download/DSM/beta/7.2/64216/DSM_VirtualDSM_64216.pat
-#ENV URL https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat
-ENV URL https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat
 
 ENTRYPOINT ["/run/run.sh"]
