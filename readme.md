@@ -14,7 +14,7 @@ virtual-dsm
 [Docker Pulls Count]: https://img.shields.io/docker/pulls/kroese/virtual-dsm.svg?style=flat
 [gh_last_release_svg]: https://img.shields.io/docker/v/kroese/virtual-dsm?arch=amd64&sort=date
 
-Virtual DSM v7.2 in a docker container.
+Virtual DSM in a docker container.
 
 ## Features
 
