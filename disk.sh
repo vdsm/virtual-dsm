@@ -17,7 +17,7 @@ FILE="$IMG/data$DISK_SIZE.img"
 
 if [ ! -f "$FILE" ]; then
     truncate -s "${NEW_SIZE}" "${FILE}"
-    mkfs.btrfs -q -L data -d single -m single "${FILE}" > /dev/null
+    mkfs.btrfs -q -L data -d single -m dup "${FILE}" > /dev/null
     #qemu-img convert -f raw -O qcow2 -o extended_l2=on,cluster_size=128k,compression_type=zstd,preallocation=metadata "$TMP" "$FILE"
 fi
 
