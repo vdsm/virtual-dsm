@@ -5,20 +5,9 @@ echo "Starting Virtual DSM..."
 
 . /run/install.sh
 . /run/disk.sh
-
-[ -z "${KVM_DISK_OPTS}" ] && echo "Error: Failed to setup disks..." && exit 83
-
 . /run/network.sh
-
-[ -z "${KVM_NET_OPTS}" ] && echo "Error: Failed to setup network..." && exit 84
-
 . /run/serial.sh
-
-[ -z "${KVM_SERIAL_OPTS}" ] && echo "Error: Failed to setup serial..." && exit 85
-
 . /run/power.sh
-
-[ -z "${KVM_MON_OPTS}" ] && echo "Error: Failed to setup monitor..." && exit 87
 
 KVM_ACC_OPTS=""
 
