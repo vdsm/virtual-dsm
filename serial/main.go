@@ -55,7 +55,7 @@ func main() {
 	listener, err := net.Listen("tcp", *ListenAddr)
 
 	if err != nil {
-		log.Println("Error listening", err.Error())
+		log.Fatalln("Error listening", err.Error())
 		return
 	}
 
@@ -64,7 +64,7 @@ func main() {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Println("Error on accept", err.Error())
+			log.Fatalln("Error on accept", err.Error())
 			return
 		}
 		log.Printf("New connection from %s\n", conn.RemoteAddr().String())
