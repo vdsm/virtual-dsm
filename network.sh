@@ -88,7 +88,7 @@ DNSMASQ_OPTS="$DNSMASQ_OPTS \
 	--dhcp-option=option:dns-server,$DNS_SERVERS \
 	--dhcp-option=option:router,${VM_NET_IP%.*}.1"
 
-if [ -n "$searchdomains" ] && [ -a "$searchdomains" != "." ]; then
+if [ -n "$searchdomains" -a "$searchdomains" != "." ]; then
   DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-search,$searchdomains"
   DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-name,$domainname"
 else
