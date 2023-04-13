@@ -44,7 +44,7 @@ services:
         volumes:
             - /var/dsm:/storage
         restart: on-failure
-        stop_grace_period: 60s
+        stop_grace_period: 1m
 ```
 
 Via `docker run`
