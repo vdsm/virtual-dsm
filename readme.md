@@ -29,7 +29,7 @@ Via `docker-compose.yml`
 ```yaml
 version: "3"
 services:
-    vm:
+    dsm:
         container_name: dsm
         image: kroese/virtual-dsm:latest
         environment:
