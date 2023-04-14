@@ -5,7 +5,12 @@ IMG="/storage"
 [ ! -d "$IMG" ] && echo "Storage folder (${IMG}) not found!" && exit 69
 
 if [ -z $URL ]; then
-  BASE="DSM_VirtualDSM_42962"
+  if [ -f "$IMG"/dsm.ver ]; then
+    BASE=$(cat "${IMG}/dsm.ver")
+  else
+    # Fallback for old installs
+    BASE="DSM_VirtualDSM_42962"
+  fi
 else
   BASE=$(basename "$URL" .pat)
 fi
@@ -128,6 +133,8 @@ tar xpfJ $HDP.txz --absolute-names -C $MOUNT/
 tar xpfJ $HDA.txz --absolute-names -C $MOUNT/
 tar xpfJ $IDB.txz --absolute-names -C $MOUNT/usr/syno/synoman/indexdb/
 
+# Install Agent 
+
 LOC="$MOUNT/usr/local"
 mkdir -p $LOC
 mv $PKG/ $LOC/
@@ -160,6 +167,7 @@ fi
 
 rm -rf $MOUNT
 
+echo "$BASE" > "$IMG"/dsm.ver
 mv -f "$PAT" "$IMG"/"$BASE".pat
 mv -f "$BOOT" "$IMG"/"$BASE".boot.img
 mv -f "$SYSTEM" "$IMG"/"$BASE".system.img
