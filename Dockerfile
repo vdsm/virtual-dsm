@@ -14,6 +14,7 @@ RUN apt-get update && apt-get -y upgrade && \
 	curl \
 	cpio \
 	wget \
+	fdisk \
 	unzip \
 	procps \
 	dnsmasq \
@@ -43,8 +44,6 @@ COPY --from=builder /src/serial/main /run/serial.bin
 RUN ["chmod", "+x", "/run/run.sh"]
 RUN ["chmod", "+x", "/run/server.sh"]
 RUN ["chmod", "+x", "/run/serial.bin"]
-
-COPY disks/template.img.xz /data/
 
 VOLUME /storage
 
