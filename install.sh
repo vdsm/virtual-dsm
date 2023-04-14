@@ -16,6 +16,11 @@ fi
 
 BASE=$(basename "$URL" .pat)
 
+rm -f "$IMG"/"$BASE".pat
+rm -f "$IMG"/"$BASE".agent
+rm -f "$IMG"/"$BASE".boot.img
+rm -f "$IMG"/"$BASE".system.img
+
 echo "Install: Downloading extractor..."
 
 TMP="$IMG/tmp"
@@ -133,7 +138,7 @@ cp /agent/service.sh $LOC/agent.sh
 chmod +x $LOC/agent.sh
 
 # Store agent version
-echo "2" > "$IMG"/agent.ver
+echo "2" > "$IMG"/"$BASE".agent
 
 if [ "$PRIVILEGED" = false ]; then
 
