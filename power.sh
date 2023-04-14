@@ -41,8 +41,7 @@ _graceful_shutdown(){
 
     echo "Could not send shutdown command to guest, error: $RESPONSE"
 
-    FILE="${IMG}/agent.ver"
-    [ ! -f "$FILE" ] && FILE="${IMG}"/"${BASE}".agent
+    FILE="${IMG}/${BASE}.agent"
     [ ! -f "$FILE" ] && echo "1" > "$FILE"
     AGENT_VERSION=$(cat "${FILE}")
 
