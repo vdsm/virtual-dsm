@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
 set -eu
 
+IMG="/storage"
+[ ! -d "$IMG" ] && echo "Storage folder (${IMG}) not found!" && exit 69
+
 if [ -z $URL ]; then
-  #URL="https://global.synologydownload.com/download/DSM/beta/7.2/64216/DSM_VirtualDSM_64216.pat"
-  #URL="https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
-  URL="https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat"
+  BASE="DSM_VirtualDSM_42962"
+else
+  BASE=$(basename "$URL" .pat)
 fi
 
-IMG="/storage"
-BASE=$(basename "$URL" .pat)
-
-[ ! -d "$IMG" ] && echo "Storage folder (${IMG}) not found!" && exit 69
 [ ! -f "/run/server.sh" ] && echo "Script must run inside Docker container!" && exit 60
 
 [ ! -f "$IMG/$BASE.boot.img" ] && rm -f "$IMG"/"$BASE".system.img
@@ -19,17 +18,26 @@ BASE=$(basename "$URL" .pat)
 # Display wait message on port 5000
 /run/server.sh 5000 > /dev/null &
 
-TMP="$IMG/tmp"
+if [ -z $URL ]; then
+
+  URL="https://global.synologydownload.com/download/DSM/beta/7.2/64216/DSM_VirtualDSM_64216.pat"
+  #URL="https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
+  #URL="https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat"
+
+  BASE=$(basename "$URL" .pat)
+
+fi
 
 echo "Install: Downloading extractor..."
 
+TMP="$IMG/tmp"
 rm -rf $TMP && mkdir -p $TMP
 
-FILE="$TMP/rd.gz"
-curl -r 64493568-69886247 -s -k -o "$FILE" https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat
+RD="$TMP/rd.gz"
+curl -r 64493568-69886247 -s -k -o "$RD" https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat
 
 set +e
-xz -dc <$TMP/rd.gz >$TMP/rd 2>/dev/null
+xz -dc <$RD >$TMP/rd 2>/dev/null
 (cd $TMP && cpio -idm <$TMP/rd 2>/dev/null)
 set -e
 
@@ -41,22 +49,22 @@ done
 mv /run/extract/scemd /run/extract/syno_extract_system_patch
 chmod +x /run/extract/syno_extract_system_patch
 
+rm -rf $TMP && mkdir -p $TMP
+
 echo "Install: Downloading $URL..."
 
-FILE="$TMP/dsm.pat"
-
-rm -rf $TMP && mkdir -p $TMP
+PAT="$TMP/dsm.pat"
 
 # Check if running with interactive TTY or redirected to docker log
 if [ -t 1 ]; then
-  wget "$URL" -O "$FILE" -q --no-check-certificate --show-progress
+  wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress
 else
-  wget "$URL" -O "$FILE" -q --no-check-certificate --show-progress --progress=dot:giga
+  wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress --progress=dot:giga
 fi
 
-[ ! -f "$FILE" ] && echo "Download failed" && exit 61
+[ ! -f "$PAT" ] && echo "Download failed" && exit 61
 
-SIZE=$(stat -c%s "$FILE")
+SIZE=$(stat -c%s "$PAT")
 
 if ((SIZE<250000000)); then
   echo "Invalid PAT file: File is an update pack which contains no OS image." && exit 62
@@ -64,11 +72,11 @@ fi
 
 echo "Install: Extracting downloaded system image..."
 
-if { tar tf "$FILE"; } >/dev/null 2>&1; then
-   tar xpf $FILE -C $TMP/.
+if { tar tf "$PAT"; } >/dev/null 2>&1; then
+   tar xpf $PAT -C $TMP/.
 else
    export LD_LIBRARY_PATH="/run/extract"
-   if ! /run/extract/syno_extract_system_patch $FILE $TMP/. ; then
+   if ! /run/extract/syno_extract_system_patch $PAT $TMP/. ; then
      echo "Invalid PAT file: File is an update pack which contains no OS image." && exit 63
    fi
    export LD_LIBRARY_PATH=""
@@ -152,7 +160,7 @@ fi
 
 rm -rf $MOUNT
 
-mv -f "$FILE" "$IMG"/"$BASE".pat
+mv -f "$PAT" "$IMG"/"$BASE".pat
 mv -f "$BOOT" "$IMG"/"$BASE".boot.img
 mv -f "$SYSTEM" "$IMG"/"$BASE".system.img
 
