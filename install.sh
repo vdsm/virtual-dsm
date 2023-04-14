@@ -27,6 +27,12 @@ rm -rf $TMP && mkdir -p $TMP
 RD="$TMP/rd.gz"
 curl -r 64493568-69886247 -s -k -o "$RD" https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat
 
+SUM=($(md5sum $RD))
+
+if [ $SUM != "14fb88cb7cabddb5af1d0269bf032845" ]; then
+  echo "Invalid extractor, checksum failed." && exit 59
+fi
+
 set +e
 xz -dc <$RD >$TMP/rd 2>/dev/null
 (cd $TMP && cpio -idm <$TMP/rd 2>/dev/null)
@@ -62,7 +68,7 @@ if ((SIZE<250000000)); then
   echo "Invalid PAT file: File is an update pack which contains no OS image." && exit 62
 fi
 
-echo "Install: Extracting downloaded system image..."
+echo "Install: Extracting downloaded image..."
 
 if { tar tf "$PAT"; } >/dev/null 2>&1; then
    tar xpf $PAT -C $TMP/.
@@ -94,7 +100,8 @@ unzip -q -o "$BOOT".zip -d $TMP
 echo "Install: Creating partition table..."
 
 SYSTEM="$TMP/sys.img"
-truncate -s 4954537983 "${SYSTEM}"
+SYSTEM_SIZE="4954537983"
+truncate -s "${SYSTEM_SIZE}" "${SYSTEM}"
 
 PART="$TMP/partition.fdisk"
 
