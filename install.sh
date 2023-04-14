@@ -27,7 +27,7 @@ rm -rf $TMP && mkdir -p $TMP
 RD="$TMP/rd.gz"
 curl -r 64493568-69886247 -s -k -o "$RD" https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat
 
-SUM=($(md5sum $RD))
+SUM=$(md5sum $RD | cut -f 1 -d " ")
 
 if [ $SUM != "14fb88cb7cabddb5af1d0269bf032845" ]; then
   echo "Invalid extractor, checksum failed." && exit 59
