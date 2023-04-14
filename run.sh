@@ -18,9 +18,7 @@ else
   BASE=$(basename "$URL" .pat)
 fi
 
-[ ! -f "$IMG/$BASE.boot.img" ] && rm -f "$IMG"/"$BASE".system.img
-
-if [ ! -f "$IMG/$BASE.system.img" ]; then
+if [[ ! -f "$IMG/$BASE.boot.img" ]] || [[ ! -f "$IMG/$BASE.system.img" ]]; then
   . /run/install.sh
 fi
 
