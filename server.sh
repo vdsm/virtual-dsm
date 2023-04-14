@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 set -eu
 
 HTML="<HTML><BODY><H1><CENTER>Please wait while Virtual DSM is installing...</CENTER></H1></BODY></HTML>"
