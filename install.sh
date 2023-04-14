@@ -152,6 +152,7 @@ fi
 
 rm -rf $MOUNT
 
+mv -f "$FILE" "$IMG"/"$BASE".pat
 mv -f "$BOOT" "$IMG"/"$BASE".boot.img
 mv -f "$SYSTEM" "$IMG"/"$BASE".system.img
 
