@@ -22,9 +22,16 @@ if [[ ! -f "$IMG/$BASE.boot.img" ]] || [[ ! -f "$IMG/$BASE.system.img" ]]; then
   . /run/install.sh
 fi
 
+# Initialize disks
 . /run/disk.sh
+
+# Initialize network
 . /run/network.sh
+
+# Initialize agent
 . /run/serial.sh
+
+# Configure shutdown
 . /run/power.sh
 
 KVM_ACC_OPTS=""
