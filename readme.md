@@ -18,9 +18,9 @@ Virtual DSM in a docker container.
 
 ## Features
 
- - Upgrades supported
  - KVM acceleration
  - Graceful shutdown
+ - Upgrades supported
 
 ## Usage
 
