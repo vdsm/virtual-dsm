@@ -5,8 +5,12 @@ set -eu
 
 QEMU_MONPORT=7100
 QEMU_POWERDOWN_TIMEOUT=50
+
 _QEMU_PID=/run/qemu.pid
 _QEMU_SHUTDOWN_COUNTER=/run/qemu.counter
+
+rm -f "${_QEMU_PID}"
+rm -f "${_QEMU_SHUTDOWN_COUNTER}"
 
 # Allows for troubleshooting signals sent to the process
 _trap(){
@@ -19,7 +23,9 @@ _trap(){
 _graceful_shutdown(){
 
   local QEMU_MONPORT="${QEMU_MONPORT:-7100}"
-  local QEMU_POWERDOWN_TIMEOUT="${QEMU_POWERDOWN_TIMEOUT:-120}"
+  local QEMU_POWERDOWN_TIMEOUT="${QEMU_POWERDOWN_TIMEOUT:-50}"
+
+  [ -f "${_QEMU_SHUTDOWN_COUNTER}" ] && return
 
   set +e
   echo "Received $1 signal, shutting down..."
@@ -64,7 +70,7 @@ _graceful_shutdown(){
   done
 
   echo "Quitting..."
-  echo 'quit' | nc -q 1 -w 1 localhost "${QEMU_MONPORT}">/dev/null || true
+  echo 'quit' | nc -q 1 -w 1 localhost "${QEMU_MONPORT:-7100}">/dev/null || true
 
   return
 }
