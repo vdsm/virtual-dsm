@@ -1,24 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-IMG="/storage"
 [ ! -d "$IMG" ] && echo "Storage folder (${IMG}) not found!" && exit 69
-
-if [ -z $URL ]; then
-  if [ -f "$IMG"/dsm.ver ]; then
-    BASE=$(cat "${IMG}/dsm.ver")
-  else
-    # Fallback for old installs
-    BASE="DSM_VirtualDSM_42962"
-  fi
-else
-  BASE=$(basename "$URL" .pat)
-fi
-
-[ ! -f "/run/server.sh" ] && echo "Script must run inside Docker container!" && exit 60
-
-[ ! -f "$IMG/$BASE.boot.img" ] && rm -f "$IMG"/"$BASE".system.img
-[ -f "$IMG/$BASE.system.img" ] && return
 
 # Display wait message on port 5000
 /run/server.sh 5000 > /dev/null &
@@ -29,9 +12,9 @@ if [ -z $URL ]; then
   #URL="https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
   #URL="https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat"
 
-  BASE=$(basename "$URL" .pat)
-
 fi
+
+BASE=$(basename "$URL" .pat)
 
 echo "Install: Downloading extractor..."
 
