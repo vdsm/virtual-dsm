@@ -3,6 +3,7 @@ set -eu
 
 # Docker environment variabeles
 
+: ${HOST_CPU:=''}
 : ${HOST_BUILD:='42962'}
 : ${HOST_VERSION:='2.6.1-12139'}
 : ${HOST_TIMESTAMP:='1679863686'}
@@ -10,16 +11,18 @@ set -eu
 : ${GUEST_SERIAL:='0000000000000'}
 : ${GUEST_UUID:='ba13a19a-c0c1-4fef-9346-915ed3b98341'}
 
-CPU=$(lscpu | sed -nr '/Model name/ s/.*:\s*(.*) @ .*/\1/p' | sed ':a;s/  / /;ta' | sed s/"(R)"//g | sed s/"-"//g | sed 's/[^[:alnum:] ]\+//g')
+if [ -z "$HOST_CPU" ]; then
+  HOST_CPU=$(lscpu | sed -nr '/Model name/ s/.*:\s*(.*) @ .*/\1/p' | sed ':a;s/  / /;ta' | sed s/"(R)"//g | sed s/"-"//g | sed 's/[^[:alnum:] ]\+//g')
+fi
 
-if [ -n "$CPU" ]; then
-  CPU="$CPU,,"
+if [ -n "$HOST_CPU" ]; then
+  HOST_CPU="$HOST_CPU,,"
 else
-  CPU="QEMU, Virtual CPU, X86_64"
+  HOST_CPU="QEMU, Virtual CPU, X86_64"
 fi
 
 ./run/serial.bin -cpu="${CPU_CORES}" \
-		 -cpu_arch="${CPU}" \
+		 -cpu_arch="${HOST_CPU}" \
 		 -hostsn="${HOST_SERIAL}" \
 		 -guestsn="${GUEST_SERIAL}" \
 		 -vmmts="${HOST_TIMESTAMP}" \
