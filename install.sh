@@ -42,18 +42,19 @@ chmod +x /run/extract/syno_extract_system_patch
 
 rm -rf $TMP && mkdir -p $TMP
 
-echo "Install: Downloading $URL..."
-
-PAT="$TMP/dsm.pat"
+echo "Install: Downloading $(basename $URL)..."
 
 # Check if running with interactive TTY or redirected to docker log
 if [ -t 1 ]; then
-  wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress
+  wget "$URL" -O /$BASE.pat -q --no-check-certificate --show-progress
 else
-  wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress --progress=dot:giga
+  wget "$URL" -O /$BASE.pat -q --no-check-certificate --show-progress --progress=dot:giga
 fi
 
-[ ! -f "$PAT" ] && echo "Download failed" && exit 61
+[ ! -f "/$BASE.pat" ] && echo "Download failed" && exit 61
+
+PAT="$TMP/dsm.pat"
+mv /$BASE.pat $PAT
 
 SIZE=$(stat -c%s "$PAT")
 
@@ -90,28 +91,30 @@ BOOT=$(find $TMP -name "*.bin.zip")
 BOOT=$(echo "$BOOT" | head -c -5)
 unzip -q -o "$BOOT".zip -d $TMP
 
-echo "Install: Extracting prepared disk image..."
+echo "Install: Creating partition table..."
 
-SYSTEM="$TMP/temp.img"
-PLATE="/data/template.img"
+SYSTEM="$TMP/sys.img"
+truncate -s 4954537983 "${SYSTEM}"
 
-rm -f $PLATE
-unxz $PLATE.xz
-mv -f $PLATE $SYSTEM
+PART="$TMP/partition.fdisk"
+
+{	echo "label: dos"
+	echo "label-id: 0x6f9ee2e9"
+	echo "device: ${SYSTEM}"
+	echo "unit: sectors"
+	echo "sector-size: 512"
+	echo ""
+	echo "${SYSTEM}1 : start=        2048, size=     4980480, type=83"
+	echo "${SYSTEM}2 : start=     4982528, size=     4194304, type=82"
+} > $PART
+
+sfdisk -q $SYSTEM < $PART
 
 echo "Install: Extracting system partition..."
 
-PRIVILEGED=false
-LABEL="1.44.1-42218"
-OFFSET="1048576" # 2048 * 512
-NUMBLOCKS="622560" # 2550005760 / 4096
+MOUNT="$TMP/system"
 
-MOUNT="/mnt/tmp"
 rm -rf $MOUNT && mkdir -p $MOUNT
-
-mount -t ext4 -o loop,offset=$OFFSET $SYSTEM $MOUNT 2>/dev/null && PRIVILEGED=true
-
-rm -rf ${MOUNT:?}/{,.[!.],..?}*
 
 mv -f $HDA.tgz $HDA.txz
 
@@ -119,7 +122,7 @@ tar xpfJ $HDP.txz --absolute-names -C $MOUNT/
 tar xpfJ $HDA.txz --absolute-names -C $MOUNT/
 tar xpfJ $IDB.txz --absolute-names -C $MOUNT/usr/syno/synoman/indexdb/
 
-# Install Agent 
+# Install Agent
 
 LOC="$MOUNT/usr/local"
 mkdir -p $LOC
@@ -138,18 +141,13 @@ chmod +x $LOC/agent.sh
 # Store agent version
 echo "2" > "$IMG"/"$BASE".agent
 
-if [ "$PRIVILEGED" = false ]; then
+echo "Install: Installing system partition..."
 
-  echo "Install: Installing system partition..."
+LABEL="1.44.1-42218"
+OFFSET="1048576" # 2048 * 512
+NUMBLOCKS="622560" # (4980480 * 512) / 4096
 
-  # Workaround for containers that are not privileged to mount loop devices
-  mke2fs -q -t ext4 -b 4096 -d $MOUNT/ -L $LABEL -F -E offset=$OFFSET $SYSTEM $NUMBLOCKS
-
-else
-
-  umount $MOUNT
-
-fi
+mke2fs -q -t ext4 -b 4096 -d $MOUNT/ -L $LABEL -F -E offset=$OFFSET $SYSTEM $NUMBLOCKS
 
 rm -rf $MOUNT
 

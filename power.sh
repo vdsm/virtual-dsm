@@ -28,6 +28,7 @@ _graceful_shutdown(){
   [ -f "${_QEMU_SHUTDOWN_COUNTER}" ] && return
 
   set +e
+  echo
   echo "Received $1 signal, shutting down..."
   echo 0 > "${_QEMU_SHUTDOWN_COUNTER}"
 
@@ -39,6 +40,7 @@ _graceful_shutdown(){
 
   if [[ ! "${RESPONSE}" =~ "\"success\"" ]] ; then
 
+    echo
     echo "Could not send shutdown command to guest, error: $RESPONSE"
 
     FILE="${IMG}/${BASE}.agent"
@@ -46,6 +48,7 @@ _graceful_shutdown(){
     AGENT_VERSION=$(cat "${FILE}")
 
     if ((AGENT_VERSION < 2)); then
+      echo
       echo "Please update the agent to allow gracefull shutdowns..."
       pkill -f qemu-system-x86_64
     else
@@ -69,6 +72,7 @@ _graceful_shutdown(){
     fi
   done
 
+  echo
   echo "Quitting..."
   echo 'quit' | nc -q 1 -w 1 localhost "${QEMU_MONPORT:-7100}">/dev/null || true
 
