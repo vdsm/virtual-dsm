@@ -14,7 +14,7 @@ DATA="$IMG/data$DISK_SIZE.img"
 
 if [ ! -f "$DATA" ]; then
     # Create an empty file
-    truncate -s "${NEW_SIZE}" "${DATA}"
+    fallocate -l "${NEW_SIZE}" "${DATA}"
     # Format as BTRFS filesystem
     mkfs.btrfs -q -L data -d single -m dup "${DATA}" > /dev/null
 fi
