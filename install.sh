@@ -44,17 +44,17 @@ rm -rf $TMP && mkdir -p $TMP
 
 echo "Install: Downloading $(basename $URL)..."
 
+PAT="/$BASE.pat"
+rm -f "$PAT"
+
 # Check if running with interactive TTY or redirected to docker log
 if [ -t 1 ]; then
-  wget "$URL" -O /$BASE.pat -q --no-check-certificate --show-progress
+  wget "$URL" -O $PAT -q --no-check-certificate --show-progress
 else
-  wget "$URL" -O /$BASE.pat -q --no-check-certificate --show-progress --progress=dot:giga
+  wget "$URL" -O $PAT -q --no-check-certificate --show-progress --progress=dot:giga
 fi
 
-[ ! -f "/$BASE.pat" ] && echo "Download failed" && exit 61
-
-PAT="$TMP/dsm.pat"
-mv /$BASE.pat $PAT
+[ ! -f "$PAT" ] && echo "Download failed" && exit 61
 
 SIZE=$(stat -c%s "$PAT")
 
@@ -79,14 +79,14 @@ IDB="$TMP/indexdb"
 PKG="$TMP/packages"
 HDP="$TMP/synohdpack_img"
 
-[ ! -f "$HDA.tgz" ] && echo "Invalid PAT file: File contains no OS image." && exit 64
-[ ! -f "$HDP.txz" ] && echo "Invalid PAT file: HD pack not found." && exit 65
-[ ! -f "$IDB.txz" ] && echo "Invalid PAT file: IndexDB file not found." && exit 66
-[ ! -d "$PKG" ] && echo "Invalid PAT file: File contains no packages." && exit 68
+[ ! -f "$HDA.tgz" ] && echo "Invalid PAT file: contains no OS image." && exit 64
+[ ! -f "$HDP.txz" ] && echo "Invalid PAT file: contains no HD pack." && exit 65
+[ ! -f "$IDB.txz" ] && echo "Invalid PAT file: contains no IndexDB." && exit 66
+[ ! -d "$PKG" ] && echo "Invalid PAT file: contains no packages." && exit 68
 
 BOOT=$(find $TMP -name "*.bin.zip")
 
-[ ! -f "$BOOT" ] && echo "Invalid PAT file: boot file not found." && exit 67
+[ ! -f "$BOOT" ] && echo "Invalid PAT file: contains no boot file." && exit 67
 
 BOOT=$(echo "$BOOT" | head -c -5)
 unzip -q -o "$BOOT".zip -d $TMP
