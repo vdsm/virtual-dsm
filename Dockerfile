@@ -7,7 +7,7 @@ RUN go get -d -v golang.org/x/net/html
 RUN go get -d -v github.com/gorilla/mux
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /src/serial/main .
 
-FROM debian:bookworm-20230320-slim
+FROM debian:bookworm-20230411-slim
 
 RUN apt-get update && apt-get -y upgrade && \
     apt-get --no-install-recommends -y install \
@@ -42,7 +42,6 @@ COPY --from=builder /src/serial/main /run/serial.bin
 
 RUN ["chmod", "+x", "/run/run.sh"]
 RUN ["chmod", "+x", "/run/server.sh"]
-RUN ["chmod", "+x", "/run/install.sh"]
 RUN ["chmod", "+x", "/run/serial.bin"]
 
 COPY disks/template.img.xz /data/
