@@ -101,7 +101,7 @@ echo "Install: Creating partition table..."
 
 SYSTEM="$TMP/sys.img"
 SYSTEM_SIZE="4954537983"
-truncate -s "${SYSTEM_SIZE}" "${SYSTEM}"
+fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"
 
 PART="$TMP/partition.fdisk"
 
