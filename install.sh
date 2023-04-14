@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -eu
 
-[ ! -d "$IMG" ] && echo "Storage folder (${IMG}) not found!" && exit 69
-
 # Display wait message on port 5000
 /run/server.sh 5000 > /dev/null &
 
