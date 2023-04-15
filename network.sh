@@ -3,6 +3,7 @@ set -eu
 
 : ${VM_NET_TAP:=''}
 : ${VM_NET_IP:='20.20.20.21'}
+: ${VM_NET_HOST:='VirtualDSM'}
 : ${VM_NET_MAC:='02:11:32:AA:BB:CC'}
 
 : ${DNS_SERVERS:=''}
@@ -34,14 +35,11 @@ configureNatNetworks () {
   #Enable port forwarding flag
   [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]] && sysctl -w net.ipv4.ip_forward=1
 
-  CIDR="24"
-  HOSTNAME="VirtualDSM"
-
   # dnsmasq configuration:
-  DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-range=$VM_NET_IP,$VM_NET_IP --dhcp-host=$VM_NET_MAC,,$VM_NET_IP,$HOSTNAME,infinite --dhcp-option=option:netmask,255.255.255.0"
+  DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-range=$VM_NET_IP,$VM_NET_IP --dhcp-host=$VM_NET_MAC,,$VM_NET_IP,$VM_NET_HOST,infinite --dhcp-option=option:netmask,255.255.255.0"
 
   # Create lease file for faster resolve
-  echo "0 $VM_NET_MAC $VM_NET_IP $HOSTNAME 01:${VM_NET_MAC}" > /var/lib/misc/dnsmasq.leases
+  echo "0 $VM_NET_MAC $VM_NET_IP $VM_NET_HOST 01:${VM_NET_MAC}" > /var/lib/misc/dnsmasq.leases
   chmod 644 /var/lib/misc/dnsmasq.leases
 }
 
@@ -76,21 +74,13 @@ for nameserver in "${nameservers[@]}"; do
   fi
 done
 
-if [ -z $DNS_SERVERS ]; then
-  DNS_SERVERS="1.1.1.1"
-else
-  COMMAS=${DNS_SERVERS//[^,]/}
-  COMMAS=${#COMMAS}
-  ((COMMAS < 1)) && DNS_SERVERS="$DNS_SERVERS,1.1.1.1"
-fi
+[[ -z $DNS_SERVERS ]] && DNS_SERVERS="1.1.1.1"
+[[ ${DNS_SERVERS} != *","* ]] && DNS_SERVERS="$DNS_SERVERS,1.0.0.1"
 
-DNSMASQ_OPTS="$DNSMASQ_OPTS \
-	--dhcp-option=option:dns-server,$DNS_SERVERS \
-	--dhcp-option=option:router,${VM_NET_IP%.*}.1"
+DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:dns-server,$DNS_SERVERS --dhcp-option=option:router,${VM_NET_IP%.*}.1"
 
 if [ -n "$searchdomains" -a "$searchdomains" != "." ]; then
-  DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-search,$searchdomains"
-  DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-name,$domainname"
+  DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-search,$searchdomains --dhcp-option=option:domain-name,$domainname"
 else
   [[ -z $(hostname -d) ]] || DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-name,$(hostname -d)"
 fi
