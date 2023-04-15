@@ -55,9 +55,9 @@ rm -f "$PAT"
 
 # Check if running with interactive TTY or redirected to docker log
 if [ -t 1 ]; then
-  wget "$URL" -O $PAT -q --no-check-certificate --show-progress
+  wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress --progress=bar:noscroll
 else
-  wget "$URL" -O $PAT -q --no-check-certificate --show-progress --progress=dot:giga
+  wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress --progress=dot:giga
 fi
 
 [ ! -f "$PAT" ] && echo "Download failed" && exit 61
