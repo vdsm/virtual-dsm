@@ -62,7 +62,7 @@ $ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-
       DISK_SIZE: "16G"
     ```
 
-    To resize the disk to a maximum capacity of 8 terabyte you would use a value of `"8T"` for example.
+    To resize the disk to a capacity of 8 terabyte you would use a value of `"8T"` for example.
 
   * ### How do I change the location of the virtual disk? ###
 
