@@ -8,10 +8,13 @@ SYSTEM="$IMG/$BASE.system.img"
 [ ! -f "$SYSTEM" ] && echo "ERROR: Virtual DSM system-image does not exist ($SYSTEM)" && exit 82
 
 DATA="${IMG}/data.img"
+
+if [[ ! -f "${DATA}" ]] && [[ -f "$IMG/data$DISK_SIZE.img" ]]; then
+  # Fallback for legacy installs
+  DATA="$IMG/data$DISK_SIZE.img"
+fi
+
 DISK_SIZE=$(echo "${DISK_SIZE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
-
-[ -f "$IMG/data$DISK_SIZE.img" ] && mv -f "$IMG/data$DISK_SIZE.img" "${DATA}"
-
 DATA_SIZE=$(numfmt --from=iec "${DISK_SIZE}")
 
 if (( DATA_SIZE < 6442450944 )); then
