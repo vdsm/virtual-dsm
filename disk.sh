@@ -14,10 +14,16 @@ DATA="$IMG/data$DISK_SIZE.img"
 
 if [ ! -f "$DATA" ]; then
 
+    # Check free diskspace
+    SPACE=$(df --output=avail -B 1 "$IMG" | tail -n 1)
+    if (( NEW_SIZE > SPACE )); then
+      echo "ERROR: Not enough free space to create virtual disk." && exit 87
+    fi
+
     # Create an empty file
     if ! fallocate -l "${NEW_SIZE}" "${DATA}"; then
       rm -f "${DATA}"
-      echo "ERROR: Not enough free space to create virtual disk." && exit 88
+      echo "ERROR: Could not allocate file for virtual disk." && exit 88
     fi
     
     # Check if file exists
