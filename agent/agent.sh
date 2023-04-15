@@ -59,7 +59,7 @@ echo "-------------------------------------------" > /dev/ttyS0
 while true; do
 
   checkNMI
-  sleep 1
+  sleep 2
 
 done
 
