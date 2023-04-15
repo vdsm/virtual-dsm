@@ -101,7 +101,11 @@ echo "Install: Creating partition table..."
 
 SYSTEM="$TMP/sys.img"
 SYSTEM_SIZE="4954537983"
-fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"
+
+if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
+  rm -f "${SYSTEM}"
+  echo "ERROR: Not enough free space to create virtual disk." && exit 88
+fi
 
 PART="$TMP/partition.fdisk"
 
