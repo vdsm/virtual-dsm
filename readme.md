@@ -88,7 +88,7 @@ $ docker run --name dsm -it -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN -
         --ip-range=192.168.0.100/28 \
         -o parent=eth0 vlan
     ```
-    And change the network of the container to `vlan` in your run command:
+    And change the network of the container to `vlan` in your run command or compose file:
 
     ```
      --network vlan --ip=192.168.0.100
