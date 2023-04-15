@@ -44,13 +44,13 @@ fi
 #   echo "Resizing data disk from $OLD_SIZE to $NEW_SIZE bytes"
 #
 #   if [ "$NEW_SIZE" -gt "$OLD_SIZE" ]; then
-#     truncate -s "${NEW_SIZE}" "${DATA}"
+#     fallocate -l "${NEW_SIZE}" "${DATA}"
 #     btrfs filesystem resize "${NEW_SIZE}" "${DATA}"
 #   fi
 #
 #   if [ "$NEW_SIZE" -lt "$OLD_SIZE" ]; then
 #     btrfs filesystem resize "${NEW_SIZE}" "${DATA}"
-#     truncate -s "${NEW_SIZE}" "${DATA}"
+#     fallocate -l "${NEW_SIZE}" "${DATA}"
 #   fi
 # fi
 
