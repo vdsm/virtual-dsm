@@ -24,7 +24,7 @@ if [ -f "${DATA}" ]; then
 
   if [ "$DATA_SIZE" -gt "$OLD_SIZE" ]; then
 
-    echo "Resizing data disk from $OLD_SIZE to $DATA_SIZE bytes.."
+    echo "INFO: Resizing data disk from $OLD_SIZE to $DATA_SIZE bytes.."
            
     REQ=$((DATA_SIZE-OLD_SIZE))
       
