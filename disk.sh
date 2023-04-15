@@ -14,7 +14,10 @@ DATA="$IMG/data$DISK_SIZE.img"
 
 if [ ! -f "$DATA" ]; then
     # Create an empty file
-    fallocate -l "${NEW_SIZE}" "${DATA}"
+    if ! fallocate -l "${NEW_SIZE}" "${DATA}"; then
+      rm -f "${DATA}"
+      echo "ERROR: Not enough free space to create virtual disk." && exit 88
+    fi
     # Format as BTRFS filesystem
     mkfs.btrfs -q -L data -d single -m dup "${DATA}" > /dev/null
 fi
