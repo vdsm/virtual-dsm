@@ -2,9 +2,9 @@
 set -eu
 
 BOOT="$IMG/$BASE.boot.img"
-[ ! -f "$BOOT" ] && echo "ERROR: Virtual DSM boot-image does not exist ($BOOT)" && exit 81
-
 SYSTEM="$IMG/$BASE.system.img"
+
+[ ! -f "$BOOT" ] && echo "ERROR: Virtual DSM boot-image does not exist ($BOOT)" && exit 81
 [ ! -f "$SYSTEM" ] && echo "ERROR: Virtual DSM system-image does not exist ($SYSTEM)" && exit 82
 
 DISK_SIZE=$(echo "${DISK_SIZE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
@@ -13,16 +13,21 @@ NEW_SIZE=$(numfmt --from=iec "${DISK_SIZE}")
 DATA="$IMG/data$DISK_SIZE.img"
 
 if [ ! -f "$DATA" ]; then
+
     # Create an empty file
     if ! fallocate -l "${NEW_SIZE}" "${DATA}"; then
       rm -f "${DATA}"
       echo "ERROR: Not enough free space to create virtual disk." && exit 88
     fi
+    
+    # Check if file exists
+    if [ ! -f "$DATA" ]; then
+      echo "ERROR: Virtual DSM data-image does not exist ($DATA)" && exit 83
+    fi
+    
     # Format as BTRFS filesystem
     mkfs.btrfs -q -L data -d single -m dup "${DATA}" > /dev/null
 fi
-
-[ ! -f "$DATA" ] && echo "ERROR: Virtual DSM data-image does not exist ($DATA)" && exit 83
 
 # Resizing requires mounting a loop device which in turn requires
 # the container to be privileged, so we must disable it for now.
