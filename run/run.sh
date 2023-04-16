@@ -57,7 +57,7 @@ set -m
 )
 set +m
 
-# Since we have to start the process with -m, we need to poll every intervall if it's still running
 while [ -d "/proc/$(cat ${_QEMU_PID})"  ]; do
-  sleep 1
+  sleep infinity &
+  wait $!
 done
