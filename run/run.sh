@@ -3,12 +3,12 @@ set -eu
 
 echo "Starting Virtual DSM..."
 
-IMG="/storage"
-[ ! -d "$IMG" ] && echo "Storage folder (${IMG}) not found!" && exit 69
+STORAGE="/storage"
+[ ! -d "$STORAGE" ] && echo "Storage folder (${STORAGE}) not found!" && exit 69
 [ ! -f "/run/run.sh" ] && echo "Script must run inside Docker container!" && exit 60
 
-if [ -f "$IMG"/dsm.ver ]; then
-  BASE=$(cat "${IMG}/dsm.ver")
+if [ -f "$STORAGE"/dsm.ver ]; then
+  BASE=$(cat "${STORAGE}/dsm.ver")
 else
   # Fallback for old installs
   BASE="DSM_VirtualDSM_42962"
@@ -16,7 +16,7 @@ fi
 
 [ -n "$URL" ] && BASE=$(basename "$URL" .pat)
 
-if [[ ! -f "$IMG/$BASE.boot.img" ]] || [[ ! -f "$IMG/$BASE.system.img" ]]; then
+if [[ ! -f "$STORAGE/$BASE.boot.img" ]] || [[ ! -f "$STORAGE/$BASE.system.img" ]]; then
   . /run/install.sh
 fi
 
