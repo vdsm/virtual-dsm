@@ -8,7 +8,8 @@ on:
     branches: [ master ]
     paths-ignore:
       - '**/*.md'
-      - '**/*.yml'     
+      - '.github/**'
+      - '.github/workflows/**'
 
 name: "Test"
 permissions: {}
