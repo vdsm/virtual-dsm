@@ -3,7 +3,9 @@ on:
     branches: [ master ]
     paths-ignore:
       - '**/*.md'
-      - '**/*.yml'     
+      - '.github/**'
+      - '.github/workflows/**'
+
   pull_request:
     branches: [ master ]
     paths-ignore:
