@@ -52,5 +52,7 @@ set -m
 )
 set +m
 
-# Wait for QEMU process to exit
-tail --pid="$(cat ${_QEMU_PID})" -f /dev/null
+# Since we have to start the process with -m, we need to poll every intervall if it's still running
+while [ -d "/proc/$(cat ${_QEMU_PID})"  ]; do
+  sleep 1
+done
