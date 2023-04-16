@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 set -eu
 
-BOOT="$IMG/$BASE.boot.img"
-SYSTEM="$IMG/$BASE.system.img"
+BOOT="$STORAGE/$BASE.boot.img"
+SYSTEM="$STORAGE/$BASE.system.img"
 
 [ ! -f "$BOOT" ] && echo "ERROR: Virtual DSM boot-image does not exist ($BOOT)" && exit 81
 [ ! -f "$SYSTEM" ] && echo "ERROR: Virtual DSM system-image does not exist ($SYSTEM)" && exit 82
 
-DATA="${IMG}/data.img"
+DATA="${STORAGE}/data.img"
 
-if [[ ! -f "${DATA}" ]] && [[ -f "$IMG/data$DISK_SIZE.img" ]]; then
+if [[ ! -f "${DATA}" ]] && [[ -f "$STORAGE/data$DISK_SIZE.img" ]]; then
   # Fallback for legacy installs
-  DATA="$IMG/data$DISK_SIZE.img"
+  DATA="$STORAGE/data$DISK_SIZE.img"
 fi
 
 DISK_SIZE=$(echo "${DISK_SIZE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
@@ -32,7 +32,7 @@ if [ -f "${DATA}" ]; then
     REQ=$((DATA_SIZE-OLD_SIZE))
       
     # Check free diskspace    
-    SPACE=$(df --output=avail -B 1 "${IMG}" | tail -n 1)
+    SPACE=$(df --output=avail -B 1 "${STORAGE}" | tail -n 1)
       
     if (( REQ > SPACE )); then
       echo "ERROR: Not enough free space to resize virtual disk." && exit 84
@@ -58,7 +58,7 @@ fi
 if [ ! -f "${DATA}" ]; then
 
   # Check free diskspace
-  SPACE=$(df --output=avail -B 1 "${IMG}" | tail -n 1)
+  SPACE=$(df --output=avail -B 1 "${STORAGE}" | tail -n 1)
 
   if (( DATA_SIZE > SPACE )); then
     echo "ERROR: Not enough free space to create virtual disk." && exit 86
