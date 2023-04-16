@@ -1,5 +1,4 @@
 .dockerignore
-.DS_Store
 .git
 .github
 .gitignore
@@ -10,4 +9,4 @@ Dockerfile.archive
 docker-compose.yml
 
 *.md
-build.sh
+
