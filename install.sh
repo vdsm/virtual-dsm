@@ -4,11 +4,13 @@ set -eu
 # Display wait message on port 5000
 /run/server.sh 5000 > /dev/null &
 
+DL="https://global.synologydownload.com/download/DSM"
+
 if [ -z $URL ]; then
 
-  URL="https://global.synologydownload.com/download/DSM/beta/7.2/64216/DSM_VirtualDSM_64216.pat"
-  #URL="https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
-  #URL="https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat"
+  URL="$DL/beta/7.2/64216/DSM_VirtualDSM_64216.pat"
+  #URL="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
+  #URL="$DL/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat"
 
 fi
 
@@ -22,10 +24,11 @@ rm -f "$IMG"/"$BASE".system.img
 echo "Install: Downloading extractor..."
 
 TMP="$IMG/tmp"
+RD="$TMP/rd.gz"
 rm -rf $TMP && mkdir -p $TMP
 
-RD="$TMP/rd.gz"
-curl -r 64493568-69886247 -s -k -o "$RD" https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat
+LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
+curl -r 64493568-69886247 -s -k -o "$RD" "$LOC"
 
 SUM=$(md5sum $RD | cut -f 1 -d " ")
 
