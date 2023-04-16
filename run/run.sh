@@ -14,7 +14,7 @@ else
   BASE="DSM_VirtualDSM_42962"
 fi
 
-[ -n $URL ] && BASE=$(basename "$URL" .pat)
+[ -n "$URL" ] && BASE=$(basename "$URL" .pat)
 
 if [[ ! -f "$IMG/$BASE.boot.img" ]] || [[ ! -f "$IMG/$BASE.system.img" ]]; then
   . /run/install.sh
