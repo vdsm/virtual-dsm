@@ -12,7 +12,7 @@ set -eu
 : ${GUEST_UUID:='ba13a19a-c0c1-4fef-9346-915ed3b98341'}
 
 if [ -z "$HOST_CPU" ]; then
-  HOST_CPU=$(lscpu | sed -nr '/Model name/ s/.*:\s*(.*) @ .*/\1/p' | sed ':a;s/  / /;ta' | sed s/"(R)"//g | sed s/"-"//g | sed 's/[^[:alnum:] ]\+//g')
+  HOST_CPU=$(lscpu | sed -nr '/Model name/ s/.*:\s*(.*) @ .*/\1/p' | sed ':a;s/  / /;ta' | sed 's/"(R)"//g' | sed 's/"-"/" "/g'  | sed 's/[^[:alnum:] ]\+//g')
 fi
 
 if [ -n "$HOST_CPU" ]; then
