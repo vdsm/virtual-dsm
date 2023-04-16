@@ -31,7 +31,7 @@ RUN apt-get update && apt-get -y upgrade && \
 COPY run.sh /run/
 COPY disk.sh /run/
 COPY power.sh /run/
-COPY serial.sh /run/
+COPY run/serial.sh /run/
 COPY run/server.sh /run/
 COPY install.sh /run/
 COPY network.sh /run/
