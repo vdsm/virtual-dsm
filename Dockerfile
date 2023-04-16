@@ -28,16 +28,8 @@ RUN apt-get update && apt-get -y upgrade && \
 	qemu-system-x86 \
     && apt-get clean
 
-COPY run.sh /run/
-COPY disk.sh /run/
-COPY power.sh /run/
-COPY run/serial.sh /run/
-COPY run/server.sh /run/
-COPY install.sh /run/
-COPY network.sh /run/
-
-COPY agent/agent.sh /agent/
-COPY agent/service.sh /agent/
+COPY run/*.sh /run/
+COPY agent/*.sh /agent/
 
 COPY --from=builder /src/serial/main /run/serial.bin
 
