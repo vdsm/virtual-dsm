@@ -1,5 +1,10 @@
-virtual-dsm
-=============
+<h1 align="center">Virtual DSM for Docker
+<br /><br />
+<p align="center">
+<img src="https://github.com/kroese/virtual-dsm/raw/master/.github/screen.jpg" title="Screenshot" style="max-width:100%;" width="432" />
+</p>
+
+<div align="center">
 
 [![build_img]][build_url]
 [![gh_last_release_svg]][dsm-docker-hub]
@@ -14,6 +19,7 @@ virtual-dsm
 [Docker Pulls Count]: https://img.shields.io/docker/pulls/kroese/virtual-dsm.svg?style=flat
 [gh_last_release_svg]: https://img.shields.io/docker/v/kroese/virtual-dsm?arch=amd64&sort=date
 
+</div></h1>
 Virtual DSM in a docker container.
 
 ## Features
