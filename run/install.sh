@@ -16,14 +16,14 @@ fi
 
 BASE=$(basename "$URL" .pat)
 
-rm -f "$IMG"/"$BASE".pat
-rm -f "$IMG"/"$BASE".agent
-rm -f "$IMG"/"$BASE".boot.img
-rm -f "$IMG"/"$BASE".system.img
+rm -f "$STORAGE"/"$BASE".pat
+rm -f "$STORAGE"/"$BASE".agent
+rm -f "$STORAGE"/"$BASE".boot.img
+rm -f "$STORAGE"/"$BASE".system.img
 
 echo "Install: Downloading extractor..."
 
-TMP="$IMG/tmp"
+TMP="$STORAGE/tmp"
 RD="$TMP/rd.gz"
 rm -rf $TMP && mkdir -p $TMP
 
@@ -160,7 +160,7 @@ cp /agent/service.sh $LOC/agent.sh
 chmod +x $LOC/agent.sh
 
 # Store agent version
-echo "2" > "$IMG"/"$BASE".agent
+echo "2" > "$STORAGE"/"$BASE".agent
 
 echo "Install: Installing system partition..."
 
@@ -172,9 +172,9 @@ mke2fs -q -t ext4 -b 4096 -d $MOUNT/ -L $LABEL -F -E offset=$OFFSET $SYSTEM $NUM
 
 rm -rf $MOUNT
 
-echo "$BASE" > "$IMG"/dsm.ver
-mv -f "$PAT" "$IMG"/"$BASE".pat
-mv -f "$BOOT" "$IMG"/"$BASE".boot.img
-mv -f "$SYSTEM" "$IMG"/"$BASE".system.img
+echo "$BASE" > "$STORAGE"/dsm.ver
+mv -f "$PAT" "$STORAGE"/"$BASE".pat
+mv -f "$BOOT" "$STORAGE"/"$BASE".boot.img
+mv -f "$SYSTEM" "$STORAGE"/"$BASE".system.img
 
 rm -rf $TMP
