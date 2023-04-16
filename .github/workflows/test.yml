@@ -13,7 +13,7 @@ on:
     paths-ignore:
       - '**/*.md'
       - '.gitignore'
-      - '.dockerignore
+      - '.dockerignore'
       - '.github/**'
       - '.github/workflows/**'
 
