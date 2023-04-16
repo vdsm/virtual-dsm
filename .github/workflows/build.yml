@@ -51,6 +51,6 @@ jobs:
       name: Push to Gitlab mirror
       uses: wangchucheng/git-repo-sync@v0.1.0
       with:
-        target-url: https://gitlab.com/kroese/virtual-dsm.git
-        target-username: kroese
+        target-url: ${{ secrets.GITLAB_URL }}
+        target-username: ${{ secrets.GITLAB_USERNAME }}
         target-token: ${{ secrets.GITLAB_TOKEN }}
