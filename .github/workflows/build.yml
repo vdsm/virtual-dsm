@@ -45,3 +45,10 @@ jobs:
         value: $((${{ secrets.MINOR }}+1))
         repository: ${{ github.repository }}
         token: ${{ secrets.REPO_ACCESS_TOKEN }}
+    - 
+        name: Gitlab Sync
+        uses: wangchucheng/git-repo-sync@v0.1.0
+        with:
+          target-url: https://gitlab.com/kroese/virtual-dsm.git
+          target-username: kroese
+          target-token: ${{ secrets.GITLAB_TOKEN }}
