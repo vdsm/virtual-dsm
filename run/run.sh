@@ -57,7 +57,5 @@ set -m
 )
 set +m
 
-while [ -d "/proc/$(cat ${_QEMU_PID})"  ]; do
-  sleep infinity &
-  wait $!
-done
+# Wait for QEMU process to exit
+tail --pid="$(cat ${_QEMU_PID})" -f /dev/null
