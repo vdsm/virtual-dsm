@@ -52,6 +52,6 @@ ENV CPU_CORES 1
 ENV DISK_SIZE 16G
 ENV RAM_SIZE 512M
 
-HEALTHCHECK --interval=30s --timeout=5s CMD curl -f http://127.0.0.1:5000/ || exit 1
+HEALTHCHECK --interval=30s --timeout=5s CMD curl -f http://20.20.20.21:5000/ || exit 1
 
 ENTRYPOINT ["/run/run.sh"]
