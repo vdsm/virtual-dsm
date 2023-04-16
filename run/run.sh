@@ -7,16 +7,14 @@ IMG="/storage"
 [ ! -d "$IMG" ] && echo "Storage folder (${IMG}) not found!" && exit 69
 [ ! -f "/run/run.sh" ] && echo "Script must run inside Docker container!" && exit 60
 
-if [ -z $URL ]; then
-  if [ -f "$IMG"/dsm.ver ]; then
-    BASE=$(cat "${IMG}/dsm.ver")
-  else
-    # Fallback for old installs
-    BASE="DSM_VirtualDSM_42962"
-  fi
+if [ -f "$IMG"/dsm.ver ]; then
+  BASE=$(cat "${IMG}/dsm.ver")
 else
-  BASE=$(basename "$URL" .pat)
+  # Fallback for old installs
+  BASE="DSM_VirtualDSM_42962"
 fi
+
+[ -n $URL ] && BASE=$(basename "$URL" .pat)
 
 if [[ ! -f "$IMG/$BASE.boot.img" ]] || [[ ! -f "$IMG/$BASE.system.img" ]]; then
   . /run/install.sh
