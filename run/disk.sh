@@ -85,7 +85,7 @@ AGENT="${STORAGE}/${BASE}.agent"
 AGENT_VERSION=$(cat "${AGENT}")
 
 if ((AGENT_VERSION < 3)); then
-  echo "INFO: The installed Guest Agent is outdated, please consider updating it or do a clean install."
+  echo "INFO: The installed Guest Agent in DSM is an outdated version, please upgrade it."
 fi
 
 KVM_DISK_OPTS="\
