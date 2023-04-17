@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
 set -u
 
-declare nmi
+# Functions
+
+snore()
+{
+    local IFS
+    [[ -n "${_snore_fd:-}" ]] || exec {_snore_fd}<> <(:)
+    read ${1:+-t "$1"} -u $_snore_fd || :
+}
 
 function checkNMI {
 
+  local nmi
   nmi=$(awk '/NMI/ {for (i=2; i<=NF; i++) if ($i ~ /^[0-9]+$/) {sum+=$i}} END {print sum}' /proc/interrupts)
 
   if [ "$nmi" != "" ] && [ "$nmi" -ne "0" ]; then
@@ -12,14 +20,27 @@ function checkNMI {
     echo "Received shutdown request through NMI.." > /dev/ttyS0
 
     /usr/syno/sbin/synoshutdown -s > /dev/null
-    exit 0
+    exit
 
   fi
 
 }
 
+finish() {
+
+  echo "Shutting down agent.." > /dev/ttyS0
+  exit
+
+}
+
+trap finish SIGINT SIGTERM
+
+# Setup serialport
+
 chmod 666 /dev/ttyS0
 checkNMI
+
+# Install packages 
 
 first_run=false
 
@@ -50,14 +71,17 @@ else
 
 fi
 
+# Display message in docker log output
+
 echo "-------------------------------------------" > /dev/ttyS0
 echo " You can now login to DSM at port 5000     " > /dev/ttyS0
 echo "-------------------------------------------" > /dev/ttyS0
 
+# Wait for NMI interrupt as a shutdown signal
+
 while true; do
 
   checkNMI
-  sleep 2
+  snore 2
 
 done
-
