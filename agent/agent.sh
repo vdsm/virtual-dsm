@@ -19,11 +19,20 @@ function checkNMI {
     echo "Received shutdown request through NMI.." > /dev/ttyS0
 
     /usr/syno/sbin/synoshutdown -s > /dev/null
-    exit 0
+    exit
 
   fi
 
 }
+
+finish() {
+
+  echo "Shutting down agent.." > /dev/ttyS0
+  exit
+
+}
+
+trap finish SIGINT SIGTERM
 
 # Setup serialport
 
