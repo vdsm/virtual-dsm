@@ -34,22 +34,20 @@ function downloadUpdate {
   TMP="/tmp/agent.sh"
   rm -f "${TMP}"
 
-  SCRIPT=$(readlink -f ${BASH_SOURCE[0]})
-  URL="https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh"
-
   # Auto update the agent
 
-  remote_size=$(curl -s -I -k -m 3 "${URL}" | grep -i "content-length:" | tr -d " \t" | cut -d ':' -f 2)
-  local_size=$(stat -c%s "$SCRIPT")
-
-  echo "local size: $local_size"
-  echo "remote size: $remote_size"
+  URL="https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh"
+  remote_size=$(curl -sIk -m 3 "${URL}" | grep -i "content-length:" | tr -d " \t" | cut -d ':' -f 2)
 
   [ "$remote_size" == "" ] && return
   [ "$remote_size" == "0" ] && return
+
+  SCRIPT=$(readlink -f ${BASH_SOURCE[0]})
+  local_size=$(stat -c%s "$SCRIPT")
+
   [ "$remote_size" == "$local_size" ] && return
   
-  if ! curl -s -f -k -m 10 -o "${TMP}" "${URL}"; then
+  if ! curl -sfk -m 10 -o "${TMP}" "${URL}"; then
     echo "$HEADER: curl error" && return
   fi
 
