@@ -53,8 +53,8 @@ if [ "$first_run" = true ]; then
       echo "Installing package ${BASE}.." > /dev/ttyS0
       /usr/syno/bin/synopkg install "$filename" > /dev/null
 
-      echo "Starting package ${BASE}.." > /dev/ttyS0
-      /usr/syno/bin/synopkg start "$BASE" > /dev/null
+      #echo "Activating package ${BASE}.." > /dev/ttyS0
+      /usr/syno/bin/synopkg start "$BASE" &
 
       rm "$filename"
 
