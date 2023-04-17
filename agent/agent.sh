@@ -36,10 +36,11 @@ function downloadUpdate {
   # Auto update the agent
 
   URL="https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh"
+  
   remote_size=$(curl -sIk -m 4 "${URL}" | grep -i "content-length:" | tr -d " \t" | cut -d ':' -f 2)
+  remote_size=${remote_size//$'\r'}
 
-  [ remote_size -eq 0 ] && return
-  [ "$remote_size" == "" ] && return
+  if [ "$remote_size" == "" || "$remote_size" == "0" ] && return
 
   SCRIPT=$(readlink -f ${BASH_SOURCE[0]})
   local_size=$(stat -c%s "$SCRIPT")
