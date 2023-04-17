@@ -2,6 +2,7 @@
 set -u
 
 # Functions
+HEADER="VirtualDSM Agent:"
 
 function checkNMI {
 
@@ -10,7 +11,7 @@ function checkNMI {
 
   if [ "$nmi" != "" ]; then
 
-    echo "Received shutdown request through NMI.."
+    echo "$HEADER Received shutdown request through NMI.."
 
     /usr/syno/sbin/synoshutdown -s > /dev/null
     exit
@@ -21,7 +22,7 @@ function checkNMI {
 
 finish() {
 
-  echo "Shutting down guest agent.."
+  echo "$HEADER Shutting down.."
   exit
 
 }
@@ -32,7 +33,7 @@ ts=$(date +%s%N)
 checkNMI
 
 VERSION="4"
-echo "Starting agent v$VERSION.."
+echo "$HEADER starting v$VERSION.."
 
 # Install packages 
 
@@ -51,11 +52,10 @@ if [ "$first_run" = true ]; then
       BASE=$(basename "$filename" .spk)
       BASE="${BASE%%-*}"
 
-      echo "Installing package ${BASE}.."
-      /usr/syno/bin/synopkg install "$filename" > /dev/null
+      echo "$HEADER Installing package ${BASE}.."
 
-      #echo "Activating package ${BASE}.."
-      /usr/syno/bin/synopkg start "$BASE" &
+      /usr/syno/bin/synopkg install "$filename" > /dev/null
+      /usr/syno/bin/synopkg start "$BASE" > /dev/null &
 
       rm "$filename"
 
@@ -73,23 +73,33 @@ else
       line=$(head -1 "${TMP}")
       if [ "$line" == "#!/usr/bin/env bash" ]; then
          SCRIPT=$(readlink -f ${BASH_SOURCE[0]})
-         mv -f "${TMP}" "${SCRIPT}"
-         chmod +x "${SCRIPT}"
+         if ! cmp --silent -- "${TMP}" "${SCRIPT}"; then
+           mv -f "${TMP}" "${SCRIPT}"
+           chmod +x "${SCRIPT}"
+           echo "$HEADER succesfully installed update."
+         else
+           echo "$HEADER Update not needed."
+         fi
       else
-         echo "Update error, invalid header: $line"
+         echo "$HEADER update error, invalid header: $line"
       fi
     else
-      echo "Update error, file not found.."
+      echo "$HEADER update error, file not found.."
     fi
   else
-    echo "Update error, curl error: $?"
+    echo "$HEADER update error, curl error: $?"
   fi
 
 fi
 
 elapsed=$((($(date +%s%N) - $ts)/1000000))
-echo "Elapsed time: $elapsed"
-    
+difference=$(((5000-elapsed)*0.001))
+      
+if (( difference > 0 )); then
+  echo "Elapsed time: $elapsed, difference: $difference"
+  sleep $difference
+fi
+
 # Display message in docker log output
 
 echo "-------------------------------------------"
