@@ -28,6 +28,8 @@ finish() {
 
 trap finish SIGINT SIGTERM
 
+ts=$(date +%s%N)
+
 # Setup serialport
 
 chmod 666 /dev/ttyS0
@@ -61,12 +63,11 @@ if [ "$first_run" = true ]; then
     fi
   done
 else
-  
-  # TODO: Auto-update agent
-  echo "Checking for updates.." > /dev/ttyS0
 
   TMP="/tmp/agent.sh"
   rm -f "${TMP}"
+
+  # Auto update the agent
 
   if curl -s -f -k -m 5 -o "${TMP}" https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh; then
     if [ -f "${TMP}" ]; then
@@ -74,7 +75,7 @@ else
       if [ "$line" == "#!/usr/bin/env bash" ]; then
          SCRIPT=$(readlink -f ${BASH_SOURCE[0]})
          mv -f "${TMP}" "${SCRIPT}"
-         echo "Moved from ${TMP} to ${SCRIPT}" > /dev/ttyS0
+         chmod +x "${SCRIPT}"
       else
          echo "Update error, invalid header: $line" > /dev/ttyS0
       fi
@@ -85,10 +86,11 @@ else
     echo "Update error, curl error: $?" > /dev/ttyS0
   fi
 
-  sleep 5
-
 fi
 
+elapsed=$((($(date +%s%N) - $ts)/1000000))
+echo "Elapsed time: $elapsed" > /dev/ttyS0
+    
 # Display message in docker log output
 
 echo "-------------------------------------------" > /dev/ttyS0
