@@ -3,13 +3,6 @@ set -u
 
 # Functions
 
-snore()
-{
-    local IFS
-    [[ -n "${_snore_fd:-}" ]] || exec {_snore_fd}<> <(:)
-    read ${1:+-t "$1"} -u $_snore_fd || :
-}
-
 function checkNMI {
 
   local nmi
@@ -28,7 +21,7 @@ function checkNMI {
 
 finish() {
 
-  echo "Shutting down vDSM Guest Agent.." > /dev/ttyS0
+  echo "Shutting down Guest Agent.." > /dev/ttyS0
   exit
 
 }
@@ -77,11 +70,13 @@ echo "-------------------------------------------" > /dev/ttyS0
 echo " You can now login to DSM at port 5000     " > /dev/ttyS0
 echo "-------------------------------------------" > /dev/ttyS0
 
+# TODO: Auto-update agent
+
 # Wait for NMI interrupt as a shutdown signal
 
 while true; do
 
   checkNMI
-  snore 2
+  sleep 2
 
 done
