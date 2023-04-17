@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -u
 
-VERSION="4"
+VERSION="5"
 HEADER="VirtualDSM Agent"
 
 # Functions
