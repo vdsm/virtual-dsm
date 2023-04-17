@@ -1,8 +1,17 @@
 #!/usr/bin/env bash
 set -u
 
-# Functions
+VERSION="4"
 HEADER="VirtualDSM Agent:"
+
+# Functions
+
+finish() {
+
+  echo "$HEADER Shutting down.."
+  exit
+
+}
 
 function checkNMI {
 
@@ -14,54 +23,12 @@ function checkNMI {
     echo "$HEADER Received shutdown request through NMI.."
 
     /usr/syno/sbin/synoshutdown -s > /dev/null
-    exit
+    finish
 
   fi
-
 }
 
-finish() {
-
-  echo "$HEADER Shutting down.."
-  exit
-
-}
-
-trap finish SIGINT SIGTERM
-
-ts=$(date +%s%N)
-checkNMI
-
-VERSION="4"
-echo "$HEADER starting v$VERSION.."
-
-# Install packages 
-
-first_run=false
-
-for filename in /usr/local/packages/*.spk; do
-  if [ -f "$filename" ]; then
-    first_run=true
-  fi
-done
-
-if [ "$first_run" = true ]; then
-  for filename in /usr/local/packages/*.spk; do
-    if [ -f "$filename" ]; then
-
-      BASE=$(basename "$filename" .spk)
-      BASE="${BASE%%-*}"
-
-      echo "$HEADER Installing package ${BASE}.."
-
-      /usr/syno/bin/synopkg install "$filename" > /dev/null
-      /usr/syno/bin/synopkg start "$BASE" > /dev/null &
-
-      rm "$filename"
-
-    fi
-  done
-else
+function downloadUpdate {
 
   TMP="/tmp/agent.sh"
   rm -f "${TMP}"
@@ -89,7 +56,52 @@ else
   else
     echo "$HEADER update error, curl error: $?"
   fi
+}
 
+function installPackages {
+
+  for filename in /usr/local/packages/*.spk; do
+    if [ -f "$filename" ]; then
+
+      BASE=$(basename "$filename" .spk)
+      BASE="${BASE%%-*}"
+
+      echo "$HEADER Installing package ${BASE}.."
+
+      /usr/syno/bin/synopkg install "$filename" > /dev/null
+      /usr/syno/bin/synopkg start "$BASE" > /dev/null &
+
+      rm "$filename"
+
+    fi
+  done
+}
+
+trap finish SIGINT SIGTERM
+
+ts=$(date +%s%N)
+checkNMI
+
+echo "$HEADER started v$VERSION.."
+
+# Install packages 
+
+first_run=false
+
+for filename in /usr/local/packages/*.spk; do
+  if [ -f "$filename" ]; then
+    first_run=true
+  fi
+done
+
+if [ "$first_run" = true ]; then
+  
+  installPackages
+
+else
+
+  downloadUpdate
+  
 fi
 
 elapsed=$((($(date +%s%N) - $ts)/1000000))
