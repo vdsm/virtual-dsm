@@ -34,7 +34,18 @@ function downloadUpdate {
   TMP="/tmp/agent.sh"
   rm -f "${TMP}"
 
+  URL="https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh"
+
   # Auto update the agent
+
+  remote_size=$(curl -s -I -k -m 3 "${URL}" | awk '/Content-Length/ {sub("\r",""); print $2}')
+  
+  echo "remote size: $remote_size"
+  [ "$remote_size" == "0" ] && return
+
+  if ! curl -s -f -k -m 10 -o "${TMP}" "${URL}"; then
+    echo "$HEADER: curl error" && return
+  fi
 
   if ! curl -s -f -k -m 3 -o "${TMP}" https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh; then
     #echo "$HEADER: curl error" && return
@@ -117,12 +128,11 @@ fi
 delay=5000
 difference=0
 elapsed=$((($(date +%s%N) - $ts)/1000000))
-echo "elapsed: $elapsed"
+
 if (( delay > elapsed )); then
   difference=$((delay-elapsed))
-  echo "firstdiff: $difference"
-  float=$(echo | awk -v diff=\""$difference\"" '{print diff * 0.001}')
-  echo "Elapsed time: $elapsed, difference: $float"
+  float=$(echo | awk -v diff=\""$difference"\" '{print diff * 0.001}')
+  echo "Elapsed time: $elapsed, sleep: $float"
   sleep $difference
 fi
 
