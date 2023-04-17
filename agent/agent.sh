@@ -31,6 +31,9 @@ trap finish SIGINT SIGTERM
 ts=$(date +%s%N)
 checkNMI
 
+VERSION="4"
+echo "Starting agent v$VERSION.."
+
 # Install packages 
 
 first_run=false
