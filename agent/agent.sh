@@ -47,11 +47,6 @@ function downloadUpdate {
     echo "$HEADER: curl error" && return
   fi
 
-  if ! curl -s -f -k -m 3 -o "${TMP}" https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh; then
-    #echo "$HEADER: curl error" && return
-    return
-  fi
-
   if [ ! -f "${TMP}" ]; then
     echo "$HEADER: update error, file not found.." && return
   fi
