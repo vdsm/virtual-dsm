@@ -45,7 +45,7 @@ function downloadUpdate {
   local_size=$(stat -c%s "$SCRIPT")
 
   [ "$remote_size" == "$local_size" ] && return
-  
+
   if ! curl -sfk -m 10 -o "${TMP}" "${URL}"; then
     echo "$HEADER: curl error" && return
   fi
@@ -68,7 +68,7 @@ function downloadUpdate {
   chmod +x "${SCRIPT}"
 
   echo "$HEADER: succesfully installed update, please reboot."
-  
+
 }
 
 function installPackages {
@@ -109,13 +109,13 @@ for filename in /usr/local/packages/*.spk; do
 done
 
 if [ "$first_run" = true ]; then
-  
+
   installPackages
 
 else
 
   downloadUpdate
-  
+
 fi
 
 delay=5000
@@ -140,4 +140,3 @@ while true; do
   sleep 2
 
 done
-.
