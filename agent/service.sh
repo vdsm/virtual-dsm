@@ -17,7 +17,7 @@ start() {
   fi
   printf 'Starting agent service...' >&2
   chmod 666 /dev/ttyS0
-  "$SCRIPT" &>  /dev/ttyS0 & echo $! > "$PIDFILE"
+  "$SCRIPT" &> /dev/ttyS0 & echo $! > "$PIDFILE"
 }
 
 stop() {
