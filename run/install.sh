@@ -29,7 +29,7 @@ rm -rf $TMP && mkdir -p $TMP
 
 LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
-if ! curl -r 64493568-69886247 -s -f -k -o "$RD" "$LOC"; then
+if ! curl -r 64493568-69886247 -sfk -o "$RD" "$LOC"; then
   echo "Failed to download extractor, code: $?" && exit 60
 fi
 
@@ -163,7 +163,7 @@ cp /agent/service.sh $LOC/agent.sh
 chmod +x $LOC/agent.sh
 
 # Store agent version
-echo "3" > "$STORAGE"/"$BASE".agent
+echo "4" > "$STORAGE"/"$BASE".agent
 
 echo "Install: Installing system partition..."
 
