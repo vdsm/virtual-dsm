@@ -2,13 +2,13 @@
 set -u
 
 VERSION="4"
-HEADER="VirtualDSM Agent:"
+HEADER="VirtualDSM Agent"
 
 # Functions
 
 finish() {
 
-  echo "$HEADER Shutting down.."
+  echo "$HEADER: Shutting down.."
   exit
 
 }
@@ -20,7 +20,7 @@ function checkNMI {
 
   if [ "$nmi" != "" ]; then
 
-    echo "$HEADER Received shutdown request through NMI.."
+    echo "$HEADER: Received shutdown request through NMI.."
 
     /usr/syno/sbin/synoshutdown -s > /dev/null
     finish
@@ -43,18 +43,18 @@ function downloadUpdate {
          if ! cmp --silent -- "${TMP}" "${SCRIPT}"; then
            mv -f "${TMP}" "${SCRIPT}"
            chmod +x "${SCRIPT}"
-           echo "$HEADER succesfully installed update."
+           echo "$HEADER: succesfully installed update."
          else
-           echo "$HEADER Update not needed."
+           echo "$HEADER: Update not needed."
          fi
       else
-         echo "$HEADER update error, invalid header: $line"
+         echo "$HEADER: update error, invalid header: $line"
       fi
     else
-      echo "$HEADER update error, file not found.."
+      echo "$HEADER: update error, file not found.."
     fi
   else
-    echo "$HEADER update error, curl error: $?"
+    echo "$HEADER: update error, curl error: $?"
   fi
 }
 
@@ -66,7 +66,7 @@ function installPackages {
       BASE=$(basename "$filename" .spk)
       BASE="${BASE%%-*}"
 
-      echo "$HEADER Installing package ${BASE}.."
+      echo "$HEADER: Installing package ${BASE}.."
 
       /usr/syno/bin/synopkg install "$filename" > /dev/null
       /usr/syno/bin/synopkg start "$BASE" > /dev/null &
@@ -82,7 +82,7 @@ trap finish SIGINT SIGTERM
 ts=$(date +%s%N)
 checkNMI
 
-echo "$HEADER started v$VERSION.."
+echo "$HEADER v$VERSION.."
 
 # Install packages 
 
