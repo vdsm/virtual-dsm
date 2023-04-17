@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PIDFILE="/var/run/agent.pid"
-SCRIPT="/usr/local/bin/agent.sh" 
+SCRIPT="/usr/local/bin/agent.sh"
 
 status() {
   if [ -f "$PIDFILE" ]; then
