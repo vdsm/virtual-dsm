@@ -37,7 +37,7 @@ function downloadUpdate {
   # Auto update the agent
 
   URL="https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh"
-  remote_size=$(curl -sIk -m 3 "${URL}" | grep -i "content-length:" | tr -d " \t" | cut -d ':' -f 2)
+  remote_size=$(curl -sIk -m 4 "${URL}" | grep -i "content-length:" | tr -d " \t" | cut -d ':' -f 2)
 
   [ "$remote_size" == "" ] && return
   [ "$remote_size" == "0" ] && return
@@ -61,18 +61,14 @@ function downloadUpdate {
     echo "$HEADER: update error, invalid header: $line" && return
   fi
 
-  if ! cmp --silent -- "${TMP}" "${SCRIPT}"; then
-
-    #mv -f "${TMP}" "${SCRIPT}"
-    chmod +x "${SCRIPT}"
-
-    echo "$HEADER: succesfully installed update."
-
-  else
-
-    echo "$HEADER: update file already equal?"
-
+  if cmp --silent -- "${TMP}" "${SCRIPT}"; then
+    echo "$HEADER: update file is already equal?" && return
   fi
+
+  mv -f "${TMP}" "${SCRIPT}"
+  chmod +x "${SCRIPT}"
+
+  echo "$HEADER: succesfully installed update, please reboot."
   
 }
 
@@ -99,7 +95,6 @@ function installPackages {
 trap finish SIGINT SIGTERM
 
 ts=$(date +%s%N)
-
 echo "$HEADER v$VERSION"
 
 checkNMI
@@ -125,14 +120,11 @@ else
 fi
 
 delay=5000
-difference=0
 elapsed=$((($(date +%s%N) - $ts)/1000000))
 
 if (( delay > elapsed )); then
   difference=$((delay-elapsed))
-  float=$(echo | awk -v diff="${difference}" '{print diff * 0.001}')
-  echo "Elapsed time: $elapsed, sleep: $float"
-  sleep $difference
+  sleep $(echo | awk -v diff="${difference}" '{print diff * 0.001}')
 fi
 
 # Display message in docker log output
