@@ -65,21 +65,24 @@ else
   # TODO: Auto-update agent
   echo "Checking for updates.." > /dev/ttyS0
 
-  rm -f /tmp/agent.sh
+  TMP="/tmp/agent.sh"
+  rm -f "${TMP}"
 
-  if curl -s -f -k -m 5 -o /tmp/agent.sh https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh; then
-    if [ -f "/tmp/agent.sh" ]; then
-      line=$(read -r FIRSTLINE < /tmp/agent.sh)
+  if curl -s -f -k -m 5 -o "${TMP}" https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh; then
+    if [ -f "${TMP}" ]; then
+      line=$(head -1 "${TMP}")
       if [ "$line" == "#!/usr/bin/env bash" ]; then
-         echo "Update found.." > /dev/ttyS0
+         SCRIPT=$(readlink -f ${BASH_SOURCE[0]})
+         mv -f "${TMP}" "${SCRIPT}"
+         echo "Moved from ${TMP} to ${SCRIPT}" > /dev/ttyS0
       else
-         echo "Update error 1.. $line" > /dev/ttyS0
+         echo "Update error, invalid header: $line" > /dev/ttyS0
       fi
     else
-      echo "Update error 2.." > /dev/ttyS0
+      echo "Update error, file not found.." > /dev/ttyS0
     fi
   else
-    echo "Update error 3.. $?" > /dev/ttyS0
+    echo "Update error, curl error: $?" > /dev/ttyS0
   fi
 
   sleep 5
