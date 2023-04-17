@@ -49,9 +49,9 @@ _graceful_shutdown(){
     echo
     echo "Could not send shutdown command to guest, error: $RESPONSE"
 
-    FILE="${STORAGE}/${BASE}.agent"
-    [ ! -f "$FILE" ] && echo "1" > "$FILE"
-    AGENT_VERSION=$(cat "${FILE}")
+    AGENT="${STORAGE}/${BASE}.agent"
+    [ ! -f "$AGENT" ] && echo "1" > "$AGENT"
+    AGENT_VERSION=$(cat "${AGENT}")
 
     if ((AGENT_VERSION < 2)); then
       echo
