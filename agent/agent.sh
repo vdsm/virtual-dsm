@@ -113,7 +113,7 @@ fi
 
 elapsed=$((($(date +%s%N) - $ts)/1000000))
 difference=$(( 5000 - elapsed ))
-difference=$(echo | awk '{print ${difference} * 0.001}')
+difference=$(echo | awk -v diff="$(difference)" '{print diff * 0.001}')
 
 echo "Elapsed time: $elapsed, difference: $difference"
 sleep $difference
