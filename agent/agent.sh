@@ -35,7 +35,7 @@ function downloadUpdate {
 
   # Auto update the agent
 
-  if ! curl -s -f -k -m 5 -o "${TMP}" https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh; then
+  if ! curl -s -f -k -m 4 -o "${TMP}" https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh; then
     echo "$HEADER: update error: $?" && return
   fi
 
@@ -89,7 +89,7 @@ trap finish SIGINT SIGTERM
 ts=$(date +%s%N)
 checkNMI
 
-echo "$HEADER v$VERSION.."
+echo "$HEADER v$VERSION"
 
 # Install packages 
 
@@ -112,7 +112,8 @@ else
 fi
 
 elapsed=$((($(date +%s%N) - $ts)/1000000))
-difference=$(echo | awk '{print $((5000-elapsed)) * 0.001}')
+difference=$(( 5000 - elapsed ))
+difference=$(echo | awk '{print ${difference} * 0.001}')
 
 echo "Elapsed time: $elapsed, difference: $difference"
 sleep $difference
