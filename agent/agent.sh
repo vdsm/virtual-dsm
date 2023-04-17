@@ -75,6 +75,7 @@ function installPackages {
 
     fi
   done
+
 }
 
 trap finish SIGINT SIGTERM
@@ -105,12 +106,10 @@ else
 fi
 
 elapsed=$((($(date +%s%N) - $ts)/1000000))
-difference=$(((5000-elapsed)*0.001))
-      
-if (( difference > 0 )); then
-  echo "Elapsed time: $elapsed, difference: $difference"
-  sleep $difference
-fi
+difference=$(echo | awk '{print $((5000-elapsed)) * 0.001}')
+
+echo "Elapsed time: $elapsed, difference: $difference"
+sleep $difference
 
 # Display message in docker log output
 
