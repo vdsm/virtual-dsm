@@ -47,7 +47,7 @@ _graceful_shutdown(){
     if ((AGENT_VERSION < 2)); then
 
       echo
-      echo "Please update the agent to allow gracefull shutdowns..."
+      echo "Please update the VirtualDSM Agent to allow gracefull shutdowns..."
 
       pkill -f qemu-system-x86_64
 
