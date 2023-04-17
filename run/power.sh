@@ -19,13 +19,6 @@ _trap(){
     done
 }
 
-snore()
-{
-    local IFS
-    [[ -n "${_snore_fd:-}" ]] || exec {_snore_fd}<> <(:)
-    read ${1:+-t "$1"} -u $_snore_fd || :
-}
-
 _graceful_shutdown(){
 
   local QEMU_MONPORT="${QEMU_MONPORT:-7100}"
@@ -42,7 +35,7 @@ _graceful_shutdown(){
   # echo 'system_powerdown' | nc -q 1 -w 1 localhost "${QEMU_MONPORT}">/dev/null
 
   # Send shutdown command to guest agent tools instead via serial port
-  RESPONSE=$(curl -s -m 2 -S http://127.0.0.1:2210/write?command=6 2>&1)
+  RESPONSE=$(curl -s -m 2 -S http://127.0.0.1:2210/write?command=6)
 
   if [[ ! "${RESPONSE}" =~ "\"success\"" ]] ; then
 
