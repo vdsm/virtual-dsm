@@ -40,7 +40,7 @@ function downloadUpdate {
   remote_size=$(curl -sIk -m 4 "${URL}" | grep -i "content-length:" | tr -d " \t" | cut -d ':' -f 2)
   remote_size=${remote_size//$'\r'}
 
-  if [ "$remote_size" == "" || "$remote_size" == "0" ] && return
+  [ "$remote_size" == "" || "$remote_size" == "0" ] && return
 
   SCRIPT=$(readlink -f ${BASH_SOURCE[0]})
   local_size=$(stat -c%s "$SCRIPT")
