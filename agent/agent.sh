@@ -47,18 +47,23 @@ if [ "$first_run" = true ]; then
   for filename in /usr/local/packages/*.spk; do
     if [ -f "$filename" ]; then
 
-      /usr/syno/bin/synopkg install "$filename" > /dev/ttyS0
-
       BASE=$(basename "$filename" .spk)
       BASE="${BASE%%-*}"
 
-      /usr/syno/bin/synopkg start "$BASE" > /dev/ttyS0
+      echo "Installing package ${BASE}.." > /dev/ttyS0
+      /usr/syno/bin/synopkg install "$filename" > /dev/null
+
+      echo "Starting package ${BASE}.." > /dev/ttyS0
+      /usr/syno/bin/synopkg start "$BASE" > /dev/null
 
       rm "$filename"
 
     fi
   done
 else
+  
+  # TODO: Auto-update agent
+  echo "Checking for updates.." > /dev/ttyS0
 
   sleep 5
 
@@ -69,8 +74,6 @@ fi
 echo "-------------------------------------------" > /dev/ttyS0
 echo " You can now login to DSM at port 5000     " > /dev/ttyS0
 echo "-------------------------------------------" > /dev/ttyS0
-
-# TODO: Auto-update agent
 
 # Wait for NMI interrupt as a shutdown signal
 
