@@ -6,7 +6,7 @@ set -u
 function checkNMI {
 
   local nmi
-  nmi=$(cat /proc/interrupts | grep NMI | sed 's/[^0-9]*//g' | sed 's/^0*//')
+  nmi=$(cat /proc/interrupts | grep NMI | sed 's/[^1-9]*//g')
 
   if [ "$nmi" != "" ]; then
 
@@ -21,7 +21,7 @@ function checkNMI {
 
 finish() {
 
-  echo "Shutting down Guest Agent.." > /dev/ttyS0
+  echo "Shutting down guest agent.." > /dev/ttyS0
   exit
 
 }
