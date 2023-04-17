@@ -65,6 +65,17 @@ else
   # TODO: Auto-update agent
   echo "Checking for updates.." > /dev/ttyS0
 
+  rm -f /tmp/agent.sh
+
+  if curl -s -k -m 5 -o /tmp/agent.sh https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh; then
+    if [ -f /tmp/agent.sh ]; then
+      line=$(read -r FIRSTLINE < /tmp/agent.sh)
+      if [ "$line" == "#!/usr/bin/env bash" ]; then
+         echo "Update found.." > /dev/ttyS0
+      fi
+    fi
+  fi
+
   sleep 5
 
 fi
