@@ -24,6 +24,7 @@ function checkNMI {
 
     /usr/syno/sbin/synoshutdown -s > /dev/null
     finish
+    exit
 
   fi
 }
@@ -35,8 +36,8 @@ function downloadUpdate {
 
   # Auto update the agent
 
-  if ! curl -s -f -k -m 4 -o "${TMP}" https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh; then
-    echo "$HEADER: update error: $?" && return
+  if ! curl -s -f -k -m 3 -o "${TMP}" https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh; then
+    #echo "$HEADER: curl error" && return
   fi
 
   if [ ! -f "${TMP}" ]; then
@@ -59,7 +60,7 @@ function downloadUpdate {
     echo "$HEADER: succesfully installed update."
 
   else
-    echo "$HEADER: Update not needed."
+    echo "$HEADER: update not needed."
   fi
   
 }
@@ -87,9 +88,10 @@ function installPackages {
 trap finish SIGINT SIGTERM
 
 ts=$(date +%s%N)
-checkNMI
 
 echo "$HEADER v$VERSION"
+
+checkNMI
 
 # Install packages 
 
@@ -111,12 +113,17 @@ else
   
 fi
 
+delay=5000
+difference=0
 elapsed=$((($(date +%s%N) - $ts)/1000000))
-difference=$(( 5000 - elapsed ))
-difference=$(echo | awk -v diff="$(difference)" '{print diff * 0.001}')
-
-echo "Elapsed time: $elapsed, difference: $difference"
-sleep $difference
+echo "elapsed: $elapsed"
+if (( delay > elapsed )); then
+  difference=$((delay-elapsed))
+  echo "firstdiff: $difference"
+  float=$(echo | awk -v diff=\""$(difference)\"" '{print diff * 0.001}')
+  echo "Elapsed time: $elapsed, difference: $float"
+  sleep $difference
+fi
 
 # Display message in docker log output
 
