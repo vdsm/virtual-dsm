@@ -1,36 +1,101 @@
 #!/usr/bin/env bash
 set -u
 
+VERSION="4"
+HEADER="VirtualDSM Agent"
+
 # Functions
+
+finish() {
+
+  echo "$HEADER: Shutting down.."
+  exit
+
+}
 
 function checkNMI {
 
   local nmi
-  nmi=$(awk '/NMI/ {for (i=2; i<=NF; i++) if ($i ~ /^[0-9]+$/) {sum+=$i}} END {print sum}' /proc/interrupts)
+  nmi=$(cat /proc/interrupts | grep NMI | sed 's/[^1-9]*//g')
 
-  if [ "$nmi" != "" ] && [ "$nmi" -ne "0" ]; then
+  if [ "$nmi" != "" ]; then
 
-    echo "Received shutdown request through NMI.." > /dev/ttyS0
+    echo "$HEADER: Received shutdown request through NMI.."
 
     /usr/syno/sbin/synoshutdown -s > /dev/null
-    exit
+    finish
 
   fi
-
 }
 
-finish() {
+function downloadUpdate {
 
-  echo "Shutting down Guest Agent.." > /dev/ttyS0
-  exit
+  TMP="/tmp/agent.sh"
+  rm -f "${TMP}"
+
+  # Auto update the agent
+
+  URL="https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh"
+  remote_size=$(curl -sIk -m 4 "${URL}" | grep -i "content-length:" | tr -d " \t" | cut -d ':' -f 2)
+
+  [ "$remote_size" == "" ] && return
+  [ "$remote_size" == "0" ] && return
+
+  SCRIPT=$(readlink -f ${BASH_SOURCE[0]})
+  local_size=$(stat -c%s "$SCRIPT")
+
+  [ "$remote_size" == "$local_size" ] && return
+  
+  if ! curl -sfk -m 10 -o "${TMP}" "${URL}"; then
+    echo "$HEADER: curl error" && return
+  fi
+
+  if [ ! -f "${TMP}" ]; then
+    echo "$HEADER: update error, file not found.." && return
+  fi
+
+  line=$(head -1 "${TMP}")
+
+  if [ "$line" != "#!/usr/bin/env bash" ]; then
+    echo "$HEADER: update error, invalid header: $line" && return
+  fi
+
+  if cmp --silent -- "${TMP}" "${SCRIPT}"; then
+    echo "$HEADER: update file is already equal?" && return
+  fi
+
+  mv -f "${TMP}" "${SCRIPT}"
+  chmod +x "${SCRIPT}"
+
+  echo "$HEADER: succesfully installed update, please reboot."
+  
+}
+
+function installPackages {
+
+  for filename in /usr/local/packages/*.spk; do
+    if [ -f "$filename" ]; then
+
+      BASE=$(basename "$filename" .spk)
+      BASE="${BASE%%-*}"
+
+      echo "$HEADER: Installing package ${BASE}.."
+
+      /usr/syno/bin/synopkg install "$filename" > /dev/null
+      /usr/syno/bin/synopkg start "$BASE" > /dev/null &
+
+      rm "$filename"
+
+    fi
+  done
 
 }
 
 trap finish SIGINT SIGTERM
 
-# Setup serialport
+ts=$(date +%s%N)
+echo "$HEADER v$VERSION"
 
-chmod 666 /dev/ttyS0
 checkNMI
 
 # Install packages 
@@ -44,36 +109,28 @@ for filename in /usr/local/packages/*.spk; do
 done
 
 if [ "$first_run" = true ]; then
-  for filename in /usr/local/packages/*.spk; do
-    if [ -f "$filename" ]; then
-
-      BASE=$(basename "$filename" .spk)
-      BASE="${BASE%%-*}"
-
-      echo "Installing package ${BASE}.." > /dev/ttyS0
-      /usr/syno/bin/synopkg install "$filename" > /dev/null
-
-      echo "Starting package ${BASE}.." > /dev/ttyS0
-      /usr/syno/bin/synopkg start "$BASE" > /dev/null
-
-      rm "$filename"
-
-    fi
-  done
-else
   
-  # TODO: Auto-update agent
-  echo "Checking for updates.." > /dev/ttyS0
+  installPackages
 
-  sleep 5
+else
 
+  downloadUpdate
+  
+fi
+
+delay=5000
+elapsed=$((($(date +%s%N) - ts)/1000000))
+
+if (( delay > elapsed )); then
+  difference=$((delay-elapsed))
+  sleep "$(echo | awk -v diff="${difference}" '{print diff * 0.001}')"
 fi
 
 # Display message in docker log output
 
-echo "-------------------------------------------" > /dev/ttyS0
-echo " You can now login to DSM at port 5000     " > /dev/ttyS0
-echo "-------------------------------------------" > /dev/ttyS0
+echo "-------------------------------------------"
+echo " You can now login to DSM at port 5000     "
+echo "-------------------------------------------"
 
 # Wait for NMI interrupt as a shutdown signal
 
@@ -83,3 +140,4 @@ while true; do
   sleep 2
 
 done
+.

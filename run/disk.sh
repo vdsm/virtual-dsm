@@ -80,12 +80,12 @@ if [ ! -f "${DATA}" ]; then
 
 fi
 
+AGENT_VERSION=1
 AGENT="${STORAGE}/${BASE}.agent"
-[ ! -f "$AGENT" ] && echo "1" > "$AGENT"
-AGENT_VERSION=$(cat "${AGENT}")
+[ -f "$AGENT" ] && AGENT_VERSION=$(cat "${AGENT}")
 
-if ((AGENT_VERSION < 3)); then
-  echo "INFO: The installed Guest Agent in DSM is an outdated version, please upgrade it."
+if ((AGENT_VERSION < 4)); then
+  echo "INFO: The installed VirtualDSM Agent is an outdated version, please upgrade it."
 fi
 
 KVM_DISK_OPTS="\
