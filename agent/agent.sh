@@ -24,7 +24,6 @@ function checkNMI {
 
     /usr/syno/sbin/synoshutdown -s > /dev/null
     finish
-    exit
 
   fi
 }
@@ -120,11 +119,11 @@ else
 fi
 
 delay=5000
-elapsed=$((($(date +%s%N) - $ts)/1000000))
+elapsed=$((($(date +%s%N) - ts)/1000000))
 
 if (( delay > elapsed )); then
   difference=$((delay-elapsed))
-  sleep $(echo | awk -v diff="${difference}" '{print diff * 0.001}')
+  sleep "$(echo | awk -v diff="${difference}" '{print diff * 0.001}')"
 fi
 
 # Display message in docker log output
@@ -141,3 +140,4 @@ while true; do
   sleep 2
 
 done
+.
