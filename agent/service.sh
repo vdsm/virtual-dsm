@@ -1,7 +1,6 @@
 #!/bin/bash
 
 PIDFILE="/var/run/agent.pid"
-LOGFILE="/var/log/agent.log"
 SCRIPT="/usr/local/bin/agent.sh" 
 
 status() {
@@ -17,7 +16,8 @@ start() {
     return 1
   fi
   printf 'Starting agent service...' >&2
-  "$SCRIPT" &> "$LOGFILE" & echo $! > "$PIDFILE"
+  chmod 666 /dev/ttyS0
+  "$SCRIPT" &>  /dev/ttyS0 & echo $! > "$PIDFILE"
 }
 
 stop() {
