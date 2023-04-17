@@ -67,13 +67,19 @@ else
 
   rm -f /tmp/agent.sh
 
-  if curl -s -k -m 5 -o /tmp/agent.sh https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh; then
-    if [ -f /tmp/agent.sh ]; then
+  if curl -s -f -k -m 5 -o /tmp/agent.sh https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh; then
+    if [ -f "/tmp/agent.sh" ]; then
       line=$(read -r FIRSTLINE < /tmp/agent.sh)
       if [ "$line" == "#!/usr/bin/env bash" ]; then
          echo "Update found.." > /dev/ttyS0
+      else
+         echo "Update error 1.. $line" > /dev/ttyS0
       fi
+    else
+      echo "Update error 2.." > /dev/ttyS0
     fi
+  else
+    echo "Update error 3.. $?" > /dev/ttyS0
   fi
 
   sleep 5
