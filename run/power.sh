@@ -32,7 +32,7 @@ _graceful_shutdown(){
   # Don't send the powerdown signal because vDSM ignores ACPI signals
   # echo 'system_powerdown' | nc -q 1 -w 1 localhost "${QEMU_MONPORT}" > /dev/null
 
-  # Send shutdown command to guest agent tools instead via serial port
+  # Send shutdown command to host via serial port
   RESPONSE=$(curl -s -m 2 -S http://127.0.0.1:2210/write?command=6 2>&1)
 
   if [[ ! "${RESPONSE}" =~ "\"success\"" ]] ; then
@@ -40,14 +40,16 @@ _graceful_shutdown(){
     echo
     echo "Could not send shutdown command to guest, error: $RESPONSE"
 
+    # If we cannot shutdown the usual way, fallback to the NMI method
+
+    AGENT_VERSION=1
     AGENT="${STORAGE}/${BASE}.agent"
-    [ ! -f "$AGENT" ] && echo "1" > "$AGENT"
-    AGENT_VERSION=$(cat "${AGENT}")
+    [ -f "$AGENT" ] && AGENT_VERSION=$(cat "${AGENT}")
 
     if ((AGENT_VERSION < 2)); then
 
       echo
-      echo "Please update the agent to allow gracefull shutdowns..."
+      echo "Please update the VirtualDSM Agent to allow gracefull shutdowns..."
 
       pkill -f qemu-system-x86_64
 
