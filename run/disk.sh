@@ -80,6 +80,14 @@ if [ ! -f "${DATA}" ]; then
 
 fi
 
+AGENT="${STORAGE}/${BASE}.agent"
+[ ! -f "$AGENT" ] && echo "1" > "$AGENT"
+AGENT_VERSION=$(cat "${AGENT}")
+
+if ((AGENT_VERSION < 3)); then
+  echo "INFO: The installed Guest Agent is outdated, please consider updating it or do a clean install."
+fi
+
 KVM_DISK_OPTS="\
     -device virtio-scsi-pci,id=hw-synoboot,bus=pcie.0,addr=0xa \
     -drive file=${BOOT},if=none,id=drive-synoboot,format=raw,cache=none,aio=native,discard=on,detect-zeroes=on \
