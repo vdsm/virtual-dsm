@@ -12,12 +12,18 @@ _QEMU_SHUTDOWN_COUNTER=/run/qemu.counter
 rm -f "${_QEMU_PID}"
 rm -f "${_QEMU_SHUTDOWN_COUNTER}"
 
-# Allows for troubleshooting signals sent to the process
 _trap(){
     func="$1" ; shift
     for sig ; do
         trap "$func $sig" "$sig"
     done
+}
+
+snore()
+{
+    local IFS
+    [[ -n "${_snore_fd:-}" ]] || exec {_snore_fd}<> <(:)
+    read ${1:+-t "$1"} -u $_snore_fd || :
 }
 
 _graceful_shutdown(){
