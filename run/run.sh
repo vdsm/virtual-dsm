@@ -53,4 +53,7 @@ set -m
 set +m
 
 pidwait -F "${_QEMU_PID}" &
+
+set +e
 wait $!
+exit 0
