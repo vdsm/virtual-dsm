@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -u
 
-VERSION="4"
+VERSION="5"
 HEADER="VirtualDSM Agent"
 
 # Functions
@@ -123,6 +123,7 @@ delay=5000
 elapsed=$((($(date +%s%N) - ts)/1000000))
 
 if (( delay > elapsed )); then
+  echo "$HEADER: Ready..."
   difference=$((delay-elapsed))
   float=$(echo | awk -v diff="${difference}" '{print diff * 0.001}')
   sleep "$float"

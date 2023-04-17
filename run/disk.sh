@@ -84,7 +84,7 @@ AGENT_VERSION=1
 AGENT="${STORAGE}/${BASE}.agent"
 [ -f "$AGENT" ] && AGENT_VERSION=$(cat "${AGENT}")
 
-if ((AGENT_VERSION < 4)); then
+if ((AGENT_VERSION < 5)); then
   echo "INFO: The installed VirtualDSM Agent is an outdated version, please upgrade it."
 fi
 
