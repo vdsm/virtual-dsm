@@ -61,7 +61,7 @@ function downloadUpdate {
   fi
 
   if cmp --silent -- "${TMP}" "${SCRIPT}"; then
-    echo "$HEADER: update file is already equal?" && return
+    echo "$HEADER: update file is already equal? (${local_size} / ${remote_size})" && return
   fi
 
   mv -f "${TMP}" "${SCRIPT}"
@@ -123,7 +123,8 @@ elapsed=$((($(date +%s%N) - ts)/1000000))
 
 if (( delay > elapsed )); then
   difference=$((delay-elapsed))
-  sleep "$(echo | awk -v diff="${difference}" '{print diff * 0.001}')"
+  float=$(echo | awk -v diff="${difference}" '{print diff * 0.001}')
+  sleep "$float"
 fi
 
 # Display message in docker log output
