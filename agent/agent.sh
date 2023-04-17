@@ -10,7 +10,7 @@ function checkNMI {
 
   if [ "$nmi" != "" ]; then
 
-    echo "Received shutdown request through NMI.." > /dev/ttyS0
+    echo "Received shutdown request through NMI.."
 
     /usr/syno/sbin/synoshutdown -s > /dev/null
     exit
@@ -21,7 +21,7 @@ function checkNMI {
 
 finish() {
 
-  echo "Shutting down guest agent.." > /dev/ttyS0
+  echo "Shutting down guest agent.."
   exit
 
 }
@@ -29,10 +29,6 @@ finish() {
 trap finish SIGINT SIGTERM
 
 ts=$(date +%s%N)
-
-# Setup serialport
-
-chmod 666 /dev/ttyS0
 checkNMI
 
 # Install packages 
@@ -52,10 +48,10 @@ if [ "$first_run" = true ]; then
       BASE=$(basename "$filename" .spk)
       BASE="${BASE%%-*}"
 
-      echo "Installing package ${BASE}.." > /dev/ttyS0
+      echo "Installing package ${BASE}.."
       /usr/syno/bin/synopkg install "$filename" > /dev/null
 
-      #echo "Activating package ${BASE}.." > /dev/ttyS0
+      #echo "Activating package ${BASE}.."
       /usr/syno/bin/synopkg start "$BASE" &
 
       rm "$filename"
@@ -77,25 +73,25 @@ else
          mv -f "${TMP}" "${SCRIPT}"
          chmod +x "${SCRIPT}"
       else
-         echo "Update error, invalid header: $line" > /dev/ttyS0
+         echo "Update error, invalid header: $line"
       fi
     else
-      echo "Update error, file not found.." > /dev/ttyS0
+      echo "Update error, file not found.."
     fi
   else
-    echo "Update error, curl error: $?" > /dev/ttyS0
+    echo "Update error, curl error: $?"
   fi
 
 fi
 
 elapsed=$((($(date +%s%N) - $ts)/1000000))
-echo "Elapsed time: $elapsed" > /dev/ttyS0
+echo "Elapsed time: $elapsed"
     
 # Display message in docker log output
 
-echo "-------------------------------------------" > /dev/ttyS0
-echo " You can now login to DSM at port 5000     " > /dev/ttyS0
-echo "-------------------------------------------" > /dev/ttyS0
+echo "-------------------------------------------"
+echo " You can now login to DSM at port 5000     "
+echo "-------------------------------------------"
 
 # Wait for NMI interrupt as a shutdown signal
 
