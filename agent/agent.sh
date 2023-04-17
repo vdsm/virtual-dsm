@@ -28,7 +28,7 @@ function checkNMI {
 
 finish() {
 
-  echo "Shutting down agent.." > /dev/ttyS0
+  echo "Shutting down vDSM Guest Agent.." > /dev/ttyS0
   exit
 
 }
@@ -54,12 +54,12 @@ if [ "$first_run" = true ]; then
   for filename in /usr/local/packages/*.spk; do
     if [ -f "$filename" ]; then
 
-      /usr/syno/bin/synopkg install "$filename" > /dev/null
+      /usr/syno/bin/synopkg install "$filename" > /dev/ttyS0
 
       BASE=$(basename "$filename" .spk)
       BASE="${BASE%%-*}"
 
-      /usr/syno/bin/synopkg start "$BASE" > /dev/null
+      /usr/syno/bin/synopkg start "$BASE" > /dev/ttyS0
 
       rm "$filename"
 
