@@ -34,15 +34,21 @@ function downloadUpdate {
   TMP="/tmp/agent.sh"
   rm -f "${TMP}"
 
+  SCRIPT=$(readlink -f ${BASH_SOURCE[0]})
   URL="https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh"
 
   # Auto update the agent
 
-  remote_size=$(curl -s -I -k -m 3 "${URL}" | awk '/Content-Length/ {sub("\r",""); print $2}')
-  
-  echo "remote size: $remote_size"
-  [ "$remote_size" == "0" ] && return
+  remote_size=$(curl -s -I -k -m 3 "${URL}" | grep -i "content-length:" | tr -d " \t" | cut -d ':' -f 2)
+  local_size=$(stat -c%s "$SCRIPT")
 
+  echo "local size: $local_size"
+  echo "remote size: $remote_size"
+
+  [ "$remote_size" == "" ] && return
+  [ "$remote_size" == "0" ] && return
+  [ "$remote_size" == "$local_size" ] && return
+  
   if ! curl -s -f -k -m 10 -o "${TMP}" "${URL}"; then
     echo "$HEADER: curl error" && return
   fi
@@ -56,18 +62,18 @@ function downloadUpdate {
   if [ "$line" != "#!/usr/bin/env bash" ]; then
     echo "$HEADER: update error, invalid header: $line" && return
   fi
-  
-  SCRIPT=$(readlink -f ${BASH_SOURCE[0]})
 
   if ! cmp --silent -- "${TMP}" "${SCRIPT}"; then
 
-    mv -f "${TMP}" "${SCRIPT}"
+    #mv -f "${TMP}" "${SCRIPT}"
     chmod +x "${SCRIPT}"
 
     echo "$HEADER: succesfully installed update."
 
   else
-    echo "$HEADER: update not needed."
+
+    echo "$HEADER: update file already equal?"
+
   fi
   
 }
@@ -126,7 +132,7 @@ elapsed=$((($(date +%s%N) - $ts)/1000000))
 
 if (( delay > elapsed )); then
   difference=$((delay-elapsed))
-  float=$(echo | awk -v diff=\""$difference"\" '{print diff * 0.001}')
+  float=$(echo | awk -v diff=\""${difference}"\" '{print diff * 0.001}')
   echo "Elapsed time: $elapsed, sleep: $float"
   sleep $difference
 fi
