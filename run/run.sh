@@ -52,7 +52,5 @@ set -m
 )
 set +m
 
-# Since we started the QEMU process with -m, we need to poll if it's still running
-while s=`ps -p "$(cat ${_QEMU_PID})" -o s=` && [[ "$s" && "$s" != 'Z' ]]; do
-  sleep 1
-done
+pidwait -F "${_QEMU_PID}" &
+wait $!
