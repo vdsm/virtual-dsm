@@ -35,27 +35,33 @@ function downloadUpdate {
 
   # Auto update the agent
 
-  if curl -s -f -k -m 5 -o "${TMP}" https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh; then
-    if [ -f "${TMP}" ]; then
-      line=$(head -1 "${TMP}")
-      if [ "$line" == "#!/usr/bin/env bash" ]; then
-         SCRIPT=$(readlink -f ${BASH_SOURCE[0]})
-         if ! cmp --silent -- "${TMP}" "${SCRIPT}"; then
-           mv -f "${TMP}" "${SCRIPT}"
-           chmod +x "${SCRIPT}"
-           echo "$HEADER: succesfully installed update."
-         else
-           echo "$HEADER: Update not needed."
-         fi
-      else
-         echo "$HEADER: update error, invalid header: $line"
-      fi
-    else
-      echo "$HEADER: update error, file not found.."
-    fi
-  else
-    echo "$HEADER: update error, curl error: $?"
+  if ! curl -s -f -k -m 5 -o "${TMP}" https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh; then
+    echo "$HEADER: update error: $?" && return
   fi
+
+  if [ ! -f "${TMP}" ]; then
+    echo "$HEADER: update error, file not found.." && return
+  fi
+
+  line=$(head -1 "${TMP}")
+
+  if [ "$line" != "#!/usr/bin/env bash" ]; then
+    echo "$HEADER: update error, invalid header: $line" && return
+  fi
+  
+  SCRIPT=$(readlink -f ${BASH_SOURCE[0]})
+
+  if ! cmp --silent -- "${TMP}" "${SCRIPT}"; then
+
+    mv -f "${TMP}" "${SCRIPT}"
+    chmod +x "${SCRIPT}"
+
+    echo "$HEADER: succesfully installed update."
+
+  else
+    echo "$HEADER: Update not needed."
+  fi
+  
 }
 
 function installPackages {
