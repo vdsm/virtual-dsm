@@ -21,12 +21,10 @@ _trap(){
 
 _graceful_shutdown(){
 
-  local QEMU_MONPORT="${QEMU_MONPORT:-7100}"
-  local QEMU_POWERDOWN_TIMEOUT="${QEMU_POWERDOWN_TIMEOUT:-50}"
-
   [ -f "${_QEMU_SHUTDOWN_COUNTER}" ] && return
 
   set +e
+
   echo
   echo "Received $1 signal, shutting down..."
   echo 0 > "${_QEMU_SHUTDOWN_COUNTER}"
@@ -47,14 +45,18 @@ _graceful_shutdown(){
     AGENT_VERSION=$(cat "${AGENT}")
 
     if ((AGENT_VERSION < 2)); then
+
       echo
       echo "Please update the agent to allow gracefull shutdowns..."
+
       pkill -f qemu-system-x86_64
+
     else
+
       # Send a NMI interrupt which will be detected by the kernel
       echo 'nmi' | nc -q 1 -w 1 localhost "${QEMU_MONPORT}" > /dev/null
-    fi
 
+    fi
   fi
 
   while [ "$(cat ${_QEMU_SHUTDOWN_COUNTER})" -lt "${QEMU_POWERDOWN_TIMEOUT}" ]; do
@@ -69,6 +71,7 @@ _graceful_shutdown(){
       #echo "Shutting down, waiting... ($(cat ${_QEMU_SHUTDOWN_COUNTER})/${QEMU_POWERDOWN_TIMEOUT})"
 
     fi
+
   done
 
   echo
