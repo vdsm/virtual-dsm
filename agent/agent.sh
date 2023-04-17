@@ -6,9 +6,9 @@ set -u
 function checkNMI {
 
   local nmi
-  nmi=$(awk '/NMI/ {for (i=2; i<=NF; i++) if ($i ~ /^[0-9]+$/) {sum+=$i}} END {print sum}' /proc/interrupts)
+  nmi=$(cat /proc/interrupts | grep NMI | sed 's/[^0-9]*//g' | sed 's/^0*//')
 
-  if [ "$nmi" != "" ] && [ "$nmi" -ne "0" ]; then
+  if [ "$nmi" != "" ]; then
 
     echo "Received shutdown request through NMI.." > /dev/ttyS0
 
