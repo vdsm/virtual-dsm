@@ -5,29 +5,33 @@ SCRIPT="/usr/local/bin/agent.sh"
 
 status() {
   if [ -f "$PIDFILE" ]; then
-    echo 'Service running' >&2
-    return 1
+    echo 'Service running'
+    exit 1
   fi
 }
 
 start() {
   if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")"; then
-    echo 'Service already running' >&2
-    return 1
+    echo 'Service already running'
+    exit 1
   fi
-  printf 'Starting agent service...' >&2
+  echo 'Starting agent service...'
   chmod 666 /dev/ttyS0
   "$SCRIPT" &> /dev/ttyS0 & echo $! > "$PIDFILE"
+  exit 0
 }
 
 stop() {
   if [ ! -f "$PIDFILE" ] || ! kill -0 "$(cat "$PIDFILE")"; then
-    echo 'Service not running' >&2
-    return 1
+    echo 'Service not running'
+    exit 1
   fi
-  echo 'Stopping agent service' >&2
+  echo 'Stopping agent service...'
+  chmod 666 /dev/ttyS0
+  echo 'Stopping agent service...' > /dev/ttyS0
   kill -15 "$(cat "$PIDFILE")" && rm -f "$PIDFILE"
-  echo 'Service stopped' >&2
+  echo 'Service stopped'
+  exit 0
 }
 
 case "$1" in
