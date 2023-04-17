@@ -121,7 +121,7 @@ echo "elapsed: $elapsed"
 if (( delay > elapsed )); then
   difference=$((delay-elapsed))
   echo "firstdiff: $difference"
-  float=$(echo | awk -v diff=\""$(difference)\"" '{print diff * 0.001}')
+  float=$(echo | awk -v diff=\""$difference\"" '{print diff * 0.001}')
   echo "Elapsed time: $elapsed, difference: $float"
   sleep $difference
 fi
