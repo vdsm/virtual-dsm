@@ -28,12 +28,15 @@ RD="$TMP/rd.gz"
 rm -rf $TMP && mkdir -p $TMP
 
 LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
-curl -r 64493568-69886247 -s -k -o "$RD" "$LOC"
+
+if ! curl -r 64493568-69886247 -s -f -k -o "$RD" "$LOC"; then
+  echo "Failed to download extractor, code: $?" && exit 60
+fi
 
 SUM=$(md5sum $RD | cut -f 1 -d " ")
 
 if [ $SUM != "14fb88cb7cabddb5af1d0269bf032845" ]; then
-  echo "Invalid extractor, checksum failed." && exit 59
+  echo "Invalid extractor, checksum failed." && exit 61
 fi
 
 set +e
