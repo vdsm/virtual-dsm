@@ -41,11 +41,11 @@ if [ -f "${DATA}" ]; then
       SPACE=$(df --output=avail -B 1 "${STORAGE}" | tail -n 1)
 
       if (( REQ > SPACE )); then
-        echo "ERROR: Not enough free space to resize virtual disk." && exit 84
+        echo "ERROR: Not enough free space to resize virtual disk to ${DISK_SIZE}." && exit 84
       fi
 
       if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
-        echo "ERROR: Could not allocate file for virtual disk." && exit 85
+        echo "ERROR: Could not allocate a file for the virtual disk." && exit 85
       fi
 
     fi
@@ -75,7 +75,8 @@ if [ ! -f "${DATA}" ]; then
     SPACE=$(df --output=avail -B 1 "${STORAGE}" | tail -n 1)
 
     if (( DATA_SIZE > SPACE )); then
-      echo "ERROR: Not enough free space to create virtual disk." && exit 86
+      echo "ERROR: Not enough free space to create a virtual disk of ${DISK_SIZE}."
+      echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATION=N." && exit 86
     fi
 
     if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
