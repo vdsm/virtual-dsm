@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -eu
 
+# Docker environment vars
+
 : ${VM_NET_TAP:=''}
 : ${VM_NET_IP:='20.20.20.21'}
 : ${VM_NET_HOST:='VirtualDSM'}
