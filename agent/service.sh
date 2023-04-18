@@ -16,7 +16,7 @@ start() {
     echo 'Service already running'
     return 1
   fi
-  echo "agent" > /var/lock/subsys/agent.sh
+  echo "-" > /var/lock/subsys/agent.sh
   echo 'Starting agent service...'
   chmod 666 /dev/ttyS0
   "$SCRIPT" &> /dev/ttyS0 & echo $! > "$PIDFILE"
