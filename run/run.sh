@@ -52,5 +52,4 @@ set -m
 )
 set +m
 
-pidwait -F "${_QEMU_PID}" &
-wait $!
+pidwait -F "${_QEMU_PID}" & wait $!
