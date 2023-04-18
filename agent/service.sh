@@ -8,6 +8,7 @@ status() {
     echo 'Service running'
     return 1
   fi
+  return 0
 }
 
 start() {
@@ -15,9 +16,11 @@ start() {
     echo 'Service already running'
     return 1
   fi
+  echo "-" > /var/lock/subsys/agent.sh
   echo 'Starting agent service...'
   chmod 666 /dev/ttyS0
   "$SCRIPT" &> /dev/ttyS0 & echo $! > "$PIDFILE"
+  return 0
 }
 
 stop() {
@@ -25,11 +28,13 @@ stop() {
     echo 'Service not running'
     return 1
   fi
+  rm -f /var/lock/subsys/agent.sh
   echo 'Stopping agent service...'
   chmod 666 /dev/ttyS0
   echo 'Stopping agent service...' > /dev/ttyS0
   kill -15 "$(cat "$PIDFILE")" && rm -f "$PIDFILE"
   echo 'Service stopped'
+  return 0
 }
 
 case "$1" in
@@ -48,4 +53,6 @@ case "$1" in
     ;;
   *)
     echo "Usage: $0 {start|stop|restart}"
+    exit 1
 esac
+

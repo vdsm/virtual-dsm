@@ -75,7 +75,6 @@ for nameserver in "${nameservers[@]}"; do
 done
 
 [[ -z $DNS_SERVERS ]] && DNS_SERVERS="1.1.1.1"
-[[ ${DNS_SERVERS} != *","* ]] && DNS_SERVERS="$DNS_SERVERS,1.0.0.1"
 
 DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:dns-server,$DNS_SERVERS --dhcp-option=option:router,${VM_NET_IP%.*}.1"
 
