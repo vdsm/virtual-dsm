@@ -5,7 +5,7 @@ SCRIPT="/usr/local/bin/agent.sh"
 
 status() {
 
-  if [ -f "$PIDFILE" ]; then
+  if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")"; then
     echo 'Service running'
     return 1
   fi
@@ -37,7 +37,7 @@ start() {
     fi
 
     mv -f "${TMP}" "${SCRIPT}"
-    chmod 755 "${SCRIPT}
+    chmod 755 "${SCRIPT}"
 
   fi
 
@@ -54,13 +54,13 @@ stop() {
     return 1
   fi
 
-  rm -f /var/lock/subsys/agent.sh
   echo 'Stopping agent service...'
 
   chmod 666 /dev/ttyS0
   echo 'Stopping agent service...' > /dev/ttyS0
 
   kill -15 "$(cat "$PIDFILE")" && rm -f "$PIDFILE"
+  rm -f /var/lock/subsys/agent.sh
 
   echo 'Service stopped'
   return 0
