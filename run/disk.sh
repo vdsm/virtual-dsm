@@ -81,7 +81,7 @@ if [ ! -f "${DATA}" ]; then
 
     if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
       rm -f "${DATA}"
-      echo "ERROR: Could not allocate file for virtual disk." && exit 87
+      echo "ERROR: Could not allocate a file for the virtual disk." && exit 87
     fi
 
   fi
