@@ -58,4 +58,4 @@ case "$1" in
     ret=1
 esac
 
-exit ret
+exit $ret
