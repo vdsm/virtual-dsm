@@ -23,7 +23,7 @@ start() {
   echo 'Starting agent service...'
   chmod 666 /dev/ttyS0
 
-  if [ -f "$SCRIPT" ]; then
+  if [ ! -f "$SCRIPT" ]; then
 
     echo 'ERROR: Agent script not found!' > /dev/ttyS0
 
