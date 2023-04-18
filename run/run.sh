@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -eu
 
+# Docker environment vars
+
+: ${URL:=''}.               # URL of PAT file
+: ${ALLOCATE:='Y'} # Preallocate diskspace
+
 echo "Starting Virtual DSM for Docker v${VERSION}..."
 
 STORAGE="/storage"
