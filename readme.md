@@ -113,7 +113,7 @@ $ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-
       CPU_CORES: "4"
       RAM_SIZE: "2048M"
     ```
-    
+ 
   * ### How do I install a specific version of vDSM? ###
 
     By default it installs vDSM 7.2, but if you want to use an older version you can add its URL to your compose file:
