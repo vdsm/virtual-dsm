@@ -155,12 +155,12 @@ mv $PKG/ $LOC/
 LOC="$MOUNT/usr/local/bin"
 mkdir -p $LOC
 cp /agent/agent.sh $LOC/agent.sh
-chmod +x $LOC/agent.sh
+chmod 755 $LOC/agent.sh
 
 LOC="$MOUNT/usr/local/etc/rc.d"
 mkdir -p $LOC
 cp /agent/service.sh $LOC/agent.sh
-chmod +x $LOC/agent.sh
+chmod 755 $LOC/agent.sh
 
 # Store agent version
 echo "5" > "$STORAGE"/"$BASE".agent
