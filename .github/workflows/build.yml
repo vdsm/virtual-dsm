@@ -11,18 +11,34 @@ on:
       - '.github/workflows/**'
 
 jobs:
+  shellcheck:
+    name: Shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        env:
+          SHELLCHECK_OPTS: -e SC2001 -e SC2002 -e SC2116 -e SC2034 -e SC1091 -e SC2143 -e SC2223 -e SC2086 -e SC2145 -e SC2015 -e SC2268 -e SC2207 -e SC2064 -e SC2162 -e SC2166
   build:
+    needs: shellcheck
     runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
     steps: 
     - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
     -
       name: Build the Docker image
       run: docker build . --file Dockerfile --build-arg "VERSION_ARG=${{ secrets.MAJOR }}.${{ secrets.MINOR }}" --build-arg "BUILD_ARG=${GITHUB_RUN_ID}" --label "id=${GITHUB_RUN_ID}" --label "version=${{ secrets.MAJOR }}.${{ secrets.MINOR }}" --tag "${{ github.repository }}:latest" --tag "${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}" --tag "ghcr.io/${{ github.repository }}:latest" --tag "ghcr.io/${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}"
+    -
+      name: Update Minor version
+      uses: hmanzur/actions-set-secret@v2.0.0
+      with:
+        name: 'MINOR'
+        value: $((${{ secrets.MINOR }}+1))
+        repository: ${{ github.repository }}
+        token: ${{ secrets.REPO_ACCESS_TOKEN }}
     -
       name: Login to Docker Hub
       uses: docker/login-action@v2
@@ -42,15 +58,15 @@ jobs:
     -
       name: Push to Github Container Registry
       run: docker push "ghcr.io/${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}" && docker push "ghcr.io/${{ github.repository }}:latest"
-    -
-      name: Update Minor version
-      uses: hmanzur/actions-set-secret@v2.0.0
+  mirror:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps: 
+    - uses: actions/checkout@v3
       with:
-        name: 'MINOR'
-        value: $((${{ secrets.MINOR }}+1))
-        repository: ${{ github.repository }}
-        token: ${{ secrets.REPO_ACCESS_TOKEN }}
-    - 
+        fetch-depth: 0
+    -
       name: Push to Gitlab mirror
       uses: wangchucheng/git-repo-sync@v0.1.0
       with:
