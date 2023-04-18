@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -eu
 
+# Docker environment variabeles
+
+: ${URL:=''}.                     # URL of PAT file
+: ${ALLOCATE:='Y'}       # Preallocate diskspace
+: ${CPU_CORES:='1'}     # vCPU count
+: ${DISK_SIZE:='16G'}    # Initial disk size
+: ${RAM_SIZE:='512M'} # Amount of RAM
+
 echo "Starting Virtual DSM for Docker v${VERSION}..."
 
 STORAGE="/storage"

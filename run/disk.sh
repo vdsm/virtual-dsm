@@ -28,20 +28,27 @@ if [ -f "${DATA}" ]; then
   if [ "$DATA_SIZE" -gt "$OLD_SIZE" ]; then
 
     echo "INFO: Resizing data disk from $OLD_SIZE to $DATA_SIZE bytes.."
-           
-    REQ=$((DATA_SIZE-OLD_SIZE))
-      
-    # Check free diskspace    
-    SPACE=$(df --output=avail -B 1 "${STORAGE}" | tail -n 1)
-      
-    if (( REQ > SPACE )); then
-      echo "ERROR: Not enough free space to resize virtual disk." && exit 84
-    fi
 
-    if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
-      echo "ERROR: Could not allocate file for virtual disk." && exit 85
+    if [ "$ALLOCATE" != "Y" ]; then
+
+      truncate -s "${DATA_SIZE}" "${DATA}"; 
+
+    else
+
+      REQ=$((DATA_SIZE-OLD_SIZE))
+
+      # Check free diskspace    
+      SPACE=$(df --output=avail -B 1 "${STORAGE}" | tail -n 1)
+
+      if (( REQ > SPACE )); then
+        echo "ERROR: Not enough free space to resize virtual disk to ${DISK_SIZE}." && exit 84
+      fi
+
+      if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
+        echo "ERROR: Could not allocate a file for the virtual disk." && exit 85
+      fi
+
     fi
-      
   fi
 
   if [ "$DATA_SIZE" -lt "$OLD_SIZE" ]; then
@@ -52,22 +59,31 @@ if [ -f "${DATA}" ]; then
     mv -f "${DATA}" "${DATA}.bak"
 
   fi
-  
 fi
 
 if [ ! -f "${DATA}" ]; then
 
-  # Check free diskspace
-  SPACE=$(df --output=avail -B 1 "${STORAGE}" | tail -n 1)
-
-  if (( DATA_SIZE > SPACE )); then
-    echo "ERROR: Not enough free space to create virtual disk." && exit 86
-  fi
-
   # Create an empty file
-  if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
-    rm -f "${DATA}"
-    echo "ERROR: Could not allocate file for virtual disk." && exit 87
+
+  if [ "$ALLOCATE" != "Y" ]; then
+
+    truncate -s "${DATA_SIZE}" "${DATA}"
+
+  else
+
+    # Check free diskspace
+    SPACE=$(df --output=avail -B 1 "${STORAGE}" | tail -n 1)
+
+    if (( DATA_SIZE > SPACE )); then
+      echo "ERROR: Not enough free space to create a virtual disk of ${DISK_SIZE}."
+      echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATION=N." && exit 86
+    fi
+
+    if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
+      rm -f "${DATA}"
+      echo "ERROR: Could not allocate a file for the virtual disk." && exit 87
+    fi
+
   fi
 
   # Check if file exists
@@ -80,12 +96,11 @@ if [ ! -f "${DATA}" ]; then
 
 fi
 
-AGENT_VERSION=1
 AGENT="${STORAGE}/${BASE}.agent"
-[ -f "$AGENT" ] && AGENT_VERSION=$(cat "${AGENT}")
+[ -f "$AGENT" ] && AGENT_VERSION=$(cat "${AGENT}") || AGENT_VERSION=1
 
 if ((AGENT_VERSION < 5)); then
-  echo "INFO: The installed VirtualDSM Agent is an outdated version, please upgrade it."
+  echo "INFO: The installed VirtualDSM Agent v${AGENT_VERSION} is an outdated version, please upgrade it."
 fi
 
 KVM_DISK_OPTS="\
