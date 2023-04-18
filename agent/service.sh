@@ -8,6 +8,7 @@ status() {
     echo 'Service running'
     return 1
   fi
+  return 0
 }
 
 start() {
@@ -18,6 +19,7 @@ start() {
   echo 'Starting agent service...'
   chmod 666 /dev/ttyS0
   "$SCRIPT" &> /dev/ttyS0 & echo $! > "$PIDFILE"
+  return 0
 }
 
 stop() {
@@ -30,22 +32,28 @@ stop() {
   echo 'Stopping agent service...' > /dev/ttyS0
   kill -15 "$(cat "$PIDFILE")" && rm -f "$PIDFILE"
   echo 'Service stopped'
+  return 0
 }
+
+ret=0
 
 case "$1" in
   start)
-    start
+    ret=start
     ;;
   stop)
-    stop
+    ret=stop
     ;;
   status)
-    status
+    ret=status
     ;;
   restart)
     stop
-    start
+    ret=start
     ;;
   *)
     echo "Usage: $0 {start|stop|restart}"
+    ret=1
 esac
+
+exit ret
