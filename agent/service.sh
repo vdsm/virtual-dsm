@@ -16,7 +16,7 @@ start() {
     echo 'Service already running'
     return 1
   fi
-  touch /var/lock/subsys/agent.sh
+  echo "agent" > /var/lock/subsys/agent.sh
   echo 'Starting agent service...'
   chmod 666 /dev/ttyS0
   "$SCRIPT" &> /dev/ttyS0 & echo $! > "$PIDFILE"
@@ -37,25 +37,22 @@ stop() {
   return 0
 }
 
-ret=0
-
 case "$1" in
   start)
-    ret=start
+    start
     ;;
   stop)
-    ret=stop
+    stop
     ;;
   status)
-    ret=status
+    status
     ;;
   restart)
     stop
-    ret=start
+    start
     ;;
   *)
     echo "Usage: $0 {start|stop|restart}"
-    ret=1
+    exit 1
 esac
 
-exit $ret
