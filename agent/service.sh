@@ -16,6 +16,7 @@ start() {
     echo 'Service already running'
     return 1
   fi
+  touch /var/lock/subsys/agent.sh
   echo 'Starting agent service...'
   chmod 666 /dev/ttyS0
   "$SCRIPT" &> /dev/ttyS0 & echo $! > "$PIDFILE"
@@ -27,6 +28,7 @@ stop() {
     echo 'Service not running'
     return 1
   fi
+  rm -f /var/lock/subsys/agent.sh
   echo 'Stopping agent service...'
   chmod 666 /dev/ttyS0
   echo 'Stopping agent service...' > /dev/ttyS0
