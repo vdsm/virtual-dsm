@@ -65,9 +65,18 @@ if [ ! -f "${DATA}" ]; then
   fi
 
   # Create an empty file
-  if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
-    rm -f "${DATA}"
-    echo "ERROR: Could not allocate file for virtual disk." && exit 87
+
+  if [ "$ALLOCATE" != "Y" ]; then
+
+    truncate -s "${DATA_SIZE}" "${DATA}"
+
+  else
+
+    if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
+      rm -f "${DATA}"
+      echo "ERROR: Could not allocate file for virtual disk." && exit 87
+    fi
+
   fi
 
   # Check if file exists
@@ -80,12 +89,11 @@ if [ ! -f "${DATA}" ]; then
 
 fi
 
-AGENT_VERSION=1
 AGENT="${STORAGE}/${BASE}.agent"
-[ -f "$AGENT" ] && AGENT_VERSION=$(cat "${AGENT}")
+[ -f "$AGENT" ] && AGENT_VERSION=$(cat "${AGENT}") || AGENT_VERSION=1
 
 if ((AGENT_VERSION < 5)); then
-  echo "INFO: The installed VirtualDSM Agent is an outdated version, please upgrade it."
+  echo "INFO: The installed VirtualDSM Agent v${AGENT_VERSION} is an outdated version, please upgrade it."
 fi
 
 KVM_DISK_OPTS="\
