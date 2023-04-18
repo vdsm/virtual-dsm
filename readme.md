@@ -54,10 +54,21 @@ services:
 Via `docker run`
 
 ```bash
-$ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-timeout 60 kroese/virtual-dsm:latest
+docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-timeout 60 kroese/virtual-dsm:latest
 ```
 
 ## FAQ
+
+  * ### How do I check if my system supports KVM?
+
+    To check if your system supports KVM run these commands:
+
+    ```
+    sudo apt install cpu-checker
+    sudo kvm-ok
+    ```
+
+    If `kvm-ok` returns an error stating KVM acceleration cannot be used, you may need to change your BIOS settings.
 
   * ### How do I change the size of the virtual disk? ###
 
@@ -81,6 +92,18 @@ $ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-
 
     Just replace `/home/user/data` with the path to the folder you want to use for storage.
 
+  * ### How do I change the amount of CPU/RAM? ###
+
+    By default an amount of 512MB RAM and 1 vCPU is allocated to the container.
+
+    To increase this you can add the following environment variabeles:
+
+    ```
+    environment:
+      CPU_CORES: "4"
+      RAM_SIZE: "2048M"
+    ```
+
   * ### How do I give the container a dedicated IP address?
 
     By default the container uses bridge networking, and is reachable by the IP of the docker host. 
@@ -100,19 +123,7 @@ $ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-
      --network vlan --ip=192.168.0.100
     ```
 
-    This has the advantage that you don't need to do any portmapping anymore.
-
-  * ### How do I change the amount of CPU/RAM? ###
-
-    By default an amount of 512MB RAM and 1 vCPU is allocated to the container.
-
-    To increase this you can add the following environment variabeles:
-
-    ```
-    environment:
-      CPU_CORES: "4"
-      RAM_SIZE: "2048M"
-    ```
+    This also has the advantage that you don't need to do any portmapping anymore.
     
   * ### How do I install a specific version of vDSM? ###
 
