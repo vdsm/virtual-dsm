@@ -11,17 +11,10 @@ on:
       - '.github/workflows/**'
 
 jobs:
-  shellcheck:
-    name: Shellcheck
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run ShellCheck
-        uses: ludeeus/action-shellcheck@master
-        env:
-          SHELLCHECK_OPTS: -e SC2001 -e SC2002 -e SC2116 -e SC2034 -e SC1091 -e SC2143 -e SC2223 -e SC2086 -e SC2145 -e SC2015 -e SC2268 -e SC2207 -e SC2064 -e SC2162 -e SC2166
+  check:
+    uses: ./.github/workflows/check.yml
   build:
-    needs: shellcheck
+    needs: check
     runs-on: ubuntu-latest
     permissions:
       packages: write
