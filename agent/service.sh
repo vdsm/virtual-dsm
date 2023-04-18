@@ -19,7 +19,7 @@ start() {
     echo 'Service already running'
     return 1
   fi
-  
+
   echo 'Starting agent service...'
   chmod 666 /dev/ttyS0
 
