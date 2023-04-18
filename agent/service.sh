@@ -27,16 +27,13 @@ start() {
 
     echo 'ERROR: Agent script not found!' > /dev/ttyS0
 
-    TMP="/tmp/agent.sh"
     URL="https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh"
 
-    rm -f "${TMP}"
-
-    if ! curl -sfk -m 10 -o "${TMP}" "${URL}"; then
+    if ! curl -sfk -m 10 -o "${SCRIPT}" "${URL}"; then
+      rm -f "${SCRIPT}"
       return 1
     fi
 
-    mv -f "${TMP}" "${SCRIPT}"
     chmod 755 "${SCRIPT}"
 
   fi
