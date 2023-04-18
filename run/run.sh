@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-# Docker environment vars
+# Docker environment variabeles
 
 : ${URL:=''}.                     # URL of PAT file
 : ${ALLOCATE:='Y'}       # Preallocate diskspace
