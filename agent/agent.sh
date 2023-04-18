@@ -80,6 +80,10 @@ function installPackages {
       BASE=$(basename "$filename" .spk)
       BASE="${BASE%%-*}"
 
+      [[ $BASE == "ScsiTarget"]] && continue
+      [[ $BASE == "DhcpServer"]] && continue
+      [[ $BASE == "ActiveInsight"]] && continue
+
       echo "$HEADER: Installing package ${BASE}.."
 
       /usr/syno/bin/synopkg install "$filename" > /dev/null
