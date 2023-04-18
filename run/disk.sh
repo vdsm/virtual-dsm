@@ -28,20 +28,27 @@ if [ -f "${DATA}" ]; then
   if [ "$DATA_SIZE" -gt "$OLD_SIZE" ]; then
 
     echo "INFO: Resizing data disk from $OLD_SIZE to $DATA_SIZE bytes.."
-           
-    REQ=$((DATA_SIZE-OLD_SIZE))
-      
-    # Check free diskspace    
-    SPACE=$(df --output=avail -B 1 "${STORAGE}" | tail -n 1)
-      
-    if (( REQ > SPACE )); then
-      echo "ERROR: Not enough free space to resize virtual disk." && exit 84
-    fi
 
-    if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
-      echo "ERROR: Could not allocate file for virtual disk." && exit 85
+    if [ "$ALLOCATE" != "Y" ]; then
+
+      truncate -s "${DATA_SIZE}" "${DATA}"; 
+
+    else
+
+      REQ=$((DATA_SIZE-OLD_SIZE))
+
+      # Check free diskspace    
+      SPACE=$(df --output=avail -B 1 "${STORAGE}" | tail -n 1)
+
+      if (( REQ > SPACE )); then
+        echo "ERROR: Not enough free space to resize virtual disk." && exit 84
+      fi
+
+      if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
+        echo "ERROR: Could not allocate file for virtual disk." && exit 85
+      fi
+
     fi
-      
   fi
 
   if [ "$DATA_SIZE" -lt "$OLD_SIZE" ]; then
@@ -52,17 +59,9 @@ if [ -f "${DATA}" ]; then
     mv -f "${DATA}" "${DATA}.bak"
 
   fi
-  
 fi
 
 if [ ! -f "${DATA}" ]; then
-
-  # Check free diskspace
-  SPACE=$(df --output=avail -B 1 "${STORAGE}" | tail -n 1)
-
-  if (( DATA_SIZE > SPACE )); then
-    echo "ERROR: Not enough free space to create virtual disk." && exit 86
-  fi
 
   # Create an empty file
 
@@ -71,6 +70,13 @@ if [ ! -f "${DATA}" ]; then
     truncate -s "${DATA_SIZE}" "${DATA}"
 
   else
+
+    # Check free diskspace
+    SPACE=$(df --output=avail -B 1 "${STORAGE}" | tail -n 1)
+
+    if (( DATA_SIZE > SPACE )); then
+      echo "ERROR: Not enough free space to create virtual disk." && exit 86
+    fi
 
     if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
       rm -f "${DATA}"
