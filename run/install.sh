@@ -112,12 +112,12 @@ SYSTEM_SIZE="4954537983"
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
 
 if (( SYSTEM_SIZE > SPACE )); then
-  echo "ERROR: Not enough free space to create virtual system disk." && exit 87
+  echo "ERROR: Not enough free space to create a 4 GB system disk." && exit 87
 fi
 
 if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
   rm -f "${SYSTEM}"
-  echo "ERROR: Could not allocate file for virtual system disk." && exit 88
+  echo "ERROR: Could not allocate a file for the system disk." && exit 88
 fi
 
 PART="$TMP/partition.fdisk"
