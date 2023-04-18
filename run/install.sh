@@ -108,24 +108,16 @@ echo "Install: Creating partition table..."
 SYSTEM="$TMP/sys.img"
 SYSTEM_SIZE="4954537983"
 
-if [ "$ALLOCATE" != "Y" ]; then
+# Check free diskspace
+SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
 
-  truncate -s "${SYSTEM_SIZE}" "${SYSTEM}"; 
+if (( SYSTEM_SIZE > SPACE )); then
+ echo "ERROR: Not enough free space to create a 4 GB system disk." && exit 87
+fi
 
-else
-
-  # Check free diskspace
-  SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
-
-  if (( SYSTEM_SIZE > SPACE )); then
-    echo "ERROR: Not enough free space to create a 4 GB system disk." && exit 87
-  fi
-
-  if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
-    rm -f "${SYSTEM}"
-    echo "ERROR: Could not allocate a file for the system disk." && exit 88
-  fi
-
+if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
+  rm -f "${SYSTEM}"
+  echo "ERROR: Could not allocate a file for the system disk." && exit 88
 fi
 
 PART="$TMP/partition.fdisk"
