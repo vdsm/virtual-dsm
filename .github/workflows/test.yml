@@ -1,19 +1,11 @@
 on:
   push:
-    paths-ignore:
-      - '**/*.md'
-      - '.gitignore'
-      - '.dockerignore'
-      - '.github/**'
-      - '.github/workflows/**'
+    paths:
+      - '**/*.sh'
 
   pull_request:
-    paths-ignore:
-      - '**/*.md'
-      - '.gitignore'
-      - '.dockerignore'
-      - '.github/**'
-      - '.github/workflows/**'
+    paths:
+      - '**/*.sh'
 
 name: "Test"
 permissions: {}
