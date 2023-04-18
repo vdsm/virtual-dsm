@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-# Docker environment vars
+# Docker environment variabeles
 
 : ${VM_NET_TAP:=''}
 : ${VM_NET_IP:='20.20.20.21'}
