@@ -112,7 +112,7 @@ SYSTEM_SIZE="4954537983"
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
 
 if (( SYSTEM_SIZE > SPACE )); then
- echo "ERROR: Not enough free space to create a 4 GB system disk." && exit 87
+  echo "ERROR: Not enough free space to create a 4 GB system disk." && exit 87
 fi
 
 if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
