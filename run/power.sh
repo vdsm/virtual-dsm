@@ -42,9 +42,8 @@ _graceful_shutdown(){
 
     # If we cannot shutdown the usual way, fallback to the NMI method
 
-    AGENT_VERSION=1
     AGENT="${STORAGE}/${BASE}.agent"
-    [ -f "$AGENT" ] && AGENT_VERSION=$(cat "${AGENT}")
+    [ -f "$AGENT" ] && AGENT_VERSION=$(cat "${AGENT}") || AGENT_VERSION=1
 
     if ((AGENT_VERSION < 2)); then
 
