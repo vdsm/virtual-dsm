@@ -48,7 +48,7 @@ function downloadUpdate {
   [[ remote_size -eq local_size ]] && return
 
   if ! curl -sfk -m 10 -o "${TMP}" "${URL}"; then
-    echo "$HEADER: curl error" && return
+    echo "$HEADER: curl error ($?)" && return
   fi
 
   if [ ! -f "${TMP}" ]; then
@@ -66,7 +66,7 @@ function downloadUpdate {
   fi
 
   mv -f "${TMP}" "${SCRIPT}"
-  chmod +x "${SCRIPT}"
+  chmod 755 "${SCRIPT}"
 
   echo "$HEADER: succesfully installed update, please reboot."
 
@@ -126,8 +126,7 @@ fi
 delay=5000
 elapsed=$((($(date +%s%N) - ts)/1000000))
 
-if (( delay > elapsed )); then
-  echo "$HEADER: Ready..."
+if [[ delay -gt elapsed ]]; then
   difference=$((delay-elapsed))
   float=$(echo | awk -v diff="${difference}" '{print diff * 0.001}')
   sleep "$float"
@@ -144,6 +143,6 @@ echo "-------------------------------------------"
 while true; do
 
   checkNMI
-  sleep 2
+  sleep 2 & wait $!
 
 done
