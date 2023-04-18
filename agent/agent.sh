@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -u
 
-VERSION="5"
+VERSION="6"
 HEADER="VirtualDSM Agent"
 
 # Functions
@@ -79,6 +79,10 @@ function installPackages {
 
       BASE=$(basename "$filename" .spk)
       BASE="${BASE%%-*}"
+
+      [[ $BASE == "ScsiTarget" ]] && continue
+      [[ $BASE == "DhcpServer" ]] && continue
+      [[ $BASE == "ActiveInsight" ]] && continue
 
       echo "$HEADER: Installing package ${BASE}.."
 
