@@ -163,7 +163,7 @@ cp /agent/service.sh $LOC/agent.sh
 chmod 755 $LOC/agent.sh
 
 # Store agent version
-echo "5" > "$STORAGE"/"$BASE".agent
+echo "6" > "$STORAGE"/"$BASE".agent
 
 echo "Install: Installing system partition..."
 
