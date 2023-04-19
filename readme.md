@@ -72,7 +72,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I change the size of the virtual disk? ###
 
-    By default it is 16GB, but you can modify the `DISK_SIZE` setting in your compose file:
+    By default it is 16GB, but to increase it you can modify the `DISK_SIZE` setting in your compose file:
 
     ```
     environment:
@@ -83,7 +83,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I change the location of the virtual disk? ###
 
-    By default it resides inside a docker volume, but you can add these lines to your compose file:
+    By default it resides inside a docker volume, but to store it somewhere else you can add these lines to your compose file:
 
     ```
     volumes:
@@ -94,7 +94,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I change the space reserved by the virtual disk? ###
 
-    By default the total space for the disk is reserved in advance. If you want to only reserve the space that is actually used, add these lines:
+    By default the total space for the disk is reserved in advance. If you want to only reserve the space that is actually used by the disk, add these lines:
 
     ```
     environment:
