@@ -50,10 +50,9 @@ if [ -e /dev/kvm ] && sh -c 'echo -n > /dev/kvm' &> /dev/null; then
 fi
 
 if [ -z "${KVM_OPTS}" ]; then
-  KVM_OPTS="-machine usb=off"
-  if [ "$DEBUG" != "Y" ]; then
-    echo "Error: KVM acceleration is disabled.." && exit 88
-  fi
+  KVM_OPTS="-machine type=q35,usb=off"
+  echo "Error: KVM acceleration is disabled.."
+  [ "$DEBUG" != "Y" ] && exit 88
 fi
 
 RAM_OPTS=$(echo "-m ${RAM_SIZE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
