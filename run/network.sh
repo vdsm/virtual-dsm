@@ -95,10 +95,10 @@ getNonConflictingIP () {
     local IP="$1"
     local CIDR="$2"
 
-    let "newCIDR=$CIDR-1"
+    (( "newCIDR=$CIDR-1" )) || true
 
     local i=$(atoi $IP)
-    let "j=$i^(1<<(32-$CIDR))"
+    (( "j=$i^(1<<(32-$CIDR))" )) || true
     local newIP=$(itoa j)
 
     echo $newIP $newCIDR
@@ -224,12 +224,12 @@ configureNetworks () {
     log "DEBUG" "bridgeName: $bridgeName"
 
     # kvm configuration:
-    let fd=$i+3
+    (( fd=$i+3 )) || true
 
     NET_OPTS="-netdev tap,id=net$i,vhost=on,fd=$fd ${fd}<>/dev/macvtap$deviceID"
     NET_OPTS="-device virtio-net-pci,netdev=net$i,mac=$MAC $NET_OPTS"
 
-    let i++
+    (( i++ )) || true
 
   done
 }
