@@ -30,7 +30,7 @@ fi
 		 -buildnumber="${HOST_BUILD}" \
 		 -guestuuid="${GUEST_UUID}" > /dev/null 2>&1 &
 
-KVM_SERIAL_OPTS="\
+SERIAL_OPTS="\
 	-serial mon:stdio \
 	-device virtio-serial-pci,id=virtio-serial0,bus=pcie.0,addr=0x3 \
 	-chardev pty,id=charserial0 \
