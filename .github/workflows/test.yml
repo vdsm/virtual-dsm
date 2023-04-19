@@ -1,6 +1,6 @@
 on:
   push:
-    branches:
+    branches-ignore:
       - master
     paths:
       - '**/*.sh'
