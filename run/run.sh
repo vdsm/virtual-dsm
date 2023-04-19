@@ -50,9 +50,11 @@ fi
 
 [ -z "${KVM_ACC_OPTS}" ] && echo "Error: KVM acceleration is disabled.." && exit 88
 
-RAM_SIZE=$(echo "${RAM_SIZE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
-EXTRA_OPTS="-nographic -object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0 -device virtio-balloon-pci,id=balloon0,bus=pcie.0,addr=0x4"
-ARGS="-m ${RAM_SIZE} -smp ${CPU_CORES},sockets=${CPU_CORES},cores=1,threads=1 ${KVM_ACC_OPTS} ${EXTRA_OPTS} ${KVM_MON_OPTS} ${KVM_SERIAL_OPTS} ${KVM_NET_OPTS} ${KVM_DISK_OPTS}"
+DEF_OPTS="-nographic"
+RAM_OPTS=$(echo "-m ${RAM_SIZE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
+CPU_OPTS="-smp ${CPU_CORES},sockets=${CPU_CORES},cores=1,threads=1"
+EXTRA_OPTS="-device virtio-balloon-pci,id=balloon0,bus=pcie.0,addr=0x4 -object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0"
+ARGS="${DEF_OPTS} ${CPU_OPTS} ${RAM_OPTS} ${KVM_ACC_OPTS} ${KVM_MON_OPTS} ${KVM_SERIAL_OPTS} ${KVM_NET_OPTS} ${KVM_DISK_OPTS} ${EXTRA_OPTS}"
 
 set -m
 (
