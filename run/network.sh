@@ -35,6 +35,7 @@ configureMacVlan () {
 
   _tmpTapPath="/dev/tap$(</sys/class/net/${VM_NET_TAP}/ifindex)"
 
+  # get MAJOR MINOR DEVNAME
   MAJOR=""
   eval "$(</sys/class/net/${VM_NET_TAP}/macvtap/${_tmpTapPath##*/}/uevent) _tmp=0"
 
@@ -48,7 +49,7 @@ configureMacVlan () {
     mknod ${_tmpTapPath} c $MAJOR $MINOR && : || ("ERROR: Cannot mknod: ${_tmpTapPath}" && exit 20)
   fi
 
-  NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30 30<>${_tmpTapPath} 40<>/dev/vhost-net"
+  NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30 ${NET_OPTS} 30<>${_tmpTapPath} 40<>/dev/vhost-net"
 }
 
 configureNatNetwork () {
@@ -80,7 +81,7 @@ configureNatNetwork () {
   echo "0 $VM_NET_MAC $VM_NET_IP $VM_NET_HOST 01:${VM_NET_MAC}" > /var/lib/misc/dnsmasq.leases
   chmod 644 /var/lib/misc/dnsmasq.leases
 
-  NET_OPTS="-netdev tap,ifname=${VM_NET_TAP},script=no,downscript=no,id=hostnet0"
+  NET_OPTS="-netdev tap,ifname=${VM_NET_TAP},script=no,downscript=no,id=hostnet0 ${NET_OPTS}"
 
   # Build DNS options from container /etc/resolv.conf
   nameservers=($(grep '^nameserver' /etc/resolv.conf | sed 's/nameserver //'))
@@ -135,6 +136,7 @@ update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
 update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 
 GATEWAY=$(ip r | grep default | awk '{print $3}')
+NET_OPTS="-device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
 
 if [[ "$GATEWAY" == "172."* ]]; then
   # Configuration for bridge network
@@ -143,8 +145,6 @@ else
   # Configuration for macvlan network
   configureMacVlan
 fi
-
-NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
 
 # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
 iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill
