@@ -18,17 +18,17 @@ set -eu
 configureMacVlan () {
 
   VM_NET_TAP="_VmMacvtap"
-  echo "Retrieving IP via DHCP using MAC: ${VM_NET_MAC}..."
+  echo "Info: Retrieving IP via DHCP using MAC: ${VM_NET_MAC}..."
 		
   ip l add link eth0 name ${VM_NET_TAP} address ${VM_NET_MAC} type macvtap mode bridge || true
   ip l set ${VM_NET_TAP} up
 		
   ip a flush eth0
   ip a flush ${VM_NET_TAP}
-		
+  dhclient -v ${VM_NET_TAP}
   _DhcpIP=$( dhclient -v ${VM_NET_TAP} 2>&1 | grep ^bound | cut -d' ' -f3 )
   [[ "${_DhcpIP}" == [0-9.]* ]] \
-  && echo "... Retrieve IP: ${_DhcpIP} from DHCP with MAC: ${VM_NET_MAC}" \
+  && echo "Info: Retrieved IP: ${_DhcpIP} from DHCP with MAC: ${VM_NET_MAC}" \
   || ( echo "ERROR: Cannot retrieve IP from DHCP with MAC: ${VM_NET_MAC}" && exit 16 )
 
   ip a flush ${VM_NET_TAP}
@@ -128,7 +128,7 @@ fi
 
 if [ "$DEBUG" = "Y" ]; then
   echo && ifconfig
-  echo && ip route
+  echo && ip route && echo
 fi
 
 update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
