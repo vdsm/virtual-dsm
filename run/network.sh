@@ -129,20 +129,26 @@ fi
 
 if [ "$DEBUG" = "Y" ]; then
 
-  GATEWAY=$(ip r | grep default | awk '{print $3}')
   IP=$(ip address show dev eth0 | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
 
   echo && ifconfig
   echo && ip route && echo
-  echo "IP: ${IP} GATEWAY: ${GATEWAY}" && echo
+  echo "Container IP: ${IP}" && echo
 
 fi
 
 update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
 update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 
-#configureNatNetwork
-configureMacVlan
+GATEWAY=$(ip r | grep default | awk '{print $3}')
+
+if [[ "$GATEWAY" == "172."* ]]; then
+  # Configuration for bridge network
+  configureNatNetwork
+else
+  # Configuration for macvlan network
+  configureMacVlan
+fi
 
 # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
 iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill
