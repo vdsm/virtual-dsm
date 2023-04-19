@@ -127,9 +127,9 @@ if [ "$ALLOCATE" != "Z" ]; then
 else
 
   GB=$(( (SYSTEM_SIZE + 1073741823)/1073741824 ))
-  echo "Install: Writing ${GB} GB of zeroes, please wait.."
+  echo "Install: Filling ${GB} GB of space, please wait.."
 
-  dd if=/dev/zero of="${SYSTEM}" count="${SYSTEM_SIZE}" bs=1M iflag=count_bytes > /dev/null
+  dd if=/dev/urandom of="${SYSTEM}" count="${SYSTEM_SIZE}" bs=1M iflag=count_bytes > /dev/null
 
 fi
 
