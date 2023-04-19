@@ -396,7 +396,8 @@ configureNetworks
   [[ -z $(hostname -d) ]] || DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-name,$(hostname -d)"
   log "INFO" "Lauching dnsmasq"
   log "DEBUG" "dnsmasq options: $DNSMASQ_OPTS"
-  $DNSMASQ $DNSMASQ_OPTS
+
+$DNSMASQ $DNSMASQ_OPTS
 
 NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
 
