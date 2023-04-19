@@ -354,13 +354,13 @@ update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 
 GATEWAY=$(ip r | grep default | awk '{print $3}')
 
-if [[ "$GATEWAY" == "172."* ]]; then
+#if [[ "$GATEWAY" == "172."* ]]; then
   # Configuration for static IP
   #configureNAT
-else
+#else
   # Configuration for DHCP IP
   #configureDHCP
-fi
+#fi
 
 # Get all interfaces:
   local_ifaces=($(ip link show | grep -v noop | grep state | grep -v LOOPBACK | awk '{print $2}' | tr -d : | sed 's/@.*$//'))
