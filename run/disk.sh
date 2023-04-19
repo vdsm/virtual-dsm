@@ -29,7 +29,7 @@ if [ -f "${DATA}" ]; then
 
     echo "INFO: Resizing data disk from $OLD_SIZE to $DATA_SIZE bytes.."
 
-    if [ "$ALLOCATE" != "Y" ]; then
+    if [ "$ALLOCATE" = "N" ]; then
 
       truncate -s "${DATA_SIZE}" "${DATA}"; 
 
@@ -45,10 +45,20 @@ if [ -f "${DATA}" ]; then
         echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATION=N." && exit 84
       fi
 
-      if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
-        echo "ERROR: Could not allocate a file for the virtual disk." && exit 85
-      fi
+      if [ "$ALLOCATE" = "Z" ]; then
 
+        GB=$(( (REQ + 1073741823)/1073741824 ))
+        echo "INFO: Writing ${GB} GB of zeroes, please wait.."
+
+        dd if=/dev/zero of="${DATA}" seek="${OLD_SIZE}" count="${REQ}" bs=1M iflag=count_bytes oflag=seek_bytes
+
+      else
+
+        if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
+          echo "ERROR: Could not allocate a file for the virtual disk." && exit 85
+        fi
+
+      fi
     fi
   fi
 
@@ -66,7 +76,7 @@ if [ ! -f "${DATA}" ]; then
 
   # Create an empty file
 
-  if [ "$ALLOCATE" != "Y" ]; then
+  if [ "$ALLOCATE" = "N" ]; then
 
     truncate -s "${DATA_SIZE}" "${DATA}"
 
@@ -80,21 +90,37 @@ if [ ! -f "${DATA}" ]; then
       echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATION=N." && exit 86
     fi
 
-    if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
-      rm -f "${DATA}"
-      echo "ERROR: Could not allocate a file for the virtual disk." && exit 87
-    fi
+    if [ "$ALLOCATE" = "Z" ]; then
 
+      echo "INFO: Writing ${DISK_SIZE} of zeroes, please wait.."
+
+      dd if=/dev/zero of="${DATA}" count="${DATA_SIZE}" bs=1M iflag=count_bytes
+
+    else
+
+      if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
+        rm -f "${DATA}"
+        echo "ERROR: Could not allocate a file for the virtual disk." && exit 87
+      fi
+
+    fi
   fi
 
   # Check if file exists
   if [ ! -f "${DATA}" ]; then
-    echo "ERROR: Virtual DSM data disk does not exist ($DATA)" && exit 88
+    echo "ERROR: Virtual disk does not exist ($DATA)" && exit 88
   fi
 
   # Format as BTRFS filesystem
   mkfs.btrfs -q -L data -d single -m dup "${DATA}" > /dev/null
 
+fi
+
+# Check the filesize
+SIZE=$(stat -c%s "${DATA}")
+
+if [[ SIZE -ne DATA_SIZE ]]; then
+  echo "ERROR: Virtual disk has the wrong size: ${SIZE}" && exit 89
 fi
 
 AGENT="${STORAGE}/${BASE}.agent"
