@@ -187,6 +187,8 @@ configureNetworks () {
     # If this env variable is not set, the IP to be given to the VM is
     # the first in the list for that interface (default behaviour).
 
+    SELECTED_NETWORK=""
+
     if ! [[ -z "$SELECTED_NETWORK" ]]; then
       local given_ip given_mask
       IFS=/ read given_ip given_mask <<< $SELECTED_NETWORK
