@@ -91,6 +91,7 @@ cidr2mask() {
 # of the given IP/MASK
 # usage: getNonConflictingIP IP MASK
 # returns NEWIP MASK
+
 getNonConflictingIP () {
     local IP="$1"
     local CIDR="$2"
@@ -110,6 +111,7 @@ getNonConflictingIP () {
 # returns:
 #   - bridgeXXXXXX if DEVICETYPE is 'bridge'
 #   - macvlanXXXXXX, macvtapXXXXXX if DEVICETYPE is 'macvlan'
+
 generateNetdevNames () {
   devicetype=$1
 
@@ -166,6 +168,7 @@ setupBridge () {
 
 # Setup macvtap device to connect later the VM and setup a new macvlan devide
 # to connect the host machine to the network
+
 configureNetworks () {
 
   local IP
