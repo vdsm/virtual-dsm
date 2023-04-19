@@ -128,8 +128,14 @@ fi
 [ ! -c /dev/net/tun ] && echo "Error: TUN network interface not available..." && exit 85
 
 if [ "$DEBUG" = "Y" ]; then
+
+  GATEWAY=$(ip r | grep default | awk '{print $3}')
+  IP=$(ip address show dev eth0 | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
+
   echo && ifconfig
   echo && ip route && echo
+  echo "IP: ${IP} GATEWAY: ${GATEWAY}" && echo
+
 fi
 
 update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
