@@ -17,6 +17,7 @@ RUN apt-get update && apt-get -y upgrade && \
 	fdisk \
 	unzip \
 	procps \
+	udhcpc \
 	dnsmasq \
 	iptables \
 	iproute2 \
