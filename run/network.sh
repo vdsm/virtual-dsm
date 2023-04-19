@@ -229,7 +229,7 @@ configureNetworks () {
     # kvm configuration:
     (( fd=$i+3 )) || true
 
-    NET_OPTS="-netdev tap,id=net$i,vhost=on,fd=$fd ${fd}<>/dev/macvtap$deviceID"
+    NET_OPTS="-netdev tap,id=net$i,vhost=on,fd=$fd -add-fd fd=${fd},set=2,opaque='rdwr:/dev/macvtap$deviceID'"
     NET_OPTS="-device virtio-net-pci,netdev=net$i,mac=$MAC $NET_OPTS"
 
     (( i++ )) || true
