@@ -84,4 +84,4 @@ _graceful_shutdown(){
 
 _trap _graceful_shutdown SIGTERM SIGHUP SIGINT SIGABRT SIGQUIT
 
-KVM_MON_OPTS="-monitor telnet:localhost:${QEMU_MONPORT},server,nowait,nodelay"
+MON_OPTS="-monitor telnet:localhost:${QEMU_MONPORT},server,nowait,nodelay"
