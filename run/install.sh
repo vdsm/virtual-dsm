@@ -103,7 +103,7 @@ BOOT=$(find $TMP -name "*.bin.zip")
 BOOT=$(echo "$BOOT" | head -c -5)
 unzip -q -o "$BOOT".zip -d $TMP
 
-echo "Install: Creating partition table..."
+echo "Install: Allocating diskspace..."
 
 SYSTEM="$TMP/sys.img"
 SYSTEM_SIZE=4954537983
@@ -115,7 +115,11 @@ if (( SYSTEM_SIZE > SPACE )); then
   echo "ERROR: Not enough free space to create a 4 GB system disk." && exit 87
 fi
 
-echo "Install: Allocating diskspace..."
+if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
+  rm -f "${SYSTEM}"
+  echo "ERROR: Could not allocate a file for the system disk." && exit 88
+fi
+
 dd if=/dev/urandom of="${SYSTEM}" count="${SYSTEM_SIZE}" bs=1M iflag=count_bytes status=none
 
 # Check if file exists
@@ -130,6 +134,8 @@ if [[ SIZE -ne SYSTEM_SIZE ]]; then
   rm -f "${SYSTEM}"
   echo "ERROR: System disk has the wrong size: ${SIZE}" && exit 90
 fi
+
+echo "Install: Creating partition table..."
 
 PART="$TMP/partition.fdisk"
 
