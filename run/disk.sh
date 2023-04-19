@@ -45,10 +45,20 @@ if [ -f "${DATA}" ]; then
         echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATION=N." && exit 84
       fi
 
-      if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
-        echo "ERROR: Could not allocate a file for the virtual disk." && exit 85
-      fi
+      if [ "$ALLOCATE" = "F" ]; then
 
+        GB=$(( (REQ + 1073741823)/1073741824 ))
+        echo "INFO: Writing ${GB} GB of zeroes, please wait.."
+
+        dd if=/dev/zero of="${DATA}" seek="{OLD_SIZE}" count="${REQ}" bs=1M iflag=count_bytes oflag=seek_bytes
+
+      else
+
+        if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
+          echo "ERROR: Could not allocate a file for the virtual disk." && exit 85
+        fi
+
+      fi
     fi
   fi
 
@@ -82,11 +92,9 @@ if [ ! -f "${DATA}" ]; then
 
     if [ "$ALLOCATE" = "F" ]; then
 
-      MB=$(( (DATA_SIZE + 1048575)/1048576 ))
+      echo "INFO: Writing ${DISK_SIZE} of zeroes, please wait.."
 
-      echo "INFO: Writing ${MB} MB of zeroes, please wait.."
-      dd if=/dev/zero of="${DATA}" count="${MB}" bs=1M
-      truncate -s "${DATA_SIZE}" "${DATA}"
+      dd if=/dev/zero of="${DATA}" count="${DATA_SIZE}" bs=1M iflag=count_bytes
 
     else
 
@@ -103,17 +111,16 @@ if [ ! -f "${DATA}" ]; then
     echo "ERROR: Virtual disk does not exist ($DATA)" && exit 88
   fi
 
-  # Check the filesize
-  SIZE=$(stat -c%s "${DATA}")
-
-  if [[ SIZE -ne DATA_SIZE ]]; then
-    rm -f "${DATA}"
-    echo "ERROR: Virtual disk has the wrong size: ${SIZE}" && exit 89
-  fi
-
   # Format as BTRFS filesystem
   mkfs.btrfs -q -L data -d single -m dup "${DATA}" > /dev/null
 
+fi
+
+# Check the filesize
+SIZE=$(stat -c%s "${DATA}")
+
+if [[ SIZE -ne DATA_SIZE ]]; then
+  echo "ERROR: Virtual disk has the wrong size: ${SIZE}" && exit 89
 fi
 
 AGENT="${STORAGE}/${BASE}.agent"
