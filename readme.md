@@ -128,10 +128,20 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
         --ip-range=192.168.0.100/28 \
         -o parent=eth0 vdsm
     ```
-    Modify these values to match your local subnet. And change the docker network of the container from `bridged` to `vdsm` in your run command or compose file:
+    Modify these values to match your local subnet. And change the docker network of the container from `bridged` to `vdsm` in your compose file:
 
     ```
-     --network vdsm --ip=192.168.0.100
+    networks:
+        vdsm:             
+            ipv4_address: 192.168.0.100
+    ```
+
+    And add the following to the very bottom of your compose file:
+
+    ```
+    networks:
+        vlan:
+            external: true
     ```
 
     This also has the advantage that you don't need to do any portmapping anymore, because all ports will be fully exposed this way.
