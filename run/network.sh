@@ -223,7 +223,7 @@ configureNetworks () {
     bridgeName="macvlan$deviceID"
     # kvm configuration:
     let fd=$i+3
-    NET_OPTS="$KVM_NET_OPTS -netdev tap,id=net$i,vhost=on,fd=$fd ${fd}<>/dev/macvtap$deviceID"
+    NET_OPTS="$NET_OPTS -netdev tap,id=net$i,vhost=on,fd=$fd ${fd}<>/dev/macvtap$deviceID"
 
     setupDhcp
     log "DEBUG" "bridgeName: $bridgeName"
