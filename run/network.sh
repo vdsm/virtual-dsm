@@ -18,7 +18,7 @@ set -eu
 configureMacVlan () {
 
   VM_NET_TAP="_VmMacvtap"
-  echo "... to retrieve IP via DHCP through Macvtap (${VM_NET_TAP}) and MAC: ${VM_NET_MAC}"
+  echo "Retrieving IP via DHCP using MAC: ${VM_NET_MAC}..."
 		
   ip l add link eth0 name ${VM_NET_TAP} address ${VM_NET_MAC} type macvtap mode bridge || true
   ip l set ${VM_NET_TAP} up
@@ -29,7 +29,7 @@ configureMacVlan () {
   _DhcpIP=$( dhclient -v ${VM_NET_TAP} 2>&1 | grep ^bound | cut -d' ' -f3 )
   [[ "${_DhcpIP}" == [0-9.]* ]] \
   && echo "... Retrieve IP: ${_DhcpIP} from DHCP with MAC: ${VM_NET_MAC}" \
-  || ( echo "... Cannot retrieve IP from DHCP with MAC: ${VM_NET_MAC}" && exit 16 )
+  || ( echo "ERROR: Cannot retrieve IP from DHCP with MAC: ${VM_NET_MAC}" && exit 16 )
 
   ip a flush ${VM_NET_TAP}
 		
