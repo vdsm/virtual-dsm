@@ -58,13 +58,13 @@ fi
 
 RAM_OPTS=$(echo "-m ${RAM_SIZE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
 CPU_OPTS="-smp ${CPU_CORES},sockets=1,cores=${CPU_CORES},threads=1"
-DEF_OPTS="-nographic -nodefaults -pidfile ${_QEMU_PID} -overcommit mem-lock=off"
+DEF_OPTS="-nographic -nodefaults -overcommit mem-lock=off"
 EXTRA_OPTS="-device virtio-balloon-pci,id=balloon0 -object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0"
 ARGS="${DEF_OPTS} ${CPU_OPTS} ${RAM_OPTS} ${KVM_OPTS} ${MON_OPTS} ${SERIAL_OPTS} ${NET_OPTS} ${DISK_OPTS} ${EXTRA_OPTS}"
 
 set -m
 (
-  qemu-system-x86_64 ${ARGS} &
+  qemu-system-x86_64 ${ARGS} & echo $! > ${_QEMU_PID}
 )
 set +m
 
