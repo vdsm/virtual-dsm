@@ -39,16 +39,15 @@ configureMacVlan () {
   eval "$(</sys/class/net/${VM_NET_TAP}/macvtap/${_tmpTapPath##*/}/uevent) _tmp=0"
 
   [[ "x${MAJOR}" != "x" ]] \
-	  && echo "Info: Please make sure that the Docker run command line uses: --device-cgroup-rule='c ${MAJOR}:* rwm'" \
+	  && echo "Info: Please make sure that the following docker setting is used: --device-cgroup-rule='c ${MAJOR}:* rwm'" \
       	  || ( echo "Info: Macvtap creation issue: Cannot find: /sys/class/net/${VM_NET_TAP}/" && exit 18 )
 
   [[ ! -e ${_tmpTapPath} ]] && [[ -e /dev0/${_tmpTapPath##*/} ]] && ln -s /dev0/${_tmpTapPath##*/} ${_tmpTapPath}
 
   if [[ ! -e ${_tmpTapPath} ]]; then
-	  echo "... file does not exist: ${_tmpTapPath}"
-	  mknod ${_tmpTapPath} c $MAJOR $MINOR \
-		  && echo "... File created with mknod: ${_tmpTapPath}" \
-		  || ( echo "... Cannot mknod: ${_tmpTapPath}" && exit 20 )
+    if [[ ! mknod ${_tmpTapPath} c $MAJOR $MINOR ]]; then
+      echo "ERROR: Cannot mknod: ${_tmpTapPath}" && exit 20
+    fi
   fi
 
   NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30 30<>${_tmpTapPath} 40<>/dev/vhost-net"
@@ -109,8 +108,6 @@ configureNatNetwork () {
   [ "$DEBUG" = "Y" ] && echo && echo "$DNSMASQ $DNSMASQ_OPTS"
 
   $DNSMASQ $DNSMASQ_OPTS
-
-  NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
 }
 
 # ######################################
@@ -148,6 +145,8 @@ else
   # Configuration for macvlan network
   configureMacVlan
 fi
+
+NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
 
 # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
 iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill
