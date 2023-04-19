@@ -66,7 +66,7 @@ if [ ! -f "${DATA}" ]; then
 
   # Create an empty file
 
-  if [ "$ALLOCATE" != "Y" ]; then
+  if [ "$ALLOCATE" = "N" ]; then
 
     truncate -s "${DATA_SIZE}" "${DATA}"
 
@@ -80,16 +80,35 @@ if [ ! -f "${DATA}" ]; then
       echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATION=N." && exit 86
     fi
 
-    if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
-      rm -f "${DATA}"
-      echo "ERROR: Could not allocate a file for the virtual disk." && exit 87
-    fi
+    if [ "$ALLOCATE" = "F" ]; then
 
+      MB=$(( (DATA_SIZE + 1048575)/1048576 ))
+
+      echo "INFO: Writing ${MB} MB of zeroes, please wait.."
+      dd if=/dev/zero of="${DATA}" count="${MB}" bs=1M
+      truncate -s "${DATA_SIZE}" "${DATA}"
+
+    else
+
+      if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
+        rm -f "${DATA}"
+        echo "ERROR: Could not allocate a file for the virtual disk." && exit 87
+      fi
+
+    fi
   fi
 
   # Check if file exists
   if [ ! -f "${DATA}" ]; then
-    echo "ERROR: Virtual DSM data disk does not exist ($DATA)" && exit 88
+    echo "ERROR: Virtual disk does not exist ($DATA)" && exit 88
+  fi
+
+  # Check the filesize
+  SIZE=$(stat -c%s "${DATA}")
+
+  if [[ SIZE -ne DATA_SIZE ]]; then
+    rm -f "${DATA}"
+    echo "ERROR: Virtual disk has the wrong size: ${SIZE}" && exit 89
   fi
 
   # Format as BTRFS filesystem
