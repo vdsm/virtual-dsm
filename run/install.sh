@@ -124,11 +124,10 @@ if [ "$ALLOCATE" != "F" ]; then
 
 else
 
-  MB=$(( (SYSTEM_SIZE + 1048575)/1048576 ))
-  echo "INFO: Writing ${MB} MB of zeroes, please wait.."
+  GB=$(( (SYSTEM_SIZE + 1073741823)/1073741824 ))
+  echo "INFO: Writing ${GB} GB of zeroes, please wait.."
 
-  dd if=/dev/zero of="${SYSTEM}" count="${MB}" bs=1M
-  truncate -s "${SYSTEM_SIZE}" "${SYSTEM}"
+  dd if=/dev/zero of="${SYSTEM}" count="${SYSTEM_SIZE}" bs=1M iflag=count_bytes
 
 fi
 
