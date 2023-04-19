@@ -124,11 +124,18 @@ if [ "$ALLOCATE" != "F" ]; then
 
 else
 
-  MB=(( (SYSTEM_SIZE + 1048575)/1048576 ))
+  MB=$(( (SYSTEM_SIZE + 1048575)/1048576 ))
 
+  echo "INFO: Writing ${MB} MB of zeroes.."
   dd if=/dev/zero of="${SYSTEM}" count="${MB}" bs=1M
   truncate -s "${SYSTEM_SIZE}" "${SYSTEM}"
 
+fi
+
+SIZE=$(stat -c%s "${SYSTEM}")
+
+if [[ SIZE -ne SYSTEM_SIZE ]]; then
+  echo "ERROR: System disk has the wrong size." && exit 89
 fi
 
 PART="$TMP/partition.fdisk"
