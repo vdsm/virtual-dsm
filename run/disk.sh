@@ -29,7 +29,7 @@ if [ -f "${DATA}" ]; then
 
     echo "INFO: Resizing data disk from $OLD_SIZE to $DATA_SIZE bytes.."
 
-    if [ "$ALLOCATE" != "Y" ]; then
+    if [ "$ALLOCATE" = "N" ]; then
 
       truncate -s "${DATA_SIZE}" "${DATA}"; 
 
@@ -45,7 +45,7 @@ if [ -f "${DATA}" ]; then
         echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATION=N." && exit 84
       fi
 
-      if [ "$ALLOCATE" = "F" ]; then
+      if [ "$ALLOCATE" = "Z" ]; then
 
         GB=$(( (REQ + 1073741823)/1073741824 ))
         echo "INFO: Writing ${GB} GB of zeroes, please wait.."
@@ -90,7 +90,7 @@ if [ ! -f "${DATA}" ]; then
       echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATION=N." && exit 86
     fi
 
-    if [ "$ALLOCATE" = "F" ]; then
+    if [ "$ALLOCATE" = "Z" ]; then
 
       echo "INFO: Writing ${DISK_SIZE} of zeroes, please wait.."
 
