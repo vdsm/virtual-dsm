@@ -48,9 +48,9 @@ if [ -f "${DATA}" ]; then
       if [ "$ALLOCATE" = "Z" ]; then
 
         GB=$(( (REQ + 1073741823)/1073741824 ))
-        echo "INFO: Writing ${GB} GB of zeroes, please wait.."
+        echo "INFO: Writing ${GB} GB of random data, please wait.."
 
-        dd if=/dev/zero of="${DATA}" seek="${OLD_SIZE}" count="${REQ}" bs=1M iflag=count_bytes oflag=seek_bytes
+        dd if=/dev/urandom of="${DATA}" seek="${OLD_SIZE}" count="${REQ}" bs=1M iflag=count_bytes oflag=seek_bytes status=none
 
       else
 
@@ -92,9 +92,9 @@ if [ ! -f "${DATA}" ]; then
 
     if [ "$ALLOCATE" = "Z" ]; then
 
-      echo "INFO: Writing ${DISK_SIZE} of zeroes, please wait.."
+      echo "INFO: Writing ${DISK_SIZE} of random data, please wait.."
 
-      dd if=/dev/zero of="${DATA}" count="${DATA_SIZE}" bs=1M iflag=count_bytes
+      dd if=/dev/urandom of="${DATA}" count="${DATA_SIZE}" bs=1M iflag=count_bytes status=none
 
     else
 
