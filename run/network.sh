@@ -19,32 +19,32 @@ configureMacVlan () {
 
   VM_NET_TAP="_VmMacvtap"
   echo "Info: Retrieving IP via DHCP using MAC ${VM_NET_MAC}..."
-		
+
   ip l add link eth0 name ${VM_NET_TAP} address ${VM_NET_MAC} type macvtap mode bridge || true
   ip l set ${VM_NET_TAP} up
-		
+
   ip a flush eth0
   ip a flush ${VM_NET_TAP}
 
-  udhcpc -v ${VM_NET_TAP}
-  _DhcpIP=$( udhcpc -v ${VM_NET_TAP} 2>&1 | grep ^bound | cut -d' ' -f3 )
+  dhclient -v ${VM_NET_TAP}
+  _DhcpIP=$( dhclient -v ${VM_NET_TAP} 2>&1 | grep ^bound | cut -d' ' -f3 )
   [[ "${_DhcpIP}" == [0-9.]* ]] \
   && echo "Info: Retrieved IP: ${_DhcpIP} from DHCP with MAC: ${VM_NET_MAC}" \
   || ( echo "ERROR: Cannot retrieve IP from DHCP with MAC: ${VM_NET_MAC}" && exit 16 )
 
   ip a flush ${VM_NET_TAP}
-		
+
   _tmpTapPath="/dev/tap$(</sys/class/net/${VM_NET_TAP}/ifindex)"
   # get MAJOR MINOR DEVNAME
   MAJOR=""
   eval "$(</sys/class/net/${VM_NET_TAP}/macvtap/${_tmpTapPath##*/}/uevent) _tmp=0"
-		
+
   [[ "x${MAJOR}" != "x" ]] \
 	  && echo "... PLEASE MAKE SURE, Docker run command line used: --device-cgroup-rule='c ${MAJOR}:* rwm'" \
       	  || ( echo "... macvtap creation issue: Cannot find: /sys/class/net/${VM_NET_TAP}/" && exit 18 )
-		
+
   [[ ! -e ${_tmpTapPath} ]] && [[ -e /dev0/${_tmpTapPath##*/} ]] && ln -s /dev0/${_tmpTapPath##*/} ${_tmpTapPath}
-		
+
   if [[ ! -e ${_tmpTapPath} ]]; then
 	  echo "... file does not exist: ${_tmpTapPath}"
 	  mknod ${_tmpTapPath} c $MAJOR $MINOR \
