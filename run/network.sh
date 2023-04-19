@@ -128,7 +128,6 @@ fi
 
 if [ "$DEBUG" = "Y" ]; then
   echo && ifconfig
-  echo && ip link
   echo && ip route
 fi
 
