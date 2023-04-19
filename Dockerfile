@@ -17,16 +17,16 @@ RUN apt-get update && apt-get -y upgrade && \
 	fdisk \
 	unzip \
 	procps \
-	udhcpc \
-	dnsmasq \
+	xz-utils \
 	iptables \
 	iproute2 \
-	xz-utils \
+	dnsmasq \
 	net-tools \
 	btrfs-progs \
 	bridge-utils \
-	netcat-openbsd \
 	ca-certificates \
+	isc-dhcp-client \
+	netcat-openbsd \
 	qemu-system-x86 \
     && apt-get clean
 
