@@ -115,7 +115,9 @@ if (( SYSTEM_SIZE > SPACE )); then
   echo "ERROR: Not enough free space to create a 4 GB system disk." && exit 87
 fi
 
-if [ "$ALLOCATE" != "F" ]; then
+if [ "$ALLOCATE" != "Z" ]; then
+
+  # Cannot use truncate here because of swap partition
 
   if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
     rm -f "${SYSTEM}"
