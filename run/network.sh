@@ -88,7 +88,7 @@ fi
 
 $DNSMASQ $DNSMASQ_OPTS
 
-NET_OPTS="${KVM_NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
+NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
 
 # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
 iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill
