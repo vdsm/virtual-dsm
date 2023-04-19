@@ -92,16 +92,16 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     Just replace `/home/user/data` with the path to the folder you want to use for storage.
 
-  * ### How do I change the allocation mode of the virtual disk? ###
+  * ### How do I change the space reserved by the virtual disk? ###
 
-    By default the total space for the disk is reserved in advance. If you want to only reserve the space that is actually used by the disk, add these lines:
+    By default the total space for the disk is reserved in advance. If you want to only reserve the space that is actually used, add these lines:
 
     ```
     environment:
       ALLOCATE: "N"
     ```
 
-    This might lower performance a bit, since the image file needs to grow every time it's written to.
+    This might lower performance a bit, since the image file will need to grow every time new data is added to it.
 
   * ### How do I change the amount of CPU/RAM? ###
 
