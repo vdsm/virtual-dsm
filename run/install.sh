@@ -115,23 +115,8 @@ if (( SYSTEM_SIZE > SPACE )); then
   echo "ERROR: Not enough free space to create a 4 GB system disk." && exit 87
 fi
 
-if [ "$ALLOCATE" != "Z" ]; then
-
-  # Cannot use truncate here because of swap partition
-
-  if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
-    rm -f "${SYSTEM}"
-    echo "ERROR: Could not allocate a file for the system disk." && exit 88
-  fi
-
-else
-
-  GB=$(( (SYSTEM_SIZE + 1073741823)/1073741824 ))
-  echo "Install: Writing ${GB} GB of random data, please wait.."
-
-  dd if=/dev/urandom of="${SYSTEM}" count="${SYSTEM_SIZE}" bs=1M iflag=count_bytes status=none
-
-fi
+echo "Install: Allocating diskspace..."
+dd if=/dev/urandom of="${SYSTEM}" count="${SYSTEM_SIZE}" bs=1M iflag=count_bytes status=none
 
 # Check if file exists
 if [ ! -f "${SYSTEM}" ]; then
