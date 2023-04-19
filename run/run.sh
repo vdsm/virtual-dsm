@@ -45,16 +45,16 @@ KVM_OPTS=""
 
 if [ -e /dev/kvm ] && sh -c 'echo -n > /dev/kvm' &> /dev/null; then
   if [[ $(grep -e vmx -e svm /proc/cpuinfo) ]]; then
-    KVM_OPTS="-machine type=q35,usb=off,accel=kvm -enable-kvm -cpu host"
+    KVM_OPTS=",accel=kvm -enable-kvm -cpu host"
   fi
 fi
 
 if [ -z "${KVM_OPTS}" ]; then
-  KVM_OPTS="-machine type=q35,usb=off"
   echo "Error: KVM acceleration is disabled.."
   [ "$DEBUG" != "Y" ] && exit 88
 fi
 
+KVM_OPTS="-machine type=q35,usb=off${KVM_OPTS}"
 RAM_OPTS=$(echo "-m ${RAM_SIZE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
 CPU_OPTS="-smp ${CPU_CORES},sockets=1,cores=${CPU_CORES},threads=1"
 DEF_OPTS="-nographic -nodefaults -overcommit mem-lock=off"
