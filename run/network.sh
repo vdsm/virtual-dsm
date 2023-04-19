@@ -18,13 +18,14 @@ set -eu
 configureMacVlan () {
 
   VM_NET_TAP="_VmMacvtap"
-  echo "Info: Retrieving IP via DHCP using MAC: ${VM_NET_MAC}..."
+  echo "Info: Retrieving IP via DHCP using MAC ${VM_NET_MAC}..."
 		
   ip l add link eth0 name ${VM_NET_TAP} address ${VM_NET_MAC} type macvtap mode bridge || true
   ip l set ${VM_NET_TAP} up
 		
   ip a flush eth0
   ip a flush ${VM_NET_TAP}
+
   dhclient -v ${VM_NET_TAP}
   _DhcpIP=$( dhclient -v ${VM_NET_TAP} 2>&1 | grep ^bound | cut -d' ' -f3 )
   [[ "${_DhcpIP}" == [0-9.]* ]] \
