@@ -40,21 +40,21 @@ fi
 # Configure shutdown
 . /run/power.sh
 
-KVM_ACC_OPTS=""
+KVM_OPTS=""
 
 if [ -e /dev/kvm ] && sh -c 'echo -n > /dev/kvm' &> /dev/null; then
   if [[ $(grep -e vmx -e svm /proc/cpuinfo) ]]; then
-    KVM_ACC_OPTS="-machine type=q35,usb=off,accel=kvm -enable-kvm -cpu host"
+    KVM_OPTS="-machine type=q35,usb=off,accel=kvm -enable-kvm -cpu host"
   fi
 fi
 
-[ -z "${KVM_ACC_OPTS}" ] && echo "Error: KVM acceleration is disabled.." && exit 88
+[ -z "${KVM_OPTS}" ] && echo "Error: KVM acceleration is disabled.." && exit 88
 
 DEF_OPTS="-nographic"
 RAM_OPTS=$(echo "-m ${RAM_SIZE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
 CPU_OPTS="-smp ${CPU_CORES},sockets=${CPU_CORES},cores=1,threads=1"
 EXTRA_OPTS="-device virtio-balloon-pci,id=balloon0,bus=pcie.0,addr=0x4 -object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0"
-ARGS="${DEF_OPTS} ${CPU_OPTS} ${RAM_OPTS} ${KVM_ACC_OPTS} ${MON_OPTS} ${SERIAL_OPTS} ${NET_OPTS} ${DISK_OPTS} ${EXTRA_OPTS}"
+ARGS="${DEF_OPTS} ${CPU_OPTS} ${RAM_OPTS} ${KVM_OPTS} ${MON_OPTS} ${SERIAL_OPTS} ${NET_OPTS} ${DISK_OPTS} ${EXTRA_OPTS}"
 
 set -m
 (
