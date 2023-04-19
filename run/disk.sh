@@ -125,7 +125,7 @@ if ((AGENT_VERSION < 5)); then
   echo "INFO: The installed VirtualDSM Agent v${AGENT_VERSION} is an outdated version, please upgrade it."
 fi
 
-KVM_DISK_OPTS="\
+DISK_OPTS="\
     -device virtio-scsi-pci,id=hw-synoboot,bus=pcie.0,addr=0xa \
     -drive file=${BOOT},if=none,id=drive-synoboot,format=raw,cache=none,aio=native,discard=on,detect-zeroes=on \
     -device scsi-hd,bus=hw-synoboot.0,channel=0,scsi-id=0,lun=0,drive=drive-synoboot,id=synoboot0,rotation_rate=1,bootindex=1 \
