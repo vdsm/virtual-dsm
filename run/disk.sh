@@ -50,7 +50,7 @@ if [ -f "${DATA}" ]; then
         GB=$(( (REQ + 1073741823)/1073741824 ))
         echo "INFO: Writing ${GB} GB of zeroes, please wait.." > /dev/null
 
-        dd if=/dev/zero of="${DATA}" seek="${OLD_SIZE}" count="${REQ}" bs=1M iflag=count_bytes oflag=seek_bytes
+        dd if=/dev/urandom of="${DATA}" seek="${OLD_SIZE}" count="${REQ}" bs=1M iflag=count_bytes oflag=seek_bytes
 
       else
 
@@ -94,7 +94,7 @@ if [ ! -f "${DATA}" ]; then
 
       echo "INFO: Writing ${DISK_SIZE} of zeroes, please wait.."
 
-      dd if=/dev/zero of="${DATA}" count="${DATA_SIZE}" bs=1M iflag=count_bytes > /dev/null
+      dd if=/dev/urandom of="${DATA}" count="${DATA_SIZE}" bs=1M iflag=count_bytes > /dev/null
 
     else
 
