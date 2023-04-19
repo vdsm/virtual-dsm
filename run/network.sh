@@ -58,7 +58,7 @@ fi
 
 [ ! -c /dev/net/tun ] && echo "Error: TUN network interface not available..." && exit 85
 
-if [ $DEBUG = "Y" ]; then
+if [ "$DEBUG" = "Y" ]; then
   ifconfig
   ip link
   ip route
@@ -92,7 +92,7 @@ else
   [[ -z $(hostname -d) ]] || DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-name,$(hostname -d)"
 fi
 
-if [ $DEBUG = "Y" ]; then
+if [ "$DEBUG" = "Y" ]; then
   echo "$DNSMASQ $DNSMASQ_OPTS"
 fi
 
