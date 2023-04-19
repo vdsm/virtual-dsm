@@ -63,7 +63,7 @@ update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 
 VM_NET_TAP="_VmNatTap"
 configureNatNetworks
-KVM_NET_OPTS="-netdev tap,ifname=${VM_NET_TAP},script=no,downscript=no,id=hostnet0"
+NET_OPTS="-netdev tap,ifname=${VM_NET_TAP},script=no,downscript=no,id=hostnet0"
 
 # Build DNS options from container /etc/resolv.conf
 nameservers=($(grep '^nameserver' /etc/resolv.conf | sed 's/nameserver //'))
@@ -88,7 +88,7 @@ fi
 
 $DNSMASQ $DNSMASQ_OPTS
 
-KVM_NET_OPTS="${KVM_NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
+NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
 
 # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
 iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill
