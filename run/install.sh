@@ -106,7 +106,7 @@ unzip -q -o "$BOOT".zip -d $TMP
 echo "Install: Creating partition table..."
 
 SYSTEM="$TMP/sys.img"
-SYSTEM_SIZE="4954537983"
+SYSTEM_SIZE=4954537983
 
 # Check free diskspace
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
@@ -115,9 +115,20 @@ if (( SYSTEM_SIZE > SPACE )); then
   echo "ERROR: Not enough free space to create a 4 GB system disk." && exit 87
 fi
 
-if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
-  rm -f "${SYSTEM}"
-  echo "ERROR: Could not allocate a file for the system disk." && exit 88
+if [ "$ALLOCATE" != "F" ]; then
+
+  if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
+    rm -f "${SYSTEM}"
+    echo "ERROR: Could not allocate a file for the system disk." && exit 88
+  fi
+
+else
+
+  MB=(( (SYSTEM_SIZE + 1048575)/1048576 ))
+
+  dd if=/dev/zero of="${SYSTEM}" count="${MB}" bs=1M
+  truncate -s "${SYSTEM_SIZE}" "${SYSTEM}"
+
 fi
 
 PART="$TMP/partition.fdisk"
