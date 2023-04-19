@@ -28,8 +28,8 @@ configureMacVlan () {
 
   _DhcpIP=$( dhclient -v ${VM_NET_TAP} 2>&1 | grep ^bound | cut -d' ' -f3 )
   [[ "${_DhcpIP}" == [0-9.]* ]] \
-  && echo "Info: Retrieved IP ${_DhcpIP} from DHCP with MAC ${VM_NET_MAC}" \
-  || ( echo "ERROR: Cannot retrieve IP from DHCP with MAC ${VM_NET_MAC}" && exit 16 )
+  && echo "Info: Retrieved IP ${_DhcpIP} from DHCP using MAC ${VM_NET_MAC}" \
+  || ( echo "ERROR: Cannot retrieve IP from DHCP using MAC ${VM_NET_MAC}" && exit 16 )
 
   ip a flush ${VM_NET_TAP}
 
@@ -39,7 +39,7 @@ configureMacVlan () {
   eval "$(</sys/class/net/${VM_NET_TAP}/macvtap/${_tmpTapPath##*/}/uevent) _tmp=0"
 
   [[ "x${MAJOR}" != "x" ]] \
-	  && echo "Info: Please make sure that the Docker run command line used: --device-cgroup-rule='c ${MAJOR}:* rwm'" \
+	  && echo "Info: Please make sure that the Docker run command line uses: --device-cgroup-rule='c ${MAJOR}:* rwm'" \
       	  || ( echo "Info: Macvtap creation issue: Cannot find: /sys/class/net/${VM_NET_TAP}/" && exit 18 )
 
   [[ ! -e ${_tmpTapPath} ]] && [[ -e /dev0/${_tmpTapPath##*/} ]] && ln -s /dev0/${_tmpTapPath##*/} ${_tmpTapPath}
