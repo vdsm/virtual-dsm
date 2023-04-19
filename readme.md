@@ -115,9 +115,9 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
       RAM_SIZE: "2048M"
     ```
 
-  * ### How do I give the container a dedicated IP address?
+  * ### How do I give the container its own IP address?
 
-    By default the container uses bridge networking, and is reachable by the IP of the docker host. 
+    By default the container uses bridge networking, and uses the same IP as the docker host. 
 
     If you want to give it a seperate IP address, create a macvlan network that matches your local subnet, for example:
 
@@ -126,15 +126,15 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
         --subnet=192.168.0.0/24 \
         --gateway=192.168.0.1 \
         --ip-range=192.168.0.100/28 \
-        -o parent=eth0 vlan
+        -o parent=eth0 vdsm
     ```
-    And change the network of the container to `vlan` in your run command or compose file:
+    Modify these values to match your network configuration. And change the network of the container to `vdsm` in your run command or compose file:
 
     ```
-     --network vlan --ip=192.168.0.100
+     --network vdsm --ip=192.168.0.100
     ```
 
-    This also has the advantage that you don't need to do any portmapping anymore.
+    This also has the advantage that you don't need to do any portmapping anymore, because all ports will be fully exposed.
     
   * ### How do I install a specific version of vDSM? ###
 
