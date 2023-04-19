@@ -120,7 +120,12 @@ if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
   echo "ERROR: Could not allocate a file for the system disk." && exit 88
 fi
 
-dd if=/dev/urandom of="${SYSTEM}" count="${SYSTEM_SIZE}" bs=1M iflag=count_bytes status=none
+ if [ "$ALLOCATE" = "Z" ]; then
+
+  echo "Install: Preallocating 4 GB of diskspace..."
+  dd if=/dev/urandom of="${SYSTEM}" count="${SYSTEM_SIZE}" bs=1M iflag=count_bytes status=none
+
+fi
 
 # Check if file exists
 if [ ! -f "${SYSTEM}" ]; then
