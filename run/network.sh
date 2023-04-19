@@ -58,6 +58,12 @@ fi
 
 [ ! -c /dev/net/tun ] && echo "Error: TUN network interface not available..." && exit 85
 
+if [ $DEBUG = "Y" ]; then
+  ifconfig
+  ip link
+  ip route
+fi
+
 update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
 update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 
@@ -84,6 +90,10 @@ if [ -n "$searchdomains" -a "$searchdomains" != "." ]; then
   DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-search,$searchdomains --dhcp-option=option:domain-name,$domainname"
 else
   [[ -z $(hostname -d) ]] || DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-name,$(hostname -d)"
+fi
+
+if [ $DEBUG = "Y" ]; then
+  echo "$DNSMASQ $DNSMASQ_OPTS"
 fi
 
 $DNSMASQ $DNSMASQ_OPTS
