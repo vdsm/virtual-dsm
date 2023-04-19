@@ -45,16 +45,20 @@ KVM_OPTS=""
 
 if [ -e /dev/kvm ] && sh -c 'echo -n > /dev/kvm' &> /dev/null; then
   if [[ $(grep -e vmx -e svm /proc/cpuinfo) ]]; then
-    KVM_OPTS="-machine type=q35,usb=off,accel=kvm -enable-kvm -cpu host"
+    KVM_OPTS=",accel=kvm -enable-kvm -cpu host"
   fi
 fi
 
-[ -z "${KVM_OPTS}" ] && echo "Error: KVM acceleration is disabled.." && exit 88
+if [ -z "${KVM_OPTS}" ]; then
+  echo "Error: KVM acceleration is disabled.."
+  [ "$DEBUG" != "Y" ] && exit 88
+fi
 
-DEF_OPTS="-nographic"
+KVM_OPTS="-machine type=q35,usb=off${KVM_OPTS}"
 RAM_OPTS=$(echo "-m ${RAM_SIZE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
 CPU_OPTS="-smp ${CPU_CORES},sockets=1,cores=${CPU_CORES},threads=1"
-EXTRA_OPTS="-device virtio-balloon-pci,id=balloon0,bus=pcie.0,addr=0x4 -object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0"
+DEF_OPTS="-nographic -nodefaults -overcommit mem-lock=off"
+EXTRA_OPTS="-device virtio-balloon-pci,id=balloon0 -object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0"
 ARGS="${DEF_OPTS} ${CPU_OPTS} ${RAM_OPTS} ${KVM_OPTS} ${MON_OPTS} ${SERIAL_OPTS} ${NET_OPTS} ${DISK_OPTS} ${EXTRA_OPTS}"
 
 set -m
