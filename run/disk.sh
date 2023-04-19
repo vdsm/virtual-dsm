@@ -53,7 +53,7 @@ if [ -f "${DATA}" ]; then
 
         GB=$(( (REQ + 1073741823)/1073741824 ))
 
-        echo "INFO: Preallocating ${GB} GB with random data, please wait.."
+        echo "INFO: Preallocating ${GB} GB of diskspace, please wait..."
         dd if=/dev/urandom of="${DATA}" seek="${OLD_SIZE}" count="${REQ}" bs=1M iflag=count_bytes oflag=seek_bytes status=none
 
       fi
@@ -95,7 +95,7 @@ if [ ! -f "${DATA}" ]; then
 
     if [ "$ALLOCATE" = "Z" ]; then
 
-      echo "INFO: Preallocating ${DISK_SIZE} with random data, please wait.."
+      echo "INFO: Preallocating ${DISK_SIZE} of diskspace, please wait..."
       dd if=/dev/urandom of="${DATA}" count="${DATA_SIZE}" bs=1M iflag=count_bytes status=none
 
     fi
