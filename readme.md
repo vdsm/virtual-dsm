@@ -105,7 +105,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I change the amount of CPU/RAM? ###
 
-    By default an amount of 512MB RAM and 1 vCPU is allocated to the container.
+    By default a single core and 512MB of RAM is allocated to the container.
 
     To increase this you can add the following environment variabeles:
 
