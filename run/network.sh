@@ -34,13 +34,13 @@ configureMacVlan () {
   ip a flush ${VM_NET_TAP}
 
   _tmpTapPath="/dev/tap$(</sys/class/net/${VM_NET_TAP}/ifindex)"
-  # get MAJOR MINOR DEVNAME
+
   MAJOR=""
   eval "$(</sys/class/net/${VM_NET_TAP}/macvtap/${_tmpTapPath##*/}/uevent) _tmp=0"
 
   [[ "x${MAJOR}" != "x" ]] \
-	  && echo "... PLEASE MAKE SURE, Docker run command line used: --device-cgroup-rule='c ${MAJOR}:* rwm'" \
-      	  || ( echo "... macvtap creation issue: Cannot find: /sys/class/net/${VM_NET_TAP}/" && exit 18 )
+	  && echo "Info: Please make sure that the Docker run command line used: --device-cgroup-rule='c ${MAJOR}:* rwm'" \
+      	  || ( echo "Info: Macvtap creation issue: Cannot find: /sys/class/net/${VM_NET_TAP}/" && exit 18 )
 
   [[ ! -e ${_tmpTapPath} ]] && [[ -e /dev0/${_tmpTapPath##*/} ]] && ln -s /dev0/${_tmpTapPath##*/} ${_tmpTapPath}
 
