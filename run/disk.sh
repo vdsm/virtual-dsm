@@ -42,7 +42,7 @@ if [ -f "${DATA}" ]; then
 
       if (( REQ > SPACE )); then
         echo "ERROR: Not enough free space to resize virtual disk to ${DISK_SIZE}."
-        echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATION=N." && exit 84
+        echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATE=N." && exit 84
       fi
 
       if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
@@ -85,7 +85,7 @@ if [ ! -f "${DATA}" ]; then
 
     if (( DATA_SIZE > SPACE )); then
       echo "ERROR: Not enough free space to create a virtual disk of ${DISK_SIZE}."
-      echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATION=N." && exit 86
+      echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATE=N." && exit 86
     fi
 
     if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
