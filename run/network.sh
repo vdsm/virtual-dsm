@@ -26,11 +26,10 @@ configureMacVlan () {
   ip a flush eth0
   ip a flush ${VM_NET_TAP}
 
-  dhclient -v ${VM_NET_TAP}
   _DhcpIP=$( dhclient -v ${VM_NET_TAP} 2>&1 | grep ^bound | cut -d' ' -f3 )
   [[ "${_DhcpIP}" == [0-9.]* ]] \
-  && echo "Info: Retrieved IP: ${_DhcpIP} from DHCP with MAC: ${VM_NET_MAC}" \
-  || ( echo "ERROR: Cannot retrieve IP from DHCP with MAC: ${VM_NET_MAC}" && exit 16 )
+  && echo "Info: Retrieved IP ${_DhcpIP} from DHCP with MAC ${VM_NET_MAC}" \
+  || ( echo "ERROR: Cannot retrieve IP from DHCP with MAC ${VM_NET_MAC}" && exit 16 )
 
   ip a flush ${VM_NET_TAP}
 
