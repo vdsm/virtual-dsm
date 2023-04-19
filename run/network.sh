@@ -291,6 +291,9 @@ configureNAT () {
   iptables -t nat -A PREROUTING -i eth0 -p tcp  -j DNAT --to $VM_NET_IP
   iptables -t nat -A PREROUTING -i eth0 -p udp  -j DNAT --to $VM_NET_IP
 
+  # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
+  iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill
+
   #Enable port forwarding flag
   [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]] && sysctl -w net.ipv4.ip_forward=1
 
@@ -365,7 +368,7 @@ GATEWAY=$(ip r | grep default | awk '{print $3}')
   #configureDHCP
 #fi
 
-# Get all interfaces:
+  # Get all interfaces:
   local_ifaces=($(ip link show | grep -v noop | grep state | grep -v LOOPBACK | awk '{print $2}' | tr -d : | sed 's/@.*$//'))
   local_bridges=($(brctl show | tail -n +2 | awk '{print $1}'))
 
@@ -404,5 +407,3 @@ $DNSMASQ $DNSMASQ_OPTS
 
 NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
 
-# Hack for guest VMs complaining about "bad udp checksums in 5 packets"
-# iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill
