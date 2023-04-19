@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -eu
 
+# Docker environment variabeles
+
+: ${DISK_IO:='native'}          # I/O Mode
+: ${DISK_ROTATION:='1'}    # Rotation rate
+: ${DISK_CACHE:='none'}   # Caching mode
+
 BOOT="$STORAGE/$BASE.boot.img"
 SYSTEM="$STORAGE/$BASE.system.img"
 
@@ -42,7 +48,7 @@ if [ -f "${DATA}" ]; then
 
       if (( REQ > SPACE )); then
         echo "ERROR: Not enough free space to resize virtual disk to ${DISK_SIZE}."
-        echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATION=N." && exit 84
+        echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATE=N." && exit 84
       fi
 
       if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
@@ -85,7 +91,7 @@ if [ ! -f "${DATA}" ]; then
 
     if (( DATA_SIZE > SPACE )); then
       echo "ERROR: Not enough free space to create a virtual disk of ${DISK_SIZE}."
-      echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATION=N." && exit 86
+      echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATE=N." && exit 86
     fi
 
     if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
@@ -127,11 +133,11 @@ fi
 
 DISK_OPTS="\
     -device virtio-scsi-pci,id=hw-synoboot,bus=pcie.0,addr=0xa \
-    -drive file=${BOOT},if=none,id=drive-synoboot,format=raw,cache=none,aio=native,discard=on,detect-zeroes=on \
-    -device scsi-hd,bus=hw-synoboot.0,channel=0,scsi-id=0,lun=0,drive=drive-synoboot,id=synoboot0,rotation_rate=1,bootindex=1 \
+    -drive file=${BOOT},if=none,id=drive-synoboot,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=on,detect-zeroes=on \
+    -device scsi-hd,bus=hw-synoboot.0,channel=0,scsi-id=0,lun=0,drive=drive-synoboot,id=synoboot0,rotation_rate=${DISK_ROTATION},bootindex=1 \
     -device virtio-scsi-pci,id=hw-synosys,bus=pcie.0,addr=0xb \
-    -drive file=${SYSTEM},if=none,id=drive-synosys,format=raw,cache=none,aio=native,discard=on,detect-zeroes=on \
-    -device scsi-hd,bus=hw-synosys.0,channel=0,scsi-id=0,lun=0,drive=drive-synosys,id=synosys0,rotation_rate=1,bootindex=2 \
+    -drive file=${SYSTEM},if=none,id=drive-synosys,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=on,detect-zeroes=on \
+    -device scsi-hd,bus=hw-synosys.0,channel=0,scsi-id=0,lun=0,drive=drive-synosys,id=synosys0,rotation_rate=${DISK_ROTATION},bootindex=2 \
     -device virtio-scsi-pci,id=hw-userdata,bus=pcie.0,addr=0xc \
-    -drive file=${DATA},if=none,id=drive-userdata,format=raw,cache=none,aio=native,discard=on,detect-zeroes=on \
-    -device scsi-hd,bus=hw-userdata.0,channel=0,scsi-id=0,lun=0,drive=drive-userdata,id=userdata0,rotation_rate=1,bootindex=3"
+    -drive file=${DATA},if=none,id=drive-userdata,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=on,detect-zeroes=on \
+    -device scsi-hd,bus=hw-userdata.0,channel=0,scsi-id=0,lun=0,drive=drive-userdata,id=userdata0,rotation_rate=${DISK_ROTATION},bootindex=3"
