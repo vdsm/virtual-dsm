@@ -13,5 +13,5 @@ name: "Test"
 permissions: {}
 
 jobs:
-  Shellcheck:
+  shellcheck:
     uses: ./.github/workflows/check.yml
