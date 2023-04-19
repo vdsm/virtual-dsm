@@ -103,7 +103,7 @@ BOOT=$(find $TMP -name "*.bin.zip")
 BOOT=$(echo "$BOOT" | head -c -5)
 unzip -q -o "$BOOT".zip -d $TMP
 
-echo "Install: Allocating diskspace..."
+ [ "$ALLOCATE" != "Z" ] && echo "Install: Allocating diskspace..."
 
 SYSTEM="$TMP/sys.img"
 SYSTEM_SIZE=4954537983
