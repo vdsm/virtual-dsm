@@ -3,22 +3,61 @@ set -eu
 
 # Docker environment variabeles
 
-: ${VM_NET_TAP:=''}
-: ${VM_NET_IP:='20.20.20.21'}
 : ${VM_NET_HOST:='VirtualDSM'}
 : ${VM_NET_MAC:='02:11:32:AA:BB:CC'}
 
 : ${DNS_SERVERS:=''}
-: ${DNSMASQ:='/usr/sbin/dnsmasq'}
 : ${DNSMASQ_OPTS:=''}
+: ${DNSMASQ:='/usr/sbin/dnsmasq'}
 : ${DNSMASQ_CONF_DIR:='/etc/dnsmasq.d'}
 
 # ######################################
 #  Functions
 # ######################################
 
-# Setup macvtap device to connect later the VM and setup a new macvlan device to connect the host machine to the network
-configureNatNetworks () {
+configureMacVlan () {
+
+  VM_NET_TAP="_VmMacvtap"
+  echo "... to retrieve IP via DHCP through Macvtap (${VM_NET_TAP}) and MAC: ${VM_NET_MAC}"
+		
+  ip l add link eth0 name ${VM_NET_TAP} address ${VM_NET_MAC} type macvtap mode bridge || true
+  ip l set ${VM_NET_TAP} up
+		
+  ip a flush eth0
+  ip a flush ${VM_NET_TAP}
+		
+  _DhcpIP=$( dhclient -v ${VM_NET_TAP} 2>&1 | grep ^bound | cut -d' ' -f3 )
+  [[ "${_DhcpIP}" == [0-9.]* ]] \
+  && echo "... Retrieve IP: ${_DhcpIP} from DHCP with MAC: ${VM_NET_MAC}" \
+  || ( echo "... Cannot retrieve IP from DHCP with MAC: ${VM_NET_MAC}" && exit 16 )
+
+  ip a flush ${VM_NET_TAP}
+		
+  _tmpTapPath="/dev/tap$(</sys/class/net/${VM_NET_TAP}/ifindex)"
+  # get MAJOR MINOR DEVNAME
+  MAJOR=""
+  eval "$(</sys/class/net/${VM_NET_TAP}/macvtap/${_tmpTapPath##*/}/uevent) _tmp=0"
+		
+  [[ "x${MAJOR}" != "x" ]] \
+	  && echo "... PLEASE MAKE SURE, Docker run command line used: --device-cgroup-rule='c ${MAJOR}:* rwm'" \
+      	  || ( echo "... macvtap creation issue: Cannot find: /sys/class/net/${VM_NET_TAP}/" && exit 18 )
+		
+  [[ ! -e ${_tmpTapPath} ]] && [[ -e /dev0/${_tmpTapPath##*/} ]] && ln -s /dev0/${_tmpTapPath##*/} ${_tmpTapPath}
+		
+  if [[ ! -e ${_tmpTapPath} ]]; then
+	  echo "... file does not exist: ${_tmpTapPath}"
+	  mknod ${_tmpTapPath} c $MAJOR $MINOR \
+		  && echo "... File created with mknod: ${_tmpTapPath}" \
+		  || ( echo "... Cannot mknod: ${_tmpTapPath}" && exit 20 )
+  fi
+
+  NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30 30<>${_tmpTapPath} 40<>/dev/vhost-net"
+}
+
+configureNatNetwork () {
+
+  VM_NET_IP='20.20.20.21'
+  VM_NET_TAP="_VmNatTap"
 
   #Create bridge with static IP for the VM guest
   brctl addbr dockerbridge
@@ -43,6 +82,35 @@ configureNatNetworks () {
   # Create lease file for faster resolve
   echo "0 $VM_NET_MAC $VM_NET_IP $VM_NET_HOST 01:${VM_NET_MAC}" > /var/lib/misc/dnsmasq.leases
   chmod 644 /var/lib/misc/dnsmasq.leases
+
+  NET_OPTS="-netdev tap,ifname=${VM_NET_TAP},script=no,downscript=no,id=hostnet0"
+
+  # Build DNS options from container /etc/resolv.conf
+  nameservers=($(grep '^nameserver' /etc/resolv.conf | sed 's/nameserver //'))
+  searchdomains=$(grep '^search' /etc/resolv.conf | sed 's/search //' | sed 's/ /,/g')
+  domainname=$(echo $searchdomains | awk -F"," '{print $1}')
+
+  for nameserver in "${nameservers[@]}"; do
+    if ! [[ $nameserver =~ .*:.* ]]; then
+      [[ -z $DNS_SERVERS ]] && DNS_SERVERS=$nameserver || DNS_SERVERS="$DNS_SERVERS,$nameserver"
+    fi
+  done
+
+  [[ -z $DNS_SERVERS ]] && DNS_SERVERS="1.1.1.1"
+
+  DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:dns-server,$DNS_SERVERS --dhcp-option=option:router,${VM_NET_IP%.*}.1"
+
+  if [ -n "$searchdomains" -a "$searchdomains" != "." ]; then
+    DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-search,$searchdomains --dhcp-option=option:domain-name,$domainname"
+  else
+    [[ -z $(hostname -d) ]] || DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-name,$(hostname -d)"
+  fi
+
+  [ "$DEBUG" = "Y" ] && echo && echo "$DNSMASQ $DNSMASQ_OPTS"
+
+  $DNSMASQ $DNSMASQ_OPTS
+
+  NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
 }
 
 # ######################################
@@ -59,46 +127,16 @@ fi
 [ ! -c /dev/net/tun ] && echo "Error: TUN network interface not available..." && exit 85
 
 if [ "$DEBUG" = "Y" ]; then
-  ifconfig
-  ip link
-  ip route
+  echo && ifconfig
+  echo && ip link
+  echo && ip route
 fi
 
 update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
 update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 
-VM_NET_TAP="_VmNatTap"
-configureNatNetworks
-NET_OPTS="-netdev tap,ifname=${VM_NET_TAP},script=no,downscript=no,id=hostnet0"
-
-# Build DNS options from container /etc/resolv.conf
-nameservers=($(grep '^nameserver' /etc/resolv.conf | sed 's/nameserver //'))
-searchdomains=$(grep '^search' /etc/resolv.conf | sed 's/search //' | sed 's/ /,/g')
-domainname=$(echo $searchdomains | awk -F"," '{print $1}')
-
-for nameserver in "${nameservers[@]}"; do
-  if ! [[ $nameserver =~ .*:.* ]]; then
-    [[ -z $DNS_SERVERS ]] && DNS_SERVERS=$nameserver || DNS_SERVERS="$DNS_SERVERS,$nameserver"
-  fi
-done
-
-[[ -z $DNS_SERVERS ]] && DNS_SERVERS="1.1.1.1"
-
-DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:dns-server,$DNS_SERVERS --dhcp-option=option:router,${VM_NET_IP%.*}.1"
-
-if [ -n "$searchdomains" -a "$searchdomains" != "." ]; then
-  DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-search,$searchdomains --dhcp-option=option:domain-name,$domainname"
-else
-  [[ -z $(hostname -d) ]] || DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-name,$(hostname -d)"
-fi
-
-if [ "$DEBUG" = "Y" ]; then
-  echo "$DNSMASQ $DNSMASQ_OPTS"
-fi
-
-$DNSMASQ $DNSMASQ_OPTS
-
-NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
+#configureNatNetwork
+configureMacVlan
 
 # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
 iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill
