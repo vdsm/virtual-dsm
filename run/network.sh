@@ -45,7 +45,7 @@ configureMacVlan () {
   [[ ! -e ${_tmpTapPath} ]] && [[ -e /dev0/${_tmpTapPath##*/} ]] && ln -s /dev0/${_tmpTapPath##*/} ${_tmpTapPath}
 
   if [[ ! -e ${_tmpTapPath} ]]; then
-    if [[ ! mknod ${_tmpTapPath} c $MAJOR $MINOR ]]; then
+    if [ ! mknod ${_tmpTapPath} c $MAJOR $MINOR ]; then
       echo "ERROR: Cannot mknod: ${_tmpTapPath}" && exit 20
     fi
   fi
