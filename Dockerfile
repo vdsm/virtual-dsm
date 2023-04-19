@@ -21,6 +21,7 @@ RUN apt-get update && apt-get -y upgrade && \
 	iptables \
 	iproute2 \
 	xz-utils \
+	net-tools \
 	btrfs-progs \
 	bridge-utils \
 	netcat-openbsd \
