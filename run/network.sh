@@ -221,13 +221,14 @@ configureNetworks () {
 
     deviceID=($(setupBridge $iface "macvlan"))
     bridgeName="macvlan$deviceID"
+    log "DEBUG" "bridgeName: $bridgeName"
+
     # kvm configuration:
     let fd=$i+3
-    NET_OPTS="$NET_OPTS -netdev tap,id=net$i,vhost=on,fd=$fd ${fd}<>/dev/macvtap$deviceID"
 
-    setupDhcp
-    log "DEBUG" "bridgeName: $bridgeName"
-    NET_OPTS=" -device virtio-net-pci,netdev=net$i,mac=$MAC $NET_OPTS"
+    NET_OPTS="-netdev tap,id=net$i,vhost=on,fd=$fd ${fd}<>/dev/macvtap$deviceID"
+    NET_OPTS="-device virtio-net-pci,netdev=net$i,mac=$MAC $NET_OPTS"
+
     let i++
 
   done
