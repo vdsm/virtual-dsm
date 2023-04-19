@@ -45,18 +45,16 @@ if [ -f "${DATA}" ]; then
         echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATION=N." && exit 84
       fi
 
+      if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
+        echo "ERROR: Could not allocate a file for the virtual disk." && exit 85
+      fi
+
       if [ "$ALLOCATE" = "Z" ]; then
 
         GB=$(( (REQ + 1073741823)/1073741824 ))
-        echo "INFO: Writing ${GB} GB of random data, please wait.."
 
+        echo "INFO: Preallocating ${GB} GB with random data, please wait.."
         dd if=/dev/urandom of="${DATA}" seek="${OLD_SIZE}" count="${REQ}" bs=1M iflag=count_bytes oflag=seek_bytes status=none
-
-      else
-
-        if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
-          echo "ERROR: Could not allocate a file for the virtual disk." && exit 85
-        fi
 
       fi
     fi
@@ -90,18 +88,15 @@ if [ ! -f "${DATA}" ]; then
       echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATION=N." && exit 86
     fi
 
+    if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
+      rm -f "${DATA}"
+      echo "ERROR: Could not allocate a file for the virtual disk." && exit 87
+    fi
+
     if [ "$ALLOCATE" = "Z" ]; then
 
-      echo "INFO: Writing ${DISK_SIZE} of random data, please wait.."
-
+      echo "INFO: Preallocating ${DISK_SIZE} with random data, please wait.."
       dd if=/dev/urandom of="${DATA}" count="${DATA_SIZE}" bs=1M iflag=count_bytes status=none
-
-    else
-
-      if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
-        rm -f "${DATA}"
-        echo "ERROR: Could not allocate a file for the virtual disk." && exit 87
-      fi
 
     fi
   fi
