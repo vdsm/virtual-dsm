@@ -17,6 +17,15 @@ set -eu
 
 configureDHCP() {
 
+  # Create /dev/vhost-net
+  if [ ! -c /dev/vhost-net ]; then
+    [ ! -d /dev/vhost-net ] && mkdir -m 755 /dev/vhost-net
+    mknod /dev/vhost-net c 10 238
+    chmod 666 /dev/vhost-net
+  fi
+
+  [ ! -c /dev/vhost-net ] && echo "Error: VHOST interface not available..." && exit 85
+
   VM_NET_TAP="_VmMacvtap"
   echo "Info: Retrieving IP via DHCP using MAC ${VM_NET_MAC}..."
 
