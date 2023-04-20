@@ -20,10 +20,13 @@ configureDHCP() {
   # Create /dev/vhost-net
   if [ ! -c /dev/vhost-net ]; then
     mknod /dev/vhost-net c 10 238
-    chmod 666 /dev/vhost-net
+    chmod 660 /dev/vhost-net
   fi
 
-  [ ! -c /dev/vhost-net ] && echo "Error: VHOST interface not available..." && exit 85
+  if [ ! -c /dev/vhost-net ]; then
+    echo -n "Error: VHOST interface not available. Please add the following "
+    echo "docker variable to your container: --device=/dev/vhost-net" && exit 85
+  fi
 
   VM_NET_TAP="_VmMacvtap"
   echo "Info: Retrieving IP via DHCP using MAC ${VM_NET_MAC}..."
@@ -62,11 +65,11 @@ configureDHCP() {
   fi
 
   if ! exec 30>>$TAP_PATH; then
-    echo "ERROR: Please add the following docker variable to your container: --device-cgroup-rule='c ${MAJOR}:* rwm'" && exit 21
+    echo "ERROR: Please add the following docker variables to your container:  --device=/dev/vhost-net --device-cgroup-rule='c ${MAJOR}:* rwm'" && exit 21
   fi
 
   if ! exec 40>>/dev/vhost-net; then
-    echo "ERROR: Cannot find vhost!" && exit 22 
+    echo "ERROR: VHOST can not be found. Please add the following docker variable to your container: --device=/dev/vhost-net" && exit 22
   fi
 
   NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30"
@@ -157,12 +160,17 @@ update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 
 GATEWAY=$(ip r | grep default | awk '{print $3}')
 
-#if [[ "$GATEWAY" == "172."* ]]; then
-  # Configuration for static IP
-  #configureNAT
-#else
-  # Configuration for DHCP IP
-  configureDHCP
-#fi
+if [[ "$GATEWAY" == "172."* ]]; then
+  # Bridge network
+  configureNAT
+else
+  if [ "$DHCP" = "Y" ]; then
+    # Configuration for DHCP IP
+    configureDHCP
+  else
+    # Configuration for static IP
+    configureNAT
+  fi
+fi
 
 NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
