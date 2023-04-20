@@ -66,11 +66,13 @@ configureDHCP() {
   fi
 
   if ! exec 30>>$TAP_PATH; then
-    echo "ERROR: Please add the following docker variables to your container:  --device=/dev/vhost-net --device-cgroup-rule='c ${MAJOR}:* rwm'" && exit 21
+    echo -n "ERROR: Please add the following docker variables to your container:  "
+    echo "--device=/dev/vhost-net --device-cgroup-rule='c ${MAJOR}:* rwm'" && exit 21
   fi
 
   if ! exec 40>>/dev/vhost-net; then
-    echo "ERROR: VHOST can not be found. Please add the following docker variable to your container: --device=/dev/vhost-net" && exit 22
+    echo -n "ERROR: VHOST can not be found. Please add the following docker "
+    echo "variable to your container: --device=/dev/vhost-net" && exit 22
   fi
 
   NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30"
@@ -157,14 +159,14 @@ GATEWAY=$(ip r | grep default | awk '{print $3}')
 if [ "$DEBUG" = "Y" ]; then
 
   IP=$(ip address show dev eth0 | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
-  echo "Info: Container IP is ${IP} with gateway {GATEWAY}" && echo
+  echo "Info: Container IP is ${IP} with gateway {GATEWAY}"
 
 fi
 
 if [ "$DHCP" != "Y" ]; then
 
- # Configuration for static IP
- configureNAT
+  # Configuration for static IP
+  configureNAT
 
 else
 
