@@ -41,10 +41,8 @@ configureDHCP() {
   # create dev file (there is no udev in container: need to be done manually)
   IFS=: read MAJOR MINOR < <(cat /sys/devices/virtual/net/${VM_NET_TAP}/tap*/dev)
 
-  if [[ "x${MAJOR}" != "x" ]]; then
-    echo "Info: Please make sure that the following docker setting is used: --device-cgroup-rule='c ${MAJOR}:* rwm'"
-  else
-     echo "Info: Macvtap creation issue: Cannot find: /sys/class/net/${VM_NET_TAP}/" && exit 18
+  if (( MAJOR < 1)); then
+     echo "ERROR: Cannot find: sys/devices/virtual/net/${VM_NET_TAP}" && exit 18
   fi
 
   [[ ! -e ${TAP_PATH} ]] && [[ -e /dev0/${TAP_PATH##*/} ]] && ln -s /dev0/${TAP_PATH##*/} ${TAP_PATH}
@@ -53,11 +51,11 @@ configureDHCP() {
     mknod ${TAP_PATH} c $MAJOR $MINOR && : || ("ERROR: Cannot mknod: ${TAP_PATH}" && exit 20)
   fi
 
-  if ! exec 30>>$TAP_PATH; then
-    echo "ERROR: Please add the following docker variable: --device-cgroup-rule='c ${MAJOR}:* rwm'" && exit 21
+  if ! exec 30>>$TAP_PATH 2>/dev/null; then
+    echo "ERROR: Please add the following docker variable to your container: --device-cgroup-rule='c ${MAJOR}:* rwm'" && exit 21
   fi
 
-  if ! exec 40>>/dev/vhost-net; then
+  if ! exec 40>>/dev/vhost-net 2>/dev/null; then
     echo "ERROR: Cannot find vhost!" && exit 22 
   fi
 
