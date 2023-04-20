@@ -161,17 +161,21 @@ if [ "$DEBUG" = "Y" ]; then
 
 fi
 
-if [[ "$GATEWAY" == "172."* ]]; then
-  # Bridge network
-  configureNAT
+if [ "$DHCP" != "Y" ]; then
+
+ # Configuration for static IP
+ configureNAT
+
 else
-  if [ "$DHCP" = "Y" ]; then
-    # Configuration for DHCP IP
-    configureDHCP
-  else
-    # Configuration for static IP
-    configureNAT
+
+  if [[ "$GATEWAY" == "172."* ]]; then
+    echo -n "ERROR: You cannot enable DHCP while the container is "
+    echo "in a bridge network, only on a macvlan network!" && exit 86
   fi
+
+  # Configuration for DHCP IP
+  configureDHCP
+
 fi
 
 NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
