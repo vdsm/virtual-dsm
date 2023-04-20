@@ -138,10 +138,7 @@ fi
 if [ "$DEBUG" = "Y" ]; then
 
   IP=$(ip address show dev eth0 | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
-
-  #echo && ifconfig
-  #echo && ip route && echo
-  echo "Container IP: ${IP}" && echo
+  echo "Info: Container IP: ${IP}" && echo
 
 fi
 
