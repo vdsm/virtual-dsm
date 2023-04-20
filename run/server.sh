@@ -13,7 +13,7 @@ for pid in $(pidof -x $script_name); do
 done
 
 # Serve the page
-HTML="<HTML><BODY><H1><CENTER>$2</CENTER></H1></BODY></HTML>"
+HTML="<HTML><HEAD><STYLE>body {  color: white; background-color: lightblue; } </STYLE></HEAD><BODY><H1><CENTER>$2</CENTER></H1></BODY></HTML>"
 LENGTH=$(echo "$HTML" | wc -c);
 
 RESPONSE="HTTP/1.1 200 OK\nContent-Length: ${LENGTH}\nConnection: close\n\n$HTML\n\n"
