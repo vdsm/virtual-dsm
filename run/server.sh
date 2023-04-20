@@ -16,8 +16,4 @@ done
 HTML="<HTML><BODY><H1><CENTER>$2</CENTER></H1></BODY></HTML>"
 RESPONSE="HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n$HTML\r\n"
 
-while { echo -en "$RESPONSE"; } | nc -lN "${1:-8080}"; do
-  echo "================================================"
-done
-
-
+while true; do (echo -en "$RESPONSE") | timeout 1 nc -lp "${1:-8080}"; done
