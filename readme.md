@@ -150,7 +150,9 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     This also has the advantage that you don't need to do any portmapping anymore, because all ports will be fully exposed this way.
 
-  * ### How can the container retrieve an IP via DHCP? ###
+    NOTE: Docker does not allow communication between the host and the container in a macvlan network. There are some ways to fix that if needed, but they go beyond the scope of this FAQ.
+
+  * ### How can the container get an IP address via DHCP? ###
 
     First follow the steps to configure the container for macvlan (see above), and then add the following lines to your compose file:
 
