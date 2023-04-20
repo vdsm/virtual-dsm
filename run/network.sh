@@ -179,6 +179,9 @@ else
   # Configuration for DHCP IP
   configureDHCP
 
+  # Display the received IP on port 5000
+  /run/server.sh 5000 "The location of DSM is http://${DHCP_IP}:5000" > /dev/null &
+
 fi
 
 NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
