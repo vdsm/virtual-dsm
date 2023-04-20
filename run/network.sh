@@ -6,6 +6,7 @@ set -eu
 : ${VM_NET_HOST:='VirtualDSM'}
 : ${VM_NET_MAC:='02:11:32:AA:BB:CC'}
 
+: ${DHCP:='N'}
 : ${DNS_SERVERS:=''}
 : ${DNSMASQ_OPTS:=''}
 : ${DNSMASQ:='/usr/sbin/dnsmasq'}
