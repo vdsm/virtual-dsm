@@ -180,7 +180,7 @@ else
   configureDHCP
 
   # Display the received IP on port 5000
-  /run/server.sh 5000 "The location of DSM is http://{$DHCP_IP}:5000" > /dev/null &
+  /run/server.sh 5000 "The location of DSM is http://${DHCP_IP}:5000" > /dev/null &
 
 fi
 
