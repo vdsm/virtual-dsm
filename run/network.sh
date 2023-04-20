@@ -26,29 +26,34 @@ configureDHCP() {
   ip a flush eth0
   ip a flush ${VM_NET_TAP}
 
-  _DhcpIP=$( dhclient -v ${VM_NET_TAP} 2>&1 | grep ^bound | cut -d' ' -f3 )
-  [[ "${_DhcpIP}" == [0-9.]* ]] \
-  && echo "Info: Retrieved IP ${_DhcpIP} via DHCP" \
-  || ( echo "ERROR: Cannot retrieve IP from DHCP using MAC ${VM_NET_MAC}" && exit 16 )
+  DHCP_IP=$( dhclient -v ${VM_NET_TAP} 2>&1 | grep ^bound | cut -d' ' -f3 )
+
+  if [[ "${DHCP_IP}" == [0-9.]* ]]; then
+    echo "Info: Retrieved IP ${DHCP_IP} via DHCP"
+  else
+    echo "ERROR: Cannot retrieve IP from DHCP using MAC ${VM_NET_MAC}" && exit 16
+  fi
 
   ip a flush ${VM_NET_TAP}
 
-  _tmpTapPath="/dev/tap$(</sys/class/net/${VM_NET_TAP}/ifindex)"
+  TAP_PATH="/dev/tap$(</sys/class/net/${VM_NET_TAP}/ifindex)"
 
   # create dev file (there is no udev in container: need to be done manually)
-  IFS=: read MAJOR MINOR < <(cat /sys/class/net/${VM_NET_TAP}/macvtap/${_tmpTapPath##*/}/uevent)
+  IFS=: read MAJOR MINOR < <(cat /sys/class/net/${VM_NET_TAP}/macvtap/${TAP_PATH##*/}/uevent)
 
-  [[ "x${MAJOR}" != "x" ]] \
-	  && echo "Info: Please make sure that the following docker setting is used: --device-cgroup-rule='c ${MAJOR}:* rwm'" \
-      	  || ( echo "Info: Macvtap creation issue: Cannot find: /sys/class/net/${VM_NET_TAP}/" && exit 18 )
-
-  [[ ! -e ${_tmpTapPath} ]] && [[ -e /dev0/${_tmpTapPath##*/} ]] && ln -s /dev0/${_tmpTapPath##*/} ${_tmpTapPath}
-
-  if [[ ! -e ${_tmpTapPath} ]]; then
-    mknod ${_tmpTapPath} c $MAJOR $MINOR && : || ("ERROR: Cannot mknod: ${_tmpTapPath}" && exit 20)
+  if [[ "x${MAJOR}" != "x" ]]; then
+    echo "Info: Please make sure that the following docker setting is used: --device-cgroup-rule='c ${MAJOR}:* rwm'"
+  else
+     echo "Info: Macvtap creation issue: Cannot find: /sys/class/net/${VM_NET_TAP}/" && exit 18
   fi
 
-  exec 30>>$_tmpTapPath
+  [[ ! -e ${TAP_PATH} ]] && [[ -e /dev0/${TAP_PATH##*/} ]] && ln -s /dev0/${TAP_PATH##*/} ${TAP_PATH}
+
+  if [[ ! -e ${TAP_PATH} ]]; then
+    mknod ${TAP_PATH} c $MAJOR $MINOR && : || ("ERROR: Cannot mknod: ${TAP_PATH}" && exit 20)
+  fi
+
+  exec 30>>$TAP_PATH
   exec 40>>/dev/vhost-net
 
   NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30"
