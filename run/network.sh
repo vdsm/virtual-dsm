@@ -58,7 +58,7 @@ configureDHCP() {
   fi
 
   if ! exec 40>>/dev/vhost-net; then
-    echo "ERROR: Cannot find vhost! && exit 22 
+    echo "ERROR: Cannot find vhost!" && exit 22 
   fi
 
   NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30"
