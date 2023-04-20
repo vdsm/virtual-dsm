@@ -39,8 +39,8 @@ configureDHCP() {
   TAP_PATH="/dev/tap$(</sys/class/net/${VM_NET_TAP}/ifindex)"
 
   # create dev file (there is no udev in container: need to be done manually)
-  IFS=: read major minor < <(cat /sys/devices/virtual/net/tap2/tap*/dev)
- 
+  IFS=: read MAJOR MINOR < <(cat /sys/devices/virtual/net/${VM_NET_TAP}/tap*/dev)
+
   if [[ "x${MAJOR}" != "x" ]]; then
     echo "Info: Please make sure that the following docker setting is used: --device-cgroup-rule='c ${MAJOR}:* rwm'"
   else
