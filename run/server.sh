@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -eu
+trap exit SIGINT SIGTERM
 
 # Close any previous instances
 script_name=${BASH_SOURCE[0]}
@@ -10,8 +11,6 @@ for pid in $(pidof -x $script_name); do
     wait $pid 2> /dev/null
   fi 
 done
-
-trap exit SIGINT SIGTERM
 
 # Serve the page
 HTML="<HTML><BODY><H1><CENTER>$2</CENTER></H1></BODY></HTML>"
