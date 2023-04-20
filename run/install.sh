@@ -2,7 +2,7 @@
 set -eu
 
 # Display wait message on port 5000
-/run/server.sh 5000 > /dev/null &
+/run/server.sh 5000 "Please wait while Virtual DSM is installing..." > /dev/null &
 
 DL="https://global.synologydownload.com/download/DSM"
 
