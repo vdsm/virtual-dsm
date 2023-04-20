@@ -1,48 +1,4 @@
-if [[ $EUID > 0 ]]
-  then echo "Run this script as root"
-  exit
-fi
-
-BRIDGE="br0"
-TAP="tap0"
-INTERFACE="eth0"
-
-echo "Adding bridge $BRIDGE"
-ip link add name $BRIDGE type bridge
-
-echo "Flushing interface $INTERFACE"
-ip addr flush dev $INTERFACE
-
-echo "Setting $BRIDGE as master of $INTERFACE"
-ip link set $INTERFACE master $BRIDGE
-
-echo "Adding tap $TAP"
-ip tuntap add $TAP mode tap
-
-echo "Setting $BRIDGE as master of $TAP"
-ip link set $TAP master $BRIDGE
-
-echo "Setting $INTERFACE, $BRIDGE and $TAP up"
-ip link set up dev $INTERFACE
-ip link set up dev $TAP
-ip link set up dev $BRIDGE
-
-echo "Stopping NetworkManager"
-systemctl stop NetworkManager
-
-echo "Requesting ip for $BRIDGE"
-dhclient $BRIDGE
-
-if [ $? -eq 0 ]; then
-    echo "Requesting ip for $INTERFACE"
-    dhclient $INTERFACE
-    echo "Killing dhclient and starting NetworkManager"
-    pkill -9 dhclient
-    systemctl start NetworkManager
-fi
-
-
-##!/usr/bin/env bash
+#!/usr/bin/env bash
 set -eu
 
 # Docker environment variabeles
@@ -270,10 +226,11 @@ configureNetworks () {
     bridgeName="macvlan$deviceID"
     log "DEBUG" "bridgeName: $bridgeName"
 
-    # kvm configuration:
+    # get a file descriptor
     (( fd=$i+3 )) || true
+    exec $fd>>/dev/macvtap$deviceID
 
-    NET_OPTS="-netdev tap,id=net$i,vhost=on,fd=$fd -add-fd fd=${fd},set=2,opaque='rdwr:/dev/macvtap$deviceID'"
+    NET_OPTS="-netdev tap,id=net$i,vhost=on,fd=$fd"
     NET_OPTS="-device virtio-net-pci,netdev=net$i,mac=$MAC $NET_OPTS"
 
     (( i++ )) || true
