@@ -147,7 +147,24 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
     ```
 
     This also has the advantage that you don't need to do any portmapping anymore, because all ports will be fully exposed this way.
-    
+
+  * ### How can the container retrieve an IP via DHCP? ###
+
+    First follow the steps to configure the container for macvlan (see above), and then add the following lines to your compose file:
+
+    ```
+    environment:
+        DHCP: "Y"
+    devices:
+        - /dev/vhost-net
+    device_cgroup_rules:
+        - 'c 510:* rwm'
+    ```
+
+    This will make DSM retrieve an IP from your router. This will not be the same as the macvlan IP of the container, so to determine which one was assigned to DSM please check the container logfile or use the devices page of your router for example.
+
+    NOTE: The exact cgroup rule may be different than `510` depending on your system, but the correct rule number will be printed to the logfile in case of error.
+
   * ### How do I install a specific version of vDSM? ###
 
     By default it installs vDSM 7.2, but if you want to use an older version you can add its URL to your compose file:
