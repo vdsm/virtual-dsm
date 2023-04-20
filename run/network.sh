@@ -149,17 +149,17 @@ fi
 
 [ ! -c /dev/net/tun ] && echo "Error: TUN network interface not available..." && exit 85
 
-if [ "$DEBUG" = "Y" ]; then
-
-  IP=$(ip address show dev eth0 | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
-  echo "Info: Container IP: ${IP}" && echo
-
-fi
-
 update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
 update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 
 GATEWAY=$(ip r | grep default | awk '{print $3}')
+
+if [ "$DEBUG" = "Y" ]; then
+
+  IP=$(ip address show dev eth0 | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
+  echo "Info: Container IP is ${IP} with gateway {GATEWAY}" && echo
+
+fi
 
 if [[ "$GATEWAY" == "172."* ]]; then
   # Bridge network
