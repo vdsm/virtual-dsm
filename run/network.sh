@@ -19,7 +19,6 @@ configureDHCP() {
 
   # Create /dev/vhost-net
   if [ ! -c /dev/vhost-net ]; then
-    [ ! -d /dev/vhost-net ] && mkdir -m 755 /dev/vhost-net
     mknod /dev/vhost-net c 10 238
     chmod 666 /dev/vhost-net
   fi
