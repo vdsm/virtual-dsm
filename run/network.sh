@@ -48,16 +48,16 @@ configureDHCP() {
   [[ ! -e ${TAP_PATH} ]] && [[ -e /dev0/${TAP_PATH##*/} ]] && ln -s /dev0/${TAP_PATH##*/} ${TAP_PATH}
 
   if [[ ! -e ${TAP_PATH} ]]; then
-    if ! mknod ${TAP_PATH} c $MAJOR $MINOR >/dev/null 2>&1; then
+    if ! mknod ${TAP_PATH} c $MAJOR $MINOR ; then
       echo "ERROR: Cannot mknod: ${TAP_PATH}" && exit 20
     fi
   fi
 
-  if ! exec 30>>$TAP_PATH >/dev/null 2>&1; then
+  if ! exec 30>>$TAP_PATH; then
     echo "ERROR: Please add the following docker variable to your container: --device-cgroup-rule='c ${MAJOR}:* rwm'" && exit 21
   fi
 
-  if ! exec 40>>/dev/vhost-net >/dev/null 2>&1; then
+  if ! exec 40>>/dev/vhost-net; then
     echo "ERROR: Cannot find vhost!" && exit 22 
   fi
 
