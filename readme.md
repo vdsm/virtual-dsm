@@ -119,7 +119,9 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     By default the container uses bridge networking, and uses the same IP as the docker host. 
 
-    If you want to give it a seperate IP address, create a macvlan network. For example:
+    If you want to give it a seperate IP address, create a macvlan network.
+
+    For example:
 
     ```
     $ docker network create -d macvlan \
