@@ -130,7 +130,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
     ```
     Modify these values to match your local subnet. 
 
-    Next change the containers configuration in your compose file:
+    Now change the containers configuration in your compose file:
 
     ```
     networks:
