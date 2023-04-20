@@ -9,7 +9,7 @@ for pid in $(pidof -x $script_name); do
   if [ $pid != $$ ]; then
     kill -15 $pid 2> /dev/null
     wait $pid 2> /dev/null
-  fi 
+  fi
 done
 
 # Serve the page
@@ -18,6 +18,6 @@ LENGTH=$(echo "$HTML" | wc -c);
 
 RESPONSE="HTTP/1.1 200 OK\nContent-Length: ${LENGTH}\nConnection: close\n\n$HTML\n\n"
 
-while true; do 
-  echo -en "$RESPONSE" | nc -N -lp "${1:-8080}"; 
+while true; do
+  echo -en "$RESPONSE" | nc -N -lp "${1:-8080}";
 done
