@@ -48,7 +48,9 @@ configureDHCP() {
   [[ ! -e ${TAP_PATH} ]] && [[ -e /dev0/${TAP_PATH##*/} ]] && ln -s /dev0/${TAP_PATH##*/} ${TAP_PATH}
 
   if [[ ! -e ${TAP_PATH} ]]; then
-    mknod ${TAP_PATH} c $MAJOR $MINOR && : || ("ERROR: Cannot mknod: ${TAP_PATH}" && exit 20)
+    if ! mknod ${TAP_PATH} c $MAJOR $MINOR >/dev/null 2>&1; then
+      echo "ERROR: Cannot mknod: ${TAP_PATH}" && exit 20
+    fi
   fi
 
   if ! exec 30>>$TAP_PATH >/dev/null 2>&1; then
