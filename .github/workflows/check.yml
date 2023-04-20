@@ -1,5 +1,5 @@
 on: [workflow_call]
-name: "Check"
+name: "Shellcheck"
 permissions: {}
 
 jobs:

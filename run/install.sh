@@ -103,7 +103,7 @@ BOOT=$(find $TMP -name "*.bin.zip")
 BOOT=$(echo "$BOOT" | head -c -5)
 unzip -q -o "$BOOT".zip -d $TMP
 
- [ "$ALLOCATE" != "Z" ] && echo "Install: Allocating diskspace..."
+[ "$ALLOCATE" != "Z" ] && echo "Install: Allocating diskspace..."
 
 SYSTEM="$TMP/sys.img"
 SYSTEM_SIZE=4954537983
@@ -121,10 +121,8 @@ if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
 fi
 
  if [ "$ALLOCATE" = "Z" ]; then
-
   echo "Install: Preallocating 4 GB of diskspace..."
   dd if=/dev/urandom of="${SYSTEM}" count="${SYSTEM_SIZE}" bs=1M iflag=count_bytes status=none
-
 fi
 
 # Check if file exists
