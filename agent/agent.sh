@@ -134,9 +134,17 @@ fi
 
 # Display message in docker log output
 
-echo "-------------------------------------------"
-echo " You can now login to DSM at port 5000     "
-echo "-------------------------------------------"
+IP=$(ip address show dev eth0 | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
+
+if [[ "$IP" == "20.20"* ]]; then
+  MSG="port 5000"
+else
+  MSG="http://${IP}:5000"
+fi
+
+echo "--------------------------------------------------------"
+echo " You can now login to DSM at ${MSG}"
+echo "--------------------------------------------------------"
 
 # Wait for NMI interrupt as a shutdown signal
 
