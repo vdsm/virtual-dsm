@@ -160,7 +160,8 @@ if [ "$DEBUG" = "Y" ]; then
 
   IP=$(ip address show dev eth0 | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
   echo "Info: Container IP is ${IP} with gateway {GATEWAY}"
-
+  ifconfig
+  ip route
 fi
 
 if [ "$DHCP" != "Y" ]; then
