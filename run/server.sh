@@ -14,7 +14,7 @@ done
 
 # Serve the page
 HTML="<HTML><HEAD><STYLE>body {  color: white; background-color: #00BFFF; } </STYLE></HEAD><BODY><BR><BR><H1><CENTER>$2</CENTER></H1></BODY></HTML>"
-LENGTH=$(echo "$HTML" | wc -c);
+LENGTH="$(echo "$HTML" | wc -c)"
 
 RESPONSE="HTTP/1.1 200 OK\nContent-Length: ${LENGTH}\nConnection: close\n\n$HTML\n\n"
 
