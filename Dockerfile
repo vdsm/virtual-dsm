@@ -11,7 +11,6 @@ FROM debian:bookworm-20230411-slim
 
 RUN apt-get update && apt-get -y upgrade && \
     apt-get --no-install-recommends -y install \
-	bc \
 	curl \
 	cpio \
 	wget \
