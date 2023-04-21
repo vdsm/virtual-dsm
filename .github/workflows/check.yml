@@ -1,10 +1,10 @@
 on: [workflow_call]
-name: "Shellcheck"
+name: "shellcheck"
 permissions: {}
 
 jobs:
   shellcheck:
-    name: Shellcheck
+    name: shellcheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
