@@ -36,6 +36,7 @@ COPY agent/*.sh /agent/
 COPY --from=builder /src/serial/main /run/serial.bin
 
 RUN ["chmod", "+x", "/run/run.sh"]
+RUN ["chmod", "+x", "/run/check.sh"]
 RUN ["chmod", "+x", "/run/server.sh"]
 RUN ["chmod", "+x", "/run/serial.bin"]
 
@@ -68,6 +69,6 @@ LABEL org.opencontainers.image.version=${VERSION_ARG}
 LABEL org.opencontainers.image.url=https://hub.docker.com/r/kroese/virtual-dsm/
 LABEL org.opencontainers.image.source=https://github.com/kroese/virtual-dsm/
 
-HEALTHCHECK --interval=30s --timeout=2s CMD curl -ILfSs http://20.20.20.21:5000/ || exit 1
+HEALTHCHECK --interval=30s --retries=1 CMD /run/check.sh
 
 ENTRYPOINT ["/run/run.sh"]

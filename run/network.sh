@@ -46,6 +46,9 @@ configureDHCP() {
     echo "ERROR: Cannot retrieve IP from DHCP using MAC ${VM_NET_MAC}" && exit 16
   fi
 
+  # Store IP for Docker healthcheck
+  echo "${DHCP_IP}" > "/var/dsm.ip"
+
   ip a flush "${VM_NET_TAP}"
 
   TAP_PATH="/dev/tap$(</sys/class/net/${VM_NET_TAP}/ifindex)"
@@ -82,6 +85,9 @@ configureNAT () {
 
   VM_NET_IP='20.20.20.21'
   VM_NET_TAP="_VmNatTap"
+
+  # Store IP for Docker healthcheck
+  echo "${VM_NET_IP}" > "/var/dsm.ip"
 
   #Create bridge with static IP for the VM guest
   brctl addbr dockerbridge
