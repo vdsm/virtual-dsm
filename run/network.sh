@@ -3,6 +3,7 @@ set -eu
 
 # Docker environment variabeles
 
+: ${VM_NET_TAP:='dsm'}
 : ${VM_NET_HOST:='VirtualDSM'}
 : ${VM_NET_MAC:='02:11:32:AA:BB:CC'}
 
@@ -29,7 +30,6 @@ configureDHCP() {
     echo "docker variable to your container: --device=/dev/vhost-net" && exit 85
   fi
 
-  VM_NET_TAP="dsm"
   echo "Info: Retrieving IP via DHCP using MAC ${VM_NET_MAC}..."
 
   ip l add link eth0 name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge || true
@@ -51,7 +51,8 @@ configureDHCP() {
 
   ip a flush "${VM_NET_TAP}"
 
-  TAP_PATH="/dev/tap$(</sys/class/net/${VM_NET_TAP}/ifindex)"
+  TAP_NR=$(</sys/class/net/"${VM_NET_TAP}"/ifindex)
+  TAP_PATH="/dev/tap${TAP_NR}"
 
   # Create dev file (there is no udev in container: need to be done manually)
   IFS=: read -r MAJOR MINOR < <(cat /sys/devices/virtual/net/"${VM_NET_TAP}"/tap*/dev)
@@ -84,7 +85,6 @@ configureDHCP() {
 configureNAT () {
 
   VM_NET_IP='20.20.20.21'
-  VM_NET_TAP="_VmNatTap"
 
   # Store IP for Docker healthcheck
   echo "${VM_NET_IP}" > "/var/dsm.ip"
@@ -94,9 +94,9 @@ configureNAT () {
   ip addr add ${VM_NET_IP%.*}.1/24 broadcast ${VM_NET_IP%.*}.255 dev dockerbridge
   ip link set dockerbridge up
   #QEMU Works with taps, set tap to the bridge created
-  ip tuntap add dev ${VM_NET_TAP} mode tap
-  ip link set ${VM_NET_TAP} up promisc on
-  brctl addif dockerbridge ${VM_NET_TAP}
+  ip tuntap add dev "${VM_NET_TAP}" mode tap
+  ip link set "${VM_NET_TAP}" up promisc on
+  brctl addif dockerbridge "${VM_NET_TAP}"
 
   #Add internet connection to the VM
   iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
@@ -168,6 +168,7 @@ if [ "$DEBUG" = "Y" ]; then
   echo "Info: Container IP is ${IP} with gateway ${GATEWAY}"
   ifconfig
   ip route
+
 fi
 
 if [ "$DHCP" != "Y" ]; then
