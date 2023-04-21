@@ -3,7 +3,7 @@ set -eu
 
 # Docker environment variabeles
 
-: ${VM_NET_TAP='dsm'}
+: ${VM_NET_TAP:='dsm'}
 : ${VM_NET_HOST:='VirtualDSM'}
 : ${VM_NET_MAC:='02:11:32:AA:BB:CC'}
 
