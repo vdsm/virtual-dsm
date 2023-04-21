@@ -63,7 +63,7 @@ ARGS="${DEF_OPTS} ${CPU_OPTS} ${RAM_OPTS} ${KVM_OPTS} ${MON_OPTS} ${SERIAL_OPTS}
 
 set -m
 (
-  qemu-system-x86_64 ${ARGS} & echo $! > "${_QEMU_PID}"
+  "qemu-system-x86_64 ${ARGS}" & echo $! > "${_QEMU_PID}"
 )
 set +m
 
