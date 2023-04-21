@@ -6,7 +6,7 @@ set -eu
 
 DL="https://global.synologydownload.com/download/DSM"
 
-if [ -z $URL ]; then
+if [ -z "$URL" ]; then
 
   URL="$DL/beta/7.2/64216/DSM_VirtualDSM_64216.pat"
   #URL="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
@@ -33,7 +33,7 @@ if ! curl -r 64493568-69886247 -sfk -o "$RD" "$LOC"; then
   echo "Failed to download extractor, code: $?" && exit 60
 fi
 
-SUM=$(md5sum $RD | cut -f 1 -d " ")
+SUM=$(md5sum "$RD" | cut -f 1 -d " ")
 
 if [ $SUM != "14fb88cb7cabddb5af1d0269bf032845" ]; then
   echo "Invalid extractor, checksum failed." && exit 61
@@ -52,7 +52,7 @@ done
 mv /run/extract/scemd /run/extract/syno_extract_system_patch
 chmod +x /run/extract/syno_extract_system_patch
 
-rm -rf $TMP && mkdir -p $TMP
+rm -rf "$TMP" && mkdir -p "$TMP"
 
 echo "Install: Downloading $(basename $URL)..."
 
