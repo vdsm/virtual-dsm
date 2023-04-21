@@ -2,7 +2,13 @@
 set -eu
 
 # Display wait message on port 5000
-/run/server.sh 5000 "Please wait while Virtual DSM is installing..." > /dev/null &
+
+HTML="Please wait while Virtual DSM is installing...<script>\
+        setTimeout(() => { document.location.reload(); }, 9999);</script>"
+
+/run/server.sh 5000 "${HTML}" > /dev/null &
+
+# Download the required files from the Synology website
 
 DL="https://global.synologydownload.com/download/DSM"
 
@@ -35,7 +41,7 @@ LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 SUM=$(md5sum "$RD" | cut -f 1 -d " ")
 
 if [ "$SUM" != "14fb88cb7cabddb5af1d0269bf032845" ]; then
-  echo "Invalid extractor, checksum failed." && exit 61
+  echo "Invalid extractor, checksum mismatch." && exit 61
 fi
 
 set +e
@@ -138,8 +144,6 @@ if [[ SIZE -ne SYSTEM_SIZE ]]; then
   rm -f "${SYSTEM}"
   echo "ERROR: System disk has the wrong size: ${SIZE}" && exit 90
 fi
-
-echo "Install: Creating partition table..."
 
 PART="$TMP/partition.fdisk"
 

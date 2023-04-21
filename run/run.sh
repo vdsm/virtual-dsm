@@ -3,7 +3,7 @@ set -eu
 
 # Docker environment variabeles
 
-: ${URL:=''}.                     # URL of PAT file
+: ${URL:=''}.                     # URL of the PAT file
 : ${DEBUG:=''}.               # Enable debug mode
 : ${ALLOCATE:='Y'}       # Preallocate diskspace
 : ${CPU_CORES:='1'}     # Amount of CPU cores
