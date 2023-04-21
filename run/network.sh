@@ -113,7 +113,7 @@ configureNAT () {
   NET_OPTS="-netdev tap,ifname=${VM_NET_TAP},script=no,downscript=no,id=hostnet0"
 
   # Build DNS options from container /etc/resolv.conf
-  nameservers=($(grep '^nameserver' /etc/resolv.conf | sed 's/nameserver //'))
+  mapfile -t nameservers < <(grep '^nameserver' /etc/resolv.conf | sed 's/nameserver //')
   searchdomains=$(grep '^search' /etc/resolv.conf | sed 's/search //' | sed 's/ /,/g')
   domainname=$(echo "$searchdomains" | awk -F"," '{print $1}')
 
