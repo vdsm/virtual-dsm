@@ -30,8 +30,26 @@ configureDHCP() {
     echo "docker variable to your container: --device=/dev/vhost-net" && exit 85
   fi
 
+  # Create macvlan to enable host <> guest communication
+
+  GATEWAY=$(ip r | grep default | awk '{print $3}')
+  IP=$(ip address show dev eth0 | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
+  NETWORK=$(ip -o route | grep eth0 | grep -v default | awk '{print $1}')
+
+  ip l add link eth0 macvlan0 type macvlan mode bridge
+
+  ip address add "${IP}" dev macvlan0
+  ip link set dev macvlan0 up
+
+  ip route flush dev eth0
+  ip route flush dev macvlan0
+
+  ip route add $NETWORK dev macvlan0 metric 0
+  ip route add default via "${GATEWAY}"
+
   echo "Info: Retrieving IP via DHCP using MAC ${VM_NET_MAC}..."
 
+  # Create macvtap
   ip l add link eth0 name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge || true
   ip l set "${VM_NET_TAP}" up
 
@@ -78,18 +96,6 @@ configureDHCP() {
     echo -n "ERROR: VHOST can not be found. Please add the following docker "
     echo "variable to your container: --device=/dev/vhost-net" && exit 22
   fi
-
-  # Create macvlan to enable host <> guest communication
-  ip l add link eth0 macvlan0 type macvlan mode bridge
-
-  IP=$(ip address show dev eth0 | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
- 
-  ip address add "${IP}" dev macvlan0
-  ip l set dev macvlan0 up
-  ip route flush dev eth0
-
-  GATEWAY=$(ip r | grep default | awk '{print $3}')
-  ip route add default via "${GATEWAY}"
 
   NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30"
 }
