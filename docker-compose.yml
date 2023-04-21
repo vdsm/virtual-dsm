@@ -13,7 +13,6 @@ services:
             - NET_ADMIN        
         ports:
             - 5000:5000
-            - 5001:5001
         volumes:
             - /var/dsm:/storage
         restart: on-failure
