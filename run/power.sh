@@ -21,7 +21,7 @@ _trap(){
 
 _graceful_shutdown() {
 
-  [ ! -f "{_QEMU_PID}" ] && return
+  [ ! -f "${_QEMU_PID}" ] && return
   [ -f "${_QEMU_SHUTDOWN_COUNTER}" ] && return
 
   set +e
