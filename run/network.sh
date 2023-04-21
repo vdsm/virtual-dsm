@@ -26,7 +26,6 @@ configureDHCP() {
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
 
   ip l add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge
-
   ip address add "${IP}" dev "${VM_NET_VLAN}"
   ip link set dev "${VM_NET_VLAN}" up
 
@@ -54,17 +53,6 @@ configureDHCP() {
 
   ip a flush "${VM_NET_TAP}"
 
-  # Create /dev/vhost-net
-  if [ ! -c /dev/vhost-net ]; then
-    mknod /dev/vhost-net c 10 238
-    chmod 660 /dev/vhost-net
-  fi
-
-  if [ ! -c /dev/vhost-net ]; then
-    echo -n "Error: VHOST interface not available. Please add the following "
-    echo "docker variable to your container: --device=/dev/vhost-net" && exit 85
-  fi
-
   TAP_NR=$(</sys/class/net/"${VM_NET_TAP}"/ifindex)
   TAP_PATH="/dev/tap${TAP_NR}"
 
@@ -88,6 +76,12 @@ configureDHCP() {
     echo "--device=/dev/vhost-net --device-cgroup-rule='c ${MAJOR}:* rwm'" && exit 21
   fi
 
+  # Create /dev/vhost-net
+  if [ ! -c /dev/vhost-net ]; then
+    mknod /dev/vhost-net c 10 238
+    chmod 660 /dev/vhost-net
+  fi
+
   if ! exec 40>>/dev/vhost-net; then
     echo -n "ERROR: VHOST can not be found. Please add the following docker "
     echo "variable to your container: --device=/dev/vhost-net" && exit 22
@@ -104,14 +98,14 @@ configureNAT () {
   VM_NET_IP='20.20.20.21'
 
   #Create bridge with static IP for the VM guest
-  brctl addbr dockerbridge
+  ip link add dev dockerbridge type bridge
   ip addr add ${VM_NET_IP%.*}.1/24 broadcast ${VM_NET_IP%.*}.255 dev dockerbridge
   ip link set dockerbridge up
 
   #QEMU Works with taps, set tap to the bridge created
   ip tuntap add dev "${VM_NET_TAP}" mode tap
   ip link set "${VM_NET_TAP}" up promisc on
-  brctl addif dockerbridge "${VM_NET_TAP}"
+  ip link set dev "${VM_NET_TAP}" master dockerbridge
 
   #Add internet connection to the VM
   iptables -t nat -A POSTROUTING -o "${VM_NET_DEV}" -j MASQUERADE
