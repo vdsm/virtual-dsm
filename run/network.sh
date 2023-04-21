@@ -141,7 +141,7 @@ configureNAT () {
 
   [ "$DEBUG" = "Y" ] && echo && echo "$DNSMASQ $DNSMASQ_OPTS"
 
-  $DNSMASQ ${$DNSMASQ_OPTS:+ $DNSMASQ_OPTS} 
+  $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS} 
 }
 
 # ######################################
