@@ -54,7 +54,7 @@ chmod +x /run/extract/syno_extract_system_patch
 
 rm -rf "$TMP" && mkdir -p "$TMP"
 
-echo "Install: Downloading $(basename $URL)..."
+echo "Install: Downloading $(basename "$URL")..."
 
 PAT="/$BASE.pat"
 rm -f "$PAT"
@@ -77,10 +77,10 @@ fi
 echo "Install: Extracting downloaded image..."
 
 if { tar tf "$PAT"; } >/dev/null 2>&1; then
-   tar xpf $PAT -C $TMP/.
+   tar xpf "$PAT" -C "$TMP/."
 else
    export LD_LIBRARY_PATH="/run/extract"
-   if ! /run/extract/syno_extract_system_patch $PAT $TMP/. ; then
+   if ! /run/extract/syno_extract_system_patch "$PAT" "$TMP/." ; then
      echo "Invalid PAT file: File is an update pack which contains no OS image." && exit 63
    fi
    export LD_LIBRARY_PATH=""
