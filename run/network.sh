@@ -104,7 +104,7 @@ configureNAT () {
   iptables -t nat -A PREROUTING -i eth0 -p udp  -j DNAT --to $VM_NET_IP
 
   # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
-  iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill
+  iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill || true
 
   #Enable port forwarding flag
   [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]] && sysctl -w net.ipv4.ip_forward=1
