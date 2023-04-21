@@ -29,7 +29,7 @@ configureDHCP() {
     echo "docker variable to your container: --device=/dev/vhost-net" && exit 85
   fi
 
-  VM_NET_TAP="dsm"
+  VM_NET_TAP="_VmMacvtap"
   echo "Info: Retrieving IP via DHCP using MAC ${VM_NET_MAC}..."
 
   ip l add link eth0 name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge || true
