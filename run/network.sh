@@ -33,7 +33,7 @@ configureDHCP() {
   ip route flush dev "${VM_NET_DEV}"
   ip route flush dev "${VM_NET_VLAN}"
 
-  ip route add $NETWORK dev "${VM_NET_VLAN}" metric 0
+  ip route add "${NETWORK}" dev "${VM_NET_VLAN}" metric 0
   ip route add default via "${GATEWAY}"
 
   echo "Info: Retrieving IP via DHCP using MAC ${VM_NET_MAC}..."
