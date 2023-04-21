@@ -29,9 +29,8 @@ rm -rf "$TMP" && mkdir -p "$TMP"
 
 LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
-if ! curl -r 64493568-69886247 -sfk -o "$RD" "$LOC"; then
-  echo "Failed to download extractor, code: $?" && exit 60
-fi
+{ curl -r 64493568-69886247 -sfk -o "$RD" "$LOC"; rc=$?; } || :
+(( rc != 0 )) && echo "Failed to download extractor, reason: $rc" && exit 60
 
 SUM=$(md5sum "$RD" | cut -f 1 -d " ")
 
