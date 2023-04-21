@@ -96,12 +96,12 @@ HDP="$TMP/synohdpack_img"
 [ ! -f "$IDB.txz" ] && echo "Invalid PAT file: contains no IndexDB." && exit 66
 [ ! -d "$PKG" ] && echo "Invalid PAT file: contains no packages." && exit 68
 
-BOOT=$(find $TMP -name "*.bin.zip")
+BOOT=$(find "$TMP" -name "*.bin.zip")
 
 [ ! -f "$BOOT" ] && echo "Invalid PAT file: contains no boot file." && exit 67
 
 BOOT=$(echo "$BOOT" | head -c -5)
-unzip -q -o "$BOOT".zip -d $TMP
+unzip -q -o "$BOOT".zip -d "$TMP"
 
 [ "$ALLOCATE" != "Z" ] && echo "Install: Allocating diskspace..."
 
@@ -152,35 +152,35 @@ PART="$TMP/partition.fdisk"
 	echo "${SYSTEM}2 : start=     4982528, size=     4194304, type=82"
 } > $PART
 
-sfdisk -q $SYSTEM < $PART
+sfdisk -q "$SYSTEM" < "$PART"
 
 echo "Install: Extracting system partition..."
 
 MOUNT="$TMP/system"
 
-rm -rf $MOUNT && mkdir -p $MOUNT
+rm -rf "$MOUNT" && mkdir -p "$MOUNT"
 
-mv -f $HDA.tgz $HDA.txz
+mv -f "$HDA.tgz" "$HDA.txz"
 
-tar xpfJ $HDP.txz --absolute-names -C $MOUNT/
-tar xpfJ $HDA.txz --absolute-names -C $MOUNT/
-tar xpfJ $IDB.txz --absolute-names -C $MOUNT/usr/syno/synoman/indexdb/
+tar xpfJ "$HDP.txz" --absolute-names -C "$MOUNT/"
+tar xpfJ "$HDA.txz" --absolute-names -C "$MOUNT/"
+tar xpfJ "$IDB.txz" --absolute-names -C "$MOUNT/usr/syno/synoman/indexdb/"
 
 # Install Agent
 
 LOC="$MOUNT/usr/local"
-mkdir -p $LOC
-mv $PKG/ $LOC/
+mkdir -p "$LOC"
+mv "$PKG/" "$LOC/"
 
 LOC="$MOUNT/usr/local/bin"
-mkdir -p $LOC
-cp /agent/agent.sh $LOC/agent.sh
-chmod 755 $LOC/agent.sh
+mkdir -p "$LOC"
+cp /agent/agent.sh "$LOC/agent.sh"
+chmod 755 "$LOC/agent.sh"
 
 LOC="$MOUNT/usr/local/etc/rc.d"
-mkdir -p $LOC
-cp /agent/service.sh $LOC/agent.sh
-chmod 755 $LOC/agent.sh
+mkdir -p "$LOC"
+cp /agent/service.sh "$LOC/agent.sh"
+chmod 755 "$LOC/agent.sh"
 
 # Store agent version
 echo "7" > "$STORAGE"/"$BASE".agent
@@ -193,11 +193,11 @@ NUMBLOCKS="622560" # (4980480 * 512) / 4096
 
 mke2fs -q -t ext4 -b 4096 -d $MOUNT/ -L $LABEL -F -E offset=$OFFSET $SYSTEM $NUMBLOCKS
 
-rm -rf $MOUNT
+rm -rf "$MOUNT"
 
 echo "$BASE" > "$STORAGE"/dsm.ver
 mv -f "$PAT" "$STORAGE"/"$BASE".pat
 mv -f "$BOOT" "$STORAGE"/"$BASE".boot.img
 mv -f "$SYSTEM" "$STORAGE"/"$BASE".system.img
 
-rm -rf $TMP
+rm -rf "$TMP"
