@@ -79,6 +79,18 @@ configureDHCP() {
     echo "variable to your container: --device=/dev/vhost-net" && exit 22
   fi
 
+  # Create macvlan to enable host <> guest communication
+  ip l add link eth0 macvlan0 type macvlan mode bridge
+
+  IP=$(ip address show dev eth0 | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
+ 
+  ip address add "${IP}" dev macvlan0
+  ip l set dev macvlan0 up
+  ip route flush dev eth0
+
+  GATEWAY=$(ip r | grep default | awk '{print $3}')
+  ip route add default via "${GATEWAY}"
+
   NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30"
 }
 
