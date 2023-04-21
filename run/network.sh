@@ -53,7 +53,7 @@ configureDHCP() {
 
   TAP_PATH="/dev/tap$(</sys/class/net/${VM_NET_TAP}/ifindex)"
 
-  # create dev file (there is no udev in container: need to be done manually)
+  # Create dev file (there is no udev in container: need to be done manually)
   IFS=: read -r MAJOR MINOR < <(cat /sys/devices/virtual/net/"${VM_NET_TAP}"/tap*/dev)
 
   if (( MAJOR < 1)); then
@@ -141,7 +141,7 @@ configureNAT () {
 
   [ "$DEBUG" = "Y" ] && echo && echo "$DNSMASQ $DNSMASQ_OPTS"
 
-  $DNSMASQ ${$DNSMASQ_OPTS:+ $$DNSMASQ_OPTS} 
+  $DNSMASQ ${$DNSMASQ_OPTS:+ $DNSMASQ_OPTS} 
 }
 
 # ######################################
