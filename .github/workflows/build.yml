@@ -47,6 +47,7 @@ jobs:
       name: Create tag
       uses: rickstaa/action-create-tag@v1
       id: "tag_create"
+      if: ${{ false }}
       with:
         tag: "v${{ secrets.MAJOR }}.${{ secrets.MINOR }}"
         tag_exists_error: false
