@@ -205,7 +205,11 @@ else
   configureDHCP
 
   # Display the received IP on port 5000
-  /run/server.sh 5000 "The location of DSM is http://${DHCP_IP}:5000" > /dev/null &
+
+  HTML="The location of DSM is http://${DHCP_IP}:5000<script>\
+                 setTimeout(function(){ window.location.replace("http://${DHCP_IP}:5000"); }, 2000);</script>"
+
+  /run/server.sh 5000 "${HTML}" > /dev/null &
 
 fi
 
