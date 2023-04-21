@@ -44,7 +44,7 @@ fi
 KVM_OPTS=""
 
 if [ -e /dev/kvm ] && sh -c 'echo -n > /dev/kvm' &> /dev/null; then
-  if [[ $(grep -e vmx -e svm /proc/cpuinfo) ]]; then
+  if grep -q -e vmx -e svm /proc/cpuinfo; then
     KVM_OPTS=",accel=kvm -enable-kvm -cpu host"
   fi
 fi
