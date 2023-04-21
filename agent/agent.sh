@@ -42,7 +42,7 @@ function downloadUpdate {
 
   [[ "$remote_size" == "" || "$remote_size" == "0" ]] && return
 
-  SCRIPT=$(readlink -f ${BASH_SOURCE[0]})
+  SCRIPT=$(readlink -f "${BASH_SOURCE[0]}")
   local_size=$(stat -c%s "$SCRIPT")
 
   [[ remote_size -eq local_size ]] && return
