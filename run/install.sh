@@ -25,7 +25,7 @@ echo "Install: Downloading extractor..."
 
 TMP="$STORAGE/tmp"
 RD="$TMP/rd.gz"
-rm -rf $TMP && mkdir -p $TMP
+rm -rf "$TMP" && mkdir -p "$TMP"
 
 LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
@@ -142,7 +142,7 @@ echo "Install: Creating partition table..."
 
 PART="$TMP/partition.fdisk"
 
-{	echo "label: dos"
+"{	echo "label: dos"
 	echo "label-id: 0x6f9ee2e9"
 	echo "device: ${SYSTEM}"
 	echo "unit: sectors"
@@ -150,7 +150,7 @@ PART="$TMP/partition.fdisk"
 	echo ""
 	echo "${SYSTEM}1 : start=        2048, size=     4980480, type=83"
 	echo "${SYSTEM}2 : start=     4982528, size=     4194304, type=82"
-} > $PART
+}" > $PART
 
 sfdisk -q "$SYSTEM" < "$PART"
 
@@ -191,7 +191,7 @@ LABEL="1.44.1-42218"
 OFFSET="1048576" # 2048 * 512
 NUMBLOCKS="622560" # (4980480 * 512) / 4096
 
-mke2fs -q -t ext4 -b 4096 -d $MOUNT/ -L $LABEL -F -E offset=$OFFSET $SYSTEM $NUMBLOCKS
+mke2fs -q -t ext4 -b 4096 -d "$MOUNT/" -L "$LABEL" -F -E "offset=$OFFSET" "$SYSTEM" "$NUMBLOCKS"
 
 rm -rf "$MOUNT"
 
