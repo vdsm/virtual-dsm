@@ -4,7 +4,7 @@ set -eu
 # Docker environment variabeles
 
 : ${URL:=''}                      # URL of the PAT file
-: ${DEBUG:=''}.               # Enable debug mode
+: ${DEBUG:=''}                # Enable debug mode
 : ${ALLOCATE:='Y'}       # Preallocate diskspace
 : ${CPU_CORES:='1'}     # Amount of CPU cores
 : ${DISK_SIZE:='16G'}    # Initial data disk size
