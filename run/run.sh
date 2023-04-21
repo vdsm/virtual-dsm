@@ -3,8 +3,8 @@ set -eu
 
 # Docker environment variabeles
 
-: ${URL:=''}.                     # URL of the PAT file
-: ${DEBUG:=''}.               # Enable debug mode
+: ${URL:=''}                      # URL of the PAT file
+: ${DEBUG:=''}                # Enable debug mode
 : ${ALLOCATE:='Y'}       # Preallocate diskspace
 : ${CPU_CORES:='1'}     # Amount of CPU cores
 : ${DISK_SIZE:='16G'}    # Initial data disk size
@@ -13,6 +13,8 @@ set -eu
 echo "Starting Virtual DSM for Docker v${VERSION}..."
 
 STORAGE="/storage"
+KERNEL=$(uname -r | cut -b 1)
+
 [ ! -d "$STORAGE" ] && echo "Storage folder (${STORAGE}) not found!" && exit 69
 [ ! -f "/run/run.sh" ] && echo "Script must run inside Docker container!" && exit 60
 
@@ -67,4 +69,8 @@ set -m
 )
 set +m
 
-pidwait -F "${_QEMU_PID}" & wait $!
+if (( KERNEL > 4 )); then
+  pidwait -F "${_QEMU_PID}" & wait $!
+else
+  tail --pid "$(cat ${_QEMU_PID})" --follow /dev/null & wait $!
+fi
