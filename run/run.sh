@@ -13,6 +13,8 @@ set -eu
 echo "Starting Virtual DSM for Docker v${VERSION}..."
 
 STORAGE="/storage"
+KERNEL=$(uname -r | cut -b 1)
+
 [ ! -d "$STORAGE" ] && echo "Storage folder (${STORAGE}) not found!" && exit 69
 [ ! -f "/run/run.sh" ] && echo "Script must run inside Docker container!" && exit 60
 
@@ -67,7 +69,7 @@ set -m
 )
 set +m
 
-if (( $(echo "$(uname -r | cut -d '.' -f 1-2) > 5.2" |bc -l) )); then
+if (( KERNEL > 4 )); then
   pidwait -F "${_QEMU_PID}" & wait $!
 else
   tail --pid "$(cat ${_QEMU_PID})" --follow /dev/null & wait $!
