@@ -93,9 +93,9 @@ configureNAT () {
   ip addr add ${VM_NET_IP%.*}.1/24 broadcast ${VM_NET_IP%.*}.255 dev dockerbridge
   ip link set dockerbridge up
   #QEMU Works with taps, set tap to the bridge created
-  ip tuntap add dev ${VM_NET_TAP} mode tap
-  ip link set ${VM_NET_TAP} up promisc on
-  brctl addif dockerbridge ${VM_NET_TAP}
+  ip tuntap add dev "${VM_NET_TAP}" mode tap
+  ip link set "${VM_NET_TAP}" up promisc on
+  brctl addif dockerbridge "${VM_NET_TAP}"
 
   #Add internet connection to the VM
   iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
