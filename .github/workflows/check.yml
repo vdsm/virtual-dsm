@@ -10,5 +10,4 @@ jobs:
       - uses: actions/checkout@v3
       - name: Run ShellCheck
         uses: ludeeus/action-shellcheck@master
-        env:
-          SHELLCHECK_OPTS: -e SX2001 -e SX2002 -e SX2116 -e SX2034 -e SX1091 -e SX2143 -e SX2223 -e SX2086 -e SX2145 -e SX2015 -e SX2268 -e SC2207 -e SC2064 -e SC2162 -e SC2153 -e SC2166
+
