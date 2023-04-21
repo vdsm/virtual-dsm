@@ -57,7 +57,7 @@ configureDHCP() {
      echo "ERROR: Cannot find: sys/devices/virtual/net/${VM_NET_TAP}" && exit 18
   fi
 
-  [[ ! -e ${TAP_PATH} ]] && [[ -e /dev0/${TAP_PATH##*/} ]] && ln -s /dev0/${TAP_PATH##*/} ${TAP_PATH}
+  [[ ! -e "${TAP_PATH}" ]] && [[ -e "/dev0/${TAP_PATH##*/}" ]] && ln -s "/dev0/${TAP_PATH##*/}" "${TAP_PATH}"
 
   if [[ ! -e "${TAP_PATH}" ]]; then
     if ! mknod "${TAP_PATH}" c "$MAJOR" "$MINOR" ; then
@@ -118,12 +118,12 @@ configureNAT () {
   domainname=$(echo $searchdomains | awk -F"," '{print $1}')
 
   for nameserver in "${nameservers[@]}"; do
-    if ! [[ $nameserver =~ .*:.* ]]; then
-      [[ -z $DNS_SERVERS ]] && DNS_SERVERS=$nameserver || DNS_SERVERS="$DNS_SERVERS,$nameserver"
+    if ! [[ "$nameserver" =~ .*:.* ]]; then
+      [[ -z "$DNS_SERVERS" ]] && DNS_SERVERS="$nameserver" || DNS_SERVERS="$DNS_SERVERS,$nameserver"
     fi
   done
 
-  [[ -z $DNS_SERVERS ]] && DNS_SERVERS="1.1.1.1"
+  [[ -z "$DNS_SERVERS" ]] && DNS_SERVERS="1.1.1.1"
 
   DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:dns-server,$DNS_SERVERS --dhcp-option=option:router,${VM_NET_IP%.*}.1"
 
