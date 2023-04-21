@@ -57,10 +57,16 @@ ENV RAM_SIZE "512M"
 ENV HOST_SERIAL ""
 ENV GUEST_SERIAL ""
 
+ARG DATE_ARG=""
 ARG BUILD_ARG=0
 ARG VERSION_ARG="0.0"
-ENV BUILD=$BUILD_ARG
 ENV VERSION=$VERSION_ARG
+
+LABEL org.opencontainers.image.created=${DATE_ARG}
+LABEL org.opencontainers.image.revision=${BUILD_ARG}
+LABEL org.opencontainers.image.version=${VERSION_ARG}
+LABEL org.opencontainers.image.url=https://hub.docker.com/r/kroese/virtual-dsm/
+LABEL org.opencontainers.image.source=https://github.com/kroese/virtual-dsm/
 
 HEALTHCHECK --interval=30s --timeout=2s CMD curl -ILfSs http://20.20.20.21:5000/ || exit 1
 
