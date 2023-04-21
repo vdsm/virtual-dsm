@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-# Docker environment variabeles 
+# Docker environment variabeles
 
 : ${URL:=''}.                     # URL of PAT file
 : ${DEBUG:=''}.               # Enable debug mode
