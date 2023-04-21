@@ -51,7 +51,8 @@ configureDHCP() {
 
   ip a flush "${VM_NET_TAP}"
 
-  TAP_PATH="/dev/tap$(</sys/class/net/${VM_NET_TAP}/ifindex)"
+  TAP_NR=$(</sys/class/net/"${VM_NET_TAP}"/ifindex)
+  TAP_PATH="/dev/tap${TAP_NR}"
 
   # Create dev file (there is no udev in container: need to be done manually)
   IFS=: read -r MAJOR MINOR < <(cat /sys/devices/virtual/net/"${VM_NET_TAP}"/tap*/dev)
