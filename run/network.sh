@@ -3,6 +3,7 @@ set -eu
 
 # Docker environment variabeles
 
+: ${VM_NET_TAP='dsm'}
 : ${VM_NET_HOST:='VirtualDSM'}
 : ${VM_NET_MAC:='02:11:32:AA:BB:CC'}
 
@@ -29,7 +30,6 @@ configureDHCP() {
     echo "docker variable to your container: --device=/dev/vhost-net" && exit 85
   fi
 
-  VM_NET_TAP="dsm"
   echo "Info: Retrieving IP via DHCP using MAC ${VM_NET_MAC}..."
 
   ip l add link eth0 name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge || true
@@ -84,7 +84,6 @@ configureDHCP() {
 configureNAT () {
 
   VM_NET_IP='20.20.20.21'
-  VM_NET_TAP="_VmNatTap"
 
   # Store IP for Docker healthcheck
   echo "${VM_NET_IP}" > "/var/dsm.ip"
@@ -168,6 +167,7 @@ if [ "$DEBUG" = "Y" ]; then
   echo "Info: Container IP is ${IP} with gateway ${GATEWAY}"
   ifconfig
   ip route
+
 fi
 
 if [ "$DHCP" != "Y" ]; then
