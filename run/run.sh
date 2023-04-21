@@ -64,7 +64,7 @@ IFS=' ' read -a ARG <<< "$ARGS"
 
 set -m
 (
-  "qemu-system-x86_64 "${ARG[@]}" & echo $! > "${_QEMU_PID}"
+  qemu-system-x86_64 "${ARG[@]}" & echo $! > "${_QEMU_PID}"
 )
 set +m
 
