@@ -23,7 +23,18 @@ jobs:
     - uses: actions/checkout@v3
     -
       name: Build the Docker image
-      run: docker build . --file Dockerfile --build-arg "VERSION_ARG=${{ secrets.MAJOR }}.${{ secrets.MINOR }}" --build-arg "BUILD_ARG=${GITHUB_RUN_ID}" --label "id=${GITHUB_RUN_ID}" --label "version=${{ secrets.MAJOR }}.${{ secrets.MINOR }}" --tag "${{ github.repository }}:latest" --tag "${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}" --tag "ghcr.io/${{ github.repository }}:latest" --tag "ghcr.io/${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}"
+      run: |
+              docker build . \
+              --file Dockerfile \
+              --build-arg "VERSION_ARG=${{ secrets.MAJOR }}.${{ secrets.MINOR }}" \
+              --build-arg "BUILD_ARG=${GITHUB_RUN_ID}" \
+              --build-arg "DATE_ARG=${{ github.event.repository.updated_at }}" \
+              --label "build=${GITHUB_RUN_ID}" \
+              --label "version=${{ secrets.MAJOR }}.${{ secrets.MINOR }}" \
+              --tag "${{ github.repository }}:latest" \
+              --tag "${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}" \
+              --tag "ghcr.io/${{ github.repository }}:latest" \
+              --tag "ghcr.io/${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}"
     -
       name: Update Minor version
       uses: hmanzur/actions-set-secret@v2.0.0
@@ -40,7 +51,9 @@ jobs:
         password: ${{ secrets.DOCKERHUB_TOKEN }}
     -
       name: Push to DockerHub
-      run: docker push "${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}" && docker push "${{ github.repository }}:latest"
+      run: |
+              docker push "${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}" &&\
+              docker push "${{ github.repository }}:latest"
     -
       name: Login to GitHub Container Registry
       uses: docker/login-action@v2
@@ -50,7 +63,9 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     -
       name: Push to Github Container Registry
-      run: docker push "ghcr.io/${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}" && docker push "ghcr.io/${{ github.repository }}:latest"
+      run: |
+              docker push "ghcr.io/${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}" && \
+              docker push "ghcr.io/${{ github.repository }}:latest"
   mirror:
     runs-on: ubuntu-latest
     permissions:
@@ -64,5 +79,5 @@ jobs:
       uses: wangchucheng/git-repo-sync@v0.1.0
       with:
         target-url: ${{ secrets.GITLAB_URL }}
-        target-username: ${{ secrets.GITLAB_USERNAME }}
         target-token: ${{ secrets.GITLAB_TOKEN }}
+        target-username: ${{ secrets.GITLAB_USERNAME }}
