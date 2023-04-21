@@ -164,7 +164,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
         - 'c 510:* rwm'
     ```
 
-    NOTE: The exact cgroup rule may be different than `510` depending on your system, but the correct rule number will be printed to the logfile in case of error.
+    NOTE: The exact cgroup rule may be different than `510` depending on your system, but the correct rule number will be printed to the log output in case of error.
 
   * ### How do I install a specific version of vDSM? ###
 
