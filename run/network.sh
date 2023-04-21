@@ -141,8 +141,7 @@ configureNAT () {
 
   [ "$DEBUG" = "Y" ] && echo && echo "$DNSMASQ $DNSMASQ_OPTS"
 
-  # shellcheck disable=SC2046 # Intended splitting of $DNSMASQ_OPTS
-  $DNSMASQ $DNSMASQ_OPTS
+  $DNSMASQ ${$DNSMASQ_OPTS:+ $$DNSMASQ_OPTS} 
 }
 
 # ######################################
