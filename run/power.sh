@@ -19,8 +19,9 @@ _trap(){
     done
 }
 
-_graceful_shutdown(){
+_graceful_shutdown() {
 
+  [ ! -f "{_QEMU_PID}" ] && return
   [ -f "${_QEMU_SHUTDOWN_COUNTER}" ] && return
 
   set +e
@@ -45,17 +46,18 @@ _graceful_shutdown(){
     AGENT="${STORAGE}/${BASE}.agent"
     [ -f "$AGENT" ] && AGENT_VERSION=$(cat "${AGENT}") || AGENT_VERSION=1
 
-    if ((AGENT_VERSION < 2)); then
+    if ((AGENT_VERSION > 1)); then
+
+      # Send a NMI interrupt which will be detected by the kernel
+      echo 'nmi' | nc -q 1 -w 1 localhost "${QEMU_MONPORT}" > /dev/null
+ 
+    else
 
       echo
       echo "Please update the VirtualDSM Agent to allow gracefull shutdowns..."
 
+      kill -15 $(cat "${_QEMU_PID}")
       pkill -f qemu-system-x86_64
-
-    else
-
-      # Send a NMI interrupt which will be detected by the kernel
-      echo 'nmi' | nc -q 1 -w 1 localhost "${QEMU_MONPORT}" > /dev/null
 
     fi
   fi
