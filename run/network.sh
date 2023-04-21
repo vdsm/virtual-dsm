@@ -115,7 +115,7 @@ configureNAT () {
   # Build DNS options from container /etc/resolv.conf
   nameservers=($(grep '^nameserver' /etc/resolv.conf | sed 's/nameserver //'))
   searchdomains=$(grep '^search' /etc/resolv.conf | sed 's/search //' | sed 's/ /,/g')
-  domainname=$(echo $searchdomains | awk -F"," '{print $1}')
+  domainname=$(echo "$searchdomains" | awk -F"," '{print $1}')
 
   for nameserver in "${nameservers[@]}"; do
     if ! [[ "$nameserver" =~ .*:.* ]]; then
@@ -135,7 +135,7 @@ configureNAT () {
 
   [ "$DEBUG" = "Y" ] && echo && echo "$DNSMASQ $DNSMASQ_OPTS"
 
-  $DNSMASQ $DNSMASQ_OPTS
+  "$DNSMASQ $DNSMASQ_OPTS"
 }
 
 # ######################################
