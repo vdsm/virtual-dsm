@@ -165,8 +165,6 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
         - 'c 510:* rwm'
     ```
 
-    This will make DSM retrieve an IP from your router. This will not be the same as the macvlan IP of the container, so to determine which one was assigned to DSM please check the container logfile or use the devices page of your router for example.
-
     NOTE: The exact cgroup rule may be different than `510` depending on your system, but the correct rule number will be printed to the logfile in case of error.
 
   * ### How do I install a specific version of vDSM? ###
