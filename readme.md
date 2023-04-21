@@ -46,7 +46,6 @@ services:
             - NET_ADMIN                       
         ports:
             - 5000:5000
-            - 5001:5001
         restart: on-failure
         stop_grace_period: 1m
 ```
