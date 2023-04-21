@@ -3,7 +3,7 @@ set -eu
 
 # Docker environment variabeles
 
-: ${URL:=''}.                     # URL of the PAT file
+: ${URL:=''}                      # URL of the PAT file
 : ${DEBUG:=''}.               # Enable debug mode
 : ${ALLOCATE:='Y'}       # Preallocate diskspace
 : ${CPU_CORES:='1'}     # Amount of CPU cores
@@ -67,4 +67,8 @@ set -m
 )
 set +m
 
-pidwait -F "${_QEMU_PID}" & wait $!
+if (( $(echo "$(uname -r | cut -d '.' -f 1-2) > 5.2" |bc -l) )); then
+  pidwait -F "${_QEMU_PID}" & wait $!
+else
+  tail --pid "$(cat ${_QEMU_PID})" --follow /dev/null & wait $!
+fi
