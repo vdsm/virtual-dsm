@@ -35,13 +35,13 @@ fi
 
 SUM=$(md5sum "$RD" | cut -f 1 -d " ")
 
-if [ $SUM != "14fb88cb7cabddb5af1d0269bf032845" ]; then
+if [ "$SUM" != "14fb88cb7cabddb5af1d0269bf032845" ]; then
   echo "Invalid extractor, checksum failed." && exit 61
 fi
 
 set +e
-xz -dc <$RD >$TMP/rd 2>/dev/null
-(cd $TMP && cpio -idm <$TMP/rd 2>/dev/null)
+xz -dc <"$RD" >"$TMP/rd" 2>/dev/null
+(cd "$TMP" && cpio -idm <"$TMP/rd" 2>/dev/null)
 set -e
 
 mkdir -p /run/extract
