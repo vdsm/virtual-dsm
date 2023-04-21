@@ -29,16 +29,16 @@ configureDHCP() {
     echo "docker variable to your container: --device=/dev/vhost-net" && exit 85
   fi
 
-  VM_NET_TAP="_VmMacvtap"
+  VM_NET_TAP="dsm"
   echo "Info: Retrieving IP via DHCP using MAC ${VM_NET_MAC}..."
 
-  ip l add link eth0 name ${VM_NET_TAP} address ${VM_NET_MAC} type macvtap mode bridge || true
-  ip l set ${VM_NET_TAP} up
+  ip l add link eth0 name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge || true
+  ip l set "${VM_NET_TAP}" up
 
   ip a flush eth0
-  ip a flush ${VM_NET_TAP}
+  ip a flush "${VM_NET_TAP}"
 
-  DHCP_IP=$( dhclient -v ${VM_NET_TAP} 2>&1 | grep ^bound | cut -d' ' -f3 )
+  DHCP_IP=$( dhclient -v "${VM_NET_TAP}" 2>&1 | grep ^bound | cut -d' ' -f3 )
 
   if [[ "${DHCP_IP}" == [0-9.]* ]]; then
     echo "Info: Retrieved IP ${DHCP_IP} via DHCP"
@@ -46,26 +46,26 @@ configureDHCP() {
     echo "ERROR: Cannot retrieve IP from DHCP using MAC ${VM_NET_MAC}" && exit 16
   fi
 
-  ip a flush ${VM_NET_TAP}
+  ip a flush "${VM_NET_TAP}"
 
   TAP_PATH="/dev/tap$(</sys/class/net/${VM_NET_TAP}/ifindex)"
 
   # create dev file (there is no udev in container: need to be done manually)
-  IFS=: read MAJOR MINOR < <(cat /sys/devices/virtual/net/${VM_NET_TAP}/tap*/dev)
+  IFS=: read -r MAJOR MINOR < <(cat "/sys/devices/virtual/net/${VM_NET_TAP}/tap*/dev")
 
   if (( MAJOR < 1)); then
      echo "ERROR: Cannot find: sys/devices/virtual/net/${VM_NET_TAP}" && exit 18
   fi
 
-  [[ ! -e ${TAP_PATH} ]] && [[ -e /dev0/${TAP_PATH##*/} ]] && ln -s /dev0/${TAP_PATH##*/} ${TAP_PATH}
+  [[ ! -e "${TAP_PATH}" ]] && [[ -e "/dev0/${TAP_PATH##*/}" ]] && ln -s "/dev0/${TAP_PATH##*/}" "${TAP_PATH}"
 
-  if [[ ! -e ${TAP_PATH} ]]; then
-    if ! mknod ${TAP_PATH} c $MAJOR $MINOR ; then
+  if [[ ! -e "${TAP_PATH}" ]]; then
+    if ! mknod "${TAP_PATH}" c "$MAJOR" "$MINOR" ; then
       echo "ERROR: Cannot mknod: ${TAP_PATH}" && exit 20
     fi
   fi
 
-  if ! exec 30>>$TAP_PATH; then
+  if ! exec 30>>"$TAP_PATH"; then
     echo -n "ERROR: Please add the following docker variables to your container:  "
     echo "--device=/dev/vhost-net --device-cgroup-rule='c ${MAJOR}:* rwm'" && exit 21
   fi
@@ -113,21 +113,21 @@ configureNAT () {
   NET_OPTS="-netdev tap,ifname=${VM_NET_TAP},script=no,downscript=no,id=hostnet0"
 
   # Build DNS options from container /etc/resolv.conf
-  nameservers=($(grep '^nameserver' /etc/resolv.conf | sed 's/nameserver //'))
+  mapfile -t nameservers < <(grep '^nameserver' /etc/resolv.conf | sed 's/nameserver //')
   searchdomains=$(grep '^search' /etc/resolv.conf | sed 's/search //' | sed 's/ /,/g')
-  domainname=$(echo $searchdomains | awk -F"," '{print $1}')
+  domainname=$(echo "$searchdomains" | awk -F"," '{print $1}')
 
   for nameserver in "${nameservers[@]}"; do
-    if ! [[ $nameserver =~ .*:.* ]]; then
-      [[ -z $DNS_SERVERS ]] && DNS_SERVERS=$nameserver || DNS_SERVERS="$DNS_SERVERS,$nameserver"
+    if ! [[ "$nameserver" =~ .*:.* ]]; then
+      [[ -z "$DNS_SERVERS" ]] && DNS_SERVERS="$nameserver" || DNS_SERVERS="$DNS_SERVERS,$nameserver"
     fi
   done
 
-  [[ -z $DNS_SERVERS ]] && DNS_SERVERS="1.1.1.1"
+  [[ -z "$DNS_SERVERS" ]] && DNS_SERVERS="1.1.1.1"
 
   DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:dns-server,$DNS_SERVERS --dhcp-option=option:router,${VM_NET_IP%.*}.1"
 
-  if [ -n "$searchdomains" -a "$searchdomains" != "." ]; then
+  if [ -n "$searchdomains" ] && [ "$searchdomains" != "." ]; then
     DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-search,$searchdomains --dhcp-option=option:domain-name,$domainname"
   else
     [[ -z $(hostname -d) ]] || DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-name,$(hostname -d)"
@@ -135,7 +135,7 @@ configureNAT () {
 
   [ "$DEBUG" = "Y" ] && echo && echo "$DNSMASQ $DNSMASQ_OPTS"
 
-  $DNSMASQ $DNSMASQ_OPTS
+  "$DNSMASQ $DNSMASQ_OPTS"
 }
 
 # ######################################

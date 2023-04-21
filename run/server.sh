@@ -5,10 +5,10 @@ trap exit SIGINT SIGTERM
 # Close any previous instances
 script_name=${BASH_SOURCE[0]}
 
-for pid in $(pidof -x $script_name); do
-  if [ $pid != $$ ]; then
-    kill -15 $pid 2> /dev/null
-    wait $pid 2> /dev/null
+for pid in $(pidof -x "$script_name"); do
+  if [ "$pid" != $$ ]; then
+    kill -15 "$pid" 2> /dev/null
+    wait "$pid" 2> /dev/null
   fi
 done
 
