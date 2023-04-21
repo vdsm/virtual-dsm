@@ -11,7 +11,7 @@ on:
       - '.github/workflows/**'
 
 jobs:
-  check:
+  shellcheck:
     uses: ./.github/workflows/check.yml
   build:
     needs: check
