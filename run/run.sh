@@ -61,8 +61,8 @@ CPU_OPTS="-smp ${CPU_CORES},sockets=1,cores=${CPU_CORES},threads=1"
 EXTRA_OPTS="-device virtio-balloon-pci,id=balloon0 -object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0"
 ARGS="${DEF_OPTS} ${CPU_OPTS} ${RAM_OPTS} ${KVM_OPTS} ${MON_OPTS} ${SERIAL_OPTS} ${NET_OPTS} ${DISK_OPTS} ${EXTRA_OPTS}"
 
-SPLIT=$(echo ${ARGS//$'\t'/ })
-SPLIT=$(echo -e "${SPLIT// -/\\n-}")
+SPLIT=${ARGS//$'\t'/ }
+SPLIT=${SPLIT// -/\\n-}
 readarray -t ARG <<<"$SPLIT"
 
 for a in "${ARG[@]}"; do
