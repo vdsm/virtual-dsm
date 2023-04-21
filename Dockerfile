@@ -23,7 +23,6 @@ RUN apt-get update && apt-get -y upgrade && \
 	dnsmasq \
 	net-tools \
 	btrfs-progs \
-	bridge-utils \
 	ca-certificates \
 	isc-dhcp-client \
 	netcat-openbsd \
