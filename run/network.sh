@@ -127,7 +127,7 @@ configureNAT () {
 
   DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:dns-server,$DNS_SERVERS --dhcp-option=option:router,${VM_NET_IP%.*}.1"
 
-  if [ -n "$searchdomains" -a "$searchdomains" != "." ]; then
+  if [ -n "$searchdomains" ] && [ "$searchdomains" != "." ]; then
     DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-search,$searchdomains --dhcp-option=option:domain-name,$domainname"
   else
     [[ -z $(hostname -d) ]] || DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-name,$(hostname -d)"
