@@ -179,6 +179,9 @@ else
   # Configuration for DHCP IP
   configureDHCP
 
+  # Store IP for Docker healthcheck
+  echo "${DHCP_IP}" > "/var/dsm.ip"
+
   # Display the received IP on port 5000
   /run/server.sh 5000 "The location of DSM is http://${DHCP_IP}:5000" > /dev/null &
 
