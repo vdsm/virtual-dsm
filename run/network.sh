@@ -121,7 +121,7 @@ configureNAT () {
   [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]] && sysctl -w net.ipv4.ip_forward=1
 
   # dnsmasq configuration:
-  DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-range=$VM_NET_IP,$VM_NET_IP --dhcp-host=$VM_NET_MAC,,$VM_NET_IP,$VM_NET_HOST,infinite --dhcp-option=option:netmask,255.255.255.0"
+  DNSMASQ_OPTS="--dhcp-range=$VM_NET_IP,$VM_NET_IP --dhcp-host=$VM_NET_MAC,,$VM_NET_IP,$VM_NET_HOST,infinite --dhcp-option=option:netmask,255.255.255.0"
 
   # Create lease file for faster resolve
   echo "0 $VM_NET_MAC $VM_NET_IP $VM_NET_HOST 01:${VM_NET_MAC}" > /var/lib/misc/dnsmasq.leases
@@ -159,6 +159,7 @@ configureNAT () {
     [[ -z $(hostname -d) ]] || DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-name,$(hostname -d)"
   fi
 
+  DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ')
   [ "$DEBUG" = "Y" ] && echo "$DNSMASQ $DNSMASQ_OPTS" && echo
 
   $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS}
