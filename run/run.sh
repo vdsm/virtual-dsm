@@ -4,7 +4,7 @@ set -eu
 # Docker environment variabeles
 
 : ${URL:=''}                      # URL of the PAT file
-: ${DEBUG:=''}                # Enable debug mode
+: ${DEBUG:='N'}             # Enable debug mode
 : ${ALLOCATE:='Y'}       # Preallocate diskspace
 : ${CPU_CORES:='1'}     # Amount of CPU cores
 : ${DISK_SIZE:='16G'}    # Initial data disk size
@@ -62,6 +62,11 @@ RAM_OPTS=$(echo "-m ${RAM_SIZE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
 CPU_OPTS="-smp ${CPU_CORES},sockets=1,cores=${CPU_CORES},threads=1"
 EXTRA_OPTS="-device virtio-balloon-pci,id=balloon0 -object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0"
 ARGS="${DEF_OPTS} ${CPU_OPTS} ${RAM_OPTS} ${KVM_OPTS} ${MON_OPTS} ${SERIAL_OPTS} ${NET_OPTS} ${DISK_OPTS} ${EXTRA_OPTS}"
+
+if [ "$DEBUG" = "Y" ]; then
+  echo && echo -n "qemu-system-x86_64 "
+  echo "${ARGS}"
+fi
 
 set -m
 (
