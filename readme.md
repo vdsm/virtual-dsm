@@ -95,7 +95,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     By default a single core and 512MB of RAM is allocated to the container.
 
-    To increase this you can add the following environment variabeles:
+    To increase this you can add the following environment variables:
 
     ```
     environment:
