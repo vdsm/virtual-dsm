@@ -159,7 +159,8 @@ configureNAT () {
     [[ -z $(hostname -d) ]] || DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-name,$(hostname -d)"
   fi
 
-  [ "$DEBUG" = "Y" ] && echo && echo "$DNSMASQ $DNSMASQ_OPTS"
+  DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
+  [ "$DEBUG" = "Y" ] && echo "$DNSMASQ $DNSMASQ_OPTS" && echo
 
   $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS}
 }
@@ -185,9 +186,9 @@ GATEWAY=$(ip r | grep default | awk '{print $3}')
 if [ "$DEBUG" = "Y" ]; then
 
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
-  echo "Info: Container IP is ${IP} with gateway ${GATEWAY}"
-  ifconfig
-  ip route
+  echo "Info: Container IP is ${IP} with gateway ${GATEWAY}" && echo
+  ifconfig && echo
+  ip route && echo
 
 fi
 
