@@ -56,11 +56,13 @@ if [ -z "${KVM_OPTS}" ]; then
   [ "$DEBUG" != "Y" ] && exit 88
 fi
 
-DEF_OPTS="-nographic -nodefaults"
-KVM_OPTS="-machine type=q35,usb=off${KVM_OPTS}"
+DEF_OPTS="-nographic -nodefaults -boot strict=on -display none"
 RAM_OPTS=$(echo "-m ${RAM_SIZE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
-CPU_OPTS="-smp ${CPU_CORES},sockets=1,cores=${CPU_CORES},threads=1"
-EXTRA_OPTS="-device virtio-balloon-pci,id=balloon0 -object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0"
+CPU_OPTS="-smp ${CPU_CORES},sockets=1,dies=1,cores=${CPU_CORES},threads=1"
+KVM_OPTS="-machine type=q35,usb=off,dump-guest-core=off,hpet=off${KVM_OPTS}"
+EXTRA_OPTS="-device virtio-balloon-pci,id=balloon0,bus=pcie.0,addr=0x4"
+EXTRA_OPTS="$EXTRA_OPTS -object rng-random,id=objrng0,filename=/dev/urandom"
+EXTRA_OPTS="$EXTRA_OPTS -device virtio-rng-pci,rng=objrng0,id=rng0,bus=pcie.0,addr=0x1c"
 
 ARGS="${DEF_OPTS} ${CPU_OPTS} ${RAM_OPTS} ${KVM_OPTS} ${MON_OPTS} ${SERIAL_OPTS} ${NET_OPTS} ${DISK_OPTS} ${EXTRA_OPTS}"
 ARGS=$(echo "$ARGS" | sed 's/\t/ /g' | tr -s ' ')
