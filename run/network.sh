@@ -159,7 +159,7 @@ configureNAT () {
     [[ -z $(hostname -d) ]] || DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-name,$(hostname -d)"
   fi
 
-  DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ')
+  DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
   [ "$DEBUG" = "Y" ] && echo "$DNSMASQ $DNSMASQ_OPTS" && echo
 
   $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS}
