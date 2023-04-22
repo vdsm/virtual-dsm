@@ -14,6 +14,7 @@ fi
 IP=$(cat "${FILE}")
 
 if ! curl -m 3 -ILfSs "http://${IP}:${PORT}/" > /dev/null; then
+  echo "Failed to reach ${IP}:${PORT}"
   exit 1
 fi
 
