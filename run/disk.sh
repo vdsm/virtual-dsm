@@ -37,6 +37,7 @@ if [ -f "${DATA}" ]; then
 
     if [ "$ALLOCATE" = "N" ]; then
 
+      # Resize file by changing its length
       truncate -s "${DATA_SIZE}" "${DATA}"; 
 
     else
@@ -51,6 +52,7 @@ if [ -f "${DATA}" ]; then
         echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATE=N." && exit 84
       fi
 
+      # Resize file by allocating more space
       if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
         echo "ERROR: Could not allocate a file for the virtual disk." && exit 85
       fi
@@ -78,10 +80,9 @@ fi
 
 if [ ! -f "${DATA}" ]; then
 
-  # Create an empty file
-
   if [ "$ALLOCATE" = "N" ]; then
 
+    # Create an empty file
     truncate -s "${DATA_SIZE}" "${DATA}"
 
   else
@@ -94,6 +95,7 @@ if [ ! -f "${DATA}" ]; then
       echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATE=N." && exit 86
     fi
 
+    # Create an empty file
     if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
       rm -f "${DATA}"
       echo "ERROR: Could not allocate a file for the virtual disk." && exit 87

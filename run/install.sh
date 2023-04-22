@@ -2,14 +2,12 @@
 set -eu
 
 # Display wait message on port 5000
-
 HTML="Please wait while Virtual DSM is installing...<script>\
         setTimeout(() => { document.location.reload(); }, 9999);</script>"
 
 /run/server.sh 5000 "${HTML}" > /dev/null &
 
 # Download the required files from the Synology website
-
 DL="https://global.synologydownload.com/download/DSM"
 
 if [ -z "$URL" ]; then

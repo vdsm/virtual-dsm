@@ -3,7 +3,7 @@ set -eu
 trap exit SIGINT SIGTERM
 
 # Close any previous instances
-script_name=${BASH_SOURCE[0]}
+script_name="${BASH_SOURCE[0]}"
 
 for pid in $(pidof -x "$script_name"); do
   if [ "$pid" != $$ ]; then
@@ -13,7 +13,9 @@ for pid in $(pidof -x "$script_name"); do
 done
 
 # Serve the page
-HTML="<HTML><HEAD><STYLE>body {  color: white; background-color: #00BFFF; } </STYLE></HEAD><BODY><BR><BR><H1><CENTER>$2</CENTER></H1></BODY></HTML>"
+HTML="<HTML><HEAD><STYLE>body {  color: white; background-color: #00BFFF; }</STYLE>\
+              </HEAD><BODY><BR><BR><H1><CENTER>$2</CENTER></H1></BODY></HTML>"
+
 LENGTH="${#HTML}"
 
 RESPONSE="HTTP/1.1 200 OK\nContent-Length: ${LENGTH}\nConnection: close\n\n$HTML\n\n"
