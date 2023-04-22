@@ -187,7 +187,7 @@ if [ "$DEBUG" = "Y" ]; then
 
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
   echo "Info: Container IP is ${IP} with gateway ${GATEWAY}" && echo
-  ifconfig && echo
+  ifconfig
   ip route && echo
 
 fi
