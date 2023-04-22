@@ -63,11 +63,11 @@ CPU_OPTS="-smp ${CPU_CORES},sockets=1,cores=${CPU_CORES},threads=1"
 EXTRA_OPTS="-device virtio-balloon-pci,id=balloon0 -object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0"
 
 ARGS="${DEF_OPTS} ${CPU_OPTS} ${RAM_OPTS} ${KVM_OPTS} ${MON_OPTS} ${SERIAL_OPTS} ${NET_OPTS} ${DISK_OPTS} ${EXTRA_OPTS}"
-ARGS=${ARGS//\t/}
+ARGS=$(echo "$ARGS" | sed 's/\t/ /g' | tr -s ' ')
 
 if [ "$DEBUG" = "Y" ]; then
-  echo && echo -n "qemu-system-x86_64 "
-  echo "${ARGS}"
+  echo -n "qemu-system-x86_64 "
+  echo "${ARGS}" && echo
 fi
 
 set -m
