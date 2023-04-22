@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
 
-# Docker environment variabeles
+# Docker environment variables
 
 : ${HOST_CPU:=''}
 : ${HOST_BUILD:='42962'}
