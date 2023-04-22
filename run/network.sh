@@ -133,11 +133,17 @@ configureNAT () {
   NET_OPTS="-netdev tap,ifname=${VM_NET_TAP},script=no,downscript=no,id=hostnet0"
 
   # Build DNS options from container /etc/resolv.conf
-  mapfile -t nameservers < <(grep '^nameserver' /etc/resolv.conf | sed 's/nameserver //')
-  searchdomains=$(grep '^search' /etc/resolv.conf | sed 's/search //' | sed 's/ /,/g')
+
+  if [ "$DEBUG" = "Y" ]; then
+    echo "/etc/resolv.conf:" && echo && cat /etc/resolv.conf && echo
+  fi
+
+  mapfile -t nameservers < <(grep '^nameserver' /etc/resolv.conf | sed 's/\t/ /g' | sed 's/nameserver //' | sed 's/ //g')
+  searchdomains=$(grep '^search' /etc/resolv.conf | sed 's/\t/ /g' | sed 's/search //' | sed 's/#.*//' | sed 's/\s*$//g' | sed 's/ /,/g')
   domainname=$(echo "$searchdomains" | awk -F"," '{print $1}')
 
   for nameserver in "${nameservers[@]}"; do
+    nameserver=$(echo "$nameserver" | sed 's/#.*//' )
     if ! [[ "$nameserver" =~ .*:.* ]]; then
       [[ -z "$DNS_SERVERS" ]] && DNS_SERVERS="$nameserver" || DNS_SERVERS="$DNS_SERVERS,$nameserver"
     fi
