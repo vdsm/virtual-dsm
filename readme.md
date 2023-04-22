@@ -58,17 +58,6 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
 ## FAQ
 
-  * ### How do I check if my system supports KVM?
-
-    To check if your system supports KVM run these commands:
-
-    ```
-    sudo apt install cpu-checker
-    sudo kvm-ok
-    ```
-
-    If `kvm-ok` returns an error stating KVM acceleration cannot be used, you may need to change your BIOS settings.
-
   * ### How do I change the size of the virtual disk? ###
 
     By default it is 16GB, but to increase it you can modify the `DISK_SIZE` setting in your compose file:
@@ -114,6 +103,17 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
       RAM_SIZE: "2048M"
     ```
 
+  * ### How do I check if my system supports KVM?
+
+    To check if your system supports KVM run these commands:
+
+    ```
+    sudo apt install cpu-checker
+    sudo kvm-ok
+    ```
+
+    If `kvm-ok` returns an error stating KVM acceleration cannot be used, you may need to change your BIOS settings.
+    
   * ### How do I give the container its own IP address?
 
     By default the container uses bridge networking, and uses the same IP as the docker host. 
