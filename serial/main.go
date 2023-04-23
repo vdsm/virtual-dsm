@@ -1,15 +1,15 @@
 package main
 
 import (
-	"bytes"
-	"encoding/binary"
-	"flag"
 	"fmt"
 	"log"
 	"net"
+	"flag"
+	"bytes"
 	"strconv"
 	"net/http"
 	"math/rand"
+	"encoding/binary"
 	"github.com/gorilla/mux"
 )
 
