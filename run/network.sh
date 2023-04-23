@@ -35,7 +35,7 @@ configureDHCP() {
   ip route add "${NETWORK}" dev "${VM_NET_VLAN}" metric 0
   ip route add default via "${GATEWAY}"
 
-  echo "Info: Retrieving IP via DHCP using MAC ${VM_NET_MAC}..."
+  echo "Info: Acquiring an IP address via DHCP using MAC address ${VM_NET_MAC}..."
 
   ip l add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge || true
   ip l set "${VM_NET_TAP}" up
@@ -43,12 +43,12 @@ configureDHCP() {
   ip a flush "${VM_NET_DEV}"
   ip a flush "${VM_NET_TAP}"
 
-  DHCP_IP=$( dhclient -v "${VM_NET_TAP}" 2>&1 | grep ^bound | cut -d' ' -f3 )
+  DHCP_IP=$(dhclient -v "${VM_NET_TAP}" 2>&1 | grep ^bound | cut -d' ' -f3)
 
   if [[ "${DHCP_IP}" == [0-9.]* ]]; then
-    echo "Info: Retrieved IP ${DHCP_IP} via DHCP"
+    echo "Info: Successfully acquired IP ${DHCP_IP} from the DHCP server..."
   else
-    echo "ERROR: Cannot retrieve IP from DHCP using MAC ${VM_NET_MAC}" && exit 16
+    echo "ERROR: Cannot acquire an IP address from the DHCP server" && exit 16
   fi
 
   ip a flush "${VM_NET_TAP}"
