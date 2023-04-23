@@ -8,7 +8,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /src/serial/main 
 
 FROM debian:bookworm-slim
 
-RUN apt-get update && apt-get -y upgrade && \
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get update && apt-get -y upgrade && \
     apt-get --no-install-recommends -y install \
 	curl \
 	cpio \
