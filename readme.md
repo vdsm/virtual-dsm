@@ -87,7 +87,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     Keep in mind that this doesn't affect any existing disks, and that it may impact performance as the image file will need to grow each time new data is added.
 
-  * ### How can I increase the amount of CPU/RAM?
+  * ### How do I increase the amount of CPU/RAM?
 
     By default, a single core and 512MB of RAM is allocated to the container. To increase this, add the following environment variables:
 
@@ -97,7 +97,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
       RAM_SIZE: "2048M"
     ```
 
-  * ### How can I verify if my system supports KVM?
+  * ### How do I verify if my system supports KVM?
 
     To verify if your system supports KVM, run the following commands:
 
