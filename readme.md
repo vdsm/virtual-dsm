@@ -58,44 +58,38 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
 ## FAQ
 
-  * ### How do I change the size of the virtual disk? ###
+  * ### How do I change the size of the virtual disk?
 
-    By default it is 16GB, but to increase it you can modify the `DISK_SIZE` setting in your compose file:
+    To expand the default size of 16 GB, locate the `DISK_SIZE` setting in your compose file and modify it to your preferred capacity:
 
     ```
     environment:
       DISK_SIZE: "16G"
     ```
 
-    To resize the disk to a capacity of 8 terabyte you would use a value of `"8T"` for example.
+  * ### How do I change the location of the virtual disk?
 
-  * ### How do I change the location of the virtual disk? ###
-
-    By default it resides inside a docker volume, but to store it somewhere else you can add these lines to your compose file:
+    To change the virtual disk's location from the default docker volume, include the following bind mount in your compose file and replace the path `/home/user/data` with the desired storage folder:
 
     ```
     volumes:
       - /home/user/data:/storage
     ```
 
-    Just replace `/home/user/data` with the path to the folder you want to use for storage.
+  * ### How do I change the space allocation method?
 
-  * ### How do I change the space reserved by the virtual disk? ###
-
-    By default the total space for the disk is reserved in advance. If you want to only reserve the space that is actually used by the disk, add these lines:
+    By default, the entire disk space is reserved in advance. To reserve only the space actually used by the disk, add the following environment variable to your compose file:
 
     ```
     environment:
       ALLOCATE: "N"
     ```
 
-    This might lower performance a bit, since the image file will need to grow every time new data is added to it.
+    Keep in mind that this doesn't affect any existing disks, and that it may impact performance as the image file will need to grow each time new data is added.
 
-  * ### How do I change the amount of CPU/RAM? ###
+  * ### How can I increase the allocated amount of CPU/RAM?
 
-    By default a single core and 512MB of RAM is allocated to the container.
-
-    To increase this you can add the following environment variables:
+    By default, a single core and 512MB of RAM is allocated to the container. To increase this, add the following environment variables:
 
     ```
     environment:
@@ -103,24 +97,22 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
       RAM_SIZE: "2048M"
     ```
 
-  * ### How do I check if my system supports KVM?
+  * ### How can I verify if my system supports KVM?
 
-    To check if your system supports KVM run these commands:
+    To verify if your system supports KVM, run the following commands:
 
     ```
     sudo apt install cpu-checker
     sudo kvm-ok
     ```
 
-    If `kvm-ok` returns an error stating KVM acceleration cannot be used, you may need to change your BIOS settings.
-    
-  * ### How do I give the container its own IP address?
+    If you receive an error from `kvm-ok` indicating that KVM acceleration can't be used, check your BIOS settings.
 
-    By default the container uses bridge networking, and uses the same IP as the docker host. 
+  * ### How do I assign the container an individual IP address?
 
-    If you want to give it a seperate IP address, create a macvlan network.
+    By default the container uses bridge networking, and uses the same IP address as the docker host. 
 
-    For example:
+    If you want to assign a unique IP address to the container, you can create a macvlan network by running a command such as:
 
     ```
     $ docker network create -d macvlan \
@@ -129,31 +121,31 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
         --ip-range=192.168.0.100/28 \
         -o parent=eth0 vdsm
     ```
-    Modify these values to match your local subnet. 
+    Be sure to modify the values to match your local subnet. 
 
-    Now change the containers configuration in your compose file:
+    Once you have created the network, modify the container's configuration in your compose file as follows:
 
     ```
     networks:
         vdsm:             
             ipv4_address: 192.168.0.100
     ```
-
-    And add the network to the very bottom of your compose file:
+    
+    Finally, add the network to the bottom of your compose file:
 
     ```
     networks:
         vdsm:
             external: true
     ```
+   
+    An added benefit of this approach is that you won't have to perform any port mapping anymore, since all ports will be exposed by default.
 
-    This also has the advantage that you don't need to do any portmapping anymore, because all ports will be fully exposed this way.
+    Please note that this IP address won't be accessible from the Docker host due to the design of macvlan, which doesn't permit communication between the two. If this is a concern, there are some solutions available, but they go beyond the scope of this FAQ.
 
-    NOTE: You will not be able to reach this IP from the Docker host, as macvlan does not allow communication between those two. There are some ways to fix that if necessary, but they go beyond the scope of this FAQ.
+  * ### How can the container acquire an IP address via DHCP?
 
-  * ### How can the container get an IP address via DHCP? ###
-
-    First follow the steps to configure the container for macvlan (see above), and then add the following lines to your compose file:
+    After configuring the container for macvlan (see above), add the following lines to your compose file to enable DHCP:
 
     ```
     environment:
@@ -164,27 +156,27 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
         - 'c 510:* rwm'
     ```
 
-    NOTE: The exact cgroup rule may be different than `510` depending on your system, but the correct rule number will be printed to the log output in case of error.
+    Please note that the exact cgroup rule number may vary depending on your system, but the log output will indicate the correct number in case of an error.
 
-  * ### How do I install a specific version of vDSM? ###
+  * ### How do I install a specific version of vDSM?
 
-    By default it installs vDSM 7.2, but if you want to use an older version you can add its URL to your compose file:
+    The default installation of vDSM is version 7.2, but if you prefer an older version, you can add its URL to your compose file:
 
     ```
     environment:
       URL: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat"
     ```
 
-    You can also switch back and forth between versions this way without loosing your file data.
+    With this method, you can switch between different versions while keeping your file data.
 
-  * ### What are the differences compared to standard DSM? ###
+  * ### What are the differences compared to standard DSM?
 
-    There are only three minor differences: the Virtual Machine Manager package is not available, Surveillance Station does not include any free licenses, and logging in to your Synology account is not supported.
- 
+    There are only three minor differences: the Virtual Machine Manager package is not provided, Surveillance Station doesn't include any free licenses, and logging in to your Synology account is not supported.
+
 ## Acknowledgments
 
 Based on an [article](https://jxcn.org/2022/04/vdsm-first-try/) by JXCN.
 
 ## Disclaimer
 
-Only run this container on original Synology hardware, any other use is not permitted and might not be legal.
+Only run this container on Synology hardware, any other use is not permitted and might not be legal according to their terms.
