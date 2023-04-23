@@ -108,11 +108,11 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     If you receive an error from `kvm-ok` indicating that KVM acceleration can't be used, check your BIOS settings.
 
-  * ### How do I assign the container an individual IP address?
+  * ### How do I assign an individual IP address to the container?
 
     By default the container uses bridge networking, and uses the same IP address as the docker host. 
 
-    If you want to assign a unique IP address to the container, you can create a macvlan network by running a command such as:
+    If you want to assign a unique IP address to the container, you can create a macvlan network by running the following command:
 
     ```
     $ docker network create -d macvlan \
@@ -121,6 +121,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
         --ip-range=192.168.0.100/28 \
         -o parent=eth0 vdsm
     ```
+    
     Be sure to modify the values to match your local subnet. 
 
     Once you have created the network, modify the container's configuration in your compose file as follows:
@@ -156,7 +157,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
         - 'c 510:* rwm'
     ```
 
-    Please note that the exact cgroup rule number may vary depending on your system, but the log output will indicate the correct number in case of an error.
+    Please note that the exact `cgroup` rule number may vary depending on your system, but the log output will indicate the correct number in case of an error.
 
   * ### How do I install a specific version of vDSM?
 
