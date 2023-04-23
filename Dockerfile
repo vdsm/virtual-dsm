@@ -7,7 +7,7 @@ RUN go get -d -v golang.org/x/net/html
 RUN go get -d -v github.com/gorilla/mux
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /src/serial/main .
 
-FROM debian:bookworm-20230411-slim
+FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get -y upgrade && \
     apt-get --no-install-recommends -y install \
