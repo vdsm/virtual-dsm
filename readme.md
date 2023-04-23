@@ -46,6 +46,8 @@ services:
             - NET_ADMIN                       
         ports:
             - 5000:5000
+        volumes:
+            - /opt/dsm:/storage
         restart: on-failure
         stop_grace_period: 1m
 ```
