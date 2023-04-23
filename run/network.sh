@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-# Docker environment variabeles
+# Docker environment variables
 
 : ${VM_NET_TAP:='dsm'}
 : ${VM_NET_DEV:='eth0'}
