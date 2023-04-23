@@ -78,7 +78,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I change the space reserved by the virtual disk? 
 
-    By default, the entire disk space is reserved in advance. To reserve only the space actually used by the disk, add the following environment variable to your compose file:
+    By default, the entire disk space is reserved in advance. To reserve only the space actually used by the disk, add the following environment variable:
 
     ```
     environment:
@@ -110,9 +110,9 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I assign an individual IP address to the container?
 
-    By default the container uses bridge networking, and uses the same IP address as the docker host. 
+    By default, the container uses bridge networking which shares the IP address with the host. 
 
-    If you want to assign a unique IP address to the container, you can create a macvlan network by running the following command:
+    If you want to assign an individual IP address to the container, you can create a macvlan network as follows:
 
     ```
     $ docker network create -d macvlan \
@@ -142,11 +142,11 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
    
     An added benefit of this approach is that you won't have to perform any port mapping anymore, since all ports will be exposed by default.
 
-    Please note that this IP address won't be accessible from the Docker host due to the design of macvlan, which doesn't permit communication between the two. If this is a concern, there are some solutions available, but they go beyond the scope of this FAQ.
+    Please note that this IP address won't be accessible from the Docker host due to the design of macvlan, which doesn't permit communication between the two. If this is a concern, there are some workarounds available, but they go beyond the scope of this FAQ.
 
   * ### How can the container acquire an IP address via DHCP?
 
-    After configuring the container for macvlan (see above), add the following lines to your compose file to enable DHCP:
+    After configuring the container for macvlan (see above), add the following lines to your compose file:
 
     ```
     environment:
@@ -161,14 +161,14 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I install a specific version of vDSM?
 
-    The default installation of vDSM is version 7.2, but if you prefer an older version, you can add its URL to your compose file:
+    By default version 7.2 will be installed, but if you prefer an older version, you can add its URL to your compose file as follows:
 
     ```
     environment:
       URL: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat"
     ```
 
-    With this method, you can switch between different versions while keeping your file data.
+    With this method, you are able to switch between different versions while keeping your file data.
 
   * ### What are the differences compared to standard DSM?
 
