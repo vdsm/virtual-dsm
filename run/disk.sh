@@ -3,8 +3,8 @@ set -eu
 
 # Docker environment variables
 
-: ${DISK_IO:='native'}          # I/O Mode, can be set to 'native', 'threads' or 'io_turing' 
-: ${DISK_ROTATION:='1'}    # Rotation rate, set to 1 for SSD storage and increase for HDD
+: ${DISK_IO:='native'}    # I/O Mode, can be set to 'native', 'threads' or 'io_turing' 
+: ${DISK_ROTATION:='1'}   # Rotation rate, set to 1 for SSD storage and increase for HDD
 : ${DISK_CACHE:='none'}   # Caching mode, can be set to 'writeback' for better performance
 
 BOOT="$STORAGE/$BASE.boot.img"

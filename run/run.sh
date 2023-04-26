@@ -3,12 +3,12 @@ set -eu
 
 # Docker environment variables
 
-: ${URL:=''}                      # URL of the PAT file
-: ${DEBUG:='N'}             # Enable debug mode
-: ${ALLOCATE:='Y'}       # Preallocate diskspace
+: ${URL:=''}            # URL of the PAT file
+: ${DEBUG:='N'}         # Enable debug mode
+: ${ALLOCATE:='Y'}      # Preallocate diskspace
 : ${CPU_CORES:='1'}     # Amount of CPU cores
-: ${DISK_SIZE:='16G'}    # Initial data disk size
-: ${RAM_SIZE:='512M'} # Maximum RAM amount
+: ${DISK_SIZE:='16G'}   # Initial data disk size
+: ${RAM_SIZE:='512M'}   # Maximum RAM amount
 
 echo "Starting Virtual DSM for Docker v${VERSION}..."
 
