@@ -181,6 +181,7 @@ fi
 update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
 update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 
+VM_NET_MAC="${VM_NET_MAC//-/:}"
 GATEWAY=$(ip r | grep default | awk '{print $3}')
 
 if [ "$DEBUG" = "Y" ]; then
