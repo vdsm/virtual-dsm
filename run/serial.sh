@@ -20,13 +20,16 @@ else
   HOST_CPU="QEMU, Virtual CPU, X86_64"
 fi
 
-./run/host.bin -cpu="${CPU_CORES}" \
-		 -cpu_arch="${HOST_CPU}" \
-		 -hostsn="${HOST_SERIAL}" \
-		 -guestsn="${GUEST_SERIAL}" \
-		 -vmmts="${HOST_TIMESTAMP}" \
-		 -vmmversion="${HOST_VERSION}" \
-		 -buildnumber="${HOST_BUILD}" > /dev/null 2>&1 &
+ARGS="-cpu_arch=${HOST_CPU}"
+
+[ -z "$CPU_CORES" ] && ARGS="$ARGS -cpu=${CPU_CORES}"
+[ -z "$HOST_BUILD" ] && ARGS="$ARGS -build=${HOST_BUILD}"
+[ -z "$HOST_SERIAL" ] && ARGS="$ARGS -hostsn=${HOST_SERIAL}" 
+[ -z "$GUEST_SERIAL" ] && ARGS="$ARGS -guestsn=${GUEST_SERIAL}"  
+[ -z "$HOST_VERSION" ] && ARGS="$ARGS -version=${HOST_VERSION}"
+[ -z "$HOST_TIMESTAMP" ] && ARGS="$ARGS -ts=${HOST_TIMESTAMP}"
+
+./run/host.bin ${ARGS:+ $ARGS} > /dev/null 2>&1 &
 
 SERIAL_OPTS="\
 	-serial mon:stdio \
