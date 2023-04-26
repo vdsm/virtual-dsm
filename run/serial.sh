@@ -20,22 +20,22 @@ else
   HOST_CPU="QEMU, Virtual CPU, X86_64"
 fi
 
-ARGS=()
-ARGS+=("-cpu_arch=${HOST_CPU}")
+HOST_ARGS=()
+HOST_ARGS+=("-cpu_arch=${HOST_CPU}")
 
-[ -n "$CPU_CORES" ] && ARGS+=("-cpu=${CPU_CORES}")
-[ -n "$HOST_BUILD" ] && ARGS+=("-build=${HOST_BUILD}")
-[ -n "$HOST_SERIAL" ] && ARGS+=("-hostsn=${HOST_SERIAL}")
-[ -n "$HOST_TIMESTAMP" ] && ARGS+=("-ts=${HOST_TIMESTAMP}")
-[ -n "$GUEST_SERIAL" ] && ARGS+=("-guestsn=${GUEST_SERIAL}")
-[ -n "$HOST_VERSION" ] && ARGS+=("-version=${HOST_VERSION}")
+[ -n "$CPU_CORES" ] && HOST_ARGS+=("-cpu=${CPU_CORES}")
+[ -n "$HOST_BUILD" ] && HOST_ARGS+=("-build=${HOST_BUILD}")
+[ -n "$HOST_SERIAL" ] && HOST_ARGS+=("-hostsn=${HOST_SERIAL}")
+[ -n "$HOST_TIMESTAMP" ] && HOST_ARGS+=("-ts=${HOST_TIMESTAMP}")
+[ -n "$GUEST_SERIAL" ] && HOST_ARGS+=("-guestsn=${GUEST_SERIAL}")
+[ -n "$HOST_VERSION" ] && HOST_ARGS+=("-version=${HOST_VERSION}")
 
 if [ "$DEBUG" = "Y" ]; then
   echo -n "./run/host.bin "
-  echo "${ARGS[*]}" && echo
+  echo "${HOST_ARGS[*]}" && echo
 fi
 
-./run/host.bin "${ARGS[@]}" > /dev/null 2>&1 &
+./run/host.bin "${HOST_ARGS[@]}" > /dev/null 2>&1 &
 
 # Configure serial ports
 
