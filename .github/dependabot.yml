@@ -8,7 +8,3 @@ updates:
     directory: /
     schedule:
       interval: weekly
-  - package-ecosystem: gomod
-    directory: /serial
-    schedule:
-      interval: daily
