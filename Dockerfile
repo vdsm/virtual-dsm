@@ -5,23 +5,23 @@ ARG DEBCONF_NOWARNINGS="yes"
 ARG DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && apt-get -y upgrade && \
-        apt-get --no-install-recommends -y install \
-        curl \
-        cpio \
-        wget \
-        fdisk \
-        unzip \
-        procps \
-        xz-utils \
-        iptables \
-        iproute2 \
-        dnsmasq \
-        net-tools \
-        btrfs-progs \
-        ca-certificates \
-        isc-dhcp-client \
-        netcat-openbsd \
-        qemu-system-x86 \
+	apt-get --no-install-recommends -y install \
+	curl \
+	cpio \
+	wget \
+	fdisk \
+	unzip \
+	procps \
+	xz-utils \
+	iptables \
+	iproute2 \
+	dnsmasq \
+	net-tools \
+	btrfs-progs \
+	ca-certificates \
+	isc-dhcp-client \
+	netcat-openbsd \
+	qemu-system-x86 \
     && apt-get clean
 
 COPY run/*.sh /run/
