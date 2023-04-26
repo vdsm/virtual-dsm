@@ -1,10 +1,10 @@
-FROM golang AS builder
+FROM golang as builder
 
-COPY serial/ /src/serial/
-WORKDIR /src/serial
-
+WORKDIR /
+RUN git clone https://github.com/qemu-tools/qemu-host.git
+WORKDIR /qemu-host/src
 RUN go mod download
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /src/serial/main .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /qemu-host/src/main .
 
 FROM debian:bookworm-slim
 
@@ -34,12 +34,12 @@ RUN apt-get update && apt-get -y upgrade && \
 COPY run/*.sh /run/
 COPY agent/*.sh /agent/
 
-COPY --from=builder /src/serial/main /run/serial.bin
+COPY --from=builder /qemu-host/src/main /run/host.bin
 
 RUN ["chmod", "+x", "/run/run.sh"]
 RUN ["chmod", "+x", "/run/check.sh"]
 RUN ["chmod", "+x", "/run/server.sh"]
-RUN ["chmod", "+x", "/run/serial.bin"]
+RUN ["chmod", "+x", "/run/host.bin"]
 
 VOLUME /storage
 
@@ -62,8 +62,8 @@ ENV VERSION=$VERSION_ARG
 LABEL org.opencontainers.image.created=${DATE_ARG}
 LABEL org.opencontainers.image.revision=${BUILD_ARG}
 LABEL org.opencontainers.image.version=${VERSION_ARG}
-LABEL org.opencontainers.image.url=https://hub.docker.com/r/kroese/virtual-dsm/
 LABEL org.opencontainers.image.source=https://github.com/kroese/virtual-dsm/
+LABEL org.opencontainers.image.url=https://hub.docker.com/r/kroese/virtual-dsm/
 
 HEALTHCHECK --interval=30s --retries=1 CMD /run/check.sh
 
