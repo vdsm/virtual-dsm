@@ -29,6 +29,11 @@ ARGS="-cpu_arch=${HOST_CPU}"
 [ -n "$GUEST_SERIAL" ] && ARGS="$ARGS -guestsn=${GUEST_SERIAL}"
 [ -n "$HOST_VERSION" ] && ARGS="$ARGS -version=${HOST_VERSION}"
 
+if [ "$DEBUG" = "Y" ]; then
+  echo -n "./run/host.bin "
+  echo "${ARGS}" && echo
+fi
+
 ./run/host.bin ${ARGS:+ $ARGS} > /dev/null 2>&1 &
 
 SERIAL_OPTS="\
