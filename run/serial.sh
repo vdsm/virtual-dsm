@@ -4,11 +4,11 @@ set -eu
 # Docker environment variables
 
 : ${HOST_CPU:=''}
-: ${HOST_BUILD:='42962'}
-: ${HOST_VERSION:='2.6.1-12139'}
-: ${HOST_TIMESTAMP:='1679863686'}
-: ${HOST_SERIAL:='0000000000000'}
-: ${GUEST_SERIAL:='0000000000000'}
+: ${HOST_BUILD:=''}
+: ${HOST_SERIAL:=''}
+: ${GUEST_SERIAL:=''}
+: ${HOST_VERSION:=''}
+: ${HOST_TIMESTAMP:=''}
 
 if [ -z "$HOST_CPU" ]; then
   HOST_CPU=$(lscpu | sed -nr '/Model name/ s/.*:\s*(.*) @ .*/\1/p' | sed ':a;s/  / /;ta' | sed s/"(R)"//g | sed 's/[^[:alnum:] ]\+/ /g' | sed 's/  */ /g')
