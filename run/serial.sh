@@ -20,14 +20,15 @@ else
   HOST_CPU="QEMU, Virtual CPU, X86_64"
 fi
 
-ARGS="-cpu_arch=${HOST_CPU}"
+ARGS="-cpu_arch=\"${HOST_CPU}\""
 
-[ -n "$CPU_CORES" ] && ARGS="$ARGS -cpu=${CPU_CORES}"
-[ -n "$HOST_BUILD" ] && ARGS="$ARGS -build=${HOST_BUILD}"
-[ -n "$HOST_SERIAL" ] && ARGS="$ARGS -hostsn=${HOST_SERIAL}"
-[ -n "$HOST_TIMESTAMP" ] && ARGS="$ARGS -ts=${HOST_TIMESTAMP}"
-[ -n "$GUEST_SERIAL" ] && ARGS="$ARGS -guestsn=${GUEST_SERIAL}"
-[ -n "$HOST_VERSION" ] && ARGS="$ARGS -version=${HOST_VERSION}"
+[ -n "$CPU_CORES" ] && ARGS="$ARGS -cpu=\"${CPU_CORES}\""
+[ -n "$HOST_BUILD" ] && ARGS="$ARGS -build=\"${HOST_BUILD}\""
+[ -n "$HOST_SERIAL" ] && ARGS="$ARGS -hostsn=\"${HOST_SERIAL}\""
+[ -n "$HOST_TIMESTAMP" ] && ARGS="$ARGS -ts=\"${HOST_TIMESTAMP}\""
+[ -n "$GUEST_SERIAL" ] && ARGS="$ARGS -guestsn=\"${GUEST_SERIAL}\""
+[ -n "$HOST_VERSION" ] && ARGS="$ARGS -version=\"${HOST_VERSION}\""
+
 
 if [ "$DEBUG" = "Y" ]; then
   echo -n "./run/host.bin "
