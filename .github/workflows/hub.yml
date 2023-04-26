@@ -5,6 +5,7 @@ on:
       - master
     paths:
       - readme.md
+      - README.md
       - .github/workflows/hub.yml
 
 jobs:
