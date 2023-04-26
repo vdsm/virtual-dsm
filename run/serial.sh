@@ -30,7 +30,6 @@ ARGS+=("-cpu_arch=${HOST_CPU}")
 [ -n "$GUEST_SERIAL" ] && ARGS+=("-guestsn=${GUEST_SERIAL}")
 [ -n "$HOST_VERSION" ] && ARGS+=("-version=${HOST_VERSION}")
 
-
 if [ "$DEBUG" = "Y" ]; then
   echo -n "./run/host.bin "
   echo "${ARGS[*]}" && echo
