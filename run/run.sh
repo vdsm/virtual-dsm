@@ -81,5 +81,5 @@ set +m
 if (( KERNEL > 4 )); then
   pidwait -F "${_QEMU_PID}" & wait $!
 else
-  tail --pid $(cat "${_QEMU_PID}") --follow /dev/null & wait $!
+  tail --pid "$(cat "${_QEMU_PID}")" --follow /dev/null & wait $!
 fi
