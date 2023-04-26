@@ -9,7 +9,6 @@ set -eu
 : ${HOST_TIMESTAMP:='1679863686'}
 : ${HOST_SERIAL:='0000000000000'}
 : ${GUEST_SERIAL:='0000000000000'}
-: ${GUEST_UUID:='ba13a19a-c0c1-4fef-9346-915ed3b98341'}
 
 if [ -z "$HOST_CPU" ]; then
   HOST_CPU=$(lscpu | sed -nr '/Model name/ s/.*:\s*(.*) @ .*/\1/p' | sed ':a;s/  / /;ta' | sed s/"(R)"//g | sed 's/[^[:alnum:] ]\+/ /g' | sed 's/  */ /g')
@@ -21,14 +20,13 @@ else
   HOST_CPU="QEMU, Virtual CPU, X86_64"
 fi
 
-./run/serial.bin -cpu="${CPU_CORES}" \
+./run/host.bin -cpu="${CPU_CORES}" \
 		 -cpu_arch="${HOST_CPU}" \
 		 -hostsn="${HOST_SERIAL}" \
 		 -guestsn="${GUEST_SERIAL}" \
 		 -vmmts="${HOST_TIMESTAMP}" \
 		 -vmmversion="${HOST_VERSION}" \
-		 -buildnumber="${HOST_BUILD}" \
-		 -guestuuid="${GUEST_UUID}" > /dev/null 2>&1 &
+		 -buildnumber="${HOST_BUILD}" > /dev/null 2>&1 &
 
 SERIAL_OPTS="\
 	-serial mon:stdio \
