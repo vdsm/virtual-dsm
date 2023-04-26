@@ -1,10 +1,11 @@
-FROM golang as builder
+FROM ghcr.io/qemu-tools/qemu-host as builder
 
-WORKDIR /
-RUN git clone https://github.com/qemu-tools/qemu-host.git
-WORKDIR /qemu-host/src
-RUN go mod download
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /qemu-host/src/main .
+#  FROM golang as builder
+#  WORKDIR /
+#  RUN git clone https://github.com/qemu-tools/qemu-host.git
+#  WORKDIR /qemu-host/src
+#  RUN go mod download
+#  RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /qemu-host.bin .
 
 FROM debian:bookworm-slim
 
@@ -34,7 +35,7 @@ RUN apt-get update && apt-get -y upgrade && \
 COPY run/*.sh /run/
 COPY agent/*.sh /agent/
 
-COPY --from=builder /qemu-host/src/main /run/host.bin
+COPY --from=builder /qemu-host.bin /run/host.bin
 
 RUN ["chmod", "+x", "/run/run.sh"]
 RUN ["chmod", "+x", "/run/check.sh"]
