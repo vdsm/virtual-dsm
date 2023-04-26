@@ -1,4 +1,4 @@
-FROM qemux/qemu-host AS host
+FROM ghcr.io/qemu-tools/qemu-host AS host
 FROM debian:bookworm-slim
 
 ARG DEBCONF_NOWARNINGS="yes"
