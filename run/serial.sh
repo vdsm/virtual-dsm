@@ -22,12 +22,12 @@ fi
 
 ARGS="-cpu_arch=${HOST_CPU}"
 
-[ -z "$CPU_CORES" ] && ARGS="$ARGS -cpu=${CPU_CORES}"
-[ -z "$HOST_BUILD" ] && ARGS="$ARGS -build=${HOST_BUILD}"
-[ -z "$HOST_SERIAL" ] && ARGS="$ARGS -hostsn=${HOST_SERIAL}" 
-[ -z "$GUEST_SERIAL" ] && ARGS="$ARGS -guestsn=${GUEST_SERIAL}"  
-[ -z "$HOST_VERSION" ] && ARGS="$ARGS -version=${HOST_VERSION}"
-[ -z "$HOST_TIMESTAMP" ] && ARGS="$ARGS -ts=${HOST_TIMESTAMP}"
+[ -n "$CPU_CORES" ] && ARGS="$ARGS -cpu=${CPU_CORES}"
+[ -n "$HOST_BUILD" ] && ARGS="$ARGS -build=${HOST_BUILD}"
+[ -n "$HOST_SERIAL" ] && ARGS="$ARGS -hostsn=${HOST_SERIAL}"
+[ -n "$HOST_TIMESTAMP" ] && ARGS="$ARGS -ts=${HOST_TIMESTAMP}"
+[ -n "$GUEST_SERIAL" ] && ARGS="$ARGS -guestsn=${GUEST_SERIAL}"
+[ -n "$HOST_VERSION" ] && ARGS="$ARGS -version=${HOST_VERSION}"
 
 ./run/host.bin ${ARGS:+ $ARGS} > /dev/null 2>&1 &
 
