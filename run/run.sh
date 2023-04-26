@@ -37,7 +37,7 @@ fi
 # Initialize network
 . /run/network.sh
 
-# Initialize agent
+# Initialize serialport
 . /run/serial.sh
 
 # Configure shutdown
