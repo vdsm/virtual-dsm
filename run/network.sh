@@ -25,7 +25,11 @@ configureDHCP() {
   NETWORK=$(ip -o route | grep "${VM_NET_DEV}" | grep -v default | awk '{print $1}')
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
 
-  ip l add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge
+  if !  ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge > /dev/null 2>&1 ; then
+    echo -n "ERROR: Capability NET_ADMIN has not been set. Please add the "
+    echo "following docker setting to your container: --cap-add NET_ADMIN" && exit 15
+  fi
+
   ip address add "${IP}" dev "${VM_NET_VLAN}"
   ip link set dev "${VM_NET_VLAN}" up
 
@@ -35,10 +39,14 @@ configureDHCP() {
   ip route add "${NETWORK}" dev "${VM_NET_VLAN}" metric 0
   ip route add default via "${GATEWAY}"
 
-  echo "Info: Acquiring an IP address via DHCP using MAC address ${VM_NET_MAC}..."
+  echo "INFO: Acquiring an IP address via DHCP using MAC address ${VM_NET_MAC}..."
 
-  ip l add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge || true
-  ip l set "${VM_NET_TAP}" up
+  if !  ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge > /dev/null 2>&1 ; then
+    echo -n "ERROR: Capability NET_ADMIN has not been set. Please add the "
+    echo "following docker setting to your container: --cap-add NET_ADMIN" && exit 16
+  fi
+
+  ip link set "${VM_NET_TAP}" up
 
   ip a flush "${VM_NET_DEV}"
   ip a flush "${VM_NET_TAP}"
@@ -46,12 +54,12 @@ configureDHCP() {
   DHCP_IP=$(dhclient -v "${VM_NET_TAP}" 2>&1 | grep ^bound | cut -d' ' -f3)
 
   if [[ "${DHCP_IP}" == [0-9.]* ]]; then
-    echo "Info: Successfully acquired IP ${DHCP_IP} from the DHCP server..."
+    echo "INFO: Successfully acquired IP ${DHCP_IP} from the DHCP server..."
   else
-    echo "ERROR: Cannot acquire an IP address from the DHCP server" && exit 16
+    echo "ERROR: Cannot acquire an IP address from the DHCP server" && exit 17
   fi
 
-  ip a flush "${VM_NET_TAP}"
+  ip address flush "${VM_NET_TAP}"
 
   TAP_NR=$(</sys/class/net/"${VM_NET_TAP}"/ifindex)
   TAP_PATH="/dev/tap${TAP_NR}"
@@ -72,8 +80,8 @@ configureDHCP() {
   fi
 
   if ! exec 30>>"$TAP_PATH"; then
-    echo -n "ERROR: Please add the following docker variables to your container:  "
-    echo "--device=/dev/vhost-net --device-cgroup-rule='c ${MAJOR}:* rwm'" && exit 21
+    echo -n "ERROR: Cannot create TAP interface. Please add the following docker settings to your "
+    echo "container: --device-cgroup-rule='c ${MAJOR}:* rwm' --device=/dev/vhost-net" && exit 21
   fi
 
   # Create /dev/vhost-net
@@ -83,8 +91,8 @@ configureDHCP() {
   fi
 
   if ! exec 40>>/dev/vhost-net; then
-    echo -n "ERROR: VHOST can not be found. Please add the following docker "
-    echo "variable to your container: --device=/dev/vhost-net" && exit 22
+    echo -n "ERROR: VHOST can not be found. Please add the following "
+    echo "docker setting to your container: --device=/dev/vhost-net" && exit 22
   fi
 
   # Store IP for Docker healthcheck
@@ -98,7 +106,12 @@ configureNAT () {
   VM_NET_IP='20.20.20.21'
 
   #Create bridge with static IP for the VM guest
-  ip link add dev dockerbridge type bridge
+
+  if ! ip link add dev dockerbridge type bridge > /dev/null 2>&1 ; then
+    echo -n "ERROR: Capability NET_ADMIN has not been set. Please add the "
+    echo "following docker setting to your container: --cap-add NET_ADMIN" && exit 23
+  fi
+
   ip addr add ${VM_NET_IP%.*}.1/24 broadcast ${VM_NET_IP%.*}.255 dev dockerbridge
   ip link set dockerbridge up
 
@@ -187,7 +200,7 @@ GATEWAY=$(ip r | grep default | awk '{print $3}')
 if [ "$DEBUG" = "Y" ]; then
 
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
-  echo "Info: Container IP is ${IP} with gateway ${GATEWAY}" && echo
+  echo "INFO: Container IP is ${IP} with gateway ${GATEWAY}" && echo
   ifconfig
   ip route && echo
 
