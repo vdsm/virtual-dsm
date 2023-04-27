@@ -70,10 +70,7 @@ EXTRA_OPTS="$EXTRA_OPTS -device virtio-rng-pci,rng=objrng0,id=rng0,bus=pcie.0,ad
 ARGS="${DEF_OPTS} ${CPU_OPTS} ${RAM_OPTS} ${MAC_OPTS} ${MON_OPTS} ${SERIAL_OPTS} ${NET_OPTS} ${DISK_OPTS} ${EXTRA_OPTS}"
 ARGS=$(echo "$ARGS" | sed 's/\t/ /g' | tr -s ' ')
 
-if [ "$DEBUG" = "Y" ]; then
-  echo -n "qemu-system-x86_64 "
-  echo "${ARGS}" && echo
-fi
+[ "$DEBUG" = "Y" ] && echo "qemu-system-x86_64 ${ARGS}" && echo
 
 set -m
 (
