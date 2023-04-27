@@ -1,18 +1,10 @@
 on:
-  push:
-    branches-ignore:
-      - master
-    paths:
-      - '**/*.sh'
-      - '.github/workflows/test.yml'
-      - '.github/workflows/check.yml'
-      
   pull_request:
     paths:
       - '**/*.sh'
       - '.github/workflows/test.yml'
       - '.github/workflows/check.yml'
-      
+
 name: "Test"
 permissions: {}
 
