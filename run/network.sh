@@ -25,7 +25,11 @@ configureDHCP() {
   NETWORK=$(ip -o route | grep "${VM_NET_DEV}" | grep -v default | awk '{print $1}')
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
 
-  ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge
+  if !  ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge > /dev/null 2>&1 ; then
+    echo -n "ERROR: Capability NET_ADMIN has not been set. Please add the "
+    echo "following docker setting to your container: --cap-add NET_ADMIN" && exit 15
+  fi
+
   ip address add "${IP}" dev "${VM_NET_VLAN}"
   ip link set dev "${VM_NET_VLAN}" up
 
@@ -72,8 +76,8 @@ configureDHCP() {
   fi
 
   if ! exec 30>>"$TAP_PATH"; then
-    echo -n "ERROR: Please add the following docker settings to your container:  "
-    echo "--device=/dev/vhost-net --device-cgroup-rule='c ${MAJOR}:* rwm'" && exit 21
+    echo -n "ERROR: Cannot create TAP interface. Please add the following docker settings to your "
+    echo "container: --device-cgroup-rule='c ${MAJOR}:* rwm' --device=/dev/vhost-net" && exit 21
   fi
 
   # Create /dev/vhost-net
@@ -101,7 +105,7 @@ configureNAT () {
 
   if ! ip link add dev dockerbridge type bridge > /dev/null 2>&1 ; then
     echo -n "ERROR: Capability NET_ADMIN has not been set. Please add the "
-    echo "following docker setting to your container:  --cap-add NET_ADMIN" && exit 23
+    echo "following docker setting to your container: --cap-add NET_ADMIN" && exit 23
   fi
 
   ip addr add ${VM_NET_IP%.*}.1/24 broadcast ${VM_NET_IP%.*}.255 dev dockerbridge
