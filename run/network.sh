@@ -41,7 +41,11 @@ configureDHCP() {
 
   echo "INFO: Acquiring an IP address via DHCP using MAC address ${VM_NET_MAC}..."
 
-  ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge || true
+  if !  ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge > /dev/null 2>&1 ; then
+    echo -n "ERROR: Capability NET_ADMIN has not been set. Please add the "
+    echo "following docker setting to your container: --cap-add NET_ADMIN" && exit 16
+  fi
+  
   ip link set "${VM_NET_TAP}" up
 
   ip a flush "${VM_NET_DEV}"
@@ -52,7 +56,7 @@ configureDHCP() {
   if [[ "${DHCP_IP}" == [0-9.]* ]]; then
     echo "INFO: Successfully acquired IP ${DHCP_IP} from the DHCP server..."
   else
-    echo "ERROR: Cannot acquire an IP address from the DHCP server" && exit 16
+    echo "ERROR: Cannot acquire an IP address from the DHCP server" && exit 17
   fi
 
   ip address flush "${VM_NET_TAP}"
