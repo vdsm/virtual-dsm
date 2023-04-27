@@ -16,3 +16,5 @@ jobs:
           SHFMT_OPTS: -s
         with:
           sh_checker_comment: true
+          sh_checker_shfmt_disable: true
+          sh_checker_checkbashisms_enable: true
