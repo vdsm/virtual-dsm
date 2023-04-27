@@ -34,12 +34,12 @@ rm -rf "$TMP" && mkdir -p "$TMP"
 LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
 { curl -r 64493568-69886247 -sfk -o "$RD" "$LOC"; rc=$?; } || :
-(( rc != 0 )) && echo "Failed to download extractor, reason: $rc" && exit 60
+(( rc != 0 )) && echo "ERROR: Failed to download extractor, reason: $rc" && exit 60
 
 SUM=$(md5sum "$RD" | cut -f 1 -d " ")
 
 if [ "$SUM" != "14fb88cb7cabddb5af1d0269bf032845" ]; then
-  echo "Invalid extractor, checksum mismatch." && exit 61
+  echo "ERROR: Invalid extractor, checksum mismatch." && exit 61
 fi
 
 set +e
@@ -69,14 +69,16 @@ else
   PROGRESS="--progress=dot:giga"
 fi
 
-wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"
+if ! wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; then
+  echo "ERROR: Failed to download $URL" && exit 69
+fi
 
-[ ! -f "$PAT" ] && echo "Download failed" && exit 61
+[ ! -f "$PAT" ] && echo "ERROR: Failed to download $URL" && exit 69
 
 SIZE=$(stat -c%s "$PAT")
 
 if ((SIZE<250000000)); then
-  echo "Invalid PAT file: File is an update pack which contains no OS image." && exit 62
+  echo "ERROR: Invalid PAT file: File is an update pack which contains no OS image." && exit 62
 fi
 
 echo "Install: Extracting downloaded image..."
@@ -86,7 +88,7 @@ if { tar tf "$PAT"; } >/dev/null 2>&1; then
 else
    export LD_LIBRARY_PATH="/run/extract"
    if ! /run/extract/syno_extract_system_patch "$PAT" "$TMP/." ; then
-     echo "Invalid PAT file: File is an update pack which contains no OS image." && exit 63
+     echo "ERROR: Invalid PAT file: File is an update pack which contains no OS image." && exit 63
    fi
    export LD_LIBRARY_PATH=""
 fi
@@ -96,14 +98,14 @@ IDB="$TMP/indexdb"
 PKG="$TMP/packages"
 HDP="$TMP/synohdpack_img"
 
-[ ! -f "$HDA.tgz" ] && echo "Invalid PAT file: contains no OS image." && exit 64
-[ ! -f "$HDP.txz" ] && echo "Invalid PAT file: contains no HD pack." && exit 65
-[ ! -f "$IDB.txz" ] && echo "Invalid PAT file: contains no IndexDB." && exit 66
-[ ! -d "$PKG" ] && echo "Invalid PAT file: contains no packages." && exit 68
+[ ! -f "$HDA.tgz" ] && echo "ERROR: Invalid PAT file: contains no OS image." && exit 64
+[ ! -f "$HDP.txz" ] && echo "ERROR: Invalid PAT file: contains no HD pack." && exit 65
+[ ! -f "$IDB.txz" ] && echo "ERROR: Invalid PAT file: contains no IndexDB." && exit 66
+[ ! -d "$PKG" ] && echo "ERROR: Invalid PAT file: contains no packages." && exit 68
 
 BOOT=$(find "$TMP" -name "*.bin.zip")
 
-[ ! -f "$BOOT" ] && echo "Invalid PAT file: contains no boot file." && exit 67
+[ ! -f "$BOOT" ] && echo "ERROR: Invalid PAT file: contains no boot file." && exit 67
 
 BOOT=$(echo "$BOOT" | head -c -5)
 unzip -q -o "$BOOT".zip -d "$TMP"
