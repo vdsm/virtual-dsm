@@ -55,7 +55,7 @@ else
 fi
 
 if [ -n "${KVM_ERR}" ]; then
-  echo "Error: KVM acceleration not detected ${KVM_ERR}, please enable it."
+  echo "ERROR: KVM acceleration not detected ${KVM_ERR}, please enable it."
   [ "$DEBUG" != "Y" ] && exit 88
 else
   KVM_OPTS=",accel=kvm -enable-kvm -cpu host"
