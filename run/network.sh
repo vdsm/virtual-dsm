@@ -45,7 +45,7 @@ configureDHCP() {
     echo -n "ERROR: Capability NET_ADMIN has not been set. Please add the "
     echo "following docker setting to your container: --cap-add NET_ADMIN" && exit 16
   fi
-  
+
   ip link set "${VM_NET_TAP}" up
 
   ip a flush "${VM_NET_DEV}"
