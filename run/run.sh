@@ -44,6 +44,7 @@ fi
 . /run/power.sh
 
 KVM_ERR=""
+KVM_OPTS=""
 
 if [ -e /dev/kvm ] && sh -c 'echo -n > /dev/kvm' &> /dev/null; then
   if ! grep -q -e vmx -e svm /proc/cpuinfo; then
@@ -54,11 +55,12 @@ else
 fi
 
 if [ -n "${KVM_ERR}" ]; then
-  echo "Error: KVM acceleration not detected ${KVM_ERR}, please enable it."
+  echo "ERROR: KVM acceleration not detected ${KVM_ERR}, please enable it."
   [ "$DEBUG" != "Y" ] && exit 88
+else
+  KVM_OPTS=",accel=kvm -enable-kvm -cpu host"
 fi
 
-KVM_OPTS=",accel=kvm -enable-kvm -cpu host"
 DEF_OPTS="-nographic -nodefaults -boot strict=on -display none"
 RAM_OPTS=$(echo "-m ${RAM_SIZE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
 CPU_OPTS="-smp ${CPU_CORES},sockets=1,dies=1,cores=${CPU_CORES},threads=1"
@@ -70,10 +72,7 @@ EXTRA_OPTS="$EXTRA_OPTS -device virtio-rng-pci,rng=objrng0,id=rng0,bus=pcie.0,ad
 ARGS="${DEF_OPTS} ${CPU_OPTS} ${RAM_OPTS} ${MAC_OPTS} ${MON_OPTS} ${SERIAL_OPTS} ${NET_OPTS} ${DISK_OPTS} ${EXTRA_OPTS}"
 ARGS=$(echo "$ARGS" | sed 's/\t/ /g' | tr -s ' ')
 
-if [ "$DEBUG" = "Y" ]; then
-  echo -n "qemu-system-x86_64 "
-  echo "${ARGS}" && echo
-fi
+[ "$DEBUG" = "Y" ] && echo "qemu-system-x86_64 ${ARGS}" && echo
 
 set -m
 (
