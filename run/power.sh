@@ -39,7 +39,7 @@ _graceful_shutdown() {
   if [[ ! "${RESPONSE}" =~ "\"success\"" ]] ; then
 
     echo
-    echo "Could not send shutdown command to guest, error: $RESPONSE"
+    echo "ERROR: Could not send shutdown command to the guest ($RESPONSE)"
 
     # If we cannot shutdown the usual way, fallback to the NMI method
 
