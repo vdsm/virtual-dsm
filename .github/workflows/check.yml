@@ -4,6 +4,9 @@ permissions: {}
 
 jobs:
   shellcheck:
-    uses: ludeeus/action-shellcheck@master
-env:
-        SHELLCHECK_OPTS: -x -e SC2001 -e SC2002 -e SC2223 -e SC2034 -e SC2064
+    name: shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
