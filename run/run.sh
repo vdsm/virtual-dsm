@@ -53,7 +53,7 @@ else
   [ -e /dev/kvm ] && KVM_ERR="(no write access)" || KVM_ERR="(device file missing)"
 fi
 
-if [ ! -z "${KVM_ERR}" ]; then
+if [ -n "${KVM_ERR}" ]; then
   echo "Error: KVM acceleration not detected ${KVM_ERR}, please enable it."
   [ "$DEBUG" != "Y" ] && exit 88
 fi
