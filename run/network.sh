@@ -35,7 +35,7 @@ configureDHCP() {
   ip route add "${NETWORK}" dev "${VM_NET_VLAN}" metric 0
   ip route add default via "${GATEWAY}"
 
-  echo "Info: Acquiring an IP address via DHCP using MAC address ${VM_NET_MAC}..."
+  echo "INFO: Acquiring an IP address via DHCP using MAC address ${VM_NET_MAC}..."
 
   ip l add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge || true
   ip l set "${VM_NET_TAP}" up
@@ -46,7 +46,7 @@ configureDHCP() {
   DHCP_IP=$(dhclient -v "${VM_NET_TAP}" 2>&1 | grep ^bound | cut -d' ' -f3)
 
   if [[ "${DHCP_IP}" == [0-9.]* ]]; then
-    echo "Info: Successfully acquired IP ${DHCP_IP} from the DHCP server..."
+    echo "INFO: Successfully acquired IP ${DHCP_IP} from the DHCP server..."
   else
     echo "ERROR: Cannot acquire an IP address from the DHCP server" && exit 16
   fi
@@ -187,7 +187,7 @@ GATEWAY=$(ip r | grep default | awk '{print $3}')
 if [ "$DEBUG" = "Y" ]; then
 
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
-  echo "Info: Container IP is ${IP} with gateway ${GATEWAY}" && echo
+  echo "INFO: Container IP is ${IP} with gateway ${GATEWAY}" && echo
   ifconfig
   ip route && echo
 
