@@ -176,10 +176,6 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     There are only three minor differences: the Virtual Machine Manager package is not provided, Surveillance Station doesn't include any free licenses, and logging in to your Synology account is not supported.
 
-## Acknowledgments
-
-Based on an [article](https://jxcn.org/2022/04/vdsm-first-try/) by JXCN.
-
 ## Disclaimer
 
 Only run this container on Synology hardware, any other use is not permitted and might not be legal.
