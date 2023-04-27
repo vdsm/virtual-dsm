@@ -189,7 +189,7 @@ if [ ! -c /dev/net/tun ]; then
   chmod 666 /dev/net/tun
 fi
 
-[ ! -c /dev/net/tun ] && echo "Error: TUN network interface not available..." && exit 85
+[ ! -c /dev/net/tun ] && echo "ERROR: TUN network interface not available..." && exit 85
 
 update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
 update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
