@@ -48,11 +48,15 @@ KVM_OPTS=""
 if [ -e /dev/kvm ] && sh -c 'echo -n > /dev/kvm' &> /dev/null; then
   if grep -q -e vmx -e svm /proc/cpuinfo; then
     KVM_OPTS=",accel=kvm -enable-kvm -cpu host"
+  else
+    KVM_ERR="(cpuinfo "$(egrep -c '(vmx|svm)' /proc/cpuinfo)")"
   fi
+else
+  [ -e /dev/kvm ] && KVM_ERR="(no write access)" || KVM_ERR="(device file missing)"
 fi
 
 if [ -z "${KVM_OPTS}" ]; then
-  echo "Error: KVM acceleration is disabled.."
+  echo "Error: KVM acceleration not detected ${KVM_ERR}, please enable KVM on your host!"
   [ "$DEBUG" != "Y" ] && exit 88
 fi
 
