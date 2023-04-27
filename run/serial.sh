@@ -26,9 +26,9 @@ HOST_ARGS+=("-cpu_arch=${HOST_CPU}")
 [ -n "$CPU_CORES" ] && HOST_ARGS+=("-cpu=${CPU_CORES}")
 [ -n "$HOST_BUILD" ] && HOST_ARGS+=("-build=${HOST_BUILD}")
 [ -n "$HOST_SERIAL" ] && HOST_ARGS+=("-hostsn=${HOST_SERIAL}")
-[ -n "$HOST_TIMESTAMP" ] && HOST_ARGS+=("-ts=${HOST_TIMESTAMP}")
 [ -n "$GUEST_SERIAL" ] && HOST_ARGS+=("-guestsn=${GUEST_SERIAL}")
 [ -n "$HOST_VERSION" ] && HOST_ARGS+=("-version=${HOST_VERSION}")
+[ -n "$HOST_TIMESTAMP" ] && HOST_ARGS+=("-ts=${HOST_TIMESTAMP}")
 
 if [ "$DEBUG" = "Y" ]; then
   echo -n "./run/host.bin "
