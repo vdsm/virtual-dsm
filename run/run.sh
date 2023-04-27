@@ -44,6 +44,7 @@ fi
 . /run/power.sh
 
 KVM_ERR=""
+KVM_OPTS=""
 
 if [ -e /dev/kvm ] && sh -c 'echo -n > /dev/kvm' &> /dev/null; then
   if ! grep -q -e vmx -e svm /proc/cpuinfo; then
@@ -56,9 +57,10 @@ fi
 if [ -n "${KVM_ERR}" ]; then
   echo "Error: KVM acceleration not detected ${KVM_ERR}, please enable it."
   [ "$DEBUG" != "Y" ] && exit 88
+else
+  KVM_OPTS=",accel=kvm -enable-kvm -cpu host"
 fi
 
-KVM_OPTS=",accel=kvm -enable-kvm -cpu host"
 DEF_OPTS="-nographic -nodefaults -boot strict=on -display none"
 RAM_OPTS=$(echo "-m ${RAM_SIZE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
 CPU_OPTS="-smp ${CPU_CORES},sockets=1,dies=1,cores=${CPU_CORES},threads=1"
