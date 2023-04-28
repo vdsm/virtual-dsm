@@ -4,8 +4,9 @@ set -eu
 # Docker environment variables
 
 : ${DISK_IO:='native'}    # I/O Mode, can be set to 'native', 'threads' or 'io_turing' 
-: ${DISK_ROTATION:='1'}   # Rotation rate, set to 1 for SSD storage and increase for HDD
 : ${DISK_CACHE:='none'}   # Caching mode, can be set to 'writeback' for better performance
+: ${DISK_DISCARD:='on'}   # Controls whether unmap (TRIM) commands are passed to the host.
+: ${DISK_ROTATION:='1'}   # Rotation rate, set to 1 for SSD storage and increase for HDD
 
 BOOT="$STORAGE/$BASE.boot.img"
 SYSTEM="$STORAGE/$BASE.system.img"
@@ -135,11 +136,11 @@ fi
 
 DISK_OPTS="\
     -device virtio-scsi-pci,id=hw-synoboot,bus=pcie.0,addr=0xa \
-    -drive file=${BOOT},if=none,id=drive-synoboot,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=on,detect-zeroes=on \
+    -drive file=${BOOT},if=none,id=drive-synoboot,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=${DISK_DISCARD},detect-zeroes=on \
     -device scsi-hd,bus=hw-synoboot.0,channel=0,scsi-id=0,lun=0,drive=drive-synoboot,id=synoboot0,rotation_rate=${DISK_ROTATION},bootindex=1 \
     -device virtio-scsi-pci,id=hw-synosys,bus=pcie.0,addr=0xb \
-    -drive file=${SYSTEM},if=none,id=drive-synosys,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=on,detect-zeroes=on \
+    -drive file=${SYSTEM},if=none,id=drive-synosys,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=${DISK_DISCARD},detect-zeroes=on \
     -device scsi-hd,bus=hw-synosys.0,channel=0,scsi-id=0,lun=0,drive=drive-synosys,id=synosys0,rotation_rate=${DISK_ROTATION},bootindex=2 \
     -device virtio-scsi-pci,id=hw-userdata,bus=pcie.0,addr=0xc \
-    -drive file=${DATA},if=none,id=drive-userdata,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=on,detect-zeroes=on \
+    -drive file=${DATA},if=none,id=drive-userdata,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=${DISK_DISCARD},detect-zeroes=on \
     -device scsi-hd,bus=hw-userdata.0,channel=0,scsi-id=0,lun=0,drive=drive-userdata,id=userdata0,rotation_rate=${DISK_ROTATION},bootindex=3"
