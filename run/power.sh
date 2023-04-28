@@ -21,13 +21,12 @@ _trap(){
 
 _graceful_shutdown() {
 
+  set +e
+
   [ ! -f "${_QEMU_PID}" ] && return
   [ -f "${_QEMU_SHUTDOWN_COUNTER}" ] && return
 
-  set +e
-
-  echo
-  echo "Received $1 signal, shutting down..."
+  echo && echo "Received $1 signal, shutting down..."
   echo 0 > "${_QEMU_SHUTDOWN_COUNTER}"
 
   # Don't send the powerdown signal because vDSM ignores ACPI signals
@@ -38,8 +37,7 @@ _graceful_shutdown() {
 
   if [[ ! "${RESPONSE}" =~ "\"success\"" ]] ; then
 
-    echo
-    echo "ERROR: Could not send shutdown command to the guest ($RESPONSE)"
+    echo && echo "ERROR: Could not send shutdown command to the guest ($RESPONSE)"
 
     # If we cannot shutdown the usual way, fallback to the NMI method
 
@@ -53,11 +51,9 @@ _graceful_shutdown() {
  
     else
 
-      echo
-      echo "Please update the VirtualDSM Agent to allow for gracefull shutdowns..."
+      echo && echo "Please update the VirtualDSM Agent to allow for gracefull shutdowns..."
 
-      PID=$(cat "${_QEMU_PID}")
-      kill -15 "${PID}"
+      kill -15 "$(cat "${_QEMU_PID}")"
       pkill -f qemu-system-x86_64
 
     fi
@@ -78,8 +74,7 @@ _graceful_shutdown() {
 
   done
 
-  echo
-  echo "Quitting..."
+  echo && echo "Quitting..."
   echo 'quit' | nc -q 1 -w 1 localhost "${QEMU_MONPORT}" > /dev/null || true
 
   return
