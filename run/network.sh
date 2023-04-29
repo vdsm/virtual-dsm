@@ -25,8 +25,10 @@ configureDHCP() {
   NETWORK=$(ip -o route | grep "${VM_NET_DEV}" | grep -v default | awk '{print $1}')
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
 
-  if !  ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge > /dev/null 2>&1 ; then
-    echo -n "ERROR: Capability NET_ADMIN has not been set (1/$?). Please add the "
+  { ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge > /dev/null 2>&1 ; rc=$?; } || :
+
+  if (( rc != 0 )); then
+    echo -n "ERROR: Capability NET_ADMIN has not been set ($?/1). Please add the "
     echo "following docker setting to your container: --cap-add NET_ADMIN" && exit 15
   fi
 
@@ -41,8 +43,10 @@ configureDHCP() {
 
   echo "INFO: Acquiring an IP address via DHCP using MAC address ${VM_NET_MAC}..."
 
-  if !  ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge > /dev/null 2>&1 ; then
-    echo -n "ERROR: Capability NET_ADMIN has not been set (2/$?). Please add the "
+  { ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge > /dev/null 2>&1 ; rc=$?; } || :
+
+  if (( rc != 0 )); then
+    echo -n "ERROR: Capability NET_ADMIN has not been set ($?/2). Please add the "
     echo "following docker setting to your container: --cap-add NET_ADMIN" && exit 16
   fi
 
@@ -74,12 +78,13 @@ configureDHCP() {
   [[ ! -e "${TAP_PATH}" ]] && [[ -e "/dev0/${TAP_PATH##*/}" ]] && ln -s "/dev0/${TAP_PATH##*/}" "${TAP_PATH}"
 
   if [[ ! -e "${TAP_PATH}" ]]; then
-    if ! mknod "${TAP_PATH}" c "$MAJOR" "$MINOR" ; then
-      echo "ERROR: Cannot mknod: ${TAP_PATH} ($?)" && exit 20
-    fi
+    { mknod "${TAP_PATH}" c "$MAJOR" "$MINOR" ; rc=$?; } || :
+    (( rc != 0 )) && echo "ERROR: Cannot mknod: ${TAP_PATH} ($?)" && exit 20
   fi
 
-  if ! exec 30>>"$TAP_PATH"; then
+  { exec 30>>"$TAP_PATH"; rc=$?; } || :
+
+  if (( rc != 0 )); then
     echo -n "ERROR: Cannot create TAP interface ($?). Please add the following docker settings to your "
     echo "container: --device-cgroup-rule='c ${MAJOR}:* rwm' --device=/dev/vhost-net" && exit 21
   fi
@@ -90,7 +95,9 @@ configureDHCP() {
     chmod 660 /dev/vhost-net
   fi
 
-  if ! exec 40>>/dev/vhost-net; then
+  { exec 40>>/dev/vhost-net; rc=$?; } || :
+
+  if (( rc != 0 )); then
     echo -n "ERROR: VHOST can not be found ($?). Please add the following "
     echo "docker setting to your container: --device=/dev/vhost-net" && exit 22
   fi
@@ -107,8 +114,10 @@ configureNAT () {
 
   #Create bridge with static IP for the VM guest
 
-  if ! ip link add dev dockerbridge type bridge > /dev/null 2>&1 ; then
-    echo -n "ERROR: Capability NET_ADMIN has not been set (3/$?). Please add the "
+  { ip link add dev dockerbridge type bridge > /dev/null 2>&1 ; rc=$?; } || :
+
+  if (( rc != 0 )); then
+    echo -n "ERROR: Capability NET_ADMIN has not been set ($?/3). Please add the "
     echo "following docker setting to your container: --cap-add NET_ADMIN" && exit 23
   fi
 
@@ -132,7 +141,8 @@ configureNAT () {
 
   #Check port forwarding flag
   if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
-    if ! sysctl -w net.ipv4.ip_forward=1 > /dev/null 2>&1; then
+    { sysctl -w net.ipv4.ip_forward=1 > /dev/null 2>&1; rc=$?; } || :
+    if (( rc != 0 )); then
       echo -n "ERROR: IP forwarding is disabled ($?). Please add the following "
       echo "docker setting to your container: --sysctl net.ipv4.ip_forward=1" && exit 24
     fi
