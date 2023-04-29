@@ -69,9 +69,8 @@ else
   PROGRESS="--progress=dot:giga"
 fi
 
-if ! wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; then
-  echo "ERROR: Failed to download $URL" && exit 69
-fi
+{ wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; rc=$?; } || :
+(( rc != 0 )) && echo "ERROR: Failed to download $URL, reason: $rc" && exit 69
 
 [ ! -f "$PAT" ] && echo "ERROR: Failed to download $URL" && exit 69
 
