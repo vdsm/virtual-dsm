@@ -48,8 +48,8 @@ configureDHCP() {
 
   ip link set "${VM_NET_TAP}" up
 
-  ip a flush "${VM_NET_DEV}"
-  ip a flush "${VM_NET_TAP}"
+  ip address flush "${VM_NET_DEV}"
+  ip address flush "${VM_NET_TAP}"
 
   DHCP_IP=$(dhclient -v "${VM_NET_TAP}" 2>&1 | grep ^bound | cut -d' ' -f3)
 
@@ -112,7 +112,7 @@ configureNAT () {
     echo "following docker setting to your container: --cap-add NET_ADMIN" && exit 23
   fi
 
-  ip addr add ${VM_NET_IP%.*}.1/24 broadcast ${VM_NET_IP%.*}.255 dev dockerbridge
+  ip address add ${VM_NET_IP%.*}.1/24 broadcast ${VM_NET_IP%.*}.255 dev dockerbridge
   ip link set dockerbridge up
 
   #QEMU Works with taps, set tap to the bridge created
