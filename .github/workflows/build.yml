@@ -60,19 +60,35 @@ jobs:
               docker push "ghcr.io/${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}" && \
               docker push "ghcr.io/${{ github.repository }}:latest"
 
-  bump:
+  release:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
+    - uses: actions/checkout@v3
+    -
+      name: Create a release
+      uses: kroese/github-release@v4
+      env:
+        GITHUB_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
+      with:
+        tag: "v${{ secrets.MAJOR }}.${{ secrets.MINOR }}"
+        title: "v${{ secrets.MAJOR }}.${{ secrets.MINOR }}"
+        body: "Release v${{ secrets.MAJOR }}.${{ secrets.MINOR }}"
+    -
+      name: Increment minor version
+      run: |
+        echo "NEW_MINOR=$((${{ secrets.MINOR }}+1))" >> $GITHUB_ENV
     -
       name: Update minor version
       uses: hmanzur/actions-set-secret@v2.0.0
       with:
         name: 'MINOR'
-        value: $((${{ secrets.MINOR }}+1))
+        value: ${{ env.NEW_MINOR }}
         repository: ${{ github.repository }}
         token: ${{ secrets.REPO_ACCESS_TOKEN }}
-
+  
   mirror:
     runs-on: ubuntu-latest
     permissions:
