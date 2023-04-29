@@ -25,7 +25,7 @@ configureDHCP() {
   NETWORK=$(ip -o route | grep "${VM_NET_DEV}" | grep -v default | awk '{print $1}')
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
 
-  { ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge > /dev/null 2>&1 ; rc=$?; } || :
+  { ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge 2> /dev/null ; rc=$?; } || :
 
   if (( rc != 0 )); then
     echo -n "ERROR: Capability NET_ADMIN has not been set ($rc/1). Please add the "
@@ -43,7 +43,7 @@ configureDHCP() {
 
   echo "INFO: Acquiring an IP address via DHCP using MAC address ${VM_NET_MAC}..."
 
-  { ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge > /dev/null 2>&1 ; rc=$?; } || :
+  { ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge 2> /dev/null ; rc=$?; } || :
 
   if (( rc != 0 )); then
     echo -n "ERROR: Capability NET_ADMIN has not been set ($rc/2). Please add the "
@@ -114,7 +114,7 @@ configureNAT () {
 
   #Create bridge with static IP for the VM guest
 
-  { ip link add dev dockerbridge type bridge > /dev/null 2>&1 ; rc=$?; } || :
+  { ip link add dev dockerbridge type bridge 2> /dev/null ; rc=$?; } || :
 
   if (( rc != 0 )); then
     echo -n "ERROR: Capability NET_ADMIN has not been set ($rc/3). Please add the "
@@ -141,7 +141,7 @@ configureNAT () {
 
   #Check port forwarding flag
   if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
-    { sysctl -w net.ipv4.ip_forward=1 > /dev/null 2>&1; rc=$?; } || :
+    { sysctl -w net.ipv4.ip_forward=1 2> /dev/null ; rc=$?; } || :
     if (( rc != 0 )); then
       echo -n "ERROR: IP forwarding is disabled ($rc). Please add the following "
       echo "docker setting to your container: --sysctl net.ipv4.ip_forward=1" && exit 24
