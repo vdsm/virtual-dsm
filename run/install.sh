@@ -39,7 +39,7 @@ LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 SUM=$(md5sum "$RD" | cut -f 1 -d " ")
 
 if [ "$SUM" != "14fb88cb7cabddb5af1d0269bf032845" ]; then
-  echo "ERROR: Invalid extractor, checksum mismatch." && exit 61
+  echo "ERROR: Invalid file, checksum mismatch: $SUM" && exit 61
 fi
 
 set +e
