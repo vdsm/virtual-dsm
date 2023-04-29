@@ -132,7 +132,7 @@ configureNAT () {
 
   #Check port forwarding flag
   if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
-    if ! sysctl -w net.ipv4.ip_forward=1; then
+    if ! sysctl -w net.ipv4.ip_forward=1 > /dev/null 2>&1; then
       echo -n "ERROR: IP forwarding is disabled. Please add the following "
       echo "docker setting to your container: --sysctl net.ipv4.ip_forward=1" && exit 24
     fi
