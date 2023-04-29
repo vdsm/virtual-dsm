@@ -69,7 +69,7 @@ jobs:
     - uses: actions/checkout@v3
     -
       name: Create a release
-      uses: kroese/github-release@v4
+      uses: kroese/github-release@20220415183405
       env:
         GITHUB_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
       with:
