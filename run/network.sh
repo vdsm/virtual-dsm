@@ -33,11 +33,11 @@ configureDHCP() {
   ip address add "${IP}" dev "${VM_NET_VLAN}"
   ip link set dev "${VM_NET_VLAN}" up
 
-  #ip route flush dev "${VM_NET_DEV}"
+  ip route flush dev "${VM_NET_DEV}"
   ip route flush dev "${VM_NET_VLAN}"
 
-  ip route add "${IP}" dev "${VM_NET_VLAN}" metric 0
-  #ip route add default via "${GATEWAY}"
+  ip route add "${NETWORK}" dev "${VM_NET_VLAN}" metric 0
+  ip route add default via "${GATEWAY}"
 
   echo "INFO: Acquiring an IP address via DHCP using MAC address ${VM_NET_MAC}..."
 
@@ -130,8 +130,13 @@ configureNAT () {
     iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill || true
   fi
 
-  #Enable port forwarding flag
-  [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]] && sysctl -w net.ipv4.ip_forward=1
+  #Check port forwarding flag
+  if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
+    if ! sysctl -w net.ipv4.ip_forward=1; then
+      echo -n "ERROR: IP forwarding is disabled. Please add the following "
+      echo "docker setting to your container: --sysctl net.ipv4.ip_forward=1" && exit 24
+    fi
+  fi
 
   # dnsmasq configuration:
   DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-range=$VM_NET_IP,$VM_NET_IP --dhcp-host=$VM_NET_MAC,,$VM_NET_IP,$VM_NET_HOST,infinite --dhcp-option=option:netmask,255.255.255.0"
