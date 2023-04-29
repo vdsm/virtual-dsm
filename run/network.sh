@@ -26,7 +26,7 @@ configureDHCP() {
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
 
   if !  ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge > /dev/null 2>&1 ; then
-    echo -n "ERROR: Capability NET_ADMIN has not been set ($?). Please add the "
+    echo -n "ERROR: Capability NET_ADMIN has not been set (1/$?). Please add the "
     echo "following docker setting to your container: --cap-add NET_ADMIN" && exit 15
   fi
 
@@ -42,7 +42,7 @@ configureDHCP() {
   echo "INFO: Acquiring an IP address via DHCP using MAC address ${VM_NET_MAC}..."
 
   if !  ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge > /dev/null 2>&1 ; then
-    echo -n "ERROR: Capability NET_ADMIN has not been set ($?). Please add the "
+    echo -n "ERROR: Capability NET_ADMIN has not been set (2/$?). Please add the "
     echo "following docker setting to your container: --cap-add NET_ADMIN" && exit 16
   fi
 
@@ -108,7 +108,7 @@ configureNAT () {
   #Create bridge with static IP for the VM guest
 
   if ! ip link add dev dockerbridge type bridge > /dev/null 2>&1 ; then
-    echo -n "ERROR: Capability NET_ADMIN has not been set ($?). Please add the "
+    echo -n "ERROR: Capability NET_ADMIN has not been set (3/$?). Please add the "
     echo "following docker setting to your container: --cap-add NET_ADMIN" && exit 23
   fi
 
