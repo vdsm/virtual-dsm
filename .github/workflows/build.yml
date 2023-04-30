@@ -29,15 +29,15 @@ jobs:
       run: |
               docker build . \
               --file Dockerfile \
-              --build-arg "VERSION_ARG=${{ secrets.MAJOR }}.${{ secrets.MINOR }}" \
+              --build-arg "VERSION_ARG=${{ vars.MAJOR }}.${{ vars.MINOR }}" \
               --build-arg "BUILD_ARG=${GITHUB_RUN_ID}" \
               --build-arg "DATE_ARG=${{ github.event.repository.updated_at }}" \
               --label "build=${GITHUB_RUN_ID}" \
-              --label "version=${{ secrets.MAJOR }}.${{ secrets.MINOR }}" \
+              --label "version=${{ vars.MAJOR }}.${{ vars.MINOR }}" \
               --tag "${{ github.repository }}:latest" \
-              --tag "${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}" \
+              --tag "${{ github.repository }}:${{ vars.MAJOR }}.${{ vars.MINOR }}" \
               --tag "ghcr.io/${{ github.repository }}:latest" \
-              --tag "ghcr.io/${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}"
+              --tag "ghcr.io/${{ github.repository }}:${{ vars.MAJOR }}.${{ vars.MINOR }}"
     -
       name: Login to Docker Hub
       uses: docker/login-action@v2
@@ -47,7 +47,7 @@ jobs:
     -
       name: Push to DockerHub
       run: |
-              docker push "${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}" &&\
+              docker push "${{ github.repository }}:${{ vars.MAJOR }}.${{ vars.MINOR }}" &&\
               docker push "${{ github.repository }}:latest"
     -
       name: Login to GitHub Container Registry
@@ -59,7 +59,7 @@ jobs:
     -
       name: Push to Github Container Registry
       run: |
-              docker push "ghcr.io/${{ github.repository }}:${{ secrets.MAJOR }}.${{ secrets.MINOR }}" && \
+              docker push "ghcr.io/${{ github.repository }}:${{ vars.MAJOR }}.${{ vars.MINOR }}" && \
               docker push "ghcr.io/${{ github.repository }}:latest"
 
   release:
@@ -75,30 +75,16 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
       with:
-        tag: "v${{ secrets.MAJOR }}.${{ secrets.MINOR }}"
-        title: "v${{ secrets.MAJOR }}.${{ secrets.MINOR }}"
-        body: "Release v${{ secrets.MAJOR }}.${{ secrets.MINOR }}"
+        tag: "v${{ vars.MAJOR }}.${{ vars.MINOR }}"
+        title: "v${{ vars.MAJOR }}.${{ vars.MINOR }}"
+        body: "Release v${{ vars.MAJOR }}.${{ vars.MINOR }}"
     -
       name: Increment minor version
       run: |
-        echo "NEW_MINOR=$((${{ secrets.MINOR }}+1))" >> $GITHUB_ENV
-    -
-      name: Update minor version
-      uses: kroese/set-secret@v4
-      with:
-        name: 'MINOR'
-        value: ${{ env.NEW_MINOR }}
-        token: ${{ secrets.REPO_ACCESS_TOKEN }}
-    -
-      name: Update major version variable
-      uses: kroese/set-variable@v2
-      with:
-        name: 'MAJOR'
-        value: ${{ secrets.MAJOR }}
-        token: ${{ secrets.REPO_ACCESS_TOKEN }}
+        echo "NEW_MINOR=$((${{ vars.MINOR }}+1))" >> $GITHUB_ENV
     -
       name: Update minor version variable
-      uses: kroese/set-variable@v2
+      uses: kroese/set-variable@v3
       with:
         name: 'MINOR'
         value: ${{ env.NEW_MINOR }}
