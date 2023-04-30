@@ -88,9 +88,22 @@ jobs:
       with:
         name: 'MINOR'
         value: ${{ env.NEW_MINOR }}
-        repository: ${{ github.repository }}
         token: ${{ secrets.REPO_ACCESS_TOKEN }}
-  
+    -
+      name: Update major version variable
+      uses: kroese/set-variable@v2
+      with:
+        name: 'MAJOR'
+        value: ${{ secrets.MAJOR }}
+        token: ${{ secrets.REPO_ACCESS_TOKEN }}
+    -
+      name: Update minor version variable
+      uses: kroese/set-variable@v2
+      with:
+        name: 'MINOR'
+        value: ${{ env.NEW_MINOR }}
+        token: ${{ secrets.REPO_ACCESS_TOKEN }}
+
   mirror:
     name: Mirror
     runs-on: ubuntu-latest
