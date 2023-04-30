@@ -11,7 +11,7 @@
 [![Docker Image Size]][dsm-docker-hub]
 [![Docker Pulls Count]][dsm-docker-hub]
 
-[build_url]: https://github.com/kroese/virtual-dsm/actions
+[build_url]: https://github.com/kroese/virtual-dsm/
 [dsm-docker-hub]: https://hub.docker.com/r/kroese/virtual-dsm
 
 [build_img]: https://github.com/kroese/virtual-dsm/actions/workflows/build.yml/badge.svg
