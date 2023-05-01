@@ -5,6 +5,7 @@ set -eu
 
 : ${HOST_CPU:=''}
 : ${HOST_BUILD:=''}
+: ${HOST_DEBUG:=''}
 : ${HOST_SERIAL:=''}
 : ${GUEST_SERIAL:=''}
 : ${HOST_VERSION:=''}
@@ -30,7 +31,7 @@ HOST_ARGS+=("-cpu_arch=${HOST_CPU}")
 [ -n "$HOST_VERSION" ] && HOST_ARGS+=("-version=${HOST_VERSION}")
 [ -n "$HOST_TIMESTAMP" ] && HOST_ARGS+=("-ts=${HOST_TIMESTAMP}")
 
-if [ "$DEBUG" = "Y" ]; then
+if [ "$HOST_DEBUG" = "Y" ]; then
   set -x
   ./run/host.bin "${HOST_ARGS[@]}" &
   { set +x; } 2>/dev/null
