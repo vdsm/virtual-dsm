@@ -31,11 +31,13 @@ HOST_ARGS+=("-cpu_arch=${HOST_CPU}")
 [ -n "$HOST_TIMESTAMP" ] && HOST_ARGS+=("-ts=${HOST_TIMESTAMP}")
 
 if [ "$DEBUG" = "Y" ]; then
-  echo -n "./run/host.bin "
-  echo "${HOST_ARGS[*]}" && echo
+  set -x
+  ./run/host.bin "${HOST_ARGS[@]}" &
+  { set +x; } 2>/dev/null
+  echo
+else
+  ./run/host.bin "${HOST_ARGS[@]}" > /dev/null 2>&1 &
 fi
-
-./run/host.bin "${HOST_ARGS[@]}" > /dev/null 2>&1 &
 
 # Configure serial ports
 
