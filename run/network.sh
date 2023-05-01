@@ -171,7 +171,7 @@ configureNAT () {
   # Build DNS options from container /etc/resolv.conf
 
   if [ "$DEBUG" = "Y" ]; then
-    echo && echo "/etc/resolv.conf:" && echo && cat /etc/resolv.conf && echo
+    echo "/etc/resolv.conf:" && echo && cat /etc/resolv.conf && echo
   fi
 
   mapfile -t nameservers < <(grep '^nameserver' /etc/resolv.conf | sed 's/\t/ /g' | sed 's/nameserver //' | sed 's/ //g')
