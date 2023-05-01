@@ -1,8 +1,8 @@
 <h1 align="center">Virtual DSM for Docker
 <br />
-<p align="center">
+<div align="center">
 <img src="https://github.com/kroese/virtual-dsm/raw/master/.github/screen.jpg" title="Screenshot" style="max-width:100%;" width="432" />
-</p>
+</div>
 
 <div align="center">
 
