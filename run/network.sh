@@ -66,6 +66,8 @@ configureDHCP() {
 
   ip address flush "${VM_NET_TAP}"
 
+  { set +x; } 2>/dev/null
+
   TAP_NR=$(</sys/class/net/"${VM_NET_TAP}"/ifindex)
   TAP_PATH="/dev/tap${TAP_NR}"
 
@@ -102,8 +104,6 @@ configureDHCP() {
     echo -n "ERROR: VHOST can not be found ($rc). Please add the following "
     echo "docker setting to your container: --device=/dev/vhost-net" && exit 22
   fi
-
-  [ "$DEBUG" = "Y" ] && { set +x; } 2>/dev/null
 
   # Store IP for Docker healthcheck
   echo "${DHCP_IP}" > "/var/dsm.ip"
@@ -142,6 +142,8 @@ configureNAT () {
     # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
     iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill || true
   fi
+
+  { set +x; } 2>/dev/null
 
   #Check port forwarding flag
   if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
@@ -192,10 +194,12 @@ configureNAT () {
   fi
 
   DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
+  
+  [ "$DEBUG" = "Y" ] && set -x
 
   $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS}
 
-  [ "$DEBUG" = "Y" ] && { set +x; } 2>/dev/null
+  { set +x; } 2>/dev/null
 }
 
 # ######################################
