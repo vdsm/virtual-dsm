@@ -254,5 +254,5 @@ else
 
 fi
 
-[ "$DEBUG" = "Y" ] && echo "Finished network setup.." && echo
+[ "$DEBUG" = "Y" ] && echo && echo "Finished network setup.." && echo
 NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
