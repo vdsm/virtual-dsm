@@ -67,7 +67,6 @@ configureDHCP() {
   ip address flush "${VM_NET_TAP}"
 
   { set +x; } 2>/dev/null
-  [ "$DEBUG" = "Y" ] && echo
 
   TAP_NR=$(</sys/class/net/"${VM_NET_TAP}"/ifindex)
   TAP_PATH="/dev/tap${TAP_NR}"
@@ -202,7 +201,6 @@ configureNAT () {
   $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS}
 
   { set +x; } 2>/dev/null
-  [ "$DEBUG" = "Y" ] && echo
 }
 
 # ######################################
@@ -256,4 +254,5 @@ else
 
 fi
 
+[ "$DEBUG" = "Y" ] && echo "Finished network setup.." && echo
 NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
