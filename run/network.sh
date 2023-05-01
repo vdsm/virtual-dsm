@@ -25,6 +25,7 @@ configureDHCP() {
   NETWORK=$(ip -o route | grep "${VM_NET_DEV}" | grep -v default | awk '{print $1}')
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
 
+  [ "$DEBUG" = "Y" ] && set -x
   { ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge 2> /dev/null ; rc=$?; } || :
 
   if (( rc != 0 )); then
@@ -41,8 +42,6 @@ configureDHCP() {
   ip route add "${NETWORK}" dev "${VM_NET_VLAN}" metric 0
   ip route add default via "${GATEWAY}"
 
-  echo "INFO: Acquiring an IP address via DHCP using MAC address ${VM_NET_MAC}..."
-
   { ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge 2> /dev/null ; rc=$?; } || :
 
   if (( rc != 0 )); then
@@ -55,6 +54,8 @@ configureDHCP() {
   ip address flush "${VM_NET_DEV}"
   ip address flush "${VM_NET_TAP}"
 
+  echo "INFO: Acquiring an IP address via DHCP using MAC address ${VM_NET_MAC}..."
+
   DHCP_IP=$(dhclient -v "${VM_NET_TAP}" 2>&1 | grep ^bound | cut -d' ' -f3)
 
   if [[ "${DHCP_IP}" == [0-9.]* ]]; then
@@ -64,6 +65,9 @@ configureDHCP() {
   fi
 
   ip address flush "${VM_NET_TAP}"
+
+  { set +x; } 2>/dev/null
+  [ "$DEBUG" = "Y" ] && echo
 
   TAP_NR=$(</sys/class/net/"${VM_NET_TAP}"/ifindex)
   TAP_PATH="/dev/tap${TAP_NR}"
@@ -111,6 +115,7 @@ configureDHCP() {
 configureNAT () {
 
   VM_NET_IP='20.20.20.21'
+  [ "$DEBUG" = "Y" ] && set -x
 
   #Create bridge with static IP for the VM guest
 
@@ -138,6 +143,9 @@ configureNAT () {
     # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
     iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill || true
   fi
+
+  { set +x; } 2>/dev/null
+  [ "$DEBUG" = "Y" ] && echo
 
   #Check port forwarding flag
   if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
@@ -188,9 +196,13 @@ configureNAT () {
   fi
 
   DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
-  [ "$DEBUG" = "Y" ] && echo "$DNSMASQ $DNSMASQ_OPTS" && echo
+
+  [ "$DEBUG" = "Y" ] && set -x
 
   $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS}
+
+  { set +x; } 2>/dev/null
+  [ "$DEBUG" = "Y" ] && echo
 }
 
 # ######################################

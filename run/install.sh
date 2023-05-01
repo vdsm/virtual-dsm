@@ -31,6 +31,8 @@ TMP="$STORAGE/tmp"
 RD="$TMP/rd.gz"
 rm -rf "$TMP" && mkdir -p "$TMP"
 
+[ "$DEBUG" = "Y" ] && set -x
+
 LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
 { curl -r 64493568-69886247 -sfk -o "$RD" "$LOC"; rc=$?; } || :
@@ -205,3 +207,6 @@ mv -f "$BOOT" "$STORAGE"/"$BASE".boot.img
 mv -f "$SYSTEM" "$STORAGE"/"$BASE".system.img
 
 rm -rf "$TMP"
+
+{ set +x; } 2>/dev/null
+[ "$DEBUG" = "Y" ] && echo
