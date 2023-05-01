@@ -56,7 +56,7 @@ configureDHCP() {
 
   echo "INFO: Acquiring an IP address via DHCP using MAC address ${VM_NET_MAC}..."
 
-  DHCP_IP=$(dhclient -v -H "${VM_NET_HOST}" "${VM_NET_TAP}" 2>&1 | grep ^bound | cut -d' ' -f3)
+  DHCP_IP=$(dhclient -v "${VM_NET_TAP}" 2>&1 | grep ^bound | cut -d' ' -f3)
 
   if [[ "${DHCP_IP}" == [0-9.]* ]]; then
     echo "INFO: Successfully acquired IP ${DHCP_IP} from the DHCP server..."
