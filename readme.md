@@ -6,18 +6,18 @@
 
 <div align="center">
 
-[![build_img]][build_url]
-[![gh_last_release_svg]][dsm-docker-hub]
-[![Docker Image Size]][dsm-docker-hub]
-[![Docker Pulls Count]][dsm-docker-hub]
+[![Build]][build_url]
+[![Version]][hub_url]
+[![Size]][hub_url]
+[![Pulls]][hub_url]
 
 [build_url]: https://github.com/kroese/virtual-dsm/
-[dsm-docker-hub]: https://hub.docker.com/r/kroese/virtual-dsm
+[hub_url]: https://hub.docker.com/r/kroese/virtual-dsm
 
-[build_img]: https://github.com/kroese/virtual-dsm/actions/workflows/build.yml/badge.svg
-[Docker Image Size]: https://img.shields.io/docker/image-size/kroese/virtual-dsm/latest
-[Docker Pulls Count]: https://img.shields.io/docker/pulls/kroese/virtual-dsm.svg?style=flat
-[gh_last_release_svg]: https://img.shields.io/docker/v/kroese/virtual-dsm?arch=amd64&sort=date
+[Build]: https://github.com/kroese/virtual-dsm/actions/workflows/build.yml/badge.svg
+[Size]: https://img.shields.io/docker/image-size/kroese/virtual-dsm/latest?color=066da5&label=size
+[Pulls]: https://img.shields.io/docker/pulls/kroese/virtual-dsm.svg?style=flat&label=pulls
+[Version]: https://img.shields.io/docker/v/kroese/virtual-dsm?arch=amd64&sort=date&color=066da5
 
 </div></h1>
 Virtual DSM in a docker container.
