@@ -25,6 +25,7 @@ configureDHCP() {
   NETWORK=$(ip -o route | grep "${VM_NET_DEV}" | grep -v default | awk '{print $1}')
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
 
+  [ "$DEBUG" = "Y" ] && set -x
   { ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge 2> /dev/null ; rc=$?; } || :
 
   if (( rc != 0 )); then
@@ -102,6 +103,8 @@ configureDHCP() {
     echo "docker setting to your container: --device=/dev/vhost-net" && exit 22
   fi
 
+  [ "$DEBUG" = "Y" ] && { set +x; } 2>/dev/null
+
   # Store IP for Docker healthcheck
   echo "${DHCP_IP}" > "/var/dsm.ip"
 
@@ -111,6 +114,7 @@ configureDHCP() {
 configureNAT () {
 
   VM_NET_IP='20.20.20.21'
+  [ "$DEBUG" = "Y" ] && set -x
 
   #Create bridge with static IP for the VM guest
 
@@ -188,9 +192,10 @@ configureNAT () {
   fi
 
   DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
-  [ "$DEBUG" = "Y" ] && echo "$DNSMASQ $DNSMASQ_OPTS" && echo
 
   $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS}
+
+  [ "$DEBUG" = "Y" ] && { set +x; } 2>/dev/null
 }
 
 # ######################################
