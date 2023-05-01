@@ -30,10 +30,10 @@ HOST_ARGS+=("-cpu_arch=${HOST_CPU}")
 [ -n "$HOST_VERSION" ] && HOST_ARGS+=("-version=${HOST_VERSION}")
 [ -n "$HOST_TIMESTAMP" ] && HOST_ARGS+=("-ts=${HOST_TIMESTAMP}")
 
- [ "$DEBUG" = "Y" ] && set -x
+[ "$DEBUG" = "Y" ] && set -x
 
 ./run/host.bin "${HOST_ARGS[@]}" > /dev/null 2>&1 &
- 
+
 [ "$DEBUG" = "Y" ] && { set +x; } 2>/dev/null
 
 # Configure serial ports
