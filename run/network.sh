@@ -67,6 +67,7 @@ configureDHCP() {
   ip address flush "${VM_NET_TAP}"
 
   { set +x; } 2>/dev/null
+  [ "$DEBUG" = "Y" ] && echo
 
   TAP_NR=$(</sys/class/net/"${VM_NET_TAP}"/ifindex)
   TAP_PATH="/dev/tap${TAP_NR}"
@@ -144,6 +145,7 @@ configureNAT () {
   fi
 
   { set +x; } 2>/dev/null
+  [ "$DEBUG" = "Y" ] && echo
 
   #Check port forwarding flag
   if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
@@ -169,7 +171,7 @@ configureNAT () {
   # Build DNS options from container /etc/resolv.conf
 
   if [ "$DEBUG" = "Y" ]; then
-    echo "/etc/resolv.conf:" && echo && cat /etc/resolv.conf && echo
+    echo && echo "/etc/resolv.conf:" && echo && cat /etc/resolv.conf && echo
   fi
 
   mapfile -t nameservers < <(grep '^nameserver' /etc/resolv.conf | sed 's/\t/ /g' | sed 's/nameserver //' | sed 's/ //g')
@@ -195,11 +197,12 @@ configureNAT () {
 
   DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
 
-  [ "$DEBUG" = "Y" ] && set -x
+  [ "$DEBUG" = "Y" ] && echo && set -x
 
   $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS}
 
   { set +x; } 2>/dev/null
+  [ "$DEBUG" = "Y" ] && echo
 }
 
 # ######################################
