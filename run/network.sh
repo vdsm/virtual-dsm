@@ -197,7 +197,7 @@ configureNAT () {
 
   DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
 
-  [ "$DEBUG" = "Y" ] && echo && set -x
+  [ "$DEBUG" = "Y" ] && set -x
 
   $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS}
 
