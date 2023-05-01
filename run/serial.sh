@@ -35,6 +35,7 @@ HOST_ARGS+=("-cpu_arch=${HOST_CPU}")
 ./run/host.bin "${HOST_ARGS[@]}" > /dev/null 2>&1 &
 
 { set +x; } 2>/dev/null
+[ "$DEBUG" = "Y" ] && echo
 
 # Configure serial ports
 
