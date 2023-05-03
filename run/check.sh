@@ -3,15 +3,15 @@ set -u
 
 # Docker Healthcheck
 
-PORT=5000
-FILE="/var/dsm.ip"
+: ${DHCP:='N'}
 
-if [ ! -f "${FILE}" ]; then
-  echo "IP not assigned"
-  exit 1
+if [ "$DHCP" = "Y" ]; then
+  PORT=5555
+  IP="127.0.0.1"
+else
+  PORT=5000
+  IP="20.20.20.21"
 fi
-
-IP=$(cat "${FILE}")
 
 if ! curl -m 3 -ILfSs "http://${IP}:${PORT}/" > /dev/null; then
   echo "Failed to reach ${IP}:${PORT}"
