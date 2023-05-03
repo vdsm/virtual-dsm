@@ -54,17 +54,17 @@ configureDHCP() {
   ip address flush "${VM_NET_DEV}"
   ip address flush "${VM_NET_TAP}"
 
-  echo "INFO: Acquiring an IP address via DHCP using MAC address ${VM_NET_MAC}..."
+  #echo "INFO: Acquiring an IP address via DHCP using MAC address ${VM_NET_MAC}..."
 
-  DHCP_IP=$(dhclient -v "${VM_NET_TAP}" 2>&1 | grep ^bound | cut -d' ' -f3)
+  #DHCP_IP=$(dhclient -v "${VM_NET_TAP}" 2>&1 | grep ^bound | cut -d' ' -f3)
 
-  if [[ "${DHCP_IP}" == [0-9.]* ]]; then
-    echo "INFO: Successfully acquired IP ${DHCP_IP} from the DHCP server..."
-  else
-    echo "ERROR: Cannot acquire an IP address from the DHCP server" && exit 17
-  fi
+  #if [[ "${DHCP_IP}" == [0-9.]* ]]; then
+  #  echo "INFO: Successfully acquired IP ${DHCP_IP} from the DHCP server..."
+  #else
+  #  echo "ERROR: Cannot acquire an IP address from the DHCP server" && exit 17
+  #fi
 
-  ip address flush "${VM_NET_TAP}"
+  #ip address flush "${VM_NET_TAP}"
 
   { set +x; } 2>/dev/null
 
