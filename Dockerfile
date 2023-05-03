@@ -27,7 +27,6 @@ RUN apt-get update && apt-get -y upgrade && \
 	net-tools \
 	btrfs-progs \
 	ca-certificates \
-	isc-dhcp-client \
 	netcat-openbsd \
 	qemu-system-x86 \
     && apt-get clean
@@ -66,6 +65,6 @@ LABEL org.opencontainers.image.version=${VERSION_ARG}
 LABEL org.opencontainers.image.source=https://github.com/kroese/virtual-dsm/
 LABEL org.opencontainers.image.url=https://hub.docker.com/r/kroese/virtual-dsm/
 
-HEALTHCHECK --interval=30s --retries=1 CMD /run/check.sh
+HEALTHCHECK --interval=30s --retries=3 CMD /run/check.sh
 
 ENTRYPOINT ["/run/run.sh"]
