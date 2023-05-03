@@ -75,6 +75,8 @@ EXTRA_OPTS="$EXTRA_OPTS -device virtio-rng-pci,rng=objrng0,id=rng0,bus=pcie.0,ad
 ARGS="${DEF_OPTS} ${CPU_OPTS} ${RAM_OPTS} ${MAC_OPTS} ${MON_OPTS} ${SERIAL_OPTS} ${NET_OPTS} ${DISK_OPTS} ${EXTRA_OPTS}"
 ARGS=$(echo "$ARGS" | sed 's/\t/ /g' | tr -s ' ')
 
+trap - ERR
+
 set -m
 (
   [ "$DEBUG" = "Y" ] && set -x
@@ -82,8 +84,6 @@ set -m
   { set +x; } 2>/dev/null
 )
 set +m
-
-trap - ERR
 
 if (( KERNEL > 4 )); then
   pidwait -F "${_QEMU_PID}" & wait $!
