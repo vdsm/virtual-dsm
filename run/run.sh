@@ -83,6 +83,8 @@ set -m
 )
 set +m
 
+trap - ERR
+
 if (( KERNEL > 4 )); then
   pidwait -F "${_QEMU_PID}" & wait $!
 else
