@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eu
+set -Eeuo pipefail
 
 # Configure QEMU for graceful shutdown
 
