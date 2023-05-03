@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-set -Eeu
-set -o errexit
-set -o pipefail
-set -o nounset
+set -Eeuo pipefail
 
 # Docker environment variables
 
