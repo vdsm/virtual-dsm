@@ -105,6 +105,8 @@ configureDHCP() {
     echo "docker setting to your container: --device=/dev/vhost-net" && exit 22
   fi
 
+  pkill -f dhclient || true
+
   NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30"
 }
 
