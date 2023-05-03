@@ -27,7 +27,6 @@ RUN apt-get update && apt-get -y upgrade && \
 	net-tools \
 	btrfs-progs \
 	ca-certificates \
-	isc-dhcp-client \
 	netcat-openbsd \
 	qemu-system-x86 \
     && apt-get clean
