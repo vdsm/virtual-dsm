@@ -1,16 +1,8 @@
 #!/usr/bin/env bash
 set -eu
+
+trap 'kill 0' EXIT
 trap exit SIGINT SIGTERM
-
-# Close any previous instances
-script_name="${BASH_SOURCE[0]}"
-
-for pid in $(pidof -x "$script_name"); do
-  if [ "$pid" != $$ ]; then
-    kill -15 "$pid" 2> /dev/null
-    wait "$pid" 2> /dev/null
-  fi
-done
 
 # Serve the page
 HTML="<HTML><HEAD><STYLE>body {  color: white; background-color: #00BFFF; }</STYLE>\
@@ -21,5 +13,5 @@ LENGTH="${#HTML}"
 RESPONSE="HTTP/1.1 200 OK\nContent-Length: ${LENGTH}\nConnection: close\n\n$HTML\n\n"
 
 while true; do
-  echo -en "$RESPONSE" | nc -N -lp "${1:-8080}";
+  echo -en "$RESPONSE" | nc -lp "${1:-5000}" & wait $!
 done

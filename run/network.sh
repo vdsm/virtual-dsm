@@ -20,7 +20,7 @@ set -eu
 
 configureDHCP() {
 
-  VM_NET_VLAN="vlan"
+  VM_NET_VLAN="${VM_NET_TAP}_vlan"
   GATEWAY=$(ip r | grep default | awk '{print $3}')
   NETWORK=$(ip -o route | grep "${VM_NET_DEV}" | grep -v default | awk '{print $1}')
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
@@ -52,18 +52,6 @@ configureDHCP() {
   ip link set "${VM_NET_TAP}" up
 
   ip address flush "${VM_NET_DEV}"
-  ip address flush "${VM_NET_TAP}"
-
-  echo "INFO: Acquiring an IP address via DHCP using MAC address ${VM_NET_MAC}..."
-
-  DHCP_IP=$(dhclient -v "${VM_NET_TAP}" 2>&1 | grep ^bound | cut -d' ' -f3)
-
-  if [[ "${DHCP_IP}" == [0-9.]* ]]; then
-    echo "INFO: Successfully acquired IP ${DHCP_IP} from the DHCP server..."
-  else
-    echo "ERROR: Cannot acquire an IP address from the DHCP server" && exit 17
-  fi
-
   ip address flush "${VM_NET_TAP}"
 
   { set +x; } 2>/dev/null
@@ -104,9 +92,6 @@ configureDHCP() {
     echo -n "ERROR: VHOST can not be found ($rc). Please add the following "
     echo "docker setting to your container: --device=/dev/vhost-net" && exit 22
   fi
-
-  # Store IP for Docker healthcheck
-  echo "${DHCP_IP}" > "/var/dsm.ip"
 
   NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30"
 }
@@ -161,9 +146,6 @@ configureNAT () {
   # Create lease file for faster resolve
   echo "0 $VM_NET_MAC $VM_NET_IP $VM_NET_HOST 01:${VM_NET_MAC}" > /var/lib/misc/dnsmasq.leases
   chmod 644 /var/lib/misc/dnsmasq.leases
-
-  # Store IP for Docker healthcheck
-  echo "${VM_NET_IP}" > "/var/dsm.ip"
 
   NET_OPTS="-netdev tap,ifname=${VM_NET_TAP},script=no,downscript=no,id=hostnet0"
 
@@ -247,12 +229,20 @@ else
   configureDHCP
 
   # Display the received IP on port 5000
-  HTML="The location of DSM is http://${DHCP_IP}:5000<script>\
-        setTimeout(function(){ window.location.replace('http://${DHCP_IP}:5000'); }, 2000);</script>"
+  HTML="DSM is using another IP address.<br><br>(Check the logfile to see which one was assigned.)"
 
+  pkill -f server.sh || true
+  /run/server.sh 80 "${HTML}" > /dev/null &
   /run/server.sh 5000 "${HTML}" > /dev/null &
 
 fi
 
-[ "$DEBUG" = "Y" ] && echo && echo "Finished network setup.." && echo
 NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
+
+if [ "$DHCP" = "Y" ]; then
+  # Add extra LAN interface for Docker Healthcheck script
+  NET_OPTS="${NET_OPTS} -netdev user,id=hostnet1,restrict=y,hostfwd=tcp::5555-:5000"
+  NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet1,id=net1"
+fi
+
+[ "$DEBUG" = "Y" ] && echo && echo "Finished network setup.." && echo
