@@ -20,6 +20,5 @@ LENGTH="${#HTML}"
 
 RESPONSE="HTTP/1.1 200 OK\nContent-Length: ${LENGTH}\nConnection: close\n\n$HTML\n\n"
 
-while true; do
-  echo -en "$RESPONSE" | nc -N -lp "${1:-8080}";
-done
+echo -en "$RESPONSE" | nc -k -N -lp 80 &
+echo -en "$RESPONSE" | nc -k -N -lp "${1:-5000}"
