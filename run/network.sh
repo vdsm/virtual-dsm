@@ -244,6 +244,8 @@ else
   HTML="The location of DSM is http://${DHCP_IP}:5000<script>\
         setTimeout(function(){ window.location.replace('http://${DHCP_IP}:5000'); }, 2000);</script>"
 
+  pkill -f server.sh
+  /run/server.sh 80 "${HTML}" > /dev/null &
   /run/server.sh 5000 "${HTML}" > /dev/null &
 
 fi
