@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eu
+set -Eeuo pipefail
 
 # Docker environment variables
 
