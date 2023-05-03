@@ -54,7 +54,7 @@ _graceful_shutdown() {
       echo && echo "Please update the VirtualDSM Agent to allow for gracefull shutdowns..."
 
       kill -15 "$(cat "${_QEMU_PID}")"
-      pkill -f qemu-system-x86_64
+      pkill -f qemu-system-x86_64 || true
 
     fi
   fi
