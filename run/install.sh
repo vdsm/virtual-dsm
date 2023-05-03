@@ -47,7 +47,7 @@ if [ "$SUM" != "14fb88cb7cabddb5af1d0269bf032845" ]; then
 fi
 
 set +e
-xz -dc <"$RD" >"$TMP/rd" 2>/dev/null
+xz -dc <"$RD" >"$TMP/rd" 2>/dev/null || true
 (cd "$TMP" && cpio -idm <"$TMP/rd" 2>/dev/null)
 set -e
 
