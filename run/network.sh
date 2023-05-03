@@ -240,6 +240,7 @@ fi
 NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
 
 if [ "$DHCP" = "Y" ]; then
+  # Add extra LAN interface for Docker Healthcheck script
   NET_OPTS="${NET_OPTS} -netdev user,id=hostnet1,restrict=y,hostfwd=tcp::5555-:5000"
   NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet1,id=net1"
 fi
