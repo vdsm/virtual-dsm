@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -eu
+
+trap 'kill 0' EXIT
 trap exit SIGINT SIGTERM
 
 # Serve the page
