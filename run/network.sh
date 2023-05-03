@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eu
+set -Eeuo pipefail
 
 # Docker environment variables
 
@@ -155,8 +155,8 @@ configureNAT () {
     echo "/etc/resolv.conf:" && echo && cat /etc/resolv.conf && echo
   fi
 
-  mapfile -t nameservers < <(grep '^nameserver' /etc/resolv.conf | sed 's/\t/ /g' | sed 's/nameserver //' | sed 's/ //g')
-  searchdomains=$(grep '^search' /etc/resolv.conf | sed 's/\t/ /g' | sed 's/search //' | sed 's/#.*//' | sed 's/\s*$//g' | sed 's/ /,/g')
+  mapfile -t nameservers < <( { grep '^nameserver' /etc/resolv.conf || true; } | sed 's/\t/ /g' | sed 's/nameserver //' | sed 's/ //g')
+  searchdomains=$( { grep '^search' /etc/resolv.conf || true; } | sed 's/\t/ /g' | sed 's/search //' | sed 's/#.*//' | sed 's/\s*$//g' | sed 's/ /,/g')
   domainname=$(echo "$searchdomains" | awk -F"," '{print $1}')
 
   for nameserver in "${nameservers[@]}"; do
