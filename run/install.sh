@@ -5,7 +5,7 @@ set -eu
 HTML="Please wait while Virtual DSM is installing...<script>\
         setTimeout(() => { document.location.reload(); }, 9999);</script>"
 
-pkill -f server.sh
+pkill -f server.sh || true
 /run/server.sh 80 "${HTML}" > /dev/null &
 /run/server.sh 5000 "${HTML}" > /dev/null &
 
