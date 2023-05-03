@@ -20,7 +20,7 @@ set -eu
 
 configureDHCP() {
 
-  VM_NET_VLAN="dsm_vlan"
+  VM_NET_VLAN="${VM_NET_TAP}_vlan"
   GATEWAY=$(ip r | grep default | awk '{print $3}')
   NETWORK=$(ip -o route | grep "${VM_NET_DEV}" | grep -v default | awk '{print $1}')
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
@@ -52,18 +52,6 @@ configureDHCP() {
   ip link set "${VM_NET_TAP}" up
 
   ip address flush "${VM_NET_DEV}"
-  ip address flush "${VM_NET_TAP}"
-
-  echo "INFO: Acquiring an IP address via DHCP using MAC address ${VM_NET_MAC}..."
-
-  DHCP_IP=$(dhclient -v "${VM_NET_TAP}" 2>&1 | grep ^bound | cut -d' ' -f3)
-
-  if [[ "${DHCP_IP}" == [0-9.]* ]]; then
-    echo "INFO: Successfully acquired IP ${DHCP_IP} from the DHCP server..."
-  else
-    echo "ERROR: Cannot acquire an IP address from the DHCP server" && exit 17
-  fi
-
   ip address flush "${VM_NET_TAP}"
 
   { set +x; } 2>/dev/null
@@ -104,8 +92,6 @@ configureDHCP() {
     echo -n "ERROR: VHOST can not be found ($rc). Please add the following "
     echo "docker setting to your container: --device=/dev/vhost-net" && exit 22
   fi
-
-  dhclient -r 2> /dev/null
 
   NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30"
 }
@@ -243,8 +229,7 @@ else
   configureDHCP
 
   # Display the received IP on port 5000
-  HTML="The location of DSM is http://${DHCP_IP}:5000<script>\
-        setTimeout(function(){ window.location.replace('http://${DHCP_IP}:5000'); }, 2000);</script>"
+  HTML="DSM is using a different IP address.<br><br>(Check the logfile to see which one was assigned.)"
 
   pkill -f server.sh || true
   /run/server.sh 80 "${HTML}" > /dev/null &
