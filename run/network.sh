@@ -105,9 +105,6 @@ configureDHCP() {
     echo "docker setting to your container: --device=/dev/vhost-net" && exit 22
   fi
 
-  # Store IP for Docker healthcheck
-  echo "${DHCP_IP}" > "/var/dsm.ip"
-
   NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30"
 }
 
@@ -161,9 +158,6 @@ configureNAT () {
   # Create lease file for faster resolve
   echo "0 $VM_NET_MAC $VM_NET_IP $VM_NET_HOST 01:${VM_NET_MAC}" > /var/lib/misc/dnsmasq.leases
   chmod 644 /var/lib/misc/dnsmasq.leases
-
-  # Store IP for Docker healthcheck
-  echo "${VM_NET_IP}" > "/var/dsm.ip"
 
   NET_OPTS="-netdev tap,ifname=${VM_NET_TAP},script=no,downscript=no,id=hostnet0"
 
