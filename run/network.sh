@@ -247,4 +247,4 @@ fi
 
 [ "$DEBUG" = "Y" ] && echo && echo "Finished network setup.." && echo
 
-exit 0
+return 0
