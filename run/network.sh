@@ -229,7 +229,7 @@ else
   configureDHCP
 
   # Display the received IP on port 5000
-  HTML="DSM is using a different IP address.<br><br>(Check the logfile to see which one was assigned.)"
+  HTML="DSM is using another IP address.<br><br>(Check the logfile to see which one was assigned.)"
 
   pkill -f server.sh || true
   /run/server.sh 80 "${HTML}" > /dev/null &
