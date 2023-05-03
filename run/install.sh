@@ -212,5 +212,3 @@ rm -rf "$TMP"
 
 { set +x; } 2>/dev/null
 [ "$DEBUG" = "Y" ] && echo
-
-return
