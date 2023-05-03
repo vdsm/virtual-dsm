@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eu
+set -Eeuo pipefail
 
 # Display wait message on port 5000
 HTML="Please wait while Virtual DSM is installing...<script>\
