@@ -246,5 +246,3 @@ if [ "$DHCP" = "Y" ]; then
 fi
 
 [ "$DEBUG" = "Y" ] && echo && echo "Finished network setup.." && echo
-
-return
