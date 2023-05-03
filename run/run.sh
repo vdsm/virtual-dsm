@@ -15,6 +15,9 @@ echo "Starting Virtual DSM for Docker v${VERSION}..."
 STORAGE="/storage"
 KERNEL=$(uname -r | cut -b 1)
 
+trap 'echo >&2 "Error - exited with status $? at line $LINENO:"; 
+         pr -tn $0 | tail -n+$((LINENO - 3)) | head -n7 >&2' ERR
+
 [ ! -d "$STORAGE" ] && echo "Storage folder (${STORAGE}) not found!" && exit 69
 [ ! -f "/run/run.sh" ] && echo "Script must run inside Docker container!" && exit 60
 
@@ -71,6 +74,8 @@ EXTRA_OPTS="$EXTRA_OPTS -device virtio-rng-pci,rng=objrng0,id=rng0,bus=pcie.0,ad
 
 ARGS="${DEF_OPTS} ${CPU_OPTS} ${RAM_OPTS} ${MAC_OPTS} ${MON_OPTS} ${SERIAL_OPTS} ${NET_OPTS} ${DISK_OPTS} ${EXTRA_OPTS}"
 ARGS=$(echo "$ARGS" | sed 's/\t/ /g' | tr -s ' ')
+
+trap - ERR
 
 set -m
 (
