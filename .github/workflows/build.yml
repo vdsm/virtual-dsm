@@ -102,8 +102,8 @@ jobs:
         fetch-depth: 0
     -
       name: Push to Gitlab mirror
-      uses: wangchucheng/git-repo-sync@v0.1.0
+      uses: kroese/gitlab-sync@v2
       with:
-        target-url: ${{ secrets.GITLAB_URL }}
-        target-token: ${{ secrets.GITLAB_TOKEN }}
-        target-username: ${{ secrets.GITLAB_USERNAME }}
+        url: ${{ secrets.GITLAB_URL }}
+        token: ${{ secrets.GITLAB_TOKEN }}
+        username: ${{ secrets.GITLAB_USERNAME }}
