@@ -81,14 +81,9 @@ jobs:
         body: "Release v${{ vars.MAJOR }}.${{ vars.MINOR }}"
     -
       name: Increment minor version
-      run: |
-        echo "NEW_MINOR=$((${{ vars.MINOR }}+1))" >> $GITHUB_ENV
-    -
-      name: Update minor version variable
-      uses: kroese/set-variable@v4
+      uses: kroese/increment@v1
       with:
         name: 'MINOR'
-        value: ${{ env.NEW_MINOR }}
         token: ${{ secrets.REPO_ACCESS_TOKEN }}
 
   mirror:
