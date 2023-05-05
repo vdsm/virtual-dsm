@@ -5,7 +5,7 @@ trap 'kill 0' EXIT
 trap exit SIGINT SIGTERM
 
 # Serve the page
-HTML="<HTML><HEAD><STYLE>body {  color: white; background-color: #00BFFF; }</STYLE>\
+HTML="<HTML><HEAD><STYLE>body {  color: white; background-color: #125bdb; }</STYLE>\
               </HEAD><BODY><BR><BR><H1><CENTER>$2</CENTER></H1></BODY></HTML>"
 
 LENGTH="${#HTML}"
