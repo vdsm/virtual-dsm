@@ -66,7 +66,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     ```
     environment:
-      DISK_SIZE: "16G"
+      DISK_SIZE: "256G"
     ```
 
   * ### How do I change the location of the virtual disk?
@@ -87,7 +87,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
       ALLOCATE: "N"
     ```
 
-    Keep in mind that this doesn't affect any existing disks, and that it may impact performance as the image file will need to grow each time new data is added.
+    Keep in mind that this doesn't affect any of your existing disks unless they are resized.
 
   * ### How do I increase the amount of CPU/RAM?
 
