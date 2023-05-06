@@ -5,12 +5,13 @@
 <div align="center">
 
 [![Build]][build_url]
-[![Version]][build_url]
-[![Size]][hub_url]
+[![Version]][tag_url]
+[![Size]][tag_url]
 [![Pulls]][hub_url]
 
 [build_url]: https://github.com/kroese/virtual-dsm/
 [hub_url]: https://hub.docker.com/r/kroese/virtual-dsm
+[tag_url]: https://hub.docker.com/r/kroese/virtual-dsm/tags
 
 [Build]: https://github.com/kroese/virtual-dsm/actions/workflows/build.yml/badge.svg
 [Size]: https://img.shields.io/docker/image-size/kroese/virtual-dsm/latest?color=066da5&label=size
@@ -65,28 +66,30 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     ```
     environment:
-      DISK_SIZE: "16G"
+      DISK_SIZE: "256G"
     ```
 
   * ### How do I change the location of the virtual disk?
 
-    To change the virtual disk's location from the default docker volume, include the following bind mount in your compose file and replace the path `/home/user/data` with the desired storage folder:
+    To change the virtual disk's location from the default docker volume, include the following bind mount in your compose file:
 
     ```
     volumes:
       - /home/user/data:/storage
     ```
 
+    Replace the example path `/home/user/data` with the desired storage folder.
+
   * ### How do I change the space reserved by the virtual disk? 
 
-    By default, the entire disk space is reserved in advance. To reserve only the space actually used by the disk, add the following environment variable:
+    By default, the entire disk space is reserved in advance. To create a growable disk, that only reserves the space that is actually used, add the following environment variable:
 
     ```
     environment:
       ALLOCATE: "N"
     ```
 
-    Keep in mind that this doesn't affect any existing disks, and that it may impact performance as the image file will need to grow each time new data is added.
+    Keep in mind that this will not affect any of your existing disks, it only applies to newly created disks.
 
   * ### How do I increase the amount of CPU/RAM?
 
@@ -145,9 +148,9 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     Please note that this IP address won't be accessible from the Docker host due to the design of macvlan, which doesn't permit communication between the two. If this is a concern, there are some workarounds available, but they go beyond the scope of this FAQ.
 
-  * ### How can the container acquire an IP address via DHCP?
+  * ### How can the container acquire an IP address from my router?
 
-    After configuring the container for macvlan (see above), add the following lines to your compose file:
+    After configuring the container for macvlan (see above), it will now be able to join your home network by requesting an IP from your router, just like your other devices. To enable this, add the following lines to your compose file:
 
     ```
     environment:
