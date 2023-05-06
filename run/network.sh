@@ -144,10 +144,7 @@ configureNAT () {
   NET_OPTS="-netdev tap,ifname=${VM_NET_TAP},script=no,downscript=no,id=hostnet0"
 
   { exec 40>>/dev/vhost-net; rc=$?; } || :
-
-  if (( rc == 0 )); then
-    NET_OPTS="$NET_OPTS,vhost=on,vhostfd=40"
-  fi
+  (( rc == 0 )) && NET_OPTS="$NET_OPTS,vhost=on,vhostfd=40"
 
   # Build DNS options from container /etc/resolv.conf
 
