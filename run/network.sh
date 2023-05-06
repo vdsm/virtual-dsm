@@ -25,7 +25,7 @@ configureDHCP() {
   NETWORK=$(ip -o route | grep "${VM_NET_DEV}" | grep -v default | awk '{print $1}')
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
 
-  [ "$DEBUG" = "Y" ] && set -x
+  [[ "${DEBUG}" == [Yy]* ] && set -x
   { ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge 2> /dev/null ; rc=$?; } || :
 
   if (( rc != 0 )); then
@@ -99,7 +99,7 @@ configureDHCP() {
 configureNAT () {
 
   VM_NET_IP='20.20.20.21'
-  [ "$DEBUG" = "Y" ] && set -x
+  [[ "${DEBUG}" == [Yy]* ]] && set -x
 
   #Create bridge with static IP for the VM guest
 
@@ -129,7 +129,7 @@ configureNAT () {
   fi
 
   { set +x; } 2>/dev/null
-  [ "$DEBUG" = "Y" ] && echo
+  [[ "${DEBUG}" == [Yy]* ]] && echo
 
   #Check port forwarding flag
   if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
@@ -151,7 +151,7 @@ configureNAT () {
 
   # Build DNS options from container /etc/resolv.conf
 
-  if [ "$DEBUG" = "Y" ]; then
+  if [[ "${DEBUG}" == [Yy]* ]]; then
     echo "/etc/resolv.conf:" && echo && cat /etc/resolv.conf && echo
   fi
 
@@ -178,7 +178,7 @@ configureNAT () {
 
   DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
 
-  [ "$DEBUG" = "Y" ] && set -x
+  [[ "${DEBUG}" == [Yy]* ]] && set -x
 
   $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS}
 
@@ -204,7 +204,7 @@ update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 VM_NET_MAC="${VM_NET_MAC//-/:}"
 GATEWAY=$(ip r | grep default | awk '{print $3}')
 
-if [ "$DEBUG" = "Y" ]; then
+if [[ "${DEBUG}" == [Yy]* ]]; then
 
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
   echo "INFO: Container IP is ${IP} with gateway ${GATEWAY}" && echo
@@ -213,12 +213,7 @@ if [ "$DEBUG" = "Y" ]; then
 
 fi
 
-if [ "$DHCP" != "Y" ]; then
-
-  # Configuration for static IP
-  configureNAT
-
-else
+if [[ "${DHCP}" == [Yy]* ]]; then
 
   if [[ "$GATEWAY" == "172."* ]]; then
     echo -n "ERROR: You cannot enable DHCP while the container is "
@@ -237,16 +232,21 @@ else
   /run/server.sh 80 "${HTML}" > /dev/null &
   /run/server.sh 5000 "${HTML}" > /dev/null &
 
+else
+
+  # Configuration for static IP
+  configureNAT
+
 fi
 
 NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
 
-if [ "$DHCP" = "Y" ]; then
+if  [[ "${DHCP}" == [Yy]* ]]; then
   # Add extra LAN interface for Docker Healthcheck script
   NET_OPTS="${NET_OPTS} -netdev user,id=hostnet1,restrict=y,hostfwd=tcp::5555-:5000"
   NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet1,id=net1"
 fi
 
-[ "$DEBUG" = "Y" ] && echo && echo "Finished network setup.." && echo
+[[ "${DEBUG}" == [Yy]* ]] && echo && echo "Finished network setup.." && echo
 
 return 0
