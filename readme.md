@@ -87,7 +87,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
       ALLOCATE: "N"
     ```
 
-    Keep in mind that this doesn't affect any of your existing disks unless they are resized.
+    Keep in mind that this will affect new disks only, not any of your existing disks.
 
   * ### How do I increase the amount of CPU/RAM?
 
