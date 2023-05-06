@@ -5,12 +5,13 @@
 <div align="center">
 
 [![Build]][build_url]
-[![Version]][build_url]
-[![Size]][hub_url]
+[![Version]][tag_url]
+[![Size]][tag_url]
 [![Pulls]][hub_url]
 
 [build_url]: https://github.com/kroese/virtual-dsm/
 [hub_url]: https://hub.docker.com/r/kroese/virtual-dsm
+[tag_url]: https://hub.docker.com/r/kroese/virtual-dsm/tags
 
 [Build]: https://github.com/kroese/virtual-dsm/actions/workflows/build.yml/badge.svg
 [Size]: https://img.shields.io/docker/image-size/kroese/virtual-dsm/latest?color=066da5&label=size
