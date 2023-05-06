@@ -59,7 +59,7 @@ fi
 
 if [ -n "${KVM_ERR}" ]; then
   echo "ERROR: KVM acceleration not detected ${KVM_ERR}, please enable it."
-  [[ "${DEBUG}" == [Yy]* ]] && exit 88
+  [[ "${DEBUG}" == [Yy1]* ]] && exit 88
 else
   KVM_OPTS=",accel=kvm -enable-kvm -cpu host"
 fi
@@ -79,7 +79,7 @@ trap - ERR
 
 set -m
 (
-  [[ "${DEBUG}" == [Yy]* ]] && set -x
+  [[ "${DEBUG}" == [Yy1]* ]] && set -x
   qemu-system-x86_64 ${ARGS:+ $ARGS} & echo $! > "${_QEMU_PID}"
   { set +x; } 2>/dev/null
 )
