@@ -80,12 +80,6 @@ configureDHCP() {
     echo "container: --device-cgroup-rule='c ${MAJOR}:* rwm' --device=/dev/vhost-net" && exit 21
   fi
 
-  # Create /dev/vhost-net
-  if [ ! -c /dev/vhost-net ]; then
-    mknod /dev/vhost-net c 10 238
-    chmod 660 /dev/vhost-net
-  fi
-
   { exec 40>>/dev/vhost-net; rc=$?; } || :
 
   if (( rc != 0 )); then
@@ -149,6 +143,12 @@ configureNAT () {
 
   NET_OPTS="-netdev tap,ifname=${VM_NET_TAP},script=no,downscript=no,id=hostnet0"
 
+  { exec 40>>/dev/vhost-net; rc=$?; } || :
+
+  if (( rc == 0 )); then
+    NET_OPTS="$NET_OPTS,vhost=on,vhostfd=40"
+  fi
+
   # Build DNS options from container /etc/resolv.conf
 
   if [[ "${DEBUG}" == [Yy1]* ]]; then
@@ -197,6 +197,12 @@ if [ ! -c /dev/net/tun ]; then
 fi
 
 [ ! -c /dev/net/tun ] && echo "ERROR: TUN network interface not available..." && exit 85
+
+# Create the necessary file structure for /dev/vhost-net
+if [ ! -c /dev/vhost-net ]; then
+  mknod /dev/vhost-net c 10 238
+  chmod 660 /dev/vhost-net
+fi
 
 update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
 update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
