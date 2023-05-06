@@ -33,7 +33,7 @@ TMP="$STORAGE/tmp"
 RD="$TMP/rd.gz"
 rm -rf "$TMP" && mkdir -p "$TMP"
 
-[ "$DEBUG" = "Y" ] && set -x
+[[ "${DEBUG}" == [Yy1]* ]] && set -x
 
 LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
@@ -113,7 +113,7 @@ BOOT=$(find "$TMP" -name "*.bin.zip")
 BOOT=$(echo "$BOOT" | head -c -5)
 unzip -q -o "$BOOT".zip -d "$TMP"
 
-[ "$ALLOCATE" != "Z" ] && echo "Install: Allocating diskspace..."
+[[ "${ALLOCATE}" == [Zz]* ]] && echo "Install: Allocating diskspace..."
 
 SYSTEM="$TMP/sys.img"
 SYSTEM_SIZE=4954537983
@@ -130,7 +130,7 @@ if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
   echo "ERROR: Could not allocate a file for the system disk." && exit 88
 fi
 
- if [ "$ALLOCATE" = "Z" ]; then
+if [[ "${ALLOCATE}" == [Zz]* ]]; then
   echo "Install: Preallocating 4 GB of diskspace..."
   dd if=/dev/urandom of="${SYSTEM}" count="${SYSTEM_SIZE}" bs=1M iflag=count_bytes status=none
 fi
@@ -211,6 +211,6 @@ mv -f "$SYSTEM" "$STORAGE"/"$BASE".system.img
 rm -rf "$TMP"
 
 { set +x; } 2>/dev/null
-[ "$DEBUG" = "Y" ] && echo
+[[ "${DEBUG}" == [Yy1]* ]] && echo
 
 return 0

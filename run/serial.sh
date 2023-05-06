@@ -31,7 +31,7 @@ HOST_ARGS+=("-cpu_arch=${HOST_CPU}")
 [ -n "$HOST_VERSION" ] && HOST_ARGS+=("-version=${HOST_VERSION}")
 [ -n "$HOST_TIMESTAMP" ] && HOST_ARGS+=("-ts=${HOST_TIMESTAMP}")
 
-if [ "$HOST_DEBUG" = "Y" ]; then
+if [[ "${HOST_DEBUG}" == [Yy1]* ]]; then
   set -x
   ./run/host.bin "${HOST_ARGS[@]}" &
   { set +x; } 2>/dev/null

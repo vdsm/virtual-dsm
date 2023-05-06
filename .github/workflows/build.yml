@@ -72,7 +72,7 @@ jobs:
     - uses: actions/checkout@v3
     -
       name: Create a release
-      uses: kroese/github-release@v6
+      uses: action-pack/github-release@v6
       env:
         GITHUB_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
       with:
@@ -81,7 +81,7 @@ jobs:
         body: "Release v${{ vars.MAJOR }}.${{ vars.MINOR }}"
     -
       name: Increment minor version
-      uses: kroese/increment@v1
+      uses: action-pack/increment@v1
       with:
         name: 'MINOR'
         token: ${{ secrets.REPO_ACCESS_TOKEN }}
@@ -97,7 +97,7 @@ jobs:
         fetch-depth: 0
     -
       name: Push to Gitlab mirror
-      uses: kroese/gitlab-sync@v2
+      uses: action-pack/gitlab-sync@v2
       with:
         url: ${{ secrets.GITLAB_URL }}
         token: ${{ secrets.GITLAB_TOKEN }}

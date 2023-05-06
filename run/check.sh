@@ -5,7 +5,7 @@ set -u
 
 : ${DHCP:='N'}
 
-if [ "$DHCP" = "Y" ]; then
+if [[ "${DHCP}" == [Yy1]* ]]; then
   PORT=5555
   IP="127.0.0.1"
 else

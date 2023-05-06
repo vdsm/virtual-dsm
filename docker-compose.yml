@@ -9,6 +9,7 @@ services:
             RAM_SIZE: "512M"
         devices:
             - /dev/kvm
+            - /dev/vhost-net
         cap_add:
             - NET_ADMIN        
         ports:
