@@ -229,9 +229,9 @@ else
   configureDHCP
 
   # Display the received IP on port 5000
-  HTML="DSM is using another IP address.<br><br>(Check the Docker logfile to see which one was<br> assigned, or download the\
+  HTML="DSM is using another IP address.<br><br>Check the Docker logfile to see which one was<br> assigned, or download the\
   <a href='https://global.synologydownload.com/download/Utility/Assistant/7.0.4-50051/Windows/synology-assistant-7.0.4-50051.exe'>\
-  Synology Assistant</a> utility.)"
+  Synology Assistant</a> utility."
 
   pkill -f server.sh || true
   /run/server.sh 80 "${HTML}" > /dev/null &
