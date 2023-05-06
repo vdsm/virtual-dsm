@@ -71,12 +71,14 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I change the location of the virtual disk?
 
-    To change the virtual disk's location from the default docker volume, include the following bind mount in your compose file and replace the path `/home/user/data` with the desired storage folder:
+    To change the virtual disk's location from the default docker volume, include the following bind mount in your compose file:
 
     ```
     volumes:
       - /home/user/data:/storage
     ```
+
+    Replace the example path `/home/user/data` with the desired storage folder.
 
   * ### How do I change the space reserved by the virtual disk? 
 
