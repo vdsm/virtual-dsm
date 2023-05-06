@@ -40,6 +40,7 @@ services:
             DISK_SIZE: "16G"
         devices:
             - /dev/kvm
+            - /dev/vhost-net
         cap_add:
             - NET_ADMIN                       
         ports:
