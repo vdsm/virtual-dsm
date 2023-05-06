@@ -11,14 +11,15 @@ set -Eeuo pipefail
 : ${RAM_SIZE:='512M'}   # Maximum RAM amount
 
 echo "Starting Virtual DSM for Docker v${VERSION}..."
+trap 'echo >&2 "Error status $? for: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
+
+[ ! -f "/run/run.sh" ] && echo "ERROR: Script must run inside Docker container!" && exit 11
+[ "$(id -u)" -ne "$ROOTUID" ] && echo "ERROR: Script must be executed with root privileges." && exit 12
 
 STORAGE="/storage"
 KERNEL=$(uname -r | cut -b 1)
 
-trap 'echo >&2 "Error status $? for: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
-
-[ ! -d "$STORAGE" ] && echo "Storage folder (${STORAGE}) not found!" && exit 69
-[ ! -f "/run/run.sh" ] && echo "Script must run inside Docker container!" && exit 60
+[ ! -d "$STORAGE" ] && echo "ERROR: Storage folder (${STORAGE}) not found!" && exit 13
 
 if [ -f "$STORAGE"/dsm.ver ]; then
   BASE=$(cat "${STORAGE}/dsm.ver")
@@ -58,7 +59,7 @@ fi
 
 if [ -n "${KVM_ERR}" ]; then
   echo "ERROR: KVM acceleration not detected ${KVM_ERR}, please enable it."
-  [ "$DEBUG" != "Y" ] && exit 88
+  [[ "${DEBUG}" == [Yy]* ]] && exit 88
 else
   KVM_OPTS=",accel=kvm -enable-kvm -cpu host"
 fi
@@ -78,7 +79,7 @@ trap - ERR
 
 set -m
 (
-  [ "$DEBUG" = "Y" ] && set -x
+  [[ "${DEBUG}" == [Yy]* ]] && set -x
   qemu-system-x86_64 ${ARGS:+ $ARGS} & echo $! > "${_QEMU_PID}"
   { set +x; } 2>/dev/null
 )
