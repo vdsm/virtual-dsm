@@ -36,7 +36,7 @@ if [ -f "${DATA}" ]; then
 
     echo "INFO: Resizing data disk from $OLD_SIZE to $DATA_SIZE bytes.."
 
-    if [ "$ALLOCATE" = "N" ]; then
+    if [[ "${ALLOCATE}" == [Nn]* ]]; then
 
       # Resize file by changing its length
       truncate -s "${DATA_SIZE}" "${DATA}"; 
@@ -58,7 +58,7 @@ if [ -f "${DATA}" ]; then
         echo "ERROR: Could not allocate a file for the virtual disk." && exit 85
       fi
 
-      if [ "$ALLOCATE" = "Z" ]; then
+      if [[ "${ALLOCATE}" == [Zz]* ]]; then
 
         GB=$(( (REQ + 1073741823)/1073741824 ))
 
@@ -81,7 +81,7 @@ fi
 
 if [ ! -f "${DATA}" ]; then
 
-  if [ "$ALLOCATE" = "N" ]; then
+  if [[ "${ALLOCATE}" == [Nn]* ]]; then
 
     # Create an empty file
     truncate -s "${DATA_SIZE}" "${DATA}"
@@ -102,7 +102,7 @@ if [ ! -f "${DATA}" ]; then
       echo "ERROR: Could not allocate a file for the virtual disk." && exit 87
     fi
 
-    if [ "$ALLOCATE" = "Z" ]; then
+    if [[ "${ALLOCATE}" == [Zz]* ]]; then
 
       echo "INFO: Preallocating ${DISK_SIZE} of diskspace, please wait..."
       dd if=/dev/urandom of="${DATA}" count="${DATA_SIZE}" bs=1M iflag=count_bytes status=none
