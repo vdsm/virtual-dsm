@@ -33,7 +33,7 @@ TMP="$STORAGE/tmp"
 RD="$TMP/rd.gz"
 rm -rf "$TMP" && mkdir -p "$TMP"
 
-[[ "${DEBUG}" == [Yy]* ]] && set -x
+[[ "${DEBUG}" == [Yy1]* ]] && set -x
 
 LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
@@ -211,6 +211,6 @@ mv -f "$SYSTEM" "$STORAGE"/"$BASE".system.img
 rm -rf "$TMP"
 
 { set +x; } 2>/dev/null
-[[ "${DEBUG}" == [Yy]* ]] && echo
+[[ "${DEBUG}" == [Yy1]* ]] && echo
 
 return 0
