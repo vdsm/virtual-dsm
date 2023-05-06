@@ -180,4 +180,4 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
 ## Disclaimer
 
-Only run this container on Synology hardware, any other use is not permitted according to their EULA. Product names, logos, brands and other trademarks referred to within this project are the property of their respective trademark holders.
+Only run this container on Synology hardware, any other use is not permitted according to their EULA. Product names, logos, brands and other trademarks referred to within this project are the property of their respective trademark holders. This project is not affiliated, sponsored or endorsed by Synology, Inc. in any way.
