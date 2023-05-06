@@ -14,7 +14,7 @@ echo "Starting Virtual DSM for Docker v${VERSION}..."
 trap 'echo >&2 "Error status $? for: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
 
 [ ! -f "/run/run.sh" ] && echo "ERROR: Script must run inside Docker container!" && exit 11
-[ "$(id -u)" -ne "$ROOTUID" ] && echo "ERROR: Script must be executed with root privileges." && exit 12
+[ "$(id -u)" -ne "0" ] && echo "ERROR: Script must be executed with root privileges." && exit 12
 
 STORAGE="/storage"
 KERNEL=$(uname -r | cut -b 1)
