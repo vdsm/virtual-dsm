@@ -80,7 +80,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I change the space reserved by the virtual disk? 
 
-    By default, the entire disk space is reserved in advance. To reserve only the space actually used by the disk, add the following environment variable:
+    By default, the entire disk space is reserved in advance. To reserve only space as soon as it is really used, add the following environment variable:
 
     ```
     environment:
