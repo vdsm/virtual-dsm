@@ -81,7 +81,7 @@ jobs:
         body: "Release v${{ vars.MAJOR }}.${{ vars.MINOR }}"
     -
       name: Increment minor version
-      uses: action-pack/increment@v1
+      uses: action-pack/increment@v2
       with:
         name: 'MINOR'
         token: ${{ secrets.REPO_ACCESS_TOKEN }}
