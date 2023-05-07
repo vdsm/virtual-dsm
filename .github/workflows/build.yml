@@ -97,7 +97,7 @@ jobs:
         fetch-depth: 0
     -
       name: Push to Gitlab mirror
-      uses: action-pack/gitlab-sync@v2
+      uses: action-pack/gitlab-sync@v3
       with:
         url: ${{ secrets.GITLAB_URL }}
         token: ${{ secrets.GITLAB_TOKEN }}
