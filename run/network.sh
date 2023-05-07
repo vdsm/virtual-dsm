@@ -26,11 +26,10 @@ configureDHCP() {
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
 
   [[ "${DEBUG}" == [Yy1]* ]] && set -x
-  { ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge 2> /dev/null ; rc=$?; } || :
+  { ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
 
-    { ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge ; } || :
     echo -n "INFO: Could not create macvlan, skipping..."
 
   else
@@ -46,10 +45,10 @@ configureDHCP() {
 
   fi
 
-  { ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge 2> /dev/null ; rc=$?; } || :
+  { ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
-    echo -n "ERROR: Capability NET_ADMIN has not been set ($rc/2). Please add the "
+    echo -n "ERROR: Capability NET_ADMIN has not been set most likely. Please add the "
     echo "following docker setting to your container: --cap-add NET_ADMIN" && exit 16
   fi
 
@@ -101,10 +100,10 @@ configureNAT () {
 
   #Create bridge with static IP for the VM guest
 
-  { ip link add dev dockerbridge type bridge 2> /dev/null ; rc=$?; } || :
+  { ip link add dev dockerbridge type bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
-    echo -n "ERROR: Capability NET_ADMIN has not been set ($rc/3). Please add the "
+    echo -n "ERROR: Capability NET_ADMIN has not been set most likely. Please add the "
     echo "following docker setting to your container: --cap-add NET_ADMIN" && exit 23
   fi
 
@@ -131,7 +130,7 @@ configureNAT () {
 
   #Check port forwarding flag
   if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
-    { sysctl -w net.ipv4.ip_forward=1 2> /dev/null ; rc=$?; } || :
+    { sysctl -w net.ipv4.ip_forward=1 ; rc=$?; } || :
     if (( rc != 0 )); then
       echo -n "ERROR: IP forwarding is disabled ($rc). Please add the following "
       echo "docker setting to your container: --sysctl net.ipv4.ip_forward=1" && exit 24
