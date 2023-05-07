@@ -3,12 +3,14 @@ set -Eeuo pipefail
 
 # Docker environment variables
 
+: ${DHCP:='N'}
+: ${MAC:='02:11:32:AA:BB:CC'}
+
 : ${VM_NET_TAP:='dsm'}
 : ${VM_NET_DEV:='eth0'}
+: ${VM_NET_MAC:='$MAC'}
 : ${VM_NET_HOST:='VirtualDSM'}
-: ${VM_NET_MAC:='02:11:32:AA:BB:CC'}
 
-: ${DHCP:='N'}
 : ${DNS_SERVERS:=''}
 : ${DNSMASQ_OPTS:=''}
 : ${DNSMASQ:='/usr/sbin/dnsmasq'}
@@ -28,11 +30,7 @@ configureDHCP() {
   [[ "${DEBUG}" == [Yy1]* ]] && set -x
   { ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge ; rc=$?; } || :
 
-  if (( rc != 0 )); then
-
-    echo -n "INFO: Could not create macvlan, skipping..."
-
-  else
+  if (( rc == 0 )); then
 
     ip address add "${IP}" dev "${VM_NET_VLAN}"
     ip link set dev "${VM_NET_VLAN}" up
@@ -42,6 +40,10 @@ configureDHCP() {
 
     ip route add "${NETWORK}" dev "${VM_NET_VLAN}" metric 0
     ip route add default via "${GATEWAY}"
+
+  else
+
+    echo "INFO: Could not create ${VM_NET_VLAN} on ${VM_NET_DEV}, skipping..."
 
   fi
 
@@ -214,8 +216,6 @@ if [[ "${DEBUG}" == [Yy1]* ]]; then
 
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
   echo "INFO: Container IP is ${IP} with gateway ${GATEWAY}" && echo
-  ifconfig
-  ip route && echo
 
 fi
 
