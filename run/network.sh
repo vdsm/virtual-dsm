@@ -29,18 +29,22 @@ configureDHCP() {
   { ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge 2> /dev/null ; rc=$?; } || :
 
   if (( rc != 0 )); then
-    echo -n "ERROR: Capability NET_ADMIN has not been set ($rc/1). Please add the "
-    echo "following docker setting to your container: --cap-add NET_ADMIN" && exit 15
+
+    { ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge ; } || :
+    echo -n "INFO: Could not create macvlan, skipping..."
+
+  else
+
+    ip address add "${IP}" dev "${VM_NET_VLAN}"
+    ip link set dev "${VM_NET_VLAN}" up
+
+    ip route flush dev "${VM_NET_DEV}"
+    ip route flush dev "${VM_NET_VLAN}"
+
+    ip route add "${NETWORK}" dev "${VM_NET_VLAN}" metric 0
+    ip route add default via "${GATEWAY}"
+
   fi
-
-  ip address add "${IP}" dev "${VM_NET_VLAN}"
-  ip link set dev "${VM_NET_VLAN}" up
-
-  ip route flush dev "${VM_NET_DEV}"
-  ip route flush dev "${VM_NET_VLAN}"
-
-  ip route add "${NETWORK}" dev "${VM_NET_VLAN}" metric 0
-  ip route add default via "${GATEWAY}"
 
   { ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge 2> /dev/null ; rc=$?; } || :
 
