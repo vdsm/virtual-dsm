@@ -150,7 +150,9 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How can the container acquire an IP address from my router?
 
-    After configuring the container for macvlan (see above), it will now be able to join your home network by requesting an IP from your router, just like your other devices. To enable this, add the following lines to your compose file:
+    After configuring the container for macvlan (see above), it will now be able to join your home network by requesting an IP from your router, just like your other devices.
+
+    To enable this, add the following lines to your compose file:
 
     ```
     environment:
