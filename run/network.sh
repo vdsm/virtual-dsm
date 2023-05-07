@@ -30,7 +30,7 @@ configureDHCP() {
 
   if (( rc != 0 )); then
 
-    echo -n "INFO: Could not create macvlan, skipping..."
+    echo "INFO: Could not create macvlan, skipping..."
 
   else
 
@@ -214,8 +214,8 @@ if [[ "${DEBUG}" == [Yy1]* ]]; then
 
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
   echo "INFO: Container IP is ${IP} with gateway ${GATEWAY}" && echo
-  ifconfig
-  ip route && echo
+  #ifconfig
+  #ip route && echo
 
 fi
 
