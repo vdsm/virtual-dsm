@@ -3,14 +3,14 @@ set -Eeuo pipefail
 
 # Docker environment variables
 
-: ${GUEST_MAC:='02:11:32:AA:BB:CC'}
+: ${DHCP:='N'}
+: ${MAC:='02:11:32:AA:BB:CC'}
 
 : ${VM_NET_TAP:='dsm'}
 : ${VM_NET_DEV:='eth0'}
+: ${VM_NET_MAC:='$MAC'}
 : ${VM_NET_HOST:='VirtualDSM'}
-: ${VM_NET_MAC:='$GUEST_MAC'}
 
-: ${DHCP:='N'}
 : ${DNS_SERVERS:=''}
 : ${DNSMASQ_OPTS:=''}
 : ${DNSMASQ:='/usr/sbin/dnsmasq'}
@@ -210,7 +210,6 @@ update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
 update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 
 VM_NET_MAC="${VM_NET_MAC//-/:}"
-
 GATEWAY=$(ip r | grep default | awk '{print $3}')
 
 if [[ "${DEBUG}" == [Yy1]* ]]; then
