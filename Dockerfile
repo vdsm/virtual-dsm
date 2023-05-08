@@ -19,6 +19,7 @@ RUN apt-get update && apt-get -y upgrade && \
 	wget \
 	fdisk \
 	unzip \
+	socat \	
 	procps \
 	dnsmasq \
 	xz-utils \
