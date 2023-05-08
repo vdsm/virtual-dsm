@@ -27,27 +27,34 @@ rm -f "$STORAGE"/"$BASE".agent
 rm -f "$STORAGE"/"$BASE".boot.img
 rm -f "$STORAGE"/"$BASE".system.img
 
-echo "Install: Downloading extractor..."
-
 TMP="$STORAGE/tmp"
-RD="$TMP/rd.gz"
+RDC="$STORAGE/dsm.rd"
+
 rm -rf "$TMP" && mkdir -p "$TMP"
 
 [[ "${DEBUG}" == [Yy1]* ]] && set -x
 
-LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
+if [ ! -f "${RDC}" ]; then
 
-{ curl -r 64493568-69886247 -sfk -o "$RD" "$LOC"; rc=$?; } || :
-(( rc != 0 )) && echo "ERROR: Failed to download $LOC, reason: $rc" && exit 60
+  RD="$TMP/rd.gz"
+  echo "Install: Downloading installer..." 
+  LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
-SUM=$(md5sum "$RD" | cut -f 1 -d " ")
+  { curl -r 65627648-71021836 -sfk -o "$RD" "$LOC"; rc=$?; } || :
+  (( rc != 0 )) && echo "ERROR: Failed to download $LOC, reason: $rc" && exit 60
 
-if [ "$SUM" != "14fb88cb7cabddb5af1d0269bf032845" ]; then
-  echo "ERROR: Invalid file, checksum mismatch: $SUM" && exit 61
+  SUM=$(md5sum "$RD" | cut -f 1 -d " ")
+
+  if [ "$SUM" != "ab399db750f88ac7aa88f608f2b8651c" ]; then
+    echo "ERROR: Invalid download location (checksum $SUM)" && exit 61
+  fi
+
+  cp "$RD" "$RDC"
+
 fi
 
 set +e
-xz -dc <"$RD" >"$TMP/rd" 2>/dev/null || true
+xz -dc <"$RDC" >"$TMP/rd" 2>/dev/null || true
 (cd "$TMP" && cpio -idm <"$TMP/rd" 2>/dev/null)
 set -e
 
