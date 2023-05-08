@@ -29,7 +29,6 @@ rm -f "$STORAGE"/"$BASE".boot.img
 rm -f "$STORAGE"/"$BASE".system.img
 
 TMP="$STORAGE/tmp"
-RD="$TMP/rd.gz"
 RDC="$STORAGE/dsm.rd"
 
 rm -rf "$TMP" && mkdir -p "$TMP"
@@ -38,6 +37,7 @@ rm -rf "$TMP" && mkdir -p "$TMP"
 
 if [ ! -f "${RDC}" ]; then
 
+  RD="$TMP/rd.gz"
   echo "Install: Downloading installer..." 
   LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
@@ -52,14 +52,10 @@ if [ ! -f "${RDC}" ]; then
   
   cp "$RD" "$RDC"
   
-else
-
-  cp "$RDC" "$RD"
-  
 fi
 
 set +e
-xz -dc <"$RD" >"$TMP/rd" 2>/dev/null || true
+xz -dc <"$RDC" >"$TMP/rd" 2>/dev/null || true
 (cd "$TMP" && cpio -idm <"$TMP/rd" 2>/dev/null)
 set -e
 
