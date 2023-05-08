@@ -33,7 +33,7 @@ _graceful_shutdown() {
   # echo 'system_powerdown' | nc -q 1 -w 1 localhost "${QEMU_MONPORT}" > /dev/null
 
   # Send shutdown command to guest agent via serial port
-  RESPONSE=$(curl -s -m 2 -S http://127.0.0.1:2210/write?command=6 2>&1)
+  RESPONSE=$(curl -s -m 5 -S http://127.0.0.1:2210/read?command=6 2>&1)
 
   if [[ ! "${RESPONSE}" =~ "\"success\"" ]] ; then
 
@@ -47,9 +47,13 @@ _graceful_shutdown() {
     if ((AGENT_VERSION > 1)); then
 
       # Send a NMI interrupt which will be detected by the kernel
-      echo 'nmi' | nc -q 1 -w 1 localhost "${QEMU_MONPORT}" > /dev/null
- 
-    else
+      if ! echo 'nmi' | nc -q 1 -w 1 localhost "${QEMU_MONPORT}" > /dev/null ; then
+        AGENT_VERSION=0
+      fi
+
+    fi
+
+    if ((AGENT_VERSION < 2)); then
 
       echo && echo "Please update the VirtualDSM Agent to allow for gracefull shutdowns..."
 
@@ -65,7 +69,7 @@ _graceful_shutdown() {
     echo $(($(cat ${_QEMU_SHUTDOWN_COUNTER})+1)) > ${_QEMU_SHUTDOWN_COUNTER}
 
     # Try to connect to qemu
-    if echo 'info version'| nc -q 1 -w 1 localhost "${QEMU_MONPORT}" > /dev/null; then
+    if echo 'info version'| nc -q 1 -w 1 localhost "${QEMU_MONPORT}" >/dev/null 2>&1 ; then
 
       sleep 1
       #echo "Shutting down, waiting... ($(cat ${_QEMU_SHUTDOWN_COUNTER})/${QEMU_POWERDOWN_TIMEOUT})"
@@ -75,7 +79,7 @@ _graceful_shutdown() {
   done
 
   echo && echo "Quitting..."
-  echo 'quit' | nc -q 1 -w 1 localhost "${QEMU_MONPORT}" > /dev/null || true
+  echo 'quit' | nc -q 1 -w 1 localhost "${QEMU_MONPORT}" >/dev/null 2>&1 || true
 
   return
 }

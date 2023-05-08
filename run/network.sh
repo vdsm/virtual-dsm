@@ -31,8 +31,8 @@ configureDHCP() {
   { ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
-    echo -n "ERROR: Cannot create macvlan interface. Please make sure the network type is 'macvlan' and not 'ipvlan'."
-    echo " And that the NET_ADMIN capability has been added to the container config: --cap-add NET_ADMIN" && exit 15
+    echo "ERROR: Cannot create macvlan interface. Please make sure the network type is 'macvlan' and not 'ipvlan',"
+    echo "ERROR: and that the NET_ADMIN capability has been added to the container config: --cap-add NET_ADMIN" && exit 15
   fi
 
   ip address add "${IP}" dev "${VM_NET_VLAN}"
@@ -226,14 +226,26 @@ if [[ "${DHCP}" == [Yy1]* ]]; then
   # Configuration for DHCP IP
   configureDHCP
 
-  # Display the received IP on port 5000
-  HTML="DSM is using another IP address.<br><br>Check the Docker logfile to see which one was<br> assigned, or download the\
-  <a href='https://global.synologydownload.com/download/Utility/Assistant/7.0.4-50051/Windows/synology-assistant-7.0.4-50051.exe'>\
-  Synology Assistant</a> utility."
+  { pkill -f server.sh || true; } 2>/dev/null
 
-  pkill -f server.sh || true
-  /run/server.sh 80 "${HTML}" > /dev/null &
-  /run/server.sh 5000 "${HTML}" > /dev/null &
+  SH_SCRIPT="/run/ipinfo.sh"
+
+  { echo "#!/bin/bash"
+    echo "INFO=\$(curl -s -m 5 -S http://127.0.0.1:2210/read?command=10 2>/dev/null)"
+    echo "rest=\${INFO#*http_port}; rest=\${rest#*:}; rest=\${rest%%,*}; PORT=\${rest%%\\\"*}"
+    echo "rest=\${INFO#*eth0}; rest=\${rest#*ip}; rest=\${rest#*:}; rest=\${rest#*\\\"}; IP=\${rest%%\\\"*}"
+    echo "BODY=\"The location of DSM is <a href=\"http://\${IP}:\${PORT}\">http://\${IP}:\${PORT}</a><script>\\"
+    echo "setTimeout(function(){ window.location.assign('http://\${IP}:\${PORT}'); }, 3000);</script>\""
+    echo "HTML=\"<!DOCTYPE html><HTML><HEAD><TITLE>VirtualDSM</TITLE><STYLE>body { color: white; background-color: #125bdb; font-family: Verdana,\\"
+    echo "Arial,sans-serif; } a, a:hover, a:active, a:visited { color: white; }</STYLE></HEAD><BODY><BR><BR><H1><CENTER>\$BODY</CENTER></H1></BODY></HTML>\""
+    echo "LENGTH=\"\${#HTML}\"; RESPONSE=\"HTTP/1.1 200 OK\\nContent-Length: \${LENGTH}\\nConnection: close\\n\\n\$HTML\\n\\n\""
+    echo "echo -e \"\$RESPONSE\""
+  } > "$SH_SCRIPT"
+
+  chmod +x "$SH_SCRIPT"
+
+  /run/server.sh 80 "$SH_SCRIPT" &
+  /run/server.sh 5000 "$SH_SCRIPT" &
 
 else
 
@@ -243,17 +255,6 @@ else
 fi
 
 NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
-
-if  [[ "${DHCP}" == [Yy1]* ]]; then
-
-  # Add extra LAN interface for Docker Healthcheck script
-
-  : ${MAC2:='02:11:32:CC:BB:AA'}
-
-  NET_OPTS="${NET_OPTS} -netdev user,id=hostnet1,restrict=y,hostfwd=tcp::5555-:5000"
-  NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet1,mac=${MAC2},id=net1"
-
-fi
 
 [[ "${DEBUG}" == [Yy1]* ]] && echo && echo "Finished network setup.." && echo
 
