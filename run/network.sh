@@ -244,16 +244,14 @@ fi
 
 NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
 
-if  [[ "${DHCP}" == [Yy1]* ]]; then
-
+#if  [[ "${DHCP}" == [Yy1]* ]]; then
+  #
   # Add extra LAN interface for Docker Healthcheck script
-
-  : ${MAC2:='02:11:32:CC:BB:AA'}
-
-  NET_OPTS="${NET_OPTS} -netdev user,id=hostnet1,restrict=y,hostfwd=tcp::5555-:5000"
-  NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet1,mac=${MAC2},id=net1"
-
-fi
+  # : ${MAC2:='02:11:32:CC:BB:AA'}
+  # NET_OPTS="${NET_OPTS} -netdev user,id=hostnet1,restrict=y,hostfwd=tcp::5555-:5000"
+  # NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet1,mac=${MAC2},id=net1"
+  #
+#fi
 
 [[ "${DEBUG}" == [Yy1]* ]] && echo && echo "Finished network setup.." && echo
 
