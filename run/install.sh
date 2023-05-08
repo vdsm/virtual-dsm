@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# Display wait message on port 5000
 HTML="Please wait while Virtual DSM is installing...<script>\
-        setTimeout(() => { document.location.reload(); }, 9999);</script>"
+      setTimeout(() => { document.location.reload(); }, 9999);</script>"
 
-{ pkill -f server.sh || true; } 2>/dev/null
-
+# Display wait message on port 5000
 /run/server.sh 80 "${HTML}" &
 /run/server.sh 5000 "${HTML}" &
 
