@@ -22,7 +22,6 @@ fi
 
 BASE=$(basename "$URL" .pat)
 
-rm -f "$STORAGE"/dsm.ver
 rm -f "$STORAGE"/"$BASE".pat
 rm -f "$STORAGE"/"$BASE".agent
 rm -f "$STORAGE"/"$BASE".boot.img
