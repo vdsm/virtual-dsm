@@ -48,7 +48,7 @@ _graceful_shutdown() {
 
       # Send a NMI interrupt which will be detected by the kernel
       echo 'nmi' | nc -q 1 -w 1 localhost "${QEMU_MONPORT}" > /dev/null
- 
+
     else
 
       echo && echo "Please update the VirtualDSM Agent to allow for gracefull shutdowns..."
