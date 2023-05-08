@@ -21,6 +21,11 @@ rest=${rest#*:}
 rest=${rest%%,*}
 PORT=${rest%%\"*}
 
+if [ -z "${PORT}" ]; then
+  echo "Guest has not set a portnumber yet.."
+  exit 1
+fi
+
 # Retrieve the IP address
 
 if [[ ! "${RESPONSE}" =~ "eth0" ]] ; then
@@ -33,6 +38,11 @@ rest=${rest#*ip}
 rest=${rest#*:}
 rest=${rest#*\"}
 IP=${rest%%\"*}
+
+if [ -z "${IP}" ]; then
+  echo "Guest has not received an IP yet.."
+  exit 1
+fi
 
 if ! curl -m 3 -ILfSs "http://${IP}:${PORT}/" > /dev/null; then
   echo "Failed to reach ${IP}:${PORT}"
