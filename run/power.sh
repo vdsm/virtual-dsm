@@ -52,7 +52,7 @@ _graceful_shutdown() {
       fi
 
     fi
-    
+
     if ((AGENT_VERSION < 2)); then
 
       echo && echo "Please update the VirtualDSM Agent to allow for gracefull shutdowns..."
