@@ -49,9 +49,9 @@ if [ ! -f "${RDC}" ]; then
   if [ "$SUM" != "ab399db750f88ac7aa88f608f2b8651c" ]; then
     echo "ERROR: Invalid download location (checksum $SUM)" && exit 61
   fi
-  
+
   cp "$RD" "$RDC"
-  
+
 fi
 
 set +e
