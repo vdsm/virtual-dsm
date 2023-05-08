@@ -23,7 +23,7 @@ else
   LENGTH="${#HTML}"
   TMP_FILE=$(mktemp -q /tmp/server.XXXXXX)
 
-  echo -en "HTTP/1.1 200 OK\nContent-Length: ${LENGTH}\nConnection: close\n\n$HTML" > $TMP_FILE
+  echo -en "HTTP/1.1 200 OK\nContent-Length: ${LENGTH}\nConnection: close\n\n$HTML" > "$TMP_FILE"
   socat TCP4-LISTEN:"${1:-5000}",reuseaddr,fork,crlf SYSTEM:"cat ${TMP_FILE}" 2> /dev/null & wait $!
 
 fi
