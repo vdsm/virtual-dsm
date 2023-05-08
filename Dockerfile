@@ -27,8 +27,8 @@ RUN apt-get update && apt-get -y upgrade && \
 	net-tools \
 	btrfs-progs \
 	ca-certificates \
-	netcat-openbsd \
 	qemu-system-x86 \
+	netcat-traditional \	
     && apt-get clean
 
 COPY run/*.sh /run/
