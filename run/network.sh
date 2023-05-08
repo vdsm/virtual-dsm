@@ -238,7 +238,7 @@ if [[ "${DHCP}" == [Yy1]* ]]; then
     echo "setTimeout(function(){ window.location.assign('http://\${IP}:\${PORT}'); }, 3000);</script>\""
     echo "HTML=\"<!DOCTYPE html><HTML><HEAD><TITLE>VirtualDSM</TITLE><STYLE>body { color: white; background-color: #125bdb; font-family: Verdana,\\"
     echo "Arial,sans-serif; } a, a:hover, a:active, a:visited { color: white; }</STYLE></HEAD><BODY><BR><BR><H1><CENTER>\$BODY</CENTER></H1></BODY></HTML>\""
-    echo "LENGTH=\"\${#HTML}\"; RESPONSE=\"HTTP/1.1 200 OK\\nContent-Length: \${LENGTH}\\nConnection: close\\n\\n\$HTML\\n\\n\""
+    echo "LENGTH=\"\${#HTML}\"; RESPONSE=\"HTTP/1.1 200 OK\\nContent-Length: \${LENGTH}\\nConnection: close\\n\\n\$HTML\""
     echo "echo -e \"\$RESPONSE\""
   } > "$SH_SCRIPT"
 
