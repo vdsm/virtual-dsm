@@ -20,15 +20,15 @@ RUN apt-get update && apt-get -y upgrade && \
 	fdisk \
 	unzip \
 	procps \
+	dnsmasq \
 	xz-utils \
 	iptables \
 	iproute2 \
-	dnsmasq \
 	net-tools \
 	btrfs-progs \
+	netcat-openbsd \
 	ca-certificates \
 	qemu-system-x86 \
-	netcat-traditional \	
     && apt-get clean
 
 COPY run/*.sh /run/
