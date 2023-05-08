@@ -3,7 +3,7 @@ set -eu
 
 stop() {
   trap - SIGINT EXIT
-  { pkill -f nc || true } 2>/dev/null
+  { pkill -f nc || true; } 2>/dev/null
 }
 
 trap 'stop' EXIT SIGINT SIGTERM SIGHUP
