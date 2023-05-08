@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 set -eu
 
-trap 'pkill -f nc || true' EXIT
-trap exit SIGINT SIGTERM
+stop() {
+  trap - SIGINT EXIT
+  { pkill -f nc || true } 2>/dev/null
+}
+
+trap 'stop' EXIT SIGINT SIGTERM SIGHUP
 
 if [[ "$2" == "/"* ]]; then
 
   while true ; do
-    nc -lp "${1:-5000}" -e "$2" >/dev/null 2>&1 & wait $!
+    nc -lp "${1:-5000}" -e "$2" & wait $!
   done
 
 else
@@ -19,7 +23,7 @@ else
   RESPONSE="HTTP/1.1 200 OK\nContent-Length: ${LENGTH}\nConnection: close\n\n$HTML\n\n"
 
   while true; do
-    echo -en "$RESPONSE" | nc -lp "${1:-5000}" >/dev/null 2>&1 & wait $!
+    echo -en "$RESPONSE" | nc -lp "${1:-5000}" & wait $!
   done
 
 fi
