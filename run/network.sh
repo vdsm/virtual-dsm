@@ -226,7 +226,7 @@ if [[ "${DHCP}" == [Yy1]* ]]; then
   # Configuration for DHCP IP
   configureDHCP
 
-  { pkill -f server.sh || true } 2>/dev/null
+  { pkill -f server.sh || true; } 2>/dev/null
 
   SH_SCRIPT="/run/ipinfo.sh"
 
