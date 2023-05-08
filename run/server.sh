@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 set -eu
 
+TMP_FILE=""
+
 stop() {
   trap - SIGINT EXIT
-  { pkill -f nc || true; } 2>/dev/null
+  { pkill -f socat || true; } 2>/dev/null
+  [ -f "$TMP_FILE" ] && rm -f "$TMP_FILE"
 }
 
 trap 'stop' EXIT SIGINT SIGTERM SIGHUP
 
 if [[ "$2" == "/"* ]]; then
 
-  while true ; do
-    nc -lp "${1:-5000}" -e "$2" & wait $!
-  done
+  socat TCP4-LISTEN:"${1:-5000}",reuseaddr,fork,crlf SYSTEM:"$2" 2> /dev/null & wait $!
 
 else
 
@@ -20,10 +21,9 @@ else
         Arial,sans-serif; } a, a:hover, a:active, a:visited { color: white; }</STYLE></HEAD><BODY><BR><BR><H1><CENTER>$2</CENTER></H1></BODY></HTML>"
 
   LENGTH="${#HTML}"
-  RESPONSE="HTTP/1.1 200 OK\nContent-Length: ${LENGTH}\nConnection: close\n\n$HTML\n\n"
+  TMP_FILE=$(mktemp -q /tmp/server.XXXXXX)
 
-  while true; do
-    echo -en "$RESPONSE" | nc -lp "${1:-5000}" & wait $!
-  done
+  echo -en "HTTP/1.1 200 OK\nContent-Length: ${LENGTH}\nConnection: close\n\n$HTML" > "$TMP_FILE"
+  socat TCP4-LISTEN:"${1:-5000}",reuseaddr,fork,crlf SYSTEM:"cat ${TMP_FILE}" 2> /dev/null & wait $!
 
 fi
