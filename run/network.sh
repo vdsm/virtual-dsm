@@ -31,8 +31,8 @@ configureDHCP() {
   { ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
-    echo -n "ERROR: Cannot create macvlan interface. Please make sure the network type is 'macvlan' and not 'ipvlan'."
-    echo " And that the NET_ADMIN capability has been added to the container config: --cap-add NET_ADMIN" && exit 15
+    echo "ERROR: Cannot create macvlan interface. Please make sure the network type is 'macvlan' and not 'ipvlan',"
+    echo "ERROR: and that the NET_ADMIN capability has been added to the container config: --cap-add NET_ADMIN" && exit 15
   fi
 
   ip address add "${IP}" dev "${VM_NET_VLAN}"
@@ -226,14 +226,9 @@ if [[ "${DHCP}" == [Yy1]* ]]; then
   # Configuration for DHCP IP
   configureDHCP
 
-  # Display the received IP on port 5000
-  HTML="DSM is using another IP address.<br><br>Check the Docker logfile to see which one was<br> assigned, or download the\
-  <a href='https://global.synologydownload.com/download/Utility/Assistant/7.0.4-50051/Windows/synology-assistant-7.0.4-50051.exe'>\
-  Synology Assistant</a> utility."
-
   pkill -f server.sh || true
-  /run/server.sh 80 "${HTML}" > /dev/null &
-  /run/server.sh 5000 "${HTML}" > /dev/null &
+  /run/server.sh 80 ipinfo > /dev/null &
+  /run/server.sh 5000 ipinfo > /dev/null &
 
 else
 
