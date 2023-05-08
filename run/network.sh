@@ -226,7 +226,7 @@ if [[ "${DHCP}" == [Yy1]* ]]; then
   # Configuration for DHCP IP
   configureDHCP
 
-  pkill -f server.sh || true
+  { pkill -f server.sh || true } 2>/dev/null
 
   SH_SCRIPT="/run/ipinfo.sh"
 
@@ -244,8 +244,8 @@ if [[ "${DHCP}" == [Yy1]* ]]; then
 
   chmod +x "$SH_SCRIPT"
 
-  /run/server.sh 80 "$SH_SCRIPT" > /dev/null &
-  /run/server.sh 5000 "$SH_SCRIPT" > /dev/null &
+  /run/server.sh 80 "$SH_SCRIPT" &
+  /run/server.sh 5000 "$SH_SCRIPT" &
 
 else
 
