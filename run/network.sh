@@ -30,22 +30,19 @@ configureDHCP() {
   [[ "${DEBUG}" == [Yy1]* ]] && set -x
   { ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge ; rc=$?; } || :
 
-  if (( rc == 0 )); then
-
-    ip address add "${IP}" dev "${VM_NET_VLAN}"
-    ip link set dev "${VM_NET_VLAN}" up
-
-    ip route flush dev "${VM_NET_DEV}"
-    ip route flush dev "${VM_NET_VLAN}"
-
-    ip route add "${NETWORK}" dev "${VM_NET_VLAN}" metric 0
-    ip route add default via "${GATEWAY}"
-
-  else
-
-    echo "INFO: Could not create ${VM_NET_VLAN} on ${VM_NET_DEV}, skipping..."
-
+  if (( rc != 0 )); then
+    echo -n "ERROR: Cannot create macvlan interface. Please make sure the network type is 'macvlan' and not 'ipvlan'."
+    echo " And that the NET_ADMIN capability has been added to the container config: --cap-add NET_ADMIN" && exit 15
   fi
+
+  ip address add "${IP}" dev "${VM_NET_VLAN}"
+  ip link set dev "${VM_NET_VLAN}" up
+
+  ip route flush dev "${VM_NET_DEV}"
+  ip route flush dev "${VM_NET_VLAN}"
+
+  ip route add "${NETWORK}" dev "${VM_NET_VLAN}" metric 0
+  ip route add default via "${GATEWAY}"
 
   { ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge ; rc=$?; } || :
 
