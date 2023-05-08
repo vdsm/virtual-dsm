@@ -5,9 +5,10 @@ set -Eeuo pipefail
 HTML="Please wait while Virtual DSM is installing...<script>\
         setTimeout(() => { document.location.reload(); }, 9999);</script>"
 
-pkill -f server.sh || true
-/run/server.sh 80 "${HTML}" > /dev/null &
-/run/server.sh 5000 "${HTML}" > /dev/null &
+{ pkill -f server.sh || true; } 2>/dev/null
+
+/run/server.sh 80 "${HTML}" &
+/run/server.sh 5000 "${HTML}" &
 
 # Download the required files from the Synology website
 DL="https://global.synologydownload.com/download/DSM"
