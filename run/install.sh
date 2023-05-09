@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# Display wait message on port 5000
-HTML="Please wait while Virtual DSM is installing...<script>\
-        setTimeout(() => { document.location.reload(); }, 9999);</script>"
-
-{ pkill -f server.sh || true; } 2>/dev/null
-
-/run/server.sh 80 "${HTML}" &
-/run/server.sh 5000 "${HTML}" &
+# Display wait message
+/run/server.sh 80 install &
+/run/server.sh 5000 install &
 
 # Download the required files from the Synology website
 DL="https://global.synologydownload.com/download/DSM"
