@@ -53,7 +53,7 @@ else
       echo "INFO=\$(curl -s -m 2 -S http://127.0.0.1:2210/read?command=10 2>/dev/null)"
       echo "rest=\${INFO#*http_port}; rest=\${rest#*:}; rest=\${rest%%,*}; PORT=\${rest%%\\\"*}"
       echo "rest=\${INFO#*eth0}; rest=\${rest#*ip}; rest=\${rest#*:}; rest=\${rest#*\\\"}; IP=\${rest%%\\\"*}"
-      echo "HTML=\"$HTML\"; [ -z \"\${IP}\" ] && BODY=\"$BODY\" || BODY=\"$WAIT\"; HTML=\${HTML/xxx/\$BODY}"
+      echo "HTML=\"$HTML\"; [ -z \"\${IP}\" ] && BODY=\"$WAIT\" || BODY=\"$BODY\"; HTML=\${HTML/xxx/\$BODY}"
       echo "printf '%b' \"HTTP/1.1 200 OK\\nContent-Length: \${#HTML}\\nConnection: close\\n\\n\$HTML\""
     } > "$TMP_FILE"
 
