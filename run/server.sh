@@ -45,9 +45,7 @@ else
      BODY="The location of DSM is <a href='http://\${IP}:\${PORT}'>http://\${IP}:\${PORT}</a><script>"
      BODY="${BODY}setTimeout(function(){ window.location.assign('http://\${IP}:\${PORT}'); }, 3000);</script>"
 
-     printf -v BODY "%q" "$BODY"
      HTML=$(html "xxx")
-     printf -v HTML "%q" "$HTML"
 
     { echo "#!/bin/bash"
       echo "INFO=\$(curl -s -m 5 -S http://127.0.0.1:2210/read?command=10 2>/dev/null)"
