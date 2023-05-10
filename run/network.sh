@@ -23,6 +23,7 @@ set -Eeuo pipefail
 configureDHCP() {
 
   VM_NET_VLAN="${VM_NET_TAP}_vlan"
+  GATEWAY=$(ip r | grep default | awk '{print $3}')
   NETWORK=$(ip -o route | grep "${VM_NET_DEV}" | grep -v default | awk '{print $1}')
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
 
