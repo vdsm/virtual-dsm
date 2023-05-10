@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -u
 
-# Retrieve guest info for Docker healthcheck
+# Retrieve IP from guest for Docker healthcheck
 RESPONSE=$(curl -s -m 6 -S http://127.0.0.1:2210/read?command=10 2>&1)
 
 if [[ ! "${RESPONSE}" =~ "\"success\"" ]] ; then
@@ -49,5 +49,5 @@ if ! curl -m 3 -ILfSs "http://${IP}:${PORT}/" > /dev/null; then
   exit 1
 fi
 
-echo "Healthcheck OK"
+echo "Healthcheck OK ($IP)"
 exit 0
