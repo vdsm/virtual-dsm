@@ -23,7 +23,6 @@ set -Eeuo pipefail
 configureDHCP() {
 
   VM_NET_VLAN="${VM_NET_TAP}_vlan"
-  GATEWAY=$(ip r | grep default | awk '{print $3}')
   NETWORK=$(ip -o route | grep "${VM_NET_DEV}" | grep -v default | awk '{print $1}')
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
 
@@ -38,11 +37,9 @@ configureDHCP() {
   ip address add "${IP}" dev "${VM_NET_VLAN}"
   ip link set dev "${VM_NET_VLAN}" up
 
-  ip route flush dev "${VM_NET_DEV}"
   ip route flush dev "${VM_NET_VLAN}"
-
+  ip route del "${NETWORK}" dev "${VM_NET_DEV}"
   ip route add "${NETWORK}" dev "${VM_NET_VLAN}" metric 0
-  ip route add default via "${GATEWAY}"
 
   { ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge ; rc=$?; } || :
 
