@@ -28,6 +28,8 @@ configureDHCP() {
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
 
   [[ "${DEBUG}" == [Yy1]* ]] && set -x
+
+  # Create a macvlan network to allow for communication between the host and the VM guest
   { ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
@@ -43,7 +45,8 @@ configureDHCP() {
 
   ip route add "${NETWORK}" dev "${VM_NET_VLAN}" metric 0
   ip route add default via "${GATEWAY}"
-
+  
+  # Create a macvtap network for the VM guest
   { ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
@@ -52,9 +55,6 @@ configureDHCP() {
   fi
 
   ip link set "${VM_NET_TAP}" up
-
-  ip address flush "${VM_NET_DEV}"
-  ip address flush "${VM_NET_TAP}"
 
   { set +x; } 2>/dev/null
 
@@ -97,8 +97,7 @@ configureNAT () {
   VM_NET_IP='20.20.20.21'
   [[ "${DEBUG}" == [Yy1]* ]] && set -x
 
-  #Create bridge with static IP for the VM guest
-
+  # Create bridge with static IP for the VM guest
   { ip link add dev dockerbridge type bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
@@ -109,12 +108,12 @@ configureNAT () {
   ip address add ${VM_NET_IP%.*}.1/24 broadcast ${VM_NET_IP%.*}.255 dev dockerbridge
   ip link set dockerbridge up
 
-  #QEMU Works with taps, set tap to the bridge created
+  # QEMU Works with taps, set tap to the bridge created
   ip tuntap add dev "${VM_NET_TAP}" mode tap
   ip link set "${VM_NET_TAP}" up promisc on
   ip link set dev "${VM_NET_TAP}" master dockerbridge
 
-  #Add internet connection to the VM
+  # Add internet connection to the VM
   iptables -t nat -A POSTROUTING -o "${VM_NET_DEV}" -j MASQUERADE
   iptables -t nat -A PREROUTING -i "${VM_NET_DEV}" -p tcp  -j DNAT --to $VM_NET_IP
   iptables -t nat -A PREROUTING -i "${VM_NET_DEV}" -p udp  -j DNAT --to $VM_NET_IP
@@ -127,7 +126,7 @@ configureNAT () {
   { set +x; } 2>/dev/null
   [[ "${DEBUG}" == [Yy1]* ]] && echo
 
-  #Check port forwarding flag
+  # Check port forwarding flag
   if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
     { sysctl -w net.ipv4.ip_forward=1 ; rc=$?; } || :
     if (( rc != 0 )); then

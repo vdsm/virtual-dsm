@@ -47,7 +47,6 @@ VOLUME /storage
 EXPOSE 22
 EXPOSE 80
 EXPOSE 139 
-EXPOSE 443 
 EXPOSE 445
 EXPOSE 5000
 
@@ -66,6 +65,6 @@ LABEL org.opencontainers.image.version=${VERSION_ARG}
 LABEL org.opencontainers.image.source=https://github.com/kroese/virtual-dsm/
 LABEL org.opencontainers.image.url=https://hub.docker.com/r/kroese/virtual-dsm/
 
-HEALTHCHECK --interval=30s --retries=2 CMD /run/check.sh
+HEALTHCHECK --interval=60s --retries=2 CMD /run/check.sh
 
 ENTRYPOINT ["/run/run.sh"]
