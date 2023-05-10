@@ -47,8 +47,8 @@ configureDHCP() {
   { ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
-    echo -n "ERROR: Capability NET_ADMIN has not been set most likely. Please add the "
-    echo "following docker setting to your container: --cap-add NET_ADMIN" && exit 16
+    echo "ERROR: Capability NET_ADMIN has not been set most likely. Please add the "
+    echo "ERROR: following docker setting to your container: --cap-add NET_ADMIN" && exit 16
   fi
 
   ip link set "${VM_NET_TAP}" up
@@ -78,15 +78,15 @@ configureDHCP() {
   { exec 30>>"$TAP_PATH"; rc=$?; } || :
 
   if (( rc != 0 )); then
-    echo -n "ERROR: Cannot create TAP interface ($rc). Please add the following docker settings to your "
-    echo "container: --device-cgroup-rule='c ${MAJOR}:* rwm' --device=/dev/vhost-net" && exit 21
+    echo "ERROR: Cannot create TAP interface ($rc). Please add the following docker settings to your "
+    echo "ERROR: container: --device-cgroup-rule='c ${MAJOR}:* rwm' --device=/dev/vhost-net" && exit 21
   fi
 
   { exec 40>>/dev/vhost-net; rc=$?; } || :
 
   if (( rc != 0 )); then
-    echo -n "ERROR: VHOST can not be found ($rc). Please add the following "
-    echo "docker setting to your container: --device=/dev/vhost-net" && exit 22
+    echo "ERROR: VHOST can not be found ($rc). Please add the following "
+    echo "ERROR: docker setting to your container: --device=/dev/vhost-net" && exit 22
   fi
 
   NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30"
@@ -102,8 +102,8 @@ configureNAT () {
   { ip link add dev dockerbridge type bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
-    echo -n "ERROR: Capability NET_ADMIN has not been set most likely. Please add the "
-    echo "following docker setting to your container: --cap-add NET_ADMIN" && exit 23
+    echo "ERROR: Capability NET_ADMIN has not been set most likely. Please add the "
+    echo "ERROR: following docker setting to your container: --cap-add NET_ADMIN" && exit 23
   fi
 
   ip address add ${VM_NET_IP%.*}.1/24 broadcast ${VM_NET_IP%.*}.255 dev dockerbridge
@@ -131,8 +131,7 @@ configureNAT () {
   if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
     { sysctl -w net.ipv4.ip_forward=1 ; rc=$?; } || :
     if (( rc != 0 )); then
-      echo -n "ERROR: IP forwarding is disabled ($rc). Please add the following "
-      echo "docker setting to your container: --sysctl net.ipv4.ip_forward=1" && exit 24
+      echo "ERROR: Please add the following docker setting to your container: --sysctl net.ipv4.ip_forward=1" && exit 24
     fi
   fi
 
