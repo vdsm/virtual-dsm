@@ -2,7 +2,6 @@
 set -Eeuo pipefail
 
 # Display wait message
-/run/server.sh 80 install &
 /run/server.sh 5000 install &
 
 # Download the required files from the Synology website
