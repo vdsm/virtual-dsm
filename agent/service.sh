@@ -3,6 +3,9 @@
 PIDFILE="/var/run/agent.pid"
 SCRIPT="/usr/local/bin/agent.sh"
 
+error () { echo -e "\E[1;31m❯ ERROR: $1\E[0m" ; }
+info () { echo -e "\E[1;34m❯\E[1;36m $1\E[0m" ; }
+
 status() {
 
   if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")"; then
@@ -25,7 +28,7 @@ start() {
 
   if [ ! -f "$SCRIPT" ]; then
 
-    echo 'ERROR: Agent script not found!' > /dev/ttyS0
+    error 'Agent script not found!' > /dev/ttyS0
 
     URL="https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh"
 
@@ -54,7 +57,7 @@ stop() {
   echo 'Stopping agent service...'
 
   chmod 666 /dev/ttyS0
-  echo 'Stopping agent service...' > /dev/ttyS0
+  info 'Stopping agent service...' > /dev/ttyS0
 
   kill -15 "$(cat "$PIDFILE")" && rm -f "$PIDFILE"
   rm -f /var/lock/subsys/agent.sh
