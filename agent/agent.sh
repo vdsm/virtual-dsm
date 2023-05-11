@@ -71,7 +71,7 @@ function downloadUpdate {
   mv -f "${TMP}" "${SCRIPT}"
   chmod 755 "${SCRIPT}"
 
-  info "$HEADER: succesfully installed update, please reboot."
+  info "$HEADER: succesfully installed update..."
 
 }
 
@@ -100,7 +100,7 @@ function installPackages {
 trap finish SIGINT SIGTERM
 
 ts=$(date +%s%N)
-echo "Started $HEADER v$VERSION..."
+echo "❯ Started $HEADER v$VERSION..."
 
 checkNMI
 
