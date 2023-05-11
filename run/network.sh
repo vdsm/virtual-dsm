@@ -199,9 +199,8 @@ if [[ "${DHCP}" == [Yy1]* ]]; then
   # Configuration for DHCP IP
   configureDHCP
 
+  # Display IP on port 80 and 5000
   { pkill -f server.sh || true; } 2>/dev/null
-
-  /run/server.sh 80 /run/ip.sh &
   /run/server.sh 5000 /run/ip.sh &
 
 else
