@@ -11,7 +11,6 @@ if [[ ! "${RESPONSE}" =~ "\"success\"" ]] ; then
 fi
 
 # Retrieve the HTTP port number
-
 if [[ ! "${RESPONSE}" =~ "\"http_port\"" ]] ; then
   echo "Failed to parse response from guest: $RESPONSE" && exit 1
 fi
@@ -24,7 +23,6 @@ PORT=${rest%%\"*}
 [ -z "${PORT}" ] && echo "Guest has not set a portnumber yet.." && exit 1
 
 # Retrieve the IP address
-
 if [[ ! "${RESPONSE}" =~ "eth0" ]] ; then
   echo "Failed to parse response from guest: $RESPONSE" && exit 1
 fi
