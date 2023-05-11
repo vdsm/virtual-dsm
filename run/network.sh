@@ -191,7 +191,7 @@ if [ ! -c /dev/net/tun ]; then
   chmod 666 /dev/net/tun
 fi
 
-[ ! -c /dev/net/tun ] && echo "ERROR: TUN network interface not available..." && exit 85
+[ ! -c /dev/net/tun ] && error "TUN network interface not available..." && exit 85
 
 # Create the necessary file structure for /dev/vhost-net
 if [ ! -c /dev/vhost-net ]; then
@@ -236,6 +236,6 @@ fi
 
 NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
 
-[[ "${DEBUG}" == [Yy1]* ]] && echo && echo "Finished network setup.." && echo
+[[ "${DEBUG}" == [Yy1]* ]] && echo && info "Finished network setup.." && echo
 
 return 0
