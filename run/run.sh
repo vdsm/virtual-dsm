@@ -10,8 +10,8 @@ set -Eeuo pipefail
 : ${DISK_SIZE:='16G'}   # Initial data disk size
 : ${RAM_SIZE:='512M'}   # Maximum RAM amount
 
+info () { echo -e "\E[1;34m❯ \E[1;36m$1\E[0m" ; }
 error () { echo -e >&2 "\E[1;31m❯ ERROR: $1\E[0m" ; }
-info () { echo -e "\E[1;34m❯\E[1;36m INFO: $1\E[0m" ; }
 
 info "Starting Virtual DSM for Docker v${VERSION}..."
 trap 'error "Error status $? for: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
