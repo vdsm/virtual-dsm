@@ -11,7 +11,7 @@ info () { echo -e "\E[1;34m❯\E[1;36m $1\E[0m" ; }
 
 finish() {
 
-  echo "$HEADER: Shutting down.."
+  echo "❯ $HEADER: Shutting down.."
   exit
 
 }
