@@ -13,7 +13,7 @@ trap 'stop' EXIT SIGINT SIGTERM SIGHUP
 
 html()
 {
-    local  h="<!DOCTYPE html><HTML><HEAD><TITLE>VirtualDSM</TITLE>"
+    local h="<!DOCTYPE html><HTML><HEAD><TITLE>VirtualDSM</TITLE>"
     h="${h} <STYLE>body { color: white; background-color: #125bdb; font-family: Verdana,"
     h="${h} Arial,sans-serif; } a, a:hover, a:active, a:visited { color: white; }</STYLE></HEAD>"
     h="${h}<BODY><BR><BR><H1><CENTER>$1</CENTER></H1></BODY></HTML>"

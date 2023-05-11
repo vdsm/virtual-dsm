@@ -10,11 +10,11 @@ set -Eeuo pipefail
 : ${DISK_SIZE:='16G'}   # Initial data disk size
 : ${RAM_SIZE:='512M'}   # Maximum RAM amount
 
+echo "❯ Starting Virtual DSM for Docker v${VERSION}..."
+
 info () { echo -e "\E[1;34m❯ \E[1;36m$1\E[0m" ; }
 error () { echo -e >&2 "\E[1;31m❯ ERROR: $1\E[0m" ; }
-
-echo "❯ Starting Virtual DSM for Docker v${VERSION}..."
-trap 'error "Error status $? for: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
+trap 'error "Status $? while: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
 
 [ ! -f "/run/run.sh" ] && error "Script must run inside Docker container!" && exit 11
 [ "$(id -u)" -ne "0" ] && error "Script must be executed with root privileges." && exit 12
@@ -61,7 +61,7 @@ else
 fi
 
 if [ -n "${KVM_ERR}" ]; then
-  error "KVM acceleration not detected ${KVM_ERR}, please enable it."
+  error "KVM acceleration not detected ${KVM_ERR}, see the FAQ about this."
   [[ "${DEBUG}" == [Yy1]* ]] && exit 88
 else
   KVM_OPTS=",accel=kvm -enable-kvm -cpu host"
