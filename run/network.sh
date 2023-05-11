@@ -200,8 +200,6 @@ if [[ "${DHCP}" == [Yy1]* ]]; then
   configureDHCP
 
   { pkill -f server.sh || true; } 2>/dev/null
-
-  /run/server.sh 80 /run/ip.sh &
   /run/server.sh 5000 /run/ip.sh &
 
 else
