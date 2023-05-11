@@ -33,8 +33,8 @@ configureDHCP() {
   { ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
-    echo "ERROR: Cannot create macvlan interface. Please make sure the network type is 'macvlan' and not 'ipvlan',"
-    echo "ERROR: and that the NET_ADMIN capability has been added to the container config: --cap-add NET_ADMIN" && exit 15
+    error "Cannot create macvlan interface. Please make sure the network type is 'macvlan' and not 'ipvlan',"
+    error "and that the NET_ADMIN capability has been added to the container config: --cap-add NET_ADMIN" && exit 15
   fi
 
   ip address add "${IP}" dev "${VM_NET_VLAN}"
@@ -48,8 +48,8 @@ configureDHCP() {
   { ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
-    echo "ERROR: Capability NET_ADMIN has not been set most likely. Please add the "
-    echo "ERROR: following docker setting to your container: --cap-add NET_ADMIN" && exit 16
+    error "Capability NET_ADMIN has not been set most likely. Please add the "
+    error "following docker setting to your container: --cap-add NET_ADMIN" && exit 16
   fi
 
   ip link set "${VM_NET_TAP}" up
@@ -63,28 +63,28 @@ configureDHCP() {
   IFS=: read -r MAJOR MINOR < <(cat /sys/devices/virtual/net/"${VM_NET_TAP}"/tap*/dev)
 
   if (( MAJOR < 1)); then
-     echo "ERROR: Cannot find: sys/devices/virtual/net/${VM_NET_TAP}" && exit 18
+     error "Cannot find: sys/devices/virtual/net/${VM_NET_TAP}" && exit 18
   fi
 
   [[ ! -e "${TAP_PATH}" ]] && [[ -e "/dev0/${TAP_PATH##*/}" ]] && ln -s "/dev0/${TAP_PATH##*/}" "${TAP_PATH}"
 
   if [[ ! -e "${TAP_PATH}" ]]; then
     { mknod "${TAP_PATH}" c "$MAJOR" "$MINOR" ; rc=$?; } || :
-    (( rc != 0 )) && echo "ERROR: Cannot mknod: ${TAP_PATH} ($rc)" && exit 20
+    (( rc != 0 )) && error "Cannot mknod: ${TAP_PATH} ($rc)" && exit 20
   fi
 
   { exec 30>>"$TAP_PATH"; rc=$?; } || :
 
   if (( rc != 0 )); then
-    echo "ERROR: Cannot create TAP interface ($rc). Please add the following docker settings to your "
-    echo "ERROR: container: --device-cgroup-rule='c ${MAJOR}:* rwm' --device=/dev/vhost-net" && exit 21
+    error "Cannot create TAP interface ($rc). Please add the following docker settings to your "
+    error "container: --device-cgroup-rule='c ${MAJOR}:* rwm' --device=/dev/vhost-net" && exit 21
   fi
 
   { exec 40>>/dev/vhost-net; rc=$?; } || :
 
   if (( rc != 0 )); then
-    echo "ERROR: VHOST can not be found ($rc). Please add the following "
-    echo "ERROR: docker setting to your container: --device=/dev/vhost-net" && exit 22
+    error "VHOST can not be found ($rc). Please add the following "
+    error "docker setting to your container: --device=/dev/vhost-net" && exit 22
   fi
 
   NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30"
@@ -99,8 +99,8 @@ configureNAT () {
   { ip link add dev dockerbridge type bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
-    echo "ERROR: Capability NET_ADMIN has not been set most likely. Please add the "
-    echo "ERROR: following docker setting to your container: --cap-add NET_ADMIN" && exit 23
+    error "Capability NET_ADMIN has not been set most likely. Please add the "
+    error "following docker setting to your container: --cap-add NET_ADMIN" && exit 23
   fi
 
   ip address add ${VM_NET_IP%.*}.1/24 broadcast ${VM_NET_IP%.*}.255 dev dockerbridge
@@ -128,7 +128,7 @@ configureNAT () {
   if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
     { sysctl -w net.ipv4.ip_forward=1 ; rc=$?; } || :
     if (( rc != 0 )); then
-      echo "ERROR: Please add the following docker setting to your container: --sysctl net.ipv4.ip_forward=1" && exit 24
+      error "Please add the following docker setting to your container: --sysctl net.ipv4.ip_forward=1" && exit 24
     fi
   fi
 
@@ -208,15 +208,15 @@ GATEWAY=$(ip r | grep default | awk '{print $3}')
 if [[ "${DEBUG}" == [Yy1]* ]]; then
 
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
-  echo "INFO: Container IP is ${IP} with gateway ${GATEWAY}" && echo
+  info "Container IP is ${IP} with gateway ${GATEWAY}" && echo
 
 fi
 
 if [[ "${DHCP}" == [Yy1]* ]]; then
 
   if [[ "$GATEWAY" == "172."* ]]; then
-    echo -n "ERROR: You cannot enable DHCP while the container is "
-    echo "in a bridge network, only on a macvlan network!" && exit 86
+    error "You cannot enable DHCP while the container is "
+    error "in a bridge network, only on a macvlan network!" && exit 86
   fi
 
   # Configuration for DHCP IP
