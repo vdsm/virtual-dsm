@@ -28,7 +28,7 @@ configureDHCP() {
 
   [[ "${DEBUG}" == [Yy1]* ]] && set -x
 
-  # Create a macvlan network to allow for communication between the host and the VM guest
+  # Create a macvlan network to allow for communication from the VM guest to the host
   { ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
