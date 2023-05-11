@@ -78,7 +78,7 @@ _graceful_shutdown() {
 
   done
 
-  echo && info "Quitting..."
+  echo && echo "❯ Quitting..."
   echo 'quit' | nc -q 1 -w 1 localhost "${QEMU_MONPORT}" >/dev/null 2>&1 || true
 
   return
