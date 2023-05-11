@@ -11,8 +11,8 @@ set -Eeuo pipefail
 BOOT="$STORAGE/$BASE.boot.img"
 SYSTEM="$STORAGE/$BASE.system.img"
 
-[ ! -f "$BOOT" ] && echo "ERROR: Virtual DSM boot-image does not exist ($BOOT)" && exit 81
-[ ! -f "$SYSTEM" ] && echo "ERROR: Virtual DSM system-image does not exist ($SYSTEM)" && exit 82
+[ ! -f "$BOOT" ] && error "Virtual DSM boot-image does not exist ($BOOT)" && exit 81
+[ ! -f "$SYSTEM" ] && error "Virtual DSM system-image does not exist ($SYSTEM)" && exit 82
 
 DATA="${STORAGE}/data.img"
 
@@ -25,7 +25,7 @@ DISK_SIZE=$(echo "${DISK_SIZE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
 DATA_SIZE=$(numfmt --from=iec "${DISK_SIZE}")
 
 if (( DATA_SIZE < 6442450944 )); then
-  echo "ERROR: Please increase DISK_SIZE to at least 6 GB." && exit 83
+  error "Please increase DISK_SIZE to at least 6 GB." && exit 83
 fi
 
 if [ -f "${DATA}" ]; then
@@ -34,7 +34,7 @@ if [ -f "${DATA}" ]; then
 
   if [ "$DATA_SIZE" -gt "$OLD_SIZE" ]; then
 
-    echo "INFO: Resizing data disk from $OLD_SIZE to $DATA_SIZE bytes.."
+    info "Resizing data disk from $OLD_SIZE to $DATA_SIZE bytes.."
 
     if [[ "${ALLOCATE}" == [Nn]* ]]; then
 
@@ -49,20 +49,20 @@ if [ -f "${DATA}" ]; then
       SPACE=$(df --output=avail -B 1 "${STORAGE}" | tail -n 1)
 
       if (( REQ > SPACE )); then
-        echo "ERROR: Not enough free space to resize virtual disk to ${DISK_SIZE}."
-        echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATE=N." && exit 84
+        error "Not enough free space to resize virtual disk to ${DISK_SIZE}."
+        error "Specify a smaller size or disable preallocation with ALLOCATE=N." && exit 84
       fi
 
       # Resize file by allocating more space
       if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
-        echo "ERROR: Could not allocate a file for the virtual disk." && exit 85
+        error "Could not allocate a file for the virtual disk." && exit 85
       fi
 
       if [[ "${ALLOCATE}" == [Zz]* ]]; then
 
         GB=$(( (REQ + 1073741823)/1073741824 ))
 
-        echo "INFO: Preallocating ${GB} GB of diskspace, please wait..."
+        info "Preallocating ${GB} GB of diskspace, please wait..."
         dd if=/dev/urandom of="${DATA}" seek="${OLD_SIZE}" count="${REQ}" bs=1M iflag=count_bytes oflag=seek_bytes status=none
 
       fi
@@ -71,8 +71,8 @@ if [ -f "${DATA}" ]; then
 
   if [ "$DATA_SIZE" -lt "$OLD_SIZE" ]; then
 
-    echo "INFO: Shrinking existing disks is not supported yet!"
-    echo "INFO: Creating backup of old drive in storage folder..."
+    info "Shrinking existing disks is not supported yet!"
+    info "Creating backup of old drive in storage folder..."
 
     mv -f "${DATA}" "${DATA}.bak"
 
@@ -92,19 +92,19 @@ if [ ! -f "${DATA}" ]; then
     SPACE=$(df --output=avail -B 1 "${STORAGE}" | tail -n 1)
 
     if (( DATA_SIZE > SPACE )); then
-      echo "ERROR: Not enough free space to create a virtual disk of ${DISK_SIZE}."
-      echo "ERROR: Specify a smaller size or disable preallocation with ALLOCATE=N." && exit 86
+      error "Not enough free space to create a virtual disk of ${DISK_SIZE}."
+      error "Specify a smaller size or disable preallocation with ALLOCATE=N." && exit 86
     fi
 
     # Create an empty file
     if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
       rm -f "${DATA}"
-      echo "ERROR: Could not allocate a file for the virtual disk." && exit 87
+      error "Could not allocate a file for the virtual disk." && exit 87
     fi
 
     if [[ "${ALLOCATE}" == [Zz]* ]]; then
 
-      echo "INFO: Preallocating ${DISK_SIZE} of diskspace, please wait..."
+      info "Preallocating ${DISK_SIZE} of diskspace, please wait..."
       dd if=/dev/urandom of="${DATA}" count="${DATA_SIZE}" bs=1M iflag=count_bytes status=none
 
     fi
@@ -112,7 +112,7 @@ if [ ! -f "${DATA}" ]; then
 
   # Check if file exists
   if [ ! -f "${DATA}" ]; then
-    echo "ERROR: Virtual disk does not exist ($DATA)" && exit 88
+    error "Virtual disk does not exist ($DATA)" && exit 88
   fi
 
   # Format as BTRFS filesystem
@@ -124,14 +124,14 @@ fi
 SIZE=$(stat -c%s "${DATA}")
 
 if [[ SIZE -ne DATA_SIZE ]]; then
-  echo "ERROR: Virtual disk has the wrong size: ${SIZE}" && exit 89
+  error "Virtual disk has the wrong size: ${SIZE}" && exit 89
 fi
 
 AGENT="${STORAGE}/${BASE}.agent"
 [ -f "$AGENT" ] && AGENT_VERSION=$(cat "${AGENT}") || AGENT_VERSION=1
 
 if ((AGENT_VERSION < 5)); then
-  echo "INFO: The installed VirtualDSM Agent v${AGENT_VERSION} is an outdated version, please upgrade it."
+  info "The installed VirtualDSM Agent v${AGENT_VERSION} is an outdated version, please upgrade it."
 fi
 
 DISK_OPTS="\
