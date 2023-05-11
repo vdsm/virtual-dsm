@@ -6,9 +6,12 @@ HEADER="VirtualDSM Agent"
 
 # Functions
 
+error () { echo -e "\E[1;31m❯ ERROR: $1\E[0m" ; }
+info () { echo -e "\E[1;34m❯\E[1;36m $1\E[0m" ; }
+
 finish() {
 
-  echo "$HEADER: Shutting down.."
+  echo "❯ $HEADER: Shutting down.."
   exit
 
 }
@@ -20,7 +23,7 @@ function checkNMI {
 
   if [ "$nmi" != "" ]; then
 
-    echo "$HEADER: Received shutdown request through NMI.."
+    info "Received shutdown request through NMI.."
 
     /usr/syno/sbin/synoshutdown -s > /dev/null
     finish
@@ -48,27 +51,27 @@ function downloadUpdate {
   [[ remote_size -eq local_size ]] && return
 
   if ! curl -sfk -m 10 -o "${TMP}" "${URL}"; then
-    echo "$HEADER: curl error ($?)" && return
+    error "$HEADER: curl error ($?)" && return
   fi
 
   if [ ! -f "${TMP}" ]; then
-    echo "$HEADER: update error, file not found.." && return
+    error "$HEADER: update error, file not found.." && return
   fi
 
   line=$(head -1 "${TMP}")
 
   if [[ "$line" != "#!/usr/bin/env bash" ]]; then
-    echo "$HEADER: update error, invalid header: $line" && return
+    error "$HEADER: update error, invalid header: $line" && return
   fi
 
   if cmp --silent -- "${TMP}" "${SCRIPT}"; then
-    echo "$HEADER: update file is already equal? (${local_size} / ${remote_size})" && return
+    error "$HEADER: update file is already equal? (${local_size} / ${remote_size})" && return
   fi
 
   mv -f "${TMP}" "${SCRIPT}"
   chmod 755 "${SCRIPT}"
 
-  echo "$HEADER: succesfully installed update, please reboot."
+  info "$HEADER: succesfully installed update..."
 
 }
 
@@ -82,7 +85,7 @@ function installPackages {
 
       [[ $BASE == "ActiveInsight" ]] && continue
 
-      echo "$HEADER: Installing package ${BASE}.."
+      info "Installing package ${BASE}.."
 
       /usr/syno/bin/synopkg install "$filename" > /dev/null
       /usr/syno/bin/synopkg start "$BASE" > /dev/null &
@@ -97,7 +100,7 @@ function installPackages {
 trap finish SIGINT SIGTERM
 
 ts=$(date +%s%N)
-echo "$HEADER v$VERSION"
+echo "❯ Started $HEADER v$VERSION..."
 
 checkNMI
 
@@ -140,9 +143,9 @@ else
   MSG="http://${IP}:5000"
 fi
 
-echo "--------------------------------------------------------"
-echo " You can now login to DSM at ${MSG}"
-echo "--------------------------------------------------------"
+info "--------------------------------------------------------"
+info " You can now login to DSM at ${MSG}"
+info "--------------------------------------------------------"
 
 # Wait for NMI interrupt as a shutdown signal
 
