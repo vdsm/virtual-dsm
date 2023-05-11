@@ -33,16 +33,16 @@ rm -rf "$TMP" && mkdir -p "$TMP"
 if [ ! -f "${RDC}" ]; then
 
   RD="$TMP/rd.gz"
-  echo "Install: Downloading installer..." 
+  info "Install: Downloading installer..." 
   LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
   { curl -r 65627648-71021836 -sfk -o "$RD" "$LOC"; rc=$?; } || :
-  (( rc != 0 )) && echo "ERROR: Failed to download $LOC, reason: $rc" && exit 60
+  (( rc != 0 )) && error "Failed to download $LOC, reason: $rc" && exit 60
 
   SUM=$(md5sum "$RD" | cut -f 1 -d " ")
 
   if [ "$SUM" != "ab399db750f88ac7aa88f608f2b8651c" ]; then
-    echo "ERROR: Invalid download location (checksum $SUM)" && exit 61
+    error "Invalid download location (checksum $SUM)" && exit 61
   fi
 
   cp "$RD" "$RDC"
@@ -64,7 +64,7 @@ chmod +x /run/extract/syno_extract_system_patch
 
 rm -rf "$TMP" && mkdir -p "$TMP"
 
-echo "Install: Downloading $(basename "$URL")..."
+info "Install: Downloading $(basename "$URL")..."
 
 PAT="/$BASE.pat"
 rm -f "$PAT"
@@ -77,24 +77,24 @@ else
 fi
 
 { wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; rc=$?; } || :
-(( rc != 0 )) && echo "ERROR: Failed to download $URL, reason: $rc" && exit 69
+(( rc != 0 )) && error "Failed to download $URL, reason: $rc" && exit 69
 
-[ ! -f "$PAT" ] && echo "ERROR: Failed to download $URL" && exit 69
+[ ! -f "$PAT" ] && error "Failed to download $URL" && exit 69
 
 SIZE=$(stat -c%s "$PAT")
 
 if ((SIZE<250000000)); then
-  echo "ERROR: Invalid PAT file: File is an update pack which contains no OS image." && exit 62
+  error "Invalid PAT file: File is an update pack which contains no OS image." && exit 62
 fi
 
-echo "Install: Extracting downloaded image..."
+info "Install: Extracting downloaded image..."
 
 if { tar tf "$PAT"; } >/dev/null 2>&1; then
    tar xpf "$PAT" -C "$TMP/."
 else
    export LD_LIBRARY_PATH="/run/extract"
    if ! /run/extract/syno_extract_system_patch "$PAT" "$TMP/." ; then
-     echo "ERROR: Invalid PAT file: File is an update pack which contains no OS image." && exit 63
+     error "Invalid PAT file: File is an update pack which contains no OS image." && exit 63
    fi
    export LD_LIBRARY_PATH=""
 fi
@@ -104,19 +104,19 @@ IDB="$TMP/indexdb"
 PKG="$TMP/packages"
 HDP="$TMP/synohdpack_img"
 
-[ ! -f "$HDA.tgz" ] && echo "ERROR: Invalid PAT file: contains no OS image." && exit 64
-[ ! -f "$HDP.txz" ] && echo "ERROR: Invalid PAT file: contains no HD pack." && exit 65
-[ ! -f "$IDB.txz" ] && echo "ERROR: Invalid PAT file: contains no IndexDB." && exit 66
-[ ! -d "$PKG" ] && echo "ERROR: Invalid PAT file: contains no packages." && exit 68
+[ ! -f "$HDA.tgz" ] && error "Invalid PAT file: contains no OS image." && exit 64
+[ ! -f "$HDP.txz" ] && error "Invalid PAT file: contains no HD pack." && exit 65
+[ ! -f "$IDB.txz" ] && error "Invalid PAT file: contains no IndexDB." && exit 66
+[ ! -d "$PKG" ] && error "Invalid PAT file: contains no packages." && exit 68
 
 BOOT=$(find "$TMP" -name "*.bin.zip")
 
-[ ! -f "$BOOT" ] && echo "ERROR: Invalid PAT file: contains no boot file." && exit 67
+[ ! -f "$BOOT" ] && error "Invalid PAT file: contains no boot file." && exit 67
 
 BOOT=$(echo "$BOOT" | head -c -5)
 unzip -q -o "$BOOT".zip -d "$TMP"
 
-[[ "${ALLOCATE}" == [Zz]* ]] && echo "Install: Allocating diskspace..."
+[[ "${ALLOCATE}" == [Zz]* ]] && info "Install: Allocating diskspace..."
 
 SYSTEM="$TMP/sys.img"
 SYSTEM_SIZE=4954537983
@@ -125,22 +125,22 @@ SYSTEM_SIZE=4954537983
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
 
 if (( SYSTEM_SIZE > SPACE )); then
-  echo "ERROR: Not enough free space to create a 4 GB system disk." && exit 87
+  error "Not enough free space to create a 4 GB system disk." && exit 87
 fi
 
 if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
   rm -f "${SYSTEM}"
-  echo "ERROR: Could not allocate a file for the system disk." && exit 88
+  error "Could not allocate a file for the system disk." && exit 88
 fi
 
 if [[ "${ALLOCATE}" == [Zz]* ]]; then
-  echo "Install: Preallocating 4 GB of diskspace..."
+  info "Install: Preallocating 4 GB of diskspace..."
   dd if=/dev/urandom of="${SYSTEM}" count="${SYSTEM_SIZE}" bs=1M iflag=count_bytes status=none
 fi
 
 # Check if file exists
 if [ ! -f "${SYSTEM}" ]; then
-    echo "ERROR: System disk does not exist ($SYSTEM)" && exit 89
+    error "System disk does not exist ($SYSTEM)" && exit 89
 fi
 
 # Check the filesize
@@ -148,7 +148,7 @@ SIZE=$(stat -c%s "${SYSTEM}")
 
 if [[ SIZE -ne SYSTEM_SIZE ]]; then
   rm -f "${SYSTEM}"
-  echo "ERROR: System disk has the wrong size: ${SIZE}" && exit 90
+  error "System disk has the wrong size: ${SIZE}" && exit 90
 fi
 
 PART="$TMP/partition.fdisk"
@@ -165,7 +165,7 @@ PART="$TMP/partition.fdisk"
 
 sfdisk -q "$SYSTEM" < "$PART"
 
-echo "Install: Extracting system partition..."
+info "Install: Extracting system partition..."
 
 MOUNT="$TMP/system"
 
@@ -196,7 +196,7 @@ chmod 755 "$LOC/agent.sh"
 # Store agent version
 echo "7" > "$STORAGE"/"$BASE".agent
 
-echo "Install: Installing system partition..."
+info "Install: Installing system partition..."
 
 LABEL="1.44.1-42218"
 OFFSET="1048576" # 2048 * 512
