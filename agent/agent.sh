@@ -7,11 +7,11 @@ HEADER="VirtualDSM Agent"
 # Functions
 
 error () { echo -e "\E[1;31m❯ ERROR: $1\E[0m" ; }
-info () { echo -e "\E[1;34m❯\E[1;36m $HEADER: $1\E[0m" ; }
+info () { echo -e "\E[1;34m❯\E[1;36m $1\E[0m" ; }
 
 finish() {
 
-  info "Shutting down.."
+  echo "$HEADER: Shutting down.."
   exit
 
 }
@@ -51,27 +51,27 @@ function downloadUpdate {
   [[ remote_size -eq local_size ]] && return
 
   if ! curl -sfk -m 10 -o "${TMP}" "${URL}"; then
-    info "curl error ($?)" && return
+    error "$HEADER: curl error ($?)" && return
   fi
 
   if [ ! -f "${TMP}" ]; then
-    info "update error, file not found.." && return
+    error "$HEADER: update error, file not found.." && return
   fi
 
   line=$(head -1 "${TMP}")
 
   if [[ "$line" != "#!/usr/bin/env bash" ]]; then
-    info "update error, invalid header: $line" && return
+    error "$HEADER: update error, invalid header: $line" && return
   fi
 
   if cmp --silent -- "${TMP}" "${SCRIPT}"; then
-    info "update file is already equal? (${local_size} / ${remote_size})" && return
+    error "$HEADER: update file is already equal? (${local_size} / ${remote_size})" && return
   fi
 
   mv -f "${TMP}" "${SCRIPT}"
   chmod 755 "${SCRIPT}"
 
-  info "succesfully installed update, please reboot."
+  info "$HEADER: succesfully installed update, please reboot."
 
 }
 
@@ -100,7 +100,7 @@ function installPackages {
 trap finish SIGINT SIGTERM
 
 ts=$(date +%s%N)
-info "running v$VERSION"
+echo "Started $HEADER v$VERSION..."
 
 checkNMI
 
