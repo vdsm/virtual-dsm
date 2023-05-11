@@ -22,48 +22,23 @@ set -Eeuo pipefail
 
 configureDHCP() {
 
-  VM_NET_VLAN="${VM_NET_TAP}_vlan"
-  NETWORK=$(ip -o route | grep "${VM_NET_DEV}" | grep -v default | awk '{print $1}')
-  IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
-
-  [[ "${DEBUG}" == [Yy1]* ]] && set -x
-
-  # Create a macvlan network to allow for communication from the VM guest to the host
-  { ip link add link "${VM_NET_DEV}" "${VM_NET_VLAN}" type macvlan mode bridge ; rc=$?; } || :
-
-  if (( rc != 0 )); then
-    error "Cannot create macvlan interface. Please make sure the network type is 'macvlan' and not 'ipvlan',"
-    error "and that the NET_ADMIN capability has been added to the container config: --cap-add NET_ADMIN" && exit 15
-  fi
-
-  ip address add "${IP}" dev "${VM_NET_VLAN}"
-  ip link set dev "${VM_NET_VLAN}" up
-  ip route flush dev "${VM_NET_VLAN}"
-  
-  ip route del "${NETWORK}" dev "${VM_NET_DEV}"
-  ip route add "${NETWORK}" dev "${VM_NET_VLAN}" metric 0
-
   # Create a macvtap network for the VM guest
-  { ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge ; rc=$?; } || :
 
+  { ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge ; rc=$?; } |:
+  
   if (( rc != 0 )); then
-    error "Capability NET_ADMIN has not been set most likely. Please add the "
-    error "following docker setting to your container: --cap-add NET_ADMIN" && exit 16
+    error "Cannot create macvtap interface. Please make sure the network type is 'macvlan' and not 'ipvlan',"
+    error "and that the NET_ADMIN capability has been added to the container config: --cap-add NET_ADMIN" && exit 16
   fi
 
   ip link set "${VM_NET_TAP}" up
-
-  { set +x; } 2>/dev/null
 
   TAP_NR=$(</sys/class/net/"${VM_NET_TAP}"/ifindex)
   TAP_PATH="/dev/tap${TAP_NR}"
 
   # Create dev file (there is no udev in container: need to be done manually)
   IFS=: read -r MAJOR MINOR < <(cat /sys/devices/virtual/net/"${VM_NET_TAP}"/tap*/dev)
-
-  if (( MAJOR < 1)); then
-     error "Cannot find: sys/devices/virtual/net/${VM_NET_TAP}" && exit 18
-  fi
+  (( MAJOR < 1)) && error "Cannot find: sys/devices/virtual/net/${VM_NET_TAP}" && exit 18
 
   [[ ! -e "${TAP_PATH}" ]] && [[ -e "/dev0/${TAP_PATH##*/}" ]] && ln -s "/dev0/${TAP_PATH##*/}" "${TAP_PATH}"
 
@@ -91,10 +66,11 @@ configureDHCP() {
 
 configureNAT () {
 
+  # Create a bridge with a static IP for the VM guest
+  
   VM_NET_IP='20.20.20.21'
   [[ "${DEBUG}" == [Yy1]* ]] && set -x
 
-  # Create bridge with static IP for the VM guest
   { ip link add dev dockerbridge type bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
@@ -177,6 +153,8 @@ configureNAT () {
   $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS}
 
   { set +x; } 2>/dev/null
+  
+  [[ "${DEBUG}" == [Yy1]* ]] && echo
 }
 
 # ######################################
@@ -234,7 +212,5 @@ else
 fi
 
 NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
-
-[[ "${DEBUG}" == [Yy1]* ]] && echo && info "Finished network setup.." && echo
 
 return 0
