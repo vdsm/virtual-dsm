@@ -28,13 +28,14 @@ start() {
 
   if [ ! -f "$SCRIPT" ]; then
 
-    error 'Agent script not found!' > /dev/ttyS0
-
     URL="https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh"
 
     if ! curl -sfk -m 10 -o "${SCRIPT}" "${URL}"; then
+      error 'Failed to download agent script.' > /dev/ttyS0
       rm -f "${SCRIPT}"
       return 1
+    else
+      info 'Agent script was missing?' > /dev/ttyS0
     fi
 
     chmod 755 "${SCRIPT}"
@@ -84,4 +85,3 @@ case "$1" in
     echo "Usage: $0 {start|stop|restart}"
     exit 1
 esac
-
