@@ -10,16 +10,19 @@ set -Eeuo pipefail
 : ${DISK_SIZE:='16G'}   # Initial data disk size
 : ${RAM_SIZE:='512M'}   # Maximum RAM amount
 
-echo "Starting Virtual DSM for Docker v${VERSION}..."
-trap 'echo >&2 "Error status $? for: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
+info () { echo -e "\E[1;34m❯ \E[1;36m$1\E[0m" ; }
+error () { echo -e >&2 "\E[1;31m❯ ERROR: $1\E[0m" ; }
 
-[ ! -f "/run/run.sh" ] && echo "ERROR: Script must run inside Docker container!" && exit 11
-[ "$(id -u)" -ne "0" ] && echo "ERROR: Script must be executed with root privileges." && exit 12
+echo "❯ Starting Virtual DSM for Docker v${VERSION}..."
+trap 'error "Error status $? for: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
+
+[ ! -f "/run/run.sh" ] && error "Script must run inside Docker container!" && exit 11
+[ "$(id -u)" -ne "0" ] && error "Script must be executed with root privileges." && exit 12
 
 STORAGE="/storage"
 KERNEL=$(uname -r | cut -b 1)
 
-[ ! -d "$STORAGE" ] && echo "ERROR: Storage folder (${STORAGE}) not found!" && exit 13
+[ ! -d "$STORAGE" ] && error "Storage folder (${STORAGE}) not found!" && exit 13
 
 if [ -f "$STORAGE"/dsm.ver ]; then
   BASE=$(cat "${STORAGE}/dsm.ver")
@@ -58,7 +61,7 @@ else
 fi
 
 if [ -n "${KVM_ERR}" ]; then
-  echo "ERROR: KVM acceleration not detected ${KVM_ERR}, please enable it."
+  error "KVM acceleration not detected ${KVM_ERR}, please enable it."
   [[ "${DEBUG}" == [Yy1]* ]] && exit 88
 else
   KVM_OPTS=",accel=kvm -enable-kvm -cpu host"

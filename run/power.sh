@@ -26,7 +26,7 @@ _graceful_shutdown() {
   [ ! -f "${_QEMU_PID}" ] && return
   [ -f "${_QEMU_SHUTDOWN_COUNTER}" ] && return
 
-  echo && echo "Received $1 signal, shutting down..."
+  echo && info "Received $1 signal, shutting down..."
   echo 0 > "${_QEMU_SHUTDOWN_COUNTER}"
 
   # Don't send the powerdown signal because vDSM ignores ACPI signals
@@ -37,7 +37,7 @@ _graceful_shutdown() {
 
   if [[ ! "${RESPONSE}" =~ "\"success\"" ]] ; then
 
-    echo && echo "ERROR: Could not send shutdown command to the guest ($RESPONSE)"
+    echo && error "Could not send shutdown command to the guest ($RESPONSE)"
 
     # If we cannot shutdown the usual way, fallback to the NMI method
 
@@ -55,7 +55,7 @@ _graceful_shutdown() {
 
     if ((AGENT_VERSION < 2)); then
 
-      echo && echo "Please update the VirtualDSM Agent to allow for gracefull shutdowns..."
+      echo && info "Please update the VirtualDSM Agent to allow for gracefull shutdowns..."
 
       kill -15 "$(cat "${_QEMU_PID}")"
       pkill -f qemu-system-x86_64 || true
@@ -72,13 +72,13 @@ _graceful_shutdown() {
     if echo 'info version'| nc -q 1 -w 1 localhost "${QEMU_MONPORT}" >/dev/null 2>&1 ; then
 
       sleep 1
-      #echo "Shutting down, waiting... ($(cat ${_QEMU_SHUTDOWN_COUNTER})/${QEMU_POWERDOWN_TIMEOUT})"
+      #info "Shutting down, waiting... ($(cat ${_QEMU_SHUTDOWN_COUNTER})/${QEMU_POWERDOWN_TIMEOUT})"
 
     fi
 
   done
 
-  echo && echo "Quitting..."
+  echo && info "Quitting..."
   echo 'quit' | nc -q 1 -w 1 localhost "${QEMU_MONPORT}" >/dev/null 2>&1 || true
 
   return
