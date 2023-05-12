@@ -7,6 +7,7 @@ on:
       - master
     paths-ignore:
       - '**/*.md'
+      - '**/*.yml'      
       - '.gitignore'
       - '.dockerignore'
       - '.github/**'
