@@ -25,7 +25,7 @@ configureDHCP() {
   # Create a macvtap network for the VM guest
 
   { ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge ; rc=$?; } || :
-  
+
   if (( rc != 0 )); then
     error "Cannot create macvtap interface. Please make sure the network type is 'macvlan' and not 'ipvlan',"
     error "and that the NET_ADMIN capability has been added to the container config: --cap-add NET_ADMIN" && exit 16
@@ -62,6 +62,8 @@ configureDHCP() {
   fi
 
   NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30"
+
+  return 0
 }
 
 configureNAT () {
@@ -155,6 +157,8 @@ configureNAT () {
   { set +x; } 2>/dev/null
 
   [[ "${DEBUG}" == [Yy1]* ]] && echo
+
+  return 0
 }
 
 # ######################################
