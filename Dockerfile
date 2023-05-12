@@ -13,7 +13,7 @@ ARG DEBCONF_NOWARNINGS="yes"
 ARG DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && apt-get -y upgrade && \
-	apt-get --no-install-recommends -y install \
+    apt-get --no-install-recommends -y install \
 	curl \
 	cpio \
 	wget \
@@ -30,17 +30,15 @@ RUN apt-get update && apt-get -y upgrade && \
 	netcat-openbsd \
 	ca-certificates \
 	qemu-system-x86 \
-    && apt-get clean
-
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    
 COPY run/*.sh /run/
 COPY agent/*.sh /agent/
 
 COPY --from=builder /qemu-host.bin /run/host.bin
 
-RUN ["chmod", "+x", "/run/run.sh"]
-RUN ["chmod", "+x", "/run/check.sh"]
-RUN ["chmod", "+x", "/run/server.sh"]
-RUN ["chmod", "+x", "/run/host.bin"]
+RUN chmod +x /run/*.sh && chmod +x /run/*.bin
 
 VOLUME /storage
 
