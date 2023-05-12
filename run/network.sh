@@ -47,14 +47,14 @@ configureDHCP() {
     (( rc != 0 )) && error "Cannot mknod: ${TAP_PATH} ($rc)" && exit 20
   fi
 
-  { exec 30>>"$TAP_PATH"; rc=$?; } || :
+  { exec 30>>"$TAP_PATH"; rc=$?; } 2>/dev/null || :
 
   if (( rc != 0 )); then
     error "Cannot create TAP interface ($rc). Please add the following docker settings to your "
     error "container: --device-cgroup-rule='c ${MAJOR}:* rwm' --device=/dev/vhost-net" && exit 21
   fi
 
-  { exec 40>>/dev/vhost-net; rc=$?; } || :
+  { exec 40>>/dev/vhost-net; rc=$?; } 2>/dev/null || :
 
   if (( rc != 0 )); then
     error "VHOST can not be found ($rc). Please add the following "
@@ -118,7 +118,7 @@ configureNAT () {
 
   NET_OPTS="-netdev tap,ifname=${VM_NET_TAP},script=no,downscript=no,id=hostnet0"
 
-  { exec 40>>/dev/vhost-net; rc=$?; } || :
+  { exec 40>>/dev/vhost-net; rc=$?; } 2>/dev/null || :
   (( rc == 0 )) && NET_OPTS="$NET_OPTS,vhost=on,vhostfd=40"
 
   # Build DNS options from container /etc/resolv.conf
