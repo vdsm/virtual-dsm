@@ -30,7 +30,7 @@ RUN apt-get update && apt-get -y upgrade && \
 	netcat-openbsd \
 	ca-certificates \
 	qemu-system-x86 \
-    && apt-get clean
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
     
 COPY run/*.sh /run/
