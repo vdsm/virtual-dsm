@@ -11,6 +11,7 @@ on:
       - '.dockerignore'
       - '.github/**'
       - '.github/workflows/**'
+      - 'Dockerfile'
 
 jobs:
   shellcheck:
