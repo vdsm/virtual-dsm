@@ -38,7 +38,7 @@ COPY agent/*.sh /agent/
 
 COPY --from=builder /qemu-host.bin /run/host.bin
 
-RUN ["chmod", "+x", "/run/run.sh /run/check.sh /run/server.sh /run/host.bin"]
+RUN chmod +x /run/*.sh && chmod +x /run/*.bin
 
 VOLUME /storage
 
