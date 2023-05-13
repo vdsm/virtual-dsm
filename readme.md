@@ -137,7 +137,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
    
     An added benefit of this approach is that you won't have to perform any port mapping anymore, since all ports will be exposed by default.
 
-    Please note that this IP address won't be accessible from the Docker host due to the design of macvlan, which doesn't permit communication between the two. If this is a concern, you need to create a second macvlan, but that goes beyond the scope of this FAQ.
+    Please note that this IP address won't be accessible from the Docker host due to the design of macvlan, which doesn't permit communication between the two. If this is a concern, you need to create a [second macvlan](https://blog.oddbit.com/post/2018-03-12-using-docker-macvlan-networks/#host-access) as a workaround.
 
   * ### How can the container acquire an IP address from my router?
 
