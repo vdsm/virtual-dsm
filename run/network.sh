@@ -109,17 +109,17 @@ configureNAT () {
     fi
   fi
 
+  NET_OPTS="-netdev tap,ifname=${VM_NET_TAP},script=no,downscript=no,id=hostnet0"
+
+  { exec 40>>/dev/vhost-net; rc=$?; } 2>/dev/null || :
+  (( rc == 0 )) && NET_OPTS="$NET_OPTS,vhost=on,vhostfd=40"
+
   # dnsmasq configuration:
   DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-range=$VM_NET_IP,$VM_NET_IP --dhcp-host=$VM_NET_MAC,,$VM_NET_IP,$VM_NET_HOST,infinite --dhcp-option=option:netmask,255.255.255.0"
 
   # Create lease file for faster resolve
   echo "0 $VM_NET_MAC $VM_NET_IP $VM_NET_HOST 01:${VM_NET_MAC}" > /var/lib/misc/dnsmasq.leases
   chmod 644 /var/lib/misc/dnsmasq.leases
-
-  NET_OPTS="-netdev tap,ifname=${VM_NET_TAP},script=no,downscript=no,id=hostnet0"
-
-  { exec 40>>/dev/vhost-net; rc=$?; } 2>/dev/null || :
-  (( rc == 0 )) && NET_OPTS="$NET_OPTS,vhost=on,vhostfd=40"
 
   # Build DNS options from container /etc/resolv.conf
 
@@ -196,8 +196,7 @@ fi
 if [[ "${DHCP}" == [Yy1]* ]]; then
 
   if [[ "$GATEWAY" == "172."* ]]; then
-    error "You cannot enable DHCP while the container is "
-    error "in a bridge network, only on a macvlan network!" && exit 86
+    error "You can only enable DHCP while the container is on a macvlan network!" && exit 86
   fi
 
   # Configuration for DHCP IP
