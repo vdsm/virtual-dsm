@@ -110,14 +110,14 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
     If you want to assign an individual IP address to the container, you can create a macvlan network as follows:
 
     ```
-    $ docker network create -d macvlan \
+    docker network create -d macvlan \
         --subnet=192.168.0.0/24 \
         --gateway=192.168.0.1 \
         --ip-range=192.168.0.100/28 \
         -o parent=eth0 vdsm
     ```
     
-    Be sure to modify the values to match your local subnet. 
+    Be sure to modify these values to match your local subnet. 
 
     Once you have created the network, modify the container's configuration in your compose file as follows:
 
@@ -137,13 +137,13 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
    
     An added benefit of this approach is that you won't have to perform any port mapping anymore, since all ports will be exposed by default.
 
-    Please note that this IP address won't be accessible from the Docker host due to the design of macvlan, which doesn't permit communication between the two. If this is a concern, there are some workarounds available, but they go beyond the scope of this FAQ.
+    Please note that this IP address won't be accessible from the Docker host due to the design of macvlan, which doesn't permit communication between the two. If this is a concern, you need to create a second macvlan, but that goes beyond the scope of this FAQ.
 
   * ### How can the container acquire an IP address from my router?
 
-    After configuring the container for macvlan (see above), it will now be able to join your home network by requesting an IP from your router, just like your other devices.
+    After configuring the container for macvlan (see above), it is possible for DSM to become part of your home network by requesting an IP from your router, just like your other devices.
 
-    To enable this, add the following lines to your compose file:
+    To enable this feature, add the following lines to your compose file:
 
     ```
     environment:
@@ -169,7 +169,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### What are the differences compared to standard DSM?
 
-    There are only three minor differences: the Virtual Machine Manager package is not provided, Surveillance Station doesn't include any free licenses, and logging in to your Synology account is not supported.
+    There are only two minor differences: the Virtual Machine Manager package is not provided and Surveillance Station doesn't include any free licenses.
 
 ## Disclaimer
 
