@@ -172,6 +172,8 @@ configureDNS () {
 #  Configure Network
 # ######################################
 
+{ pkill -f server.sh || true; } 2>/dev/null
+
 # Create the necessary file structure for /dev/net/tun
 if [ ! -c /dev/net/tun ]; then
   [ ! -d /dev/net ] && mkdir -m 755 /dev/net
@@ -210,7 +212,6 @@ if [[ "${DHCP}" == [Yy1]* ]]; then
   configureDHCP
 
   # Display IP on port 80 and 5000
-  { pkill -f server.sh || true; } 2>/dev/null
   /run/server.sh 5000 /run/ip.sh &
 
 else
