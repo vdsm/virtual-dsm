@@ -114,6 +114,13 @@ configureNAT () {
   { exec 40>>/dev/vhost-net; rc=$?; } 2>/dev/null || :
   (( rc == 0 )) && NET_OPTS="$NET_OPTS,vhost=on,vhostfd=40"
 
+  configureDNS
+
+  return 0
+}
+
+configureDNS () {
+
   # dnsmasq configuration:
   DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-range=$VM_NET_IP,$VM_NET_IP --dhcp-host=$VM_NET_MAC,,$VM_NET_IP,$VM_NET_HOST,infinite --dhcp-option=option:netmask,255.255.255.0"
 
