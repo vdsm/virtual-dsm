@@ -57,7 +57,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     ```yaml
     environment:
-      DISK_SIZE: "256G"
+        DISK_SIZE: "256G"
     ```
 
   * ### How do I change the location of the virtual disk?
@@ -66,7 +66,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     ```yaml
     volumes:
-      - /home/user/data:/storage
+        - /home/user/data:/storage
     ```
 
     Replace the example path `/home/user/data` with the desired storage folder.
@@ -77,7 +77,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     ```yaml
     environment:
-      ALLOCATE: "N"
+        ALLOCATE: "N"
     ```
 
     Keep in mind that this will not affect any of your existing disks, it only applies to newly created disks.
@@ -88,8 +88,8 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     ```yaml
     environment:
-      CPU_CORES: "4"
-      RAM_SIZE: "2048M"
+        CPU_CORES: "4"
+        RAM_SIZE: "2048M"
     ```
 
   * ### How do I verify if my system supports KVM?
@@ -161,7 +161,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     ```yaml
     environment:
-      URL: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat"
+        URL: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat"
     ```
 
     With this method, you are able to switch between different versions while keeping your file data.
