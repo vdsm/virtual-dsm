@@ -124,6 +124,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
     ```yaml
     services:
         dsm:
+            container_name: dsm
             ..<snip>..
             networks:
                 vdsm:             
