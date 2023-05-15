@@ -119,17 +119,16 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
     
     Be sure to modify these values to match your local subnet. 
 
-    Once you have created the network, modify the container's configuration in your compose file as follows:
+    Once you have created the network, change your compose file to make it look as follows:
 
     ```yaml
-    networks:
-        vdsm:             
-            ipv4_address: 192.168.0.100
-    ```
-    
-    Finally, add the network to the bottom of your compose file:
+    services:
+        dsm:
+            ..<snip>..
+            networks:
+                vdsm:             
+                    ipv4_address: 192.168.0.100
 
-    ```yaml
     networks:
         vdsm:
             external: true
@@ -151,7 +150,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
     devices:
         - /dev/vhost-net
     device_cgroup_rules:
-        - 'c 510:* rwm'
+        - 'c 511:* rwm'
     ```
 
     Please note that the exact `cgroup` rule number may vary depending on your system, but the log output will indicate the correct number in case of an error.
