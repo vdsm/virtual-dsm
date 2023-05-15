@@ -55,7 +55,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     To expand the default size of 16 GB, locate the `DISK_SIZE` setting in your compose file and modify it to your preferred capacity:
 
-    ```
+    ```yaml
     environment:
       DISK_SIZE: "256G"
     ```
@@ -64,7 +64,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     To change the virtual disk's location from the default docker volume, include the following bind mount in your compose file:
 
-    ```
+    ```yaml
     volumes:
       - /home/user/data:/storage
     ```
@@ -75,7 +75,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     By default, the entire disk space is reserved in advance. To create a growable disk, that only reserves the space that is actually used, add the following environment variable:
 
-    ```
+    ```yaml
     environment:
       ALLOCATE: "N"
     ```
@@ -86,7 +86,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     By default, a single core and 512MB of RAM is allocated to the container. To increase this, add the following environment variables:
 
-    ```
+    ```yaml
     environment:
       CPU_CORES: "4"
       RAM_SIZE: "2048M"
@@ -96,7 +96,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     To verify if your system supports KVM, run the following commands:
 
-    ```
+    ```bash
     sudo apt install cpu-checker
     sudo kvm-ok
     ```
@@ -109,7 +109,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     If you want to assign an individual IP address to the container, you can create a macvlan network as follows:
 
-    ```
+    ```bash
     docker network create -d macvlan \
         --subnet=192.168.0.0/24 \
         --gateway=192.168.0.1 \
@@ -121,7 +121,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     Once you have created the network, modify the container's configuration in your compose file as follows:
 
-    ```
+    ```yaml
     networks:
         vdsm:             
             ipv4_address: 192.168.0.100
@@ -129,7 +129,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
     
     Finally, add the network to the bottom of your compose file:
 
-    ```
+    ```yaml
     networks:
         vdsm:
             external: true
@@ -145,7 +145,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     To enable this feature, add the following lines to your compose file:
 
-    ```
+    ```yaml
     environment:
         DHCP: "Y"
     devices:
@@ -160,7 +160,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     By default version 7.2 will be installed, but if you prefer an older version, you can add its URL to your compose file as follows:
 
-    ```
+    ```yaml
     environment:
       URL: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat"
     ```
