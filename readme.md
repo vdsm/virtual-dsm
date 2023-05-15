@@ -55,18 +55,18 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     To expand the default size of 16 GB, locate the `DISK_SIZE` setting in your compose file and modify it to your preferred capacity:
 
-    ```
+    ```yaml
     environment:
-      DISK_SIZE: "256G"
+        DISK_SIZE: "256G"
     ```
 
   * ### How do I change the location of the virtual disk?
 
     To change the virtual disk's location from the default docker volume, include the following bind mount in your compose file:
 
-    ```
+    ```yaml
     volumes:
-      - /home/user/data:/storage
+        - /home/user/data:/storage
     ```
 
     Replace the example path `/home/user/data` with the desired storage folder.
@@ -75,9 +75,9 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     By default, the entire disk space is reserved in advance. To create a growable disk, that only reserves the space that is actually used, add the following environment variable:
 
-    ```
+    ```yaml
     environment:
-      ALLOCATE: "N"
+        ALLOCATE: "N"
     ```
 
     Keep in mind that this will not affect any of your existing disks, it only applies to newly created disks.
@@ -86,17 +86,17 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     By default, a single core and 512MB of RAM is allocated to the container. To increase this, add the following environment variables:
 
-    ```
+    ```yaml
     environment:
-      CPU_CORES: "4"
-      RAM_SIZE: "2048M"
+        CPU_CORES: "4"
+        RAM_SIZE: "2048M"
     ```
 
   * ### How do I verify if my system supports KVM?
 
     To verify if your system supports KVM, run the following commands:
 
-    ```
+    ```bash
     sudo apt install cpu-checker
     sudo kvm-ok
     ```
@@ -109,27 +109,27 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     If you want to assign an individual IP address to the container, you can create a macvlan network as follows:
 
-    ```
-    $ docker network create -d macvlan \
+    ```bash
+    docker network create -d macvlan \
         --subnet=192.168.0.0/24 \
         --gateway=192.168.0.1 \
         --ip-range=192.168.0.100/28 \
         -o parent=eth0 vdsm
     ```
     
-    Be sure to modify the values to match your local subnet. 
+    Be sure to modify these values to match your local subnet. 
 
-    Once you have created the network, modify the container's configuration in your compose file as follows:
+    Once you have created the network, change your compose file to make it look as follows:
 
-    ```
-    networks:
-        vdsm:             
-            ipv4_address: 192.168.0.100
-    ```
-    
-    Finally, add the network to the bottom of your compose file:
+    ```yaml
+    services:
+        dsm:
+            container_name: dsm
+            ..<snip>..
+            networks:
+                vdsm:             
+                    ipv4_address: 192.168.0.100
 
-    ```
     networks:
         vdsm:
             external: true
@@ -137,21 +137,21 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
    
     An added benefit of this approach is that you won't have to perform any port mapping anymore, since all ports will be exposed by default.
 
-    Please note that this IP address won't be accessible from the Docker host due to the design of macvlan, which doesn't permit communication between the two. If this is a concern, there are some workarounds available, but they go beyond the scope of this FAQ.
+    Please note that this IP address won't be accessible from the Docker host due to the design of macvlan, which doesn't permit communication between the two. If this is a concern, you need to create a [second macvlan](https://blog.oddbit.com/post/2018-03-12-using-docker-macvlan-networks/#host-access) as a workaround.
 
   * ### How can the container acquire an IP address from my router?
 
-    After configuring the container for macvlan (see above), it will now be able to join your home network by requesting an IP from your router, just like your other devices.
+    After configuring the container for macvlan (see above), it is possible for DSM to become part of your home network by requesting an IP from your router, just like your other devices.
 
-    To enable this, add the following lines to your compose file:
+    To enable this feature, add the following lines to your compose file:
 
-    ```
+    ```yaml
     environment:
         DHCP: "Y"
     devices:
         - /dev/vhost-net
     device_cgroup_rules:
-        - 'c 510:* rwm'
+        - 'c 511:* rwm'
     ```
 
     Please note that the exact `cgroup` rule number may vary depending on your system, but the log output will indicate the correct number in case of an error.
@@ -160,16 +160,16 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     By default version 7.2 will be installed, but if you prefer an older version, you can add its URL to your compose file as follows:
 
-    ```
+    ```yaml
     environment:
-      URL: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat"
+        URL: "https://global.synologydownload.com/download/DSM/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat"
     ```
 
     With this method, you are able to switch between different versions while keeping your file data.
 
   * ### What are the differences compared to standard DSM?
 
-    There are only three minor differences: the Virtual Machine Manager package is not provided, Surveillance Station doesn't include any free licenses, and logging in to your Synology account is not supported.
+    There are only two minor differences: the Virtual Machine Manager package is not provided and Surveillance Station doesn't include any free licenses.
 
 ## Disclaimer
 
