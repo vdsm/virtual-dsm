@@ -15,6 +15,13 @@ if [ -z "$URL" ]; then
 
 fi
 
+# Check if output is to interactive TTY
+if [ -t 1 ]; then
+  PROGRESS="--progress=bar:noscroll"
+else
+  PROGRESS="--progress=dot:giga"
+fi
+
 BASE=$(basename "$URL" .pat)
 
 rm -f "$STORAGE"/"$BASE".pat
@@ -32,16 +39,27 @@ rm -rf "$TMP" && mkdir -p "$TMP"
 if [ ! -f "${RDC}" ]; then
 
   RD="$TMP/rd.gz"
-  info "Install: Downloading installer..." 
+  info "Install: Downloading installer..."
   LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
-  { curl -r 65627648-71021836 -sfk -o "$RD" "$LOC"; rc=$?; } || :
+  { curl -r 65627648-71021835 -sfk -o "$RD" "$LOC"; rc=$?; } || :
   (( rc != 0 )) && error "Failed to download $LOC, reason: $rc" && exit 60
 
   SUM=$(md5sum "$RD" | cut -f 1 -d " ")
+  VERIFY="b4215a4b213ff5154db0488f92c87864"
 
-  if [ "$SUM" != "ab399db750f88ac7aa88f608f2b8651c" ]; then
-    error "Invalid download location (checksum $SUM)" && exit 61
+  if [ "$SUM" != "$VERIFY" ]; then
+
+    PAT="/install.pat"
+    rm "$RD"
+    rm -f "$PAT"
+
+    { wget "$LOC" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; rc=$?; } || :
+    (( rc != 0 )) && error "Failed to download $LOC, reason: $rc" && exit 60
+
+    tar --extract --file="$PAT" --directory="$TMP/." rd.gz
+    rm "$PAT"
+
   fi
 
   cp "$RD" "$RDC"
@@ -67,13 +85,6 @@ info "Install: Downloading $(basename "$URL")..."
 
 PAT="/$BASE.pat"
 rm -f "$PAT"
-
-# Check if running with interactive TTY or redirected to docker log
-if [ -t 1 ]; then
-  PROGRESS="--progress=bar:noscroll"
-else
-  PROGRESS="--progress=dot:giga"
-fi
 
 { wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; rc=$?; } || :
 (( rc != 0 )) && error "Failed to download $URL, reason: $rc" && exit 69
