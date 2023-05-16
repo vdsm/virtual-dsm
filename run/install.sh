@@ -72,7 +72,14 @@ xz -dc <"$RDC" >"$TMP/rd" 2>/dev/null || true
 set -e
 
 mkdir -p /run/extract
-for file in $TMP/usr/lib/libcurl.so.4 $TMP/usr/lib/libmbedcrypto.so.5 $TMP/usr/lib/libmbedtls.so.13 $TMP/usr/lib/libmbedx509.so.1 $TMP/usr/lib/libmsgpackc.so.2 $TMP/usr/lib/libsodium.so $TMP/usr/lib/libsynocodesign-ng-virtual-junior-wins.so.7 $TMP/usr/syno/bin/scemd; do
+for file in $TMP/usr/lib/libcurl.so.4 \
+            $TMP/usr/lib/libmbedcrypto.so.5 \
+            $TMP/usr/lib/libmbedtls.so.13 \
+            $TMP/usr/lib/libmbedx509.so.1 \
+            $TMP/usr/lib/libmsgpackc.so.2 \
+            $TMP/usr/lib/libsodium.so \
+            $TMP/usr/lib/libsynocodesign-ng-virtual-junior-wins.so.7 \
+            $TMP/usr/syno/bin/scemd; do
   cp "$file" /run/extract/
 done
 
