@@ -101,7 +101,7 @@ rm -f "$PAT"
 SIZE=$(stat -c%s "$PAT")
 
 if ((SIZE<250000000)); then
-  error "Invalid PAT file: File is an update pack which contains no OS image." && exit 62
+  error "The specified PAT file is probably an update pack as it's too small." && exit 62
 fi
 
 info "Install: Extracting downloaded image..."
@@ -110,9 +110,8 @@ if { tar tf "$PAT"; } >/dev/null 2>&1; then
    tar xpf "$PAT" -C "$TMP/."
 else
    export LD_LIBRARY_PATH="/run/extract"
-   if ! /run/extract/syno_extract_system_patch "$PAT" "$TMP/." ; then
-     error "Invalid PAT file: File is an update pack which contains no OS image." && exit 63
-   fi
+   { /run/extract/syno_extract_system_patch "$PAT" "$TMP/."; rc=$?; } || :
+   (( rc != 0 )) && error "Failed to extract PAT file, reason $rc" && exit 63
    export LD_LIBRARY_PATH=""
 fi
 
@@ -121,14 +120,14 @@ IDB="$TMP/indexdb"
 PKG="$TMP/packages"
 HDP="$TMP/synohdpack_img"
 
-[ ! -f "$HDA.tgz" ] && error "Invalid PAT file: contains no OS image." && exit 64
-[ ! -f "$HDP.txz" ] && error "Invalid PAT file: contains no HD pack." && exit 65
-[ ! -f "$IDB.txz" ] && error "Invalid PAT file: contains no IndexDB." && exit 66
-[ ! -d "$PKG" ] && error "Invalid PAT file: contains no packages." && exit 68
+[ ! -f "$HDA.tgz" ] && error "The PAT file contains no OS image." && exit 64
+[ ! -f "$HDP.txz" ] && error "The PAT file contains no HD pack." && exit 65
+[ ! -f "$IDB.txz" ] && error "The PAT file contains no IndexDB." && exit 66
+[ ! -d "$PKG" ] && error "The PAT file contains no packages." && exit 68
 
 BOOT=$(find "$TMP" -name "*.bin.zip")
 
-[ ! -f "$BOOT" ] && error "Invalid PAT file: contains no boot file." && exit 67
+[ ! -f "$BOOT" ] && error "The PAT file contains no boot file." && exit 67
 
 BOOT=$(echo "$BOOT" | head -c -5)
 unzip -q -o "$BOOT".zip -d "$TMP"
