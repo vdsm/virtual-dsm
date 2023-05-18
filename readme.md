@@ -62,7 +62,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I change the location of the virtual disk?
 
-    To change the virtual disk's location from the default docker volume, include the following bind mount in your compose file:
+    To change the virtual disk's location from the default Docker volume, include the following bind mount in your compose file:
 
     ```yaml
     volumes:
@@ -73,7 +73,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I change the space reserved by the virtual disk? 
 
-    By default, the entire disk space is reserved in advance. To create a growable disk, that only reserves the space that is actually used, add the following environment variable:
+    By default, the entire disk space is reserved in advance. To create a growable disk that only reserves the space that is actually used, add the following environment variable:
 
     ```yaml
     environment:
@@ -82,9 +82,9 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     Keep in mind that this will not affect any of your existing disks, it only applies to newly created disks.
 
-  * ### How do I increase the amount of CPU/RAM?
+  * ### How do I increase the amount of CPU or RAM?
 
-    By default, a single core and 512MB of RAM is allocated to the container. To increase this, add the following environment variables:
+    By default, a single core and 512 MB of RAM are allocated to the container. To increase this, add the following environment variables:
 
     ```yaml
     environment:
@@ -105,7 +105,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I assign an individual IP address to the container?
 
-    By default, the container uses bridge networking which shares the IP address with the host. 
+    By default, the container uses bridge networking, which shares the IP address with the host. 
 
     If you want to assign an individual IP address to the container, you can create a macvlan network as follows:
 
@@ -119,7 +119,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
     
     Be sure to modify these values to match your local subnet. 
 
-    Once you have created the network, change your compose file to make it look as follows:
+    Once you have created the network, change your compose file to look as follows:
 
     ```yaml
     services:
@@ -135,7 +135,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
             external: true
     ```
    
-    An added benefit of this approach is that you won't have to perform any port mapping anymore, since all ports will be exposed by default.
+    An added benefit of this approach is that you won't have to perform any port mapping anymore since all ports will be exposed by default.
 
     Please note that this IP address won't be accessible from the Docker host due to the design of macvlan, which doesn't permit communication between the two. If this is a concern, you need to create a [second macvlan](https://blog.oddbit.com/post/2018-03-12-using-docker-macvlan-networks/#host-access) as a workaround.
 
@@ -154,11 +154,11 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
         - 'c 511:* rwm'
     ```
 
-    Please note that the exact `cgroup` rule number may vary depending on your system, but the log output will indicate the correct number in case of an error.
+    Please note that the exact `cgroup` rule number may vary depending on your system, but the log output will indicate the correct number in the event of an error.
 
   * ### How do I install a specific version of vDSM?
 
-    By default version 7.2 will be installed, but if you prefer an older version, you can add its URL to your compose file as follows:
+    By default, version 7.2 will be installed, but if you prefer an older version, you can add its URL to your compose file as follows:
 
     ```yaml
     environment:
@@ -167,19 +167,19 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     With this method, you are able to switch between different versions while keeping your file data.
 
-  * ### What are the differences compared to standard DSM?
+  * ### What are the differences compared to the standard DSM?
 
-    There are only two minor differences: the Virtual Machine Manager package is not provided and Surveillance Station doesn't include any free licenses.
+    There are only two minor differences: the Virtual Machine Manager package is not provided, and Surveillance Station doesn't include any free licenses.
     
   * ### Is this project fully legal?
 
-    Yes, this project contains only open-source code and does not distribute any copyrighted material. Neither does it try to circumvent any copyright protection measures. So by all applicable laws this project should be considered legal. 
+    Yes, this project contains only open-source code and does not distribute any copyrighted material. Neither does it try to circumvent any copyright protection measures. So under all applicable laws, this project should be considered legal. 
     
-    However by installing Synology's Virtual DSM you must accept their end-user license agreement, which does not permit installation on non-Synology hardware. So only run this project on an official Synology NAS via the Container Manager package, as any other use will be a violation of their terms and conditions.
+    However, by installing Synology's Virtual DSM, you must accept their end-user license agreement, which does not permit installation on non-Synology hardware. So only run this project on an official Synology NAS via the Container Manager package, as any other use will be a violation of their terms and conditions.
 
 ## Disclaimer
 
-Only run this container on Synology hardware, any other use is not permitted by their EULA. The product names, logos, brands and other trademarks referred to within this project are the property of their respective trademark holders. This project is not affiliated, sponsored or endorsed by Synology, Inc.
+Only run this container on Synology hardware, any other use is not permitted by their EULA. The product names, logos, brands, and other trademarks referred to within this project are the property of their respective trademark holders. This project is not affiliated, sponsored, or endorsed by Synology, Inc.
 
 [build_url]: https://github.com/kroese/virtual-dsm/
 [hub_url]: https://hub.docker.com/r/kroese/virtual-dsm
