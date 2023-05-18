@@ -175,7 +175,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     Yes, this project contains only open-source code and does not distribute any copyrighted material. Neither does it try to circumvent any copyright protection measures. So by all applicable laws this project should be considered legal. 
     
-    However by installing Synology's Virtual DSM you must accept their end-user license agreement, which does not permit installation on non-Synology hardware. So only run this project on a official Synology NAS via the Container Manager package, as any other use will be a violation of their terms and conditions.
+    However by installing Synology's Virtual DSM you must accept their end-user license agreement, which does not permit installation on non-Synology hardware. So only run this project on an official Synology NAS via the Container Manager package, as any other use will be a violation of their terms and conditions.
 
 ## Disclaimer
 
