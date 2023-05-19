@@ -42,7 +42,7 @@ if [ ! -f "${RDC}" ]; then
 
   RD="$TMP/rd.gz"
   POS="65627648-71021835"
-  VERIFY="b4215a4b213ff5154db0488f92c87864" 
+  VERIFY="b4215a4b213ff5154db0488f92c87864"
   LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
   { curl -r "$POS" -sfk -o "$RD" "$LOC"; rc=$?; } || :
@@ -69,10 +69,10 @@ if [ ! -f "${RDC}" ]; then
 fi
 
 { xz -dc <"$RDC" >"$TMP/rd" 2>/dev/null; rc=$?; } || :
-(( rc != 0 )) && error "Failed to extract $RDC" && exit 91
+(( rc > 1 )) && error "Failed to unxz $RDC, reason $rc" && exit 91
 
 { (cd "$TMP" && cpio -idm <"$TMP/rd" 2>/dev/null); rc=$?; } || :
-(( rc != 0 )) && error "Failed to cpio $RDC" && exit 92
+(( rc != 0 )) && error "Failed to cpio $RDC, reason $rc" && exit 92
 
 mkdir -p /run/extract
 for file in $TMP/usr/lib/libcurl.so.4 \
