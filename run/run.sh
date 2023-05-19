@@ -21,6 +21,7 @@ trap 'error "Status $? while: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
 
 STORAGE="/storage"
 KERNEL=$(uname -r | cut -b 1)
+ARCH=$(dpkg --print-architecture)
 
 [ ! -d "$STORAGE" ] && error "Storage folder (${STORAGE}) not found!" && exit 13
 
