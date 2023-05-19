@@ -38,15 +38,17 @@ rm -rf "$TMP" && mkdir -p "$TMP"
 
 if [ ! -f "${RDC}" ]; then
 
-  RD="$TMP/rd.gz"
   info "Install: Downloading installer..."
+
+  RD="$TMP/rd.gz"
+  POS="65627648-71021835"
+  VERIFY="b4215a4b213ff5154db0488f92c87864"
   LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
-  { curl -r 65627648-71021835 -sfk -o "$RD" "$LOC"; rc=$?; } || :
+  { curl -r "$POS" -sfk -o "$RD" "$LOC"; rc=$?; } || :
   (( rc != 0 )) && error "Failed to download $LOC, reason: $rc" && exit 60
 
   SUM=$(md5sum "$RD" | cut -f 1 -d " ")
-  VERIFY="b4215a4b213ff5154db0488f92c87864"
 
   if [ "$SUM" != "$VERIFY" ]; then
 
@@ -57,7 +59,7 @@ if [ ! -f "${RDC}" ]; then
     { wget "$LOC" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; rc=$?; } || :
     (( rc != 0 )) && error "Failed to download $LOC, reason: $rc" && exit 60
 
-    tar --extract --file="$PAT" --directory="$TMP/." rd.gz
+    tar --extract --file="$PAT" --directory="$(dirname "${RD}")"/. "$(basename "${RD}")"
     rm "$PAT"
 
   fi
@@ -66,10 +68,11 @@ if [ ! -f "${RDC}" ]; then
 
 fi
 
-set +e
-xz -dc <"$RDC" >"$TMP/rd" 2>/dev/null || true
-(cd "$TMP" && cpio -idm <"$TMP/rd" 2>/dev/null)
-set -e
+{ xz -dc <"$RDC" >"$TMP/rd" 2>/dev/null; rc=$?; } || :
+(( rc != 1 )) && error "Failed to unxz $RDC, reason $rc" && exit 91
+
+{ (cd "$TMP" && cpio -idm <"$TMP/rd" 2>/dev/null); rc=$?; } || :
+(( rc != 0 )) && error "Failed to cpio $RDC, reason $rc" && exit 92
 
 mkdir -p /run/extract
 for file in $TMP/usr/lib/libcurl.so.4 \
@@ -140,13 +143,10 @@ SYSTEM_SIZE=4954537983
 # Check free diskspace
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
 
-if (( SYSTEM_SIZE > SPACE )); then
-  error "Not enough free space to create a 4 GB system disk." && exit 87
-fi
+(( SYSTEM_SIZE > SPACE )) && error "Not enough free space to create a 4 GB system disk." && exit 87
 
 if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
-  rm -f "${SYSTEM}"
-  error "Could not allocate a file for the system disk." && exit 88
+  rm -f "${SYSTEM}" && error "Could not allocate a file for the system disk." && exit 88
 fi
 
 if [[ "${ALLOCATE}" == [Zz]* ]]; then
@@ -155,17 +155,11 @@ if [[ "${ALLOCATE}" == [Zz]* ]]; then
 fi
 
 # Check if file exists
-if [ ! -f "${SYSTEM}" ]; then
-    error "System disk does not exist ($SYSTEM)" && exit 89
-fi
+[ ! -f "${SYSTEM}" ] && error "System disk does not exist ($SYSTEM)" && exit 89
 
 # Check the filesize
 SIZE=$(stat -c%s "${SYSTEM}")
-
-if [[ SIZE -ne SYSTEM_SIZE ]]; then
-  rm -f "${SYSTEM}"
-  error "System disk has the wrong size: ${SIZE}" && exit 90
-fi
+[[ SIZE -ne SYSTEM_SIZE ]] && rm -f "${SYSTEM}" && error "System disk has the wrong size: ${SIZE}" && exit 90
 
 PART="$TMP/partition.fdisk"
 
@@ -186,7 +180,6 @@ info "Install: Extracting system partition..."
 MOUNT="$TMP/system"
 
 rm -rf "$MOUNT" && mkdir -p "$MOUNT"
-
 mv -f "$HDA.tgz" "$HDA.txz"
 
 tar xpfJ "$HDP.txz" --absolute-names -C "$MOUNT/"
