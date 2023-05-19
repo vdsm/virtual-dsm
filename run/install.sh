@@ -143,13 +143,10 @@ SYSTEM_SIZE=4954537983
 # Check free diskspace
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
 
-if (( SYSTEM_SIZE > SPACE )); then
-  error "Not enough free space to create a 4 GB system disk." && exit 87
-fi
+(( SYSTEM_SIZE > SPACE )) && error "Not enough free space to create a 4 GB system disk." && exit 87
 
 if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
-  rm -f "${SYSTEM}"
-  error "Could not allocate a file for the system disk." && exit 88
+  rm -f "${SYSTEM}" && error "Could not allocate a file for the system disk." && exit 88
 fi
 
 if [[ "${ALLOCATE}" == [Zz]* ]]; then
@@ -158,17 +155,11 @@ if [[ "${ALLOCATE}" == [Zz]* ]]; then
 fi
 
 # Check if file exists
-if [ ! -f "${SYSTEM}" ]; then
-    error "System disk does not exist ($SYSTEM)" && exit 89
-fi
+[ ! -f "${SYSTEM}" ] && error "System disk does not exist ($SYSTEM)" && exit 89
 
 # Check the filesize
 SIZE=$(stat -c%s "${SYSTEM}")
-
-if [[ SIZE -ne SYSTEM_SIZE ]]; then
-  rm -f "${SYSTEM}"
-  error "System disk has the wrong size: ${SIZE}" && exit 90
-fi
+[[ SIZE -ne SYSTEM_SIZE ]] && rm -f "${SYSTEM}" && error "System disk has the wrong size: ${SIZE}" && exit 90
 
 PART="$TMP/partition.fdisk"
 
@@ -189,7 +180,6 @@ info "Install: Extracting system partition..."
 MOUNT="$TMP/system"
 
 rm -rf "$MOUNT" && mkdir -p "$MOUNT"
-
 mv -f "$HDA.tgz" "$HDA.txz"
 
 tar xpfJ "$HDP.txz" --absolute-names -C "$MOUNT/"
