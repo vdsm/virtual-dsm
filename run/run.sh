@@ -62,7 +62,7 @@ fi
 
 if [ -n "${KVM_ERR}" ]; then
   error "KVM acceleration not detected ${KVM_ERR}, see the FAQ about this."
-  [[ "${DEBUG}" == [Yy1]* ]] && exit 88
+  [[ "${DEBUG}" != [Yy1]* ]] && exit 88
 else
   KVM_OPTS=",accel=kvm -enable-kvm -cpu host"
 fi
