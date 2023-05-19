@@ -54,7 +54,7 @@ KVM_OPTS=""
 
 if [ -e /dev/kvm ] && sh -c 'echo -n > /dev/kvm' &> /dev/null; then
   if ! grep -q -e vmx -e svm /proc/cpuinfo; then
-    KVM_ERR="(cpuinfo $(grep -c -e vmx -e svm /proc/cpuinfo))"
+    KVM_ERR="(vmx/svm disabled)"
   fi
 else
   [ -e /dev/kvm ] && KVM_ERR="(no write access)" || KVM_ERR="(device file missing)"
