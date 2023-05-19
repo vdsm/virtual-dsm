@@ -38,15 +38,17 @@ rm -rf "$TMP" && mkdir -p "$TMP"
 
 if [ ! -f "${RDC}" ]; then
 
-  RD="$TMP/rd.gz"
   info "Install: Downloading installer..."
+
+  RD="$TMP/rd.gz"
+  POS="65627648-71021835"
+  VERIFY="b4215a4b213ff5154db0488f92c87864" 
   LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
-  { curl -r 65627648-71021835 -sfk -o "$RD" "$LOC"; rc=$?; } || :
+  { curl -r "$POS" -sfk -o "$RD" "$LOC"; rc=$?; } || :
   (( rc != 0 )) && error "Failed to download $LOC, reason: $rc" && exit 60
 
   SUM=$(md5sum "$RD" | cut -f 1 -d " ")
-  VERIFY="b4215a4b213ff5154db0488f92c87864"
 
   if [ "$SUM" != "$VERIFY" ]; then
 
@@ -57,7 +59,7 @@ if [ ! -f "${RDC}" ]; then
     { wget "$LOC" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; rc=$?; } || :
     (( rc != 0 )) && error "Failed to download $LOC, reason: $rc" && exit 60
 
-    tar --extract --file="$PAT" --directory="$TMP/." rd.gz
+    tar --extract --file="$PAT" --directory="$(dirname "${RD}")"/. "$(basename "${RD}")"
     rm "$PAT"
 
   fi
@@ -66,10 +68,11 @@ if [ ! -f "${RDC}" ]; then
 
 fi
 
-set +e
-xz -dc <"$RDC" >"$TMP/rd" 2>/dev/null || true
-(cd "$TMP" && cpio -idm <"$TMP/rd" 2>/dev/null)
-set -e
+{ xz -dc <"$RDC" >"$TMP/rd" 2>/dev/null; rc=$?; } || :
+(( rc != 0 )) && error "Failed to extract $RDC" && exit 91
+
+{ (cd "$TMP" && cpio -idm <"$TMP/rd" 2>/dev/null); rc=$?; } || :
+(( rc != 0 )) && error "Failed to cpio $RDC" && exit 92
 
 mkdir -p /run/extract
 for file in $TMP/usr/lib/libcurl.so.4 \
