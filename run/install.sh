@@ -178,19 +178,16 @@ sfdisk -q "$SYSTEM" < "$PART"
 info "Install: Extracting system partition..."
 
 MOUNT="$TMP/system"
-
 rm -rf "$MOUNT" && mkdir -p "$MOUNT"
-mv -f "$HDA.tgz" "$HDA.txz"
+
+mv "$HDA.tgz" "$HDA.txz"
+mv "$PKG/" "$MOUNT/.SynoUpgradePackages/"
 
 tar xpfJ "$HDP.txz" --absolute-names -C "$MOUNT/"
 tar xpfJ "$HDA.txz" --absolute-names -C "$MOUNT/"
 tar xpfJ "$IDB.txz" --absolute-names -C "$MOUNT/usr/syno/synoman/indexdb/"
 
 # Install Agent
-
-LOC="$MOUNT/usr/local"
-mkdir -p "$LOC"
-mv "$PKG/" "$LOC/"
 
 LOC="$MOUNT/usr/local/bin"
 mkdir -p "$LOC"
