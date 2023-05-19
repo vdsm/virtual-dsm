@@ -97,8 +97,8 @@ PAT="/$BASE.pat"
 rm -f "$PAT"
 
 { wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; rc=$?; } || :
-(( rc != 0 )) && error "Failed to download $URL, reason: $rc" && exit 69
 
+(( rc != 0 )) && error "Failed to download $URL, reason: $rc" && exit 69
 [ ! -f "$PAT" ] && error "Failed to download $URL" && exit 69
 
 SIZE=$(stat -c%s "$PAT")
@@ -129,7 +129,6 @@ HDP="$TMP/synohdpack_img"
 [ ! -d "$PKG" ] && error "The PAT file contains no packages." && exit 68
 
 BOOT=$(find "$TMP" -name "*.bin.zip")
-
 [ ! -f "$BOOT" ] && error "The PAT file contains no boot file." && exit 67
 
 BOOT=$(echo "$BOOT" | head -c -5)
@@ -142,7 +141,6 @@ SYSTEM_SIZE=4954537983
 
 # Check free diskspace
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
-
 (( SYSTEM_SIZE > SPACE )) && error "Not enough free space to create a 4 GB system disk." && exit 87
 
 if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
