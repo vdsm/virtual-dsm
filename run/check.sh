@@ -4,7 +4,7 @@ set -u
 [ ! -f "/run/qemu.pid" ] && echo "QEMU not running yet.." && exit 0
 
 # Retrieve IP from guest VM for Docker healthcheck
-RESPONSE=$(curl -s -m 6 -S http://127.0.0.1:2210/read?command=10 2>&1)
+RESPONSE=$(curl -s -m 16 -S http://127.0.0.1:2210/read?command=10 2>&1)
 
 if [[ ! "${RESPONSE}" =~ "\"success\"" ]] ; then
   echo "Failed to connect to guest: $RESPONSE" && exit 1
