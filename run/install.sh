@@ -180,7 +180,7 @@ rm -rf "$MOUNT" && mkdir -p "$MOUNT"
 
 mv "$HDA.tgz" "$HDA.txz"
 mv "$PKG/" "$MOUNT/.SynoUpgradePackages/"
-rm -f "$MOUNT/.SynoUpgradePackages/ActiveInsight.spk"
+rm -f "$MOUNT/.SynoUpgradePackages/ActiveInsight-"*
 
 tar xpfJ "$HDP.txz" --absolute-names -C "$MOUNT/"
 tar xpfJ "$HDA.txz" --absolute-names -C "$MOUNT/"
