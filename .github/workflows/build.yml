@@ -32,11 +32,9 @@ jobs:
       run: |
               docker build . \
               --file Dockerfile \
-              --build-arg "VERSION_ARG=${{ vars.MAJOR }}.${{ vars.MINOR }}" \
               --build-arg "BUILD_ARG=${GITHUB_RUN_ID}" \
+              --build-arg "VERSION_ARG=${{ vars.MAJOR }}.${{ vars.MINOR }}" \
               --build-arg "DATE_ARG=${{ github.event.repository.updated_at }}" \
-              --label "build=${GITHUB_RUN_ID}" \
-              --label "version=${{ vars.MAJOR }}.${{ vars.MINOR }}" \
               --tag "${{ github.repository }}:latest" \
               --tag "${{ github.repository }}:${{ vars.MAJOR }}.${{ vars.MINOR }}" \
               --tag "ghcr.io/${{ github.repository }}:latest" \
