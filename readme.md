@@ -171,7 +171,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     There are only two minor differences: the Virtual Machine Manager package is not provided, and Surveillance Station doesn't include any free licenses.
     
-  * ### Is this project fully legal?
+  * ### Is this project legal?
 
     Yes, this project contains only open-source code and does not distribute any copyrighted material. Neither does it try to circumvent any copyright protection measures. So under all applicable laws, this project should be considered legal. 
     
