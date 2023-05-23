@@ -9,7 +9,7 @@ DL="https://global.synologydownload.com/download/DSM"
 
 if [ -z "$URL" ]; then
 
-  URL="$DL/release/7.2/64551/DSM_VirtualDSM_64551.pat"
+  URL="$DL/release/7.2/64561/DSM_VirtualDSM_64561.pat"
   #URL="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
   #URL="$DL/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat"
 
