@@ -71,6 +71,24 @@ jobs:
       contents: write
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - 
+      name: Get previous tag
+      id: previousTag
+      run: |
+        name=$(git --no-pager tag --sort=creatordate --merged ${{ github.ref_name }} | tail -2 | head -1)
+        echo "previousTag: $name"
+        echo "previousTag=$name" >> $GITHUB_ENV
+    -
+      name: Generate changelog
+      id: changelog
+      uses: requarks/changelog-action@v1
+      with:
+        token: ${{ github.token }}
+        fromTag: ${{ github.ref_name }}
+        toTag: ${{ env.previousTag }}
+        writeToFile: false
     -
       name: Create a release
       uses: action-pack/github-release@v2
@@ -79,7 +97,7 @@ jobs:
       with:
         tag: "v${{ vars.MAJOR }}.${{ vars.MINOR }}"
         title: "v${{ vars.MAJOR }}.${{ vars.MINOR }}"
-        body: "Release v${{ vars.MAJOR }}.${{ vars.MINOR }}"
+        body: "${{ steps.changelog.outputs.changes }}"
     -
       name: Increment version variable
       uses: action-pack/bump@v2
