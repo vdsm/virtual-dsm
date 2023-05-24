@@ -18,7 +18,11 @@ fi
 if [ -n "$HOST_CPU" ]; then
   HOST_CPU="$HOST_CPU,,"
 else
-  HOST_CPU="QEMU, Virtual CPU, X86_64"
+  if [ "$ARCH" == "amd64" ]; then
+    HOST_CPU="QEMU, Virtual CPU, X86_64"
+  else
+    HOST_CPU="QEMU, Virtual CPU, $ARCH"
+  fi
 fi
 
 HOST_ARGS=()
