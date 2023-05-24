@@ -124,12 +124,9 @@ PKG="$TMP/packages"
 HDP="$TMP/synohdpack_img"
 
 [ ! -f "$HDA.tgz" ] && error "The PAT file contains no OS image." && exit 64
-[ ! -f "$HDP.txz" ] && error "The PAT file contains no HD pack." && exit 65
-[ ! -f "$IDB.txz" ] && error "The PAT file contains no IndexDB." && exit 66
-[ ! -d "$PKG" ] && error "The PAT file contains no packages." && exit 68
 
 BOOT=$(find "$TMP" -name "*.bin.zip")
-[ ! -f "$BOOT" ] && error "The PAT file contains no boot file." && exit 67
+[ ! -f "$BOOT" ] && error "The PAT file contains no boot image." && exit 67
 
 BOOT=$(echo "$BOOT" | head -c -5)
 unzip -q -o "$BOOT".zip -d "$TMP"
@@ -179,12 +176,13 @@ MOUNT="$TMP/system"
 rm -rf "$MOUNT" && mkdir -p "$MOUNT"
 
 mv "$HDA.tgz" "$HDA.txz"
-mv "$PKG/" "$MOUNT/.SynoUpgradePackages/"
+tar xpfJ "$HDA.txz" --absolute-names -C "$MOUNT/"
+
+[ -d "$PKG" ] && mv "$PKG/" "$MOUNT/.SynoUpgradePackages/"
 rm -f "$MOUNT/.SynoUpgradePackages/ActiveInsight-"*
 
-tar xpfJ "$HDP.txz" --absolute-names -C "$MOUNT/"
-tar xpfJ "$HDA.txz" --absolute-names -C "$MOUNT/"
-tar xpfJ "$IDB.txz" --absolute-names -C "$MOUNT/usr/syno/synoman/indexdb/"
+[ -f "$HDP.txz" ] && tar xpfJ "$HDP.txz" --absolute-names -C "$MOUNT/"
+[ -f "$IDB.txz" ] && tar xpfJ "$IDB.txz" --absolute-names -C "$MOUNT/usr/syno/synoman/indexdb/"
 
 # Install Agent
 
