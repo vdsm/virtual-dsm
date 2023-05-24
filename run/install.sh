@@ -179,10 +179,10 @@ mv "$HDA.tgz" "$HDA.txz"
 tar xpfJ "$HDA.txz" --absolute-names -C "$MOUNT/"
 
 [ -d "$PKG" ] && mv "$PKG/" "$MOUNT/.SynoUpgradePackages/"
-[ -d "$MOUNT/.SynoUpgradePackages/" ] && rm -f "$MOUNT/.SynoUpgradePackages/ActiveInsight-"*
+rm -f "$MOUNT/.SynoUpgradePackages/ActiveInsight-"*
 
-[ -f "$IDB.txz" ] && mv "$IDB.txz" "$MOUNT/.SynoUpgradeIndexdb.txz"
-[ -f "$HDP.txz" ] && mv "$HDP.txz" "$MOUNT/.SynoUpgradeSynohdpackImg.txz"
+[ -f "$HDP.txz" ] && tar xpfJ "$HDP.txz" --absolute-names -C "$MOUNT/"
+[ -f "$IDB.txz" ] && tar xpfJ "$IDB.txz" --absolute-names -C "$MOUNT/usr/syno/synoman/indexdb/"
 
 # Install Agent
 
