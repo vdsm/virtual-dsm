@@ -10,10 +10,11 @@ DL="https://global.synologydownload.com/download/DSM"
 if [ -z "$URL" ]; then
 
   URL="$DL/release/7.2/64561/DSM_VirtualDSM_64561.pat"
-  #URL="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
   #URL="$DL/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat"
 
 fi
+
+[ "$ARCH" != "amd64" ] && URL="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
 # Check if output is to interactive TTY
 if [ -t 1 ]; then
@@ -36,7 +37,7 @@ rm -rf "$TMP" && mkdir -p "$TMP"
 
 [[ "${DEBUG}" == [Yy1]* ]] && set -x
 
-if [ ! -f "${RDC}" ]; then
+if [ ! -f "${RDC}" ] && [ "$ARCH" == "amd64" ]; then
 
   info "Install: Downloading installer..."
 
@@ -68,28 +69,32 @@ if [ ! -f "${RDC}" ]; then
 
 fi
 
-{ xz -dc <"$RDC" >"$TMP/rd" 2>/dev/null; rc=$?; } || :
-(( rc != 1 )) && error "Failed to unxz $RDC, reason $rc" && exit 91
+if [ -f "${RDC}" ] && [ "$ARCH" == "amd64" ]; then
 
-{ (cd "$TMP" && cpio -idm <"$TMP/rd" 2>/dev/null); rc=$?; } || :
-(( rc != 0 )) && error "Failed to cpio $RDC, reason $rc" && exit 92
+  { xz -dc <"$RDC" >"$TMP/rd" 2>/dev/null; rc=$?; } || :
+  (( rc != 1 )) && error "Failed to unxz $RDC, reason $rc" && exit 91
 
-mkdir -p /run/extract
-for file in $TMP/usr/lib/libcurl.so.4 \
-            $TMP/usr/lib/libmbedcrypto.so.5 \
-            $TMP/usr/lib/libmbedtls.so.13 \
-            $TMP/usr/lib/libmbedx509.so.1 \
-            $TMP/usr/lib/libmsgpackc.so.2 \
-            $TMP/usr/lib/libsodium.so \
-            $TMP/usr/lib/libsynocodesign-ng-virtual-junior-wins.so.7 \
-            $TMP/usr/syno/bin/scemd; do
-  cp "$file" /run/extract/
-done
+  { (cd "$TMP" && cpio -idm <"$TMP/rd" 2>/dev/null); rc=$?; } || :
+  (( rc != 0 )) && error "Failed to cpio $RDC, reason $rc" && exit 92
 
-mv /run/extract/scemd /run/extract/syno_extract_system_patch
-chmod +x /run/extract/syno_extract_system_patch
+  mkdir -p /run/extract
+  for file in $TMP/usr/lib/libcurl.so.4 \
+              $TMP/usr/lib/libmbedcrypto.so.5 \
+              $TMP/usr/lib/libmbedtls.so.13 \
+              $TMP/usr/lib/libmbedx509.so.1 \
+              $TMP/usr/lib/libmsgpackc.so.2 \
+              $TMP/usr/lib/libsodium.so \
+              $TMP/usr/lib/libsynocodesign-ng-virtual-junior-wins.so.7 \
+              $TMP/usr/syno/bin/scemd; do
+    cp "$file" /run/extract/
+  done
 
-rm -rf "$TMP" && mkdir -p "$TMP"
+  mv /run/extract/scemd /run/extract/syno_extract_system_patch
+  chmod +x /run/extract/syno_extract_system_patch
+
+  rm -rf "$TMP" && mkdir -p "$TMP"
+
+fi
 
 info "Install: Downloading $(basename "$URL")..."
 
@@ -110,12 +115,18 @@ fi
 info "Install: Extracting downloaded image..."
 
 if { tar tf "$PAT"; } >/dev/null 2>&1; then
-   tar xpf "$PAT" -C "$TMP/."
+
+  tar xpf "$PAT" -C "$TMP/."
+  
 else
-   export LD_LIBRARY_PATH="/run/extract"
-   { /run/extract/syno_extract_system_patch "$PAT" "$TMP/."; rc=$?; } || :
-   (( rc != 0 )) && error "Failed to extract PAT file, reason $rc" && exit 63
-   export LD_LIBRARY_PATH=""
+
+  [ "$ARCH" != "amd64" ] && error "Wrong architecture: $ARCH" && exit 65
+  
+  export LD_LIBRARY_PATH="/run/extract"
+  { /run/extract/syno_extract_system_patch "$PAT" "$TMP/."; rc=$?; } || :
+  (( rc != 0 )) && error "Failed to extract PAT file, reason $rc" && exit 63
+  export LD_LIBRARY_PATH=""
+  
 fi
 
 HDA="$TMP/hda1"
