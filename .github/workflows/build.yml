@@ -97,7 +97,12 @@ jobs:
       with:
         tag: "v${{ vars.MAJOR }}.${{ vars.MINOR }}"
         title: "v${{ vars.MAJOR }}.${{ vars.MINOR }}"
-        body: "${{ steps.changelog.outputs.changes }}"
+        body: |
+          ## Changelog :eyes:
+
+          ${{ steps.changelog.outputs.changes }}
+
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare//${{ env.previousTag }}...v${{ vars.MAJOR }}.${{ vars.MINOR }}
     -
       name: Increment version variable
       uses: action-pack/bump@v2
