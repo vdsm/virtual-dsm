@@ -9,9 +9,11 @@ DL="https://global.synologydownload.com/download/DSM"
 
 if [ -z "$URL" ]; then
 
-  URL="$DL/release/7.2/64561/DSM_VirtualDSM_64561.pat"
-  #URL="$DL/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat"
-  #URL="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
+  if [ "$ARCH" == "amd64" ]; then
+    URL="$DL/release/7.2/64561/DSM_VirtualDSM_64561.pat"
+  else
+    URL="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
+  fi
 
 fi
 
@@ -98,9 +100,9 @@ if [ -f "${RDC}" ]; then
   mv /run/extract/scemd /run/extract/syno_extract_system_patch
   chmod +x /run/extract/syno_extract_system_patch
 
-  rm -rf "$TMP" && mkdir -p "$TMP"
-
 fi
+
+rm -rf "$TMP" && mkdir -p "$TMP"
 
 info "Install: Downloading $(basename "$URL")..."
 
@@ -136,6 +138,7 @@ else
     apt-get -qq --no-install-recommends -y install qemu-user > /dev/null
 
     export DEBIAN_FRONTEND=""
+    export DEBCONF_NOWARNINGS=""
 
   fi
 
@@ -147,8 +150,9 @@ else
     { qemu-x86_64 /run/extract/syno_extract_system_patch "$PAT" "$TMP/."; rc=$?; } || :
   fi
 
-  (( rc != 0 )) && error "Failed to extract PAT file, reason $rc" && exit 63
   export LD_LIBRARY_PATH=""
+
+  (( rc != 0 )) && error "Failed to extract PAT file, reason $rc" && exit 63
 
 fi
 
