@@ -25,103 +25,108 @@ jobs:
     permissions:
       packages: write
       contents: read
-    steps: 
-    - uses: actions/checkout@v3
-    -
-      name: Build the Docker image
-      run: |
-              docker build . \
-              --file Dockerfile \
-              --build-arg "BUILD_ARG=${GITHUB_RUN_ID}" \
-              --build-arg "VERSION_ARG=${{ vars.MAJOR }}.${{ vars.MINOR }}" \
-              --build-arg "DATE_ARG=${{ github.event.repository.updated_at }}" \
-              --tag "${{ github.repository }}:latest" \
-              --tag "${{ github.repository }}:${{ vars.MAJOR }}.${{ vars.MINOR }}" \
-              --tag "ghcr.io/${{ github.repository }}:latest" \
-              --tag "ghcr.io/${{ github.repository }}:${{ vars.MAJOR }}.${{ vars.MINOR }}"
-    -
-      name: Login to Docker Hub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-    -
-      name: Push to DockerHub
-      run: |
-              docker push "${{ github.repository }}:${{ vars.MAJOR }}.${{ vars.MINOR }}" &&\
-              docker push "${{ github.repository }}:latest"
-    -
-      name: Login to GitHub Container Registry
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    -
-      name: Push to Github Container Registry
-      run: |
-              docker push "ghcr.io/${{ github.repository }}:${{ vars.MAJOR }}.${{ vars.MINOR }}" && \
-              docker push "ghcr.io/${{ github.repository }}:latest"
-
-  release:
-    needs: build
-    name: Release
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    - 
-      name: Get previous tag
-      id: previousTag
-      run: |
-        name=$(git --no-pager tag --sort=creatordate --merged ${{ github.ref_name }} | tail -2 | head -1)
-        echo "previousTag: $name"
-        echo "previousTag=$name" >> $GITHUB_ENV
-    -
-      name: Generate changelog
-      id: changelog
-      uses: requarks/changelog-action@v1
-      with:
-        token: ${{ github.token }}
-        fromTag: ${{ github.ref_name }}
-        toTag: ${{ env.previousTag }}
-        writeToFile: false
-    -
-      name: Create a release
-      uses: action-pack/github-release@v2
-      env:
-        GITHUB_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
-      with:
-        tag: "v${{ vars.MAJOR }}.${{ vars.MINOR }}"
-        title: "v${{ vars.MAJOR }}.${{ vars.MINOR }}"
-        body: |
-          ## Changelog :eyes:
+      - 
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      -
+        name: Prepare Docker build
+        id: prepare
+        run: |
+        
+          PLATFORMS="linux/amd64,linux/arm64"
+          VERSION="${{ vars.MAJOR }}.${{ vars.MINOR }}"
+          
+          TAGS=()
+          TAGS=("${{ github.repository }}:latest")
+          TAGS+=("${{ github.repository }}:${VERSION}")
+          TAGS+=("ghcr.io/${{ github.repository }}:latest")
+          TAGS+=("ghcr.io/${{ github.repository }}:${VERSION}")
+          
+          echo "tags=${TAGS[@]}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "docker_platforms=${PLATFORMS}" >> $GITHUB_OUTPUT
+          echo "build_date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+      -
+        name: Login into Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - 
+        name: Build Docker image
+        run: |
+        
+          TAGS=(${{ steps.prepare.outputs.tags }})
 
-          ${{ steps.changelog.outputs.changes }}
+          echo "Build date: ${{ steps.prepare.outputs.build_date }}"
+          echo "Docker platform: ${{ steps.prepare.outputs.docker_platforms }}"
+          echo "Tags: ${{ steps.prepare.outputs.tags }}"
 
-          **Full Changelog**: https://github.com/${{ github.repository }}/compare//${{ env.previousTag }}...v${{ vars.MAJOR }}.${{ vars.MINOR }}
-    -
-      name: Increment version variable
-      uses: action-pack/bump@v2
-      with:
-        token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          docker buildx build --platform ${{ steps.prepare.outputs.docker_platforms }} \
+            --output "type=image,push=true" \
+            --progress=plain \
+            --build-arg "BUILD_ARG=${GITHUB_RUN_ID}" \
+            --build-arg "VERSION_ARG=${{ steps.prepare.outputs.version }}" \
+            --build-arg "DATE_ARG=${{ steps.prepare.outputs.build_date }}" \
+            --build-arg "VCS_REF=${GITHUB_SHA::8}" \
+            $(printf "%s" "${TAGS[@]/#/ --tag }" ) .
+      -
+        name: Clear Docker credentials
+        run: |
+          rm -f ${HOME}/.docker/config.json
+      -
+        name: Get previous tag
+        id: previousTag
+        run: |
+          name=$(git --no-pager tag --sort=creatordate --merged ${{ github.ref_name }} | tail -1)
+          echo "previousTag: $name"
+          echo "previousTag=$name" >> $GITHUB_ENV
+      -
+        name: Generate changelog
+        id: changelog
+        uses: requarks/changelog-action@v1
+        with:
+          token: ${{ github.token }}
+          fromTag: ${{ github.ref_name }}
+          toTag: ${{ env.previousTag }}
+          writeToFile: false
+          reverseOrder: true
+          includeInvalidCommits: true
+          excludeTypes: "docs,build,chore"
+      -
+        name: Create a release
+        uses: action-pack/github-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
+        with:
+          tag: "v${{ steps.prepare.outputs.version }}"
+          title: "v${{ steps.prepare.outputs.version }}"
+          body: |
+            ${{ steps.changelog.outputs.changes }}
 
-  mirror:
-    name: Mirror
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps: 
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    -
-      name: Push to Gitlab mirror
-      uses: action-pack/gitlab-sync@v3
-      with:
-        url: ${{ secrets.GITLAB_URL }}
-        token: ${{ secrets.GITLAB_TOKEN }}
-        username: ${{ secrets.GITLAB_USERNAME }}
+            **Full Changelog**: https://github.com/${{ github.repository }}/compare//${{ env.previousTag }}...v${{ steps.prepare.outputs.version }}
+      -
+        name: Increment version variable
+        uses: action-pack/bump@v2
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+      -
+        name: Push to Gitlab mirror
+        uses: action-pack/gitlab-sync@v3
+        with:
+          url: ${{ secrets.GITLAB_URL }}
+          token: ${{ secrets.GITLAB_TOKEN }}
+          username: ${{ secrets.GITLAB_USERNAME }}
