@@ -155,6 +155,8 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
         - 'c *:* rwm'
     ```
 
+    Please note that even if you don't need DHCP, it's still recommended to enable this feature as it prevents NAT issues and increases performance by using a `macvtap` interface.
+
   * ### How do I install a specific version of vDSM?
 
     By default, version 7.2 will be installed, but if you prefer an older version, you can add its URL to your compose file as follows:
