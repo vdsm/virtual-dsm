@@ -22,6 +22,7 @@ trap 'error "Status $? while: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
 STORAGE="/storage"
 KERNEL=$(uname -r | cut -b 1)
 ARCH=$(dpkg --print-architecture)
+VERS=$(qemu-system-x86_64 --version | head -n 1 | cut -d '(' -f 1)
 
 [ ! -d "$STORAGE" ] && error "Storage folder (${STORAGE}) not found!" && exit 13
 
@@ -85,7 +86,7 @@ trap - ERR
 
 set -m
 (
-  [[ "${DEBUG}" == [Yy1]* ]] && set -x
+  [[ "${DEBUG}" == [Yy1]* ]] && info "$VERS" && set -x
   qemu-system-x86_64 ${ARGS:+ $ARGS} & echo $! > "${_QEMU_PID}"
   { set +x; } 2>/dev/null
 )
