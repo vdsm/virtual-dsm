@@ -90,9 +90,9 @@ if [ -f "${RDC}" ]; then
 
   if [ "$ARCH" != "amd64" ]; then
     mkdir -p /lib64/
-    cp $TMP/usr/lib/libc.so.6 /lib64/
-    cp $TMP/usr/lib/libpthread.so.0 /lib64/
-    cp $TMP/usr/lib/ld-linux-x86-64.so.2 /lib64/
+    cp "$TMP/usr/lib/libc.so.6" /lib64/
+    cp "$TMP/usr/lib/libpthread.so.0" /lib64/
+    cp "$TMP/usr/lib/ld-linux-x86-64.so.2" /lib64/
   fi  
 
   mv /run/extract/scemd /run/extract/syno_extract_system_patch
