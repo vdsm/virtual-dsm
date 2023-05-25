@@ -10,6 +10,8 @@ services:
         devices:
             - /dev/kvm
             - /dev/vhost-net
+        device_cgroup_rules:
+            - 'c *:* rwm'
         cap_add:
             - NET_ADMIN        
         ports:
