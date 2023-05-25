@@ -11,10 +11,9 @@ if [ -z "$URL" ]; then
 
   URL="$DL/release/7.2/64561/DSM_VirtualDSM_64561.pat"
   #URL="$DL/release/7.1.1/42962-1/DSM_VirtualDSM_42962.pat"
+  #URL="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
 fi
-
-[ "$ARCH" != "amd64" ] && URL="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
 # Check if output is to interactive TTY
 if [ -t 1 ]; then
@@ -37,7 +36,7 @@ rm -rf "$TMP" && mkdir -p "$TMP"
 
 [[ "${DEBUG}" == [Yy1]* ]] && set -x
 
-if [ ! -f "${RDC}" ] && [ "$ARCH" == "amd64" ]; then
+if [ ! -f "${RDC}" ]; then
 
   info "Install: Downloading installer..."
 
@@ -69,7 +68,7 @@ if [ ! -f "${RDC}" ] && [ "$ARCH" == "amd64" ]; then
 
 fi
 
-if [ -f "${RDC}" ] && [ "$ARCH" == "amd64" ]; then
+if [ -f "${RDC}" ]; then
 
   { xz -dc <"$RDC" >"$TMP/rd" 2>/dev/null; rc=$?; } || :
   (( rc != 1 )) && error "Failed to unxz $RDC, reason $rc" && exit 91
@@ -88,6 +87,13 @@ if [ -f "${RDC}" ] && [ "$ARCH" == "amd64" ]; then
               $TMP/usr/syno/bin/scemd; do
     cp "$file" /run/extract/
   done
+
+  if [ "$ARCH" != "amd64" ]; then
+    mkdir -p /lib64/
+    cp $TMP/usr/lib/libc.so.6 /lib64/
+    cp $TMP/usr/lib/libpthread.so.0 /lib64/
+    cp $TMP/usr/lib/ld-linux-x86-64.so.2 /lib64/
+  fi  
 
   mv /run/extract/scemd /run/extract/syno_extract_system_patch
   chmod +x /run/extract/syno_extract_system_patch
@@ -117,16 +123,33 @@ info "Install: Extracting downloaded image..."
 if { tar tf "$PAT"; } >/dev/null 2>&1; then
 
   tar xpf "$PAT" -C "$TMP/."
-  
+
 else
 
-  [ "$ARCH" != "amd64" ] && error "Wrong architecture: $ARCH" && exit 65
-  
+  if [ "$ARCH" != "amd64" ]; then
+
+    export DEBCONF_NOWARNINGS="yes"
+    export DEBIAN_FRONTEND="noninteractive"
+
+    apt-get -qq update
+    apt-get -qq -y upgrade
+    apt-get -qq --no-install-recommends -y install qemu-user > /dev/null
+
+    export DEBIAN_FRONTEND=""
+
+  fi
+
   export LD_LIBRARY_PATH="/run/extract"
-  { /run/extract/syno_extract_system_patch "$PAT" "$TMP/."; rc=$?; } || :
+
+  if [ "$ARCH" == "amd64" ]; then
+    { /run/extract/syno_extract_system_patch "$PAT" "$TMP/."; rc=$?; } || :
+  else
+    { qemu-x86_64 /run/extract/syno_extract_system_patch "$PAT" "$TMP/."; rc=$?; } || :
+  fi
+
   (( rc != 0 )) && error "Failed to extract PAT file, reason $rc" && exit 63
   export LD_LIBRARY_PATH=""
-  
+
 fi
 
 HDA="$TMP/hda1"
