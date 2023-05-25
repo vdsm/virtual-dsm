@@ -152,10 +152,8 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
     devices:
         - /dev/vhost-net
     device_cgroup_rules:
-        - 'c 511:* rwm'
+        - 'c *:* rwm'
     ```
-
-    Please note that the exact `cgroup` rule number may vary depending on your system, but the log output will indicate the correct number in the event of an error.
 
   * ### How do I install a specific version of vDSM?
 
