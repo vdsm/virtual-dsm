@@ -41,7 +41,7 @@ if [[ "${HOST_DEBUG}" == [Yy1]* ]]; then
   { set +x; } 2>/dev/null
   echo
 else
-  ./run/host.bin "${HOST_ARGS[@]}" > /dev/null 2>&1 &
+  ./run/host.bin "${HOST_ARGS[@]}" 2> /dev/null &
 fi
 
 # Configure serial ports
