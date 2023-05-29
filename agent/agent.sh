@@ -124,7 +124,7 @@ else
 
 fi
 
-delay=5000
+delay=500
 elapsed=$((($(date +%s%N) - ts)/1000000))
 
 if [[ delay -gt elapsed ]]; then

@@ -4,6 +4,7 @@ set -Eeuo pipefail
 # Docker environment variables
 
 : ${HOST_CPU:=''}
+: ${HOST_MAC:=''}
 : ${HOST_BUILD:=''}
 : ${HOST_DEBUG:=''}
 : ${HOST_SERIAL:=''}
@@ -26,9 +27,10 @@ else
 fi
 
 HOST_ARGS=()
+HOST_ARGS+=("-cpu=${CPU_CORES}")
 HOST_ARGS+=("-cpu_arch=${HOST_CPU}")
 
-[ -n "$CPU_CORES" ] && HOST_ARGS+=("-cpu=${CPU_CORES}")
+[ -n "$HOST_MAC" ] && HOST_ARGS+=("-mac=${HOST_MAC//:/-}")
 [ -n "$HOST_BUILD" ] && HOST_ARGS+=("-build=${HOST_BUILD}")
 [ -n "$HOST_SERIAL" ] && HOST_ARGS+=("-hostsn=${HOST_SERIAL}")
 [ -n "$GUEST_SERIAL" ] && HOST_ARGS+=("-guestsn=${GUEST_SERIAL}")
@@ -41,7 +43,7 @@ if [[ "${HOST_DEBUG}" == [Yy1]* ]]; then
   { set +x; } 2>/dev/null
   echo
 else
-  ./run/host.bin "${HOST_ARGS[@]}" > /dev/null 2>&1 &
+  ./run/host.bin "${HOST_ARGS[@]}" 2> /dev/null &
 fi
 
 # Configure serial ports
