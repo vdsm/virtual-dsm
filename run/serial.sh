@@ -9,6 +9,7 @@ set -Eeuo pipefail
 : ${HOST_DEBUG:=''}
 : ${HOST_SERIAL:=''}
 : ${GUEST_SERIAL:=''}
+: ${HOST_MODEL:=''}
 : ${HOST_VERSION:=''}
 : ${HOST_TIMESTAMP:=''}
 
@@ -32,6 +33,7 @@ HOST_ARGS+=("-cpu_arch=${HOST_CPU}")
 
 [ -n "$HOST_MAC" ] && HOST_ARGS+=("-mac=${HOST_MAC//:/-}")
 [ -n "$HOST_BUILD" ] && HOST_ARGS+=("-build=${HOST_BUILD}")
+[ -n "$HOST_MODEL" ] && HOST_ARGS+=("-model=${HOST_MODEL}")
 [ -n "$HOST_SERIAL" ] && HOST_ARGS+=("-hostsn=${HOST_SERIAL}")
 [ -n "$GUEST_SERIAL" ] && HOST_ARGS+=("-guestsn=${GUEST_SERIAL}")
 [ -n "$HOST_VERSION" ] && HOST_ARGS+=("-version=${HOST_VERSION}")
