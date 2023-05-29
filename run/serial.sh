@@ -31,7 +31,7 @@ HOST_ARGS=()
 HOST_ARGS+=("-cpu=${CPU_CORES}")
 HOST_ARGS+=("-cpu_arch=${HOST_CPU}")
 
-[ -n "$HOST_MAC" ] && HOST_ARGS+=("-mac=${HOST_MAC//:/-}")
+[ -n "$HOST_MAC" ] && HOST_ARGS+=("-mac=${HOST_MAC//-/:}")
 [ -n "$HOST_BUILD" ] && HOST_ARGS+=("-build=${HOST_BUILD}")
 [ -n "$HOST_MODEL" ] && HOST_ARGS+=("-model=${HOST_MODEL}")
 [ -n "$HOST_SERIAL" ] && HOST_ARGS+=("-hostsn=${HOST_SERIAL}")
