@@ -143,9 +143,11 @@ else
   MSG="http://${IP}:5000"
 fi
 
+echo ""
 info "--------------------------------------------------------"
 info " You can now login to DSM at ${MSG}"
 info "--------------------------------------------------------"
+echo ""
 
 # Wait for NMI interrupt as a shutdown signal
 
