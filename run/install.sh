@@ -10,7 +10,7 @@ DL="https://global.synologydownload.com/download/DSM"
 if [ -z "$URL" ]; then
 
   if [ "$ARCH" == "amd64" ]; then
-    URL="$DL/release/7.2/64570/DSM_VirtualDSM_64570.pat"
+    URL="$DL/release/7.2/64570-1/DSM_VirtualDSM_64570.pat"
   else
     URL="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
   fi
