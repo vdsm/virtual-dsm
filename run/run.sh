@@ -21,6 +21,7 @@ trap 'error "Status $? while: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
 
 STORAGE="/storage"
 KERNEL=$(uname -r | cut -b 1)
+MINOR=$(uname -r | cut -d '.' -f2)
 ARCH=$(dpkg --print-architecture)
 VERS=$(qemu-system-x86_64 --version | head -n 1 | cut -d '(' -f 1)
 
@@ -92,7 +93,7 @@ set -m
 )
 set +m
 
-if (( KERNEL > 4 )); then
+if (( KERNEL > 5 )) || ( (( KERNEL == 5 )) && (( MINOR > 2 )) ); then
   pidwait -F "${_QEMU_PID}" & wait $!
 else
   tail --pid "$(cat "${_QEMU_PID}")" --follow /dev/null & wait $!
