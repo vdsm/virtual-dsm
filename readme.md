@@ -60,6 +60,8 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
     environment:
         DISK_SIZE: "256G"
     ```
+    
+    This can also be used to resize the existing disk to a larger capacity without data loss. 
 
   * ### How do I change the location of the virtual disk?
 
