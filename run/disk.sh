@@ -39,7 +39,9 @@ if [ -f "${DATA}" ]; then
     if [[ "${ALLOCATE}" == [Nn]* ]]; then
 
       # Resize file by changing its length
-      truncate -s "${DATA_SIZE}" "${DATA}"; 
+      if ! truncate -s "${DATA_SIZE}" "${DATA}"; then
+        error "Could not resize the file for the virtual disk." && exit 85
+      fi
 
     else
 
@@ -55,7 +57,9 @@ if [ -f "${DATA}" ]; then
 
       # Resize file by allocating more space
       if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
-        error "Could not allocate a file for the virtual disk." && exit 85
+        if ! truncate -s "${DATA_SIZE}" "${DATA}"; then
+          error "Could not resize the file for the virtual disk." && exit 85
+        fi
       fi
 
       if [[ "${ALLOCATE}" == [Zz]* ]]; then
@@ -84,7 +88,10 @@ if [ ! -f "${DATA}" ]; then
   if [[ "${ALLOCATE}" == [Nn]* ]]; then
 
     # Create an empty file
-    truncate -s "${DATA_SIZE}" "${DATA}"
+    if ! truncate -s "${DATA_SIZE}" "${DATA}"; then
+      rm -f "${DATA}"
+      error "Could not create a file for the virtual disk." && exit 87
+    fi
 
   else
 
@@ -98,8 +105,10 @@ if [ ! -f "${DATA}" ]; then
 
     # Create an empty file
     if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
-      rm -f "${DATA}"
-      error "Could not allocate a file for the virtual disk." && exit 87
+      if ! truncate -s "${DATA_SIZE}" "${DATA}"; then
+        rm -f "${DATA}"
+        error "Could not create a file for the virtual disk." && exit 87
+      fi
     fi
 
     if [[ "${ALLOCATE}" == [Zz]* ]]; then
