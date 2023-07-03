@@ -179,7 +179,9 @@ SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
 (( SYSTEM_SIZE > SPACE )) && error "Not enough free space to create a 4 GB system disk." && exit 87
 
 if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
-  rm -f "${SYSTEM}" && error "Could not allocate a file for the system disk." && exit 88
+  if ! truncate -s "${SYSTEM_SIZE}" "${SYSTEM}"; then
+    rm -f "${SYSTEM}" && error "Could not allocate a file for the system disk." && exit 88
+  fi
 fi
 
 if [[ "${ALLOCATE}" == [Zz]* ]]; then
