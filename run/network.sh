@@ -31,7 +31,11 @@ configureDHCP() {
     error "and that the NET_ADMIN capability has been added to the container config: --cap-add NET_ADMIN" && exit 16
   fi
 
-  ip link set "${VM_NET_TAP}" up
+  while [ ! ip link set "${VM_NET_TAP}" up ]
+  do
+    info "Waiting for address to become available..."
+    sleep 2
+  done
 
   TAP_NR=$(</sys/class/net/"${VM_NET_TAP}"/ifindex)
   TAP_PATH="/dev/tap${TAP_NR}"
@@ -127,7 +131,12 @@ configureNAT () {
   fi
 
   ip address add ${VM_NET_IP%.*}.1/24 broadcast ${VM_NET_IP%.*}.255 dev dockerbridge
-  ip link set dockerbridge up
+
+  while [ ! ip link set dockerbridge up ]
+  do
+    info "Waiting for address to become available..."
+    sleep 2
+  done
 
   # QEMU Works with taps, set tap to the bridge created
   ip tuntap add dev "${VM_NET_TAP}" mode tap
