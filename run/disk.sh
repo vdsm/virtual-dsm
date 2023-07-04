@@ -47,7 +47,7 @@ if [ -f "${DATA}" ]; then
 
       REQ=$((DATA_SIZE-OLD_SIZE))
 
-      # Check free diskspace    
+      # Check free diskspace
       SPACE=$(df --output=avail -B 1 "${STORAGE}" | tail -n 1)
 
       if (( REQ > SPACE )); then
