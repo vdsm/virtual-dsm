@@ -140,7 +140,13 @@ configureNAT () {
 
   # QEMU Works with taps, set tap to the bridge created
   ip tuntap add dev "${VM_NET_TAP}" mode tap
-  ip link set "${VM_NET_TAP}" up promisc on
+
+  while [ ! ip link set "${VM_NET_TAP}" up promisc on ]
+  do
+    info "Waiting for tap to become available..."
+    sleep 2
+  done
+
   ip link set dev "${VM_NET_TAP}" master dockerbridge
 
   # Add internet connection to the VM
@@ -172,6 +178,19 @@ configureNAT () {
   configureDNS
 
   return 0
+}
+
+closeNetwork () {
+
+  ip link set "${VM_NET_TAP}" down
+  ip link delete "${VM_NET_TAP}"
+    
+  if [[ "${DHCP}" != [Yy1]* ]]; then
+
+    ip link set dockerbridge down
+    ip link delete dockerbridge
+
+  fi
 }
 
 # ######################################
