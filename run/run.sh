@@ -95,6 +95,6 @@ set +m
 
 if (( KERNEL > 5 )) || ( (( KERNEL == 5 )) && (( MINOR > 10 )) ); then
   pidwait -F "${_QEMU_PID}" & wait $!
-else
-  tail --pid "$(cat "${_QEMU_PID}")" --follow /dev/null & wait $!
 fi
+
+tail --pid "$(cat "${_QEMU_PID}")" --follow /dev/null & wait $!
