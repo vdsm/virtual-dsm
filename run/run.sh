@@ -20,8 +20,6 @@ trap 'error "Status $? while: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
 [ "$(id -u)" -ne "0" ] && error "Script must be executed with root privileges." && exit 12
 
 STORAGE="/storage"
-KERNEL=$(uname -r | cut -b 1)
-MINOR=$(uname -r | cut -d '.' -f2)
 ARCH=$(dpkg --print-architecture)
 VERS=$(qemu-system-x86_64 --version | head -n 1 | cut -d '(' -f 1)
 
@@ -93,7 +91,8 @@ set -m
 )
 set +m
 
-if (( KERNEL > 5 )) || ( (( KERNEL == 5 )) && (( MINOR > 10 )) ); then
+kernel_version=$(uname -r)
+if (( $(echo "$kernel_version < 5.3" | bc -l) )); then
   pidwait -F "${_QEMU_PID}" & wait $!
 else
   tail --pid "$(cat "${_QEMU_PID}")" --follow /dev/null & wait $!
