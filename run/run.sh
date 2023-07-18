@@ -93,7 +93,7 @@ set -m
 )
 set +m
 
-if (( KERNEL > 5 )) || ( (( KERNEL == 5 )) && (( MINOR > 10 )) ); then
+if (( KERNEL > 5 )) || ( (( KERNEL == 5 )) && (( MINOR > 2 )) ); then
   pidwait -F "${_QEMU_PID}" & wait $!
 fi
 
