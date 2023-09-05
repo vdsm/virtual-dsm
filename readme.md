@@ -191,4 +191,4 @@ Only run this container on Synology hardware, any other use is not permitted by 
 [Build]: https://github.com/kroese/virtual-dsm/actions/workflows/build.yml/badge.svg
 [Size]: https://img.shields.io/docker/image-size/kroese/virtual-dsm/latest?color=066da5&label=size
 [Pulls]: https://img.shields.io/docker/pulls/kroese/virtual-dsm.svg?style=flat&label=pulls&logo=docker
-[Version]: https://img.shields.io/docker/v/kroese/virtual-dsm?arch=amd64&sort=date&color=066da5
+[Version]: https://img.shields.io/docker/v/kroese/virtual-dsm/latest?arch=amd64&sort=semver&color=066da5
