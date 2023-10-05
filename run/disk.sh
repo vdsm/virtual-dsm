@@ -125,7 +125,7 @@ if [ ! -f "${DATA}" ]; then
   fi
 
   # Format as BTRFS filesystem
-  mkfs.btrfs -q -L data -d single -m dup "${DATA}" > /dev/null
+  # mkfs.btrfs -q -L data -d single -m dup "${DATA}" > /dev/null
 
 fi
 
