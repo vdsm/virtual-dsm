@@ -39,14 +39,13 @@ else
   TMP="/tmp/dsm"
 fi
 
+RDC="$STORAGE/dsm.rd"
+rm -rf "$TMP" && mkdir -p "$TMP"
+
 # Check free diskspace
 MIN_SPACE=5842450944
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
 (( MIN_SPACE > SPACE )) && error "Not enough free space for installation." && exit 95
-
-RDC="$STORAGE/dsm.rd"
-
-rm -rf "$TMP" && mkdir -p "$TMP"
 
 [[ "${DEBUG}" == [Yy1]* ]] && set -x
 
