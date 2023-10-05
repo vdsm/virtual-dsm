@@ -31,7 +31,7 @@ rm -f "$STORAGE"/"$BASE".agent
 rm -f "$STORAGE"/"$BASE".boot.img
 rm -f "$STORAGE"/"$BASE".system.img
 
-TMP="$STORAGE/tmp"
+TMP="/tmp/dsm"
 RDC="$STORAGE/dsm.rd"
 
 rm -rf "$TMP" && mkdir -p "$TMP"
@@ -250,6 +250,11 @@ mke2fs -q -t ext4 -b 4096 -d "$MOUNT/" -L "$LABEL" -F -E "offset=$OFFSET" "$SYST
 rm -rf "$MOUNT"
 
 echo "$BASE" > "$STORAGE"/dsm.ver
+
+# Check free diskspace
+SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
+(( 6442450944 > SPACE )) && error "Not enough free space in destination folder." && exit 94
+
 mv -f "$PAT" "$STORAGE"/"$BASE".pat
 mv -f "$BOOT" "$STORAGE"/"$BASE".boot.img
 mv -f "$SYSTEM" "$STORAGE"/"$BASE".system.img

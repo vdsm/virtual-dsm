@@ -1,4 +1,4 @@
-FROM ghcr.io/qemu-tools/qemu-host as builder
+FROM qemux/qemu-host as builder
 
 #  FROM golang as builder
 #  WORKDIR /
@@ -21,14 +21,13 @@ RUN apt-get update && apt-get -y upgrade && \
 	unzip \
 	socat \	
 	procps \
-	dnsmasq \
 	xz-utils \
 	iptables \
 	iproute2 \
-	net-tools \
-	btrfs-progs \
-	netcat-openbsd \
+ 	dnsmasq \
+  	net-tools \
 	ca-certificates \
+	netcat-openbsd \
 	qemu-system-x86 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
