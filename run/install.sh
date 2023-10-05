@@ -31,7 +31,19 @@ rm -f "$STORAGE"/"$BASE".agent
 rm -f "$STORAGE"/"$BASE".boot.img
 rm -f "$STORAGE"/"$BASE".system.img
 
-TMP="/tmp/dsm"
+FS=$(stat -f -c %T "$STORAGE")
+
+if [[ "$FS" == "ext"* ]]; then
+  TMP="$STORAGE/tmp"
+else
+  TMP="/tmp/dsm"
+fi
+
+# Check free diskspace
+MIN_SPACE=5842450944
+SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
+(( MIN_SPACE > SPACE )) && error "Not enough free space for installation." && exit 95
+
 RDC="$STORAGE/dsm.rd"
 
 rm -rf "$TMP" && mkdir -p "$TMP"
@@ -253,7 +265,7 @@ echo "$BASE" > "$STORAGE"/dsm.ver
 
 # Check free diskspace
 SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
-(( 6442450944 > SPACE )) && error "Not enough free space in destination folder." && exit 94
+(( MIN_SPACE > SPACE )) && error "Not enough free space in storage folder." && exit 94
 
 mv -f "$PAT" "$STORAGE"/"$BASE".pat
 mv -f "$BOOT" "$STORAGE"/"$BASE".boot.img
