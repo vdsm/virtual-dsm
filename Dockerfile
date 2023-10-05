@@ -1,4 +1,4 @@
-FROM ghcr.io/qemu-tools/qemu-host as builder
+FROM qemux/qemu-host as builder
 
 #  FROM golang as builder
 #  WORKDIR /
