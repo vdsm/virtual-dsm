@@ -31,15 +31,9 @@ rm -f "$STORAGE"/"$BASE".agent
 rm -f "$STORAGE"/"$BASE".boot.img
 rm -f "$STORAGE"/"$BASE".system.img
 
+TMP="/tmp/dsm"
 FS=$(stat -f -c %T "$STORAGE")
-
-if [[ "$FS" == "ext"* ]]; then
-  TMP="$STORAGE/tmp"
-else
-  TMP="/tmp/dsm"
-fi
-
-RDC="$STORAGE/dsm.rd"
+[[ "$FS" == "ext"* ]] && TMP="$STORAGE/tmp"
 rm -rf "$TMP" && mkdir -p "$TMP"
 
 # Check free diskspace
@@ -48,6 +42,8 @@ SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
 (( MIN_SPACE > SPACE )) && error "Not enough free space for installation." && exit 95
 
 [[ "${DEBUG}" == [Yy1]* ]] && set -x
+
+RDC="$STORAGE/dsm.rd"
 
 if [ ! -f "${RDC}" ]; then
 
