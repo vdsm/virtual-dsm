@@ -29,6 +29,7 @@ RUN apt-get update && apt-get -y upgrade && \
 	ca-certificates \
 	netcat-openbsd \
 	qemu-system-x86 \
+	xserver-xorg-video-intel \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
     
