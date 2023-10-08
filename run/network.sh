@@ -146,10 +146,13 @@ configureNAT () {
 
   ip link set dev "${VM_NET_TAP}" master dockerbridge
 
+
   # Add internet connection to the VM
+  IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
+
   iptables -t nat -A POSTROUTING -o "${VM_NET_DEV}" -j MASQUERADE
-  iptables -t nat -A PREROUTING -i "${VM_NET_DEV}" -p tcp  -j DNAT --to $VM_NET_IP
-  iptables -t nat -A PREROUTING -i "${VM_NET_DEV}" -p udp  -j DNAT --to $VM_NET_IP
+  iptables -t nat -A PREROUTING -i "${VM_NET_DEV}" -d "${IP}" -p tcp  -j DNAT --to $VM_NET_IP
+  iptables -t nat -A PREROUTING -i "${VM_NET_DEV}" -d "${IP}" -p udp  -j DNAT --to $VM_NET_IP
 
   if (( KERNEL > 4 )); then
     # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
