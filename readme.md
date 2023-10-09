@@ -181,8 +181,6 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
         - /dev/dri
     ```
     
-    As the Intel GPU drivers will be downloaded during installation, you need to re-install DSM when you want to apply this to an existing instance.
-    
   * ### What are the differences compared to the standard DSM?
 
     There are only two minor differences: the Virtual Machine Manager package is not provided, and Surveillance Station doesn't include any free licenses.
