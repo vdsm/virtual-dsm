@@ -4,8 +4,8 @@ set -Eeuo pipefail
 # Docker environment variables
 
 : ${URL:=''}            # URL of the PAT file
-: ${GPU:='N'}         # Enable GPU passthrough
-: ${DEBUG:='N'}         # Enable debug mode
+: ${GPU:='N'}           # Enable GPU passthrough
+: ${DEBUG:='N'}         # Enable debugging mode
 : ${ALLOCATE:='Y'}      # Preallocate diskspace
 : ${ARGUMENTS:=''}      # Extra QEMU parameters
 : ${CPU_CORES:='1'}     # Amount of CPU cores
@@ -42,17 +42,10 @@ if [[ ! -f "$STORAGE/$BASE.boot.img" ]] || [[ ! -f "$STORAGE/$BASE.system.img" ]
   . /run/install.sh
 fi
 
-# Initialize disks
-. /run/disk.sh
-
-# Initialize network
-. /run/network.sh
-
-# Initialize serialport
-. /run/serial.sh
-
-# Configure shutdown
-. /run/power.sh
+. /run/disk.sh     # Initialize disks
+. /run/network.sh  # Initialize network
+. /run/serial.sh   # Initialize serialport
+. /run/power.sh    # Configure shutdown
 
 KVM_ERR=""
 KVM_OPTS=""
@@ -82,10 +75,7 @@ EXTRA_OPTS="-device virtio-balloon-pci,id=balloon0,bus=pcie.0,addr=0x4"
 EXTRA_OPTS="$EXTRA_OPTS -object rng-random,id=objrng0,filename=/dev/urandom"
 EXTRA_OPTS="$EXTRA_OPTS -device virtio-rng-pci,rng=objrng0,id=rng0,bus=pcie.0,addr=0x1c"
 
-if [[ "${GPU}" == [Yy1]* ]]; then
-  DEF_OPTS="-nodefaults -boot strict=on -display egl-headless,rendernode=/dev/dri/renderD128"
-  DEF_OPTS="${DEF_OPTS} -device virtio-vga,id=video0,max_outputs=1,bus=pcie.0,addr=0x1"
-fi
+[[ "${GPU}" == [Yy1]* ]] && [[ "$ARCH" == "amd64" ]] && . /run/gpu.sh
 
 ARGS="${DEF_OPTS} ${CPU_OPTS} ${RAM_OPTS} ${MAC_OPTS} ${MON_OPTS} ${SERIAL_OPTS} ${NET_OPTS} ${DISK_OPTS} ${EXTRA_OPTS} ${ARGUMENTS}"
 ARGS=$(echo "$ARGS" | sed 's/\t/ /g' | tr -s ' ')
