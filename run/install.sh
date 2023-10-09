@@ -102,7 +102,7 @@ if [ -f "${RDC}" ]; then
     cp "$TMP/usr/lib/libc.so.6" /lib64/
     cp "$TMP/usr/lib/libpthread.so.0" /lib64/
     cp "$TMP/usr/lib/ld-linux-x86-64.so.2" /lib64/
-  fi  
+  fi
 
   mv /run/extract/scemd /run/extract/syno_extract_system_patch
   chmod +x /run/extract/syno_extract_system_patch
@@ -127,27 +127,35 @@ if ((SIZE<250000000)); then
   error "The specified PAT file is probably an update pack as it's too small." && exit 62
 fi
 
-info "Install: Extracting downloaded image..."
-
 if { tar tf "$PAT"; } >/dev/null 2>&1; then
 
+  info "Install: Extracting downloaded image..."
   tar xpf "$PAT" -C "$TMP/."
 
 else
 
+  export DEBCONF_NOWARNINGS="yes"
+  export DEBIAN_FRONTEND="noninteractive"
+
   if [ "$ARCH" != "amd64" ]; then
 
-    export DEBCONF_NOWARNINGS="yes"
-    export DEBIAN_FRONTEND="noninteractive"
+    info "Install: Installing QEMU..."
 
-    apt-get -qq update
-    apt-get -qq -y upgrade
+    apt-get -qq update && apt-get -qq -y upgrade
     apt-get -qq --no-install-recommends -y install qemu-user > /dev/null
 
-    export DEBIAN_FRONTEND=""
-    export DEBCONF_NOWARNINGS=""
+  fi
+
+  if [[ "${GPU}" == [Yy1]* ]] && [[ "$ARCH" == "amd64" ]]; then
+
+    info "Install: Installing GPU drivers..."
+
+    apt-get -qq update && apt-get -qq -y upgrade
+    apt-get -qq --no-install-recommends -y install xserver-xorg-video-intel > /dev/null
 
   fi
+
+  info "Install: Extracting downloaded image..."
 
   export LD_LIBRARY_PATH="/run/extract"
 
