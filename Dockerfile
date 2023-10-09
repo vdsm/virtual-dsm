@@ -7,7 +7,7 @@ FROM qemux/qemu-host as builder
 #  RUN go mod download
 #  RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /qemu-host.bin .
 
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 ARG DEBCONF_NOWARNINGS="yes"
 ARG DEBIAN_FRONTEND noninteractive
@@ -16,6 +16,7 @@ RUN apt-get update && apt-get -y upgrade && \
     apt-get --no-install-recommends -y install \
         curl \
         cpio \
+        tini \
         wget \
         fdisk \
         unzip \
@@ -64,4 +65,4 @@ LABEL org.opencontainers.image.url=https://hub.docker.com/r/kroese/virtual-dsm/
 
 HEALTHCHECK --interval=60s --retries=2 CMD /run/check.sh
 
-ENTRYPOINT ["/run/run.sh"]
+ENTRYPOINT ["/usr/bin/tini", "-s", "/run/run.sh"]
