@@ -134,35 +134,24 @@ if { tar tf "$PAT"; } >/dev/null 2>&1; then
 
 else
 
+  export DEBCONF_NOWARNINGS="yes"
+  export DEBIAN_FRONTEND="noninteractive"
+
   if [ "$ARCH" != "amd64" ]; then
 
     info "Install: Installing QEMU..."
 
-    export DEBCONF_NOWARNINGS="yes"
-    export DEBIAN_FRONTEND="noninteractive"
-
-    apt-get -qq update
-    apt-get -qq -y upgrade
+    apt-get -qq update && apt-get -qq -y upgrade
     apt-get -qq --no-install-recommends -y install qemu-user > /dev/null
-
-    export DEBIAN_FRONTEND=""
-    export DEBCONF_NOWARNINGS=""
 
   fi
 
   if [[ "${GPU}" == [Yy1]* ]] && [[ "$ARCH" == "amd64" ]]; then
-  
+
     info "Install: Installing GPU drivers..."
-    
-    export DEBCONF_NOWARNINGS="yes"
-    export DEBIAN_FRONTEND="noninteractive"
 
-    apt-get -qq update
-    apt-get -qq -y upgrade
+    apt-get -qq update && apt-get -qq -y upgrade
     apt-get -qq --no-install-recommends -y install xserver-xorg-video-intel > /dev/null
-
-    export DEBIAN_FRONTEND=""
-    export DEBCONF_NOWARNINGS=""
 
   fi
 
