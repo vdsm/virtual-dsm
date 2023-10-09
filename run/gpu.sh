@@ -1,0 +1,17 @@
+#!/bin/bash
+set -Eeuo pipefail
+
+DEF_OPTS="-nodefaults -boot strict=on -display egl-headless,rendernode=/dev/dri/renderD128"
+DEF_OPTS="${DEF_OPTS} -device virtio-vga,id=video0,max_outputs=1,bus=pcie.0,addr=0x1"
+
+if ! apt-mark showinstall | grep -q "xserver-xorg-video-intel"; then
+
+  info "Installing GPU drivers..."
+
+  export DEBCONF_NOWARNINGS="yes"
+  export DEBIAN_FRONTEND="noninteractive"
+
+  apt-get -qq update
+  apt-get -qq --no-install-recommends -y install xserver-xorg-video-intel > /dev/null
+
+fi
