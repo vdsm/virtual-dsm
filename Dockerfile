@@ -9,32 +9,35 @@ FROM qemux/qemu-host as builder
 
 FROM debian:bookworm-slim
 
+ARG TARGETARCH
 ARG DEBCONF_NOWARNINGS="yes"
 ARG DEBIAN_FRONTEND noninteractive
 
-RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
-    ADD_PKG="xserver-xorg-video-intel"; fi && \
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+    PKG="qemu-user"; fi && \
+    if [ "$TARGETARCH" = "amd64" ]; then \
+    PKG="xserver-xorg-video-intel"; fi && \
     apt-get update && apt-get -y upgrade && \
     apt-get --no-install-recommends -y install \
-	curl \
-	cpio \
-	wget \
-	fdisk \
-	unzip \
-	socat \	
-	procps \
-	xz-utils \
-	iptables \
-	iproute2 \
- 	dnsmasq \
-  	net-tools \
-	ca-certificates \
-	netcat-openbsd \
-	qemu-system-x86 \
-	${ADD_PKG}  \
+        curl \
+        cpio \
+        wget \
+        fdisk \
+        unzip \
+        socat \
+        procps \
+        xz-utils \
+        iptables \
+        iproute2 \
+        dnsmasq \
+        net-tools \
+        ca-certificates \
+        netcat-openbsd \
+        qemu-system-x86 \
+        ${PKG}  \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-    
+
 COPY run/*.sh /run/
 COPY agent/*.sh /agent/
 
@@ -46,7 +49,7 @@ VOLUME /storage
 
 EXPOSE 22
 EXPOSE 80
-EXPOSE 139 
+EXPOSE 139
 EXPOSE 445
 EXPOSE 5000
 
