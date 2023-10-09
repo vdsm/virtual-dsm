@@ -12,7 +12,9 @@ FROM debian:bookworm-slim
 ARG DEBCONF_NOWARNINGS="yes"
 ARG DEBIAN_FRONTEND noninteractive
 
-RUN apt-get update && apt-get -y upgrade && \
+RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
+    ADD_PKG="xserver-xorg-video-intel"; fi && \
+    apt-get update && apt-get -y upgrade && \
     apt-get --no-install-recommends -y install \
 	curl \
 	cpio \
@@ -29,7 +31,7 @@ RUN apt-get update && apt-get -y upgrade && \
 	ca-certificates \
 	netcat-openbsd \
 	qemu-system-x86 \
-	xserver-xorg-video-intel \
+	${ADD_PKG}  \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
     
