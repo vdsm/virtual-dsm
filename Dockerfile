@@ -9,15 +9,10 @@ FROM qemux/qemu-host as builder
 
 FROM debian:bookworm-slim
 
-ARG TARGETARCH
 ARG DEBCONF_NOWARNINGS="yes"
 ARG DEBIAN_FRONTEND noninteractive
 
-RUN if [ "$TARGETARCH" = "arm64" ]; then \
-    PKG="qemu-user"; fi && \
-    if [ "$TARGETARCH" = "amd64" ]; then \
-    PKG="xserver-xorg-video-intel"; fi && \
-    apt-get update && apt-get -y upgrade && \
+RUN apt-get update && apt-get -y upgrade && \
     apt-get --no-install-recommends -y install \
         curl \
         cpio \
@@ -34,7 +29,6 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
         ca-certificates \
         netcat-openbsd \
         qemu-system-x86 \
-        ${PKG}  \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
