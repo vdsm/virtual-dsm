@@ -7,7 +7,7 @@ FROM qemux/qemu-host as builder
 #  RUN go mod download
 #  RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /qemu-host.bin .
 
-FROM debian:trixie-slim
+FROM debian:bookworm-slim
 
 ARG DEBCONF_NOWARNINGS="yes"
 ARG DEBIAN_FRONTEND noninteractive
