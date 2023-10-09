@@ -170,6 +170,17 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     With this method, you are able to switch between different versions while keeping your file data.
 
+  * ### How do I passthrough my GPU?
+
+    To enable this feature, add the following lines to your compose file:
+
+    ```yaml
+    environment:
+        GPU: "Y"
+    devices:
+        - /dev/dri
+    ```
+
   * ### What are the differences compared to the standard DSM?
 
     There are only two minor differences: the Virtual Machine Manager package is not provided, and Surveillance Station doesn't include any free licenses.
