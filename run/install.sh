@@ -134,24 +134,15 @@ if { tar tf "$PAT"; } >/dev/null 2>&1; then
 
 else
 
-  export DEBCONF_NOWARNINGS="yes"
-  export DEBIAN_FRONTEND="noninteractive"
-
   if [ "$ARCH" != "amd64" ]; then
 
     info "Install: Installing QEMU..."
 
-    apt-get -qq update && apt-get -qq -y upgrade
+    export DEBCONF_NOWARNINGS="yes"
+    export DEBIAN_FRONTEND="noninteractive"
+
+    apt-get -qq update
     apt-get -qq --no-install-recommends -y install qemu-user > /dev/null
-
-  fi
-
-  if [[ "${GPU}" == [Yy1]* ]] && [[ "$ARCH" == "amd64" ]]; then
-
-    info "Install: Installing GPU drivers..."
-
-    apt-get -qq update && apt-get -qq -y upgrade
-    apt-get -qq --no-install-recommends -y install xserver-xorg-video-intel > /dev/null
 
   fi
 
@@ -213,14 +204,14 @@ SIZE=$(stat -c%s "${SYSTEM}")
 
 PART="$TMP/partition.fdisk"
 
-{	echo "label: dos"
-	echo "label-id: 0x6f9ee2e9"
-	echo "device: ${SYSTEM}"
-	echo "unit: sectors"
-	echo "sector-size: 512"
-	echo ""
-	echo "${SYSTEM}1 : start=        2048, size=     4980480, type=83"
-	echo "${SYSTEM}2 : start=     4982528, size=     4194304, type=82"
+{       echo "label: dos"
+        echo "label-id: 0x6f9ee2e9"
+        echo "device: ${SYSTEM}"
+        echo "unit: sectors"
+        echo "sector-size: 512"
+        echo ""
+        echo "${SYSTEM}1 : start=        2048, size=     4980480, type=83"
+        echo "${SYSTEM}2 : start=     4982528, size=     4194304, type=82"
 } > "$PART"
 
 sfdisk -q "$SYSTEM" < "$PART"
