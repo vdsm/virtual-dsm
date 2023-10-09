@@ -153,3 +153,25 @@ DISK_OPTS="\
     -device virtio-scsi-pci,id=hw-userdata,bus=pcie.0,addr=0xc \
     -drive file=${DATA},if=none,id=drive-userdata,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=${DISK_DISCARD},detect-zeroes=on \
     -device scsi-hd,bus=hw-userdata.0,channel=0,scsi-id=0,lun=0,drive=drive-userdata,id=userdata0,rotation_rate=${DISK_ROTATION},bootindex=3"
+
+STORAGE2="/storage2"
+DATA2="${STORAGE2}/data.img"
+
+if [ -f "${DATA2}" ]; then
+  
+  DISK_OPTS="${DISK_OPTS} \
+    -drive file=${DATA2},if=none,id=drive-userdata2,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=${DISK_DISCARD},detect-zeroes=on \
+    -device scsi-hd,bus=hw-userdata.2,channel=0,scsi-id=0,lun=0,drive=drive-userdata2,id=userdata2,rotation_rate=${DISK_ROTATION},bootindex=4"
+
+fi
+
+STORAGE3="/storage3"
+DATA3="${STORAGE3}/data.img"
+
+if [ -f "${DATA3}" ]; then
+  
+  DISK_OPTS="${DISK_OPTS} \
+    -drive file=${DATA3},if=none,id=drive-userdata3,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=${DISK_DISCARD},detect-zeroes=on \
+    -device scsi-hd,bus=hw-userdata.3,channel=0,scsi-id=0,lun=0,drive=drive-userdata3,id=userdata3,rotation_rate=${DISK_ROTATION},bootindex=5"
+
+fi
