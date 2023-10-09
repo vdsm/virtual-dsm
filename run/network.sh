@@ -146,7 +146,6 @@ configureNAT () {
 
   ip link set dev "${VM_NET_TAP}" master dockerbridge
 
-
   # Add internet connection to the VM
   IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
 
