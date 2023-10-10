@@ -19,7 +19,7 @@ DEF_OPTS="${DEF_OPTS} -device virtio-vga,id=video0,max_outputs=1,bus=pcie.0,addr
 
 if ! apt-mark showinstall | grep -q "xserver-xorg-video-intel"; then
 
-  info "Installing GPU drivers..."
+  info "Installing Intel GPU drivers..."
 
   export DEBCONF_NOWARNINGS="yes"
   export DEBIAN_FRONTEND="noninteractive"
