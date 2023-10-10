@@ -154,8 +154,7 @@ DISK_OPTS="\
     -drive file=${DATA},if=none,id=drive-userdata,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=${DISK_DISCARD},detect-zeroes=on \
     -device scsi-hd,bus=hw-userdata.0,channel=0,scsi-id=0,lun=0,drive=drive-userdata,id=userdata0,rotation_rate=${DISK_ROTATION},bootindex=3"
 
-STORAGE2="/storage2"
-DATA2="${STORAGE2}/data.img"
+DATA2="/storage2/data.img"
 
 if [ -f "${DATA2}" ]; then
 
@@ -166,8 +165,7 @@ if [ -f "${DATA2}" ]; then
 
 fi
 
-STORAGE3="/storage3"
-DATA3="${STORAGE3}/data.img"
+DATA3="/storage3/data.img"
 
 if [ -f "${DATA3}" ]; then
 
@@ -175,5 +173,16 @@ if [ -f "${DATA3}" ]; then
     -device virtio-scsi-pci,id=hw-userdata3,bus=pcie.0,addr=0xe \
     -drive file=${DATA3},if=none,id=drive-userdata3,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=${DISK_DISCARD},detect-zeroes=on \
     -device scsi-hd,bus=hw-userdata3.0,channel=0,scsi-id=0,lun=0,drive=drive-userdata3,id=userdata3,rotation_rate=${DISK_ROTATION},bootindex=5"
+
+fi
+
+DEVICE="/device"
+
+if [ -d "${DEVICE}" ]; then
+
+  DISK_OPTS="${DISK_OPTS} \
+    -device virtio-scsi-pci,id=hw-userdata4,bus=pcie.0,addr=0xf \
+    -drive file=${DEVICE},if=none,id=drive-userdata4,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=${DISK_DISCARD},detect-zeroes=on \
+    -device scsi-hd,bus=hw-userdata4.0,channel=0,scsi-id=0,lun=0,drive=drive-userdata4,id=userdata4,rotation_rate=${DISK_ROTATION},bootindex=6"
 
 fi
