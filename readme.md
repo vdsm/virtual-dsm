@@ -17,7 +17,7 @@ Virtual DSM in a docker container.
  - Multi-platform
  - KVM acceleration
  - GPU passthrough
- - Graceful shutdown
+ - Graceful shutdowns
  - Upgrades supported
  
 ## Usage
@@ -173,7 +173,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I passthrough my GPU?
 
-    To enable this feature, add the following lines to your compose file:
+    To passthrough your GPU, add the following lines to your compose file:
 
     ```yaml
     environment:
@@ -181,6 +181,8 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
     devices:
         - /dev/dri
     ```
+
+    This can be used to enable facial recognition in Synology Photos for example.
     
   * ### What are the differences compared to the standard DSM?
 
