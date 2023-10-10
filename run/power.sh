@@ -55,8 +55,6 @@ _graceful_shutdown() {
 
     if ((AGENT_VERSION < 2)); then
 
-      echo && info "Please update the VirtualDSM Agent to allow for gracefull shutdowns..."
-
       kill -15 "$(cat "${_QEMU_PID}")"
       pkill -f qemu-system-x86_64 || true
 
@@ -72,7 +70,7 @@ _graceful_shutdown() {
     if echo 'info version'| nc -q 1 -w 1 localhost "${QEMU_MONPORT}" >/dev/null 2>&1 ; then
 
       sleep 1
-      #info "Shutting down, waiting... ($(cat ${_QEMU_SHUTDOWN_COUNTER})/${QEMU_POWERDOWN_TIMEOUT})"
+      [[ "${DEBUG}" == [Yy1]* ]] && info "Shutting down, waiting... ($(cat ${_QEMU_SHUTDOWN_COUNTER})/${QEMU_POWERDOWN_TIMEOUT})"
 
     fi
 
