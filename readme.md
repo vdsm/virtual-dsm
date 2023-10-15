@@ -27,22 +27,22 @@ Via `docker-compose.yml`
 ```yaml
 version: "3"
 services:
-    dsm:
-        container_name: dsm
-        image: kroese/virtual-dsm:latest
-        environment:
-            DISK_SIZE: "16G"
-        devices:
-            - /dev/kvm
-            - /dev/vhost-net
-        cap_add:
-            - NET_ADMIN                       
-        ports:
-            - 5000:5000
-        volumes:
-            - /opt/dsm:/storage
-        restart: on-failure
-        stop_grace_period: 1m
+  dsm:
+    container_name: dsm
+    image: kroese/virtual-dsm:latest
+    environment:
+      DISK_SIZE: "16G"
+    devices:
+      - /dev/kvm
+      - /dev/vhost-net
+    cap_add:
+      - NET_ADMIN                       
+    ports:
+      - 5000:5000
+    volumes:
+      - /opt/dsm:/storage
+    restart: on-failure
+    stop_grace_period: 1m
 ```
 
 Via `docker run`
@@ -59,7 +59,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     ```yaml
     environment:
-        DISK_SIZE: "256G"
+      DISK_SIZE: "256G"
     ```
     
     This can also be used to resize the existing disk to a larger capacity without data loss. 
@@ -70,7 +70,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     ```yaml
     volumes:
-        - /home/user/data:/storage
+      - /home/user/data:/storage
     ```
 
     Replace the example path `/home/user/data` with the desired storage folder.
@@ -81,7 +81,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     ```yaml
     environment:
-        ALLOCATE: "N"
+      ALLOCATE: "N"
     ```
 
     Keep in mind that this will not affect any of your existing disks, it only applies to newly created disks.
@@ -92,8 +92,8 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     ```yaml
     environment:
-        CPU_CORES: "4"
-        RAM_SIZE: "2048M"
+      CPU_CORES: "4"
+      RAM_SIZE: "2048M"
     ```
 
   * ### How do I verify if my system supports KVM?
@@ -127,16 +127,16 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     ```yaml
     services:
-        dsm:
-            container_name: dsm
-            ..<snip>..
-            networks:
-                vdsm:             
-                    ipv4_address: 192.168.0.100
+      dsm:
+        container_name: dsm
+        ..<snip>..
+        networks:
+          vdsm:             
+            ipv4_address: 192.168.0.100
 
     networks:
-        vdsm:
-            external: true
+      vdsm:
+        external: true
     ```
    
     An added benefit of this approach is that you won't have to perform any port mapping anymore since all ports will be exposed by default.
@@ -151,11 +151,11 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     ```yaml
     environment:
-        DHCP: "Y"
+      DHCP: "Y"
     devices:
-        - /dev/vhost-net
+      - /dev/vhost-net
     device_cgroup_rules:
-        - 'c *:* rwm'
+      - 'c *:* rwm'
     ```
 
     Please note that even if you don't need DHCP, it's still recommended to enable this feature as it prevents NAT issues and increases performance by using a `macvtap` interface.
@@ -166,7 +166,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     ```yaml
     environment:
-        URL: "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
+      URL: "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
     ```
 
     With this method, you are able to switch between different versions while keeping your file data.
@@ -177,9 +177,9 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     ```yaml
     environment:
-        GPU: "Y"
+      GPU: "Y"
     devices:
-        - /dev/dri
+      - /dev/dri
     ```
 
     This can be used to enable facial recognition in Synology Photos for example.
