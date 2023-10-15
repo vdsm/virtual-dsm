@@ -36,7 +36,7 @@ services:
       - /dev/kvm
       - /dev/vhost-net
     cap_add:
-      - NET_ADMIN                       
+      - NET_ADMIN
     ports:
       - 5000:5000
     volumes:
@@ -131,7 +131,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
         container_name: dsm
         ..<snip>..
         networks:
-          vdsm:             
+          vdsm:
             ipv4_address: 192.168.0.100
 
     networks:
