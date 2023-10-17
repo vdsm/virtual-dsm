@@ -28,3 +28,15 @@ if ! apt-mark showinstall | grep -q "xserver-xorg-video-intel"; then
   apt-get -qq --no-install-recommends -y install xserver-xorg-video-intel > /dev/null
 
 fi
+
+if ! apt-mark showinstall | grep -q "qemu-system-modules-opengl"; then
+
+  info "Installing OpenGL module..."
+
+  export DEBCONF_NOWARNINGS="yes"
+  export DEBIAN_FRONTEND="noninteractive"
+
+  apt-get -qq update
+  apt-get -qq --no-install-recommends -y install qemu-system-modules-opengl > /dev/null
+
+fi
