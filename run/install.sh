@@ -242,9 +242,6 @@ mkdir -p "$LOC"
 cp /agent/service.sh "$LOC/agent.sh"
 chmod 755 "$LOC/agent.sh"
 
-# Store agent version
-echo "7" > "$STORAGE"/"$BASE".agent
-
 info "Install: Installing system partition..."
 
 LABEL="1.44.1-42218"
