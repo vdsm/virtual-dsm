@@ -234,7 +234,11 @@ fi
 if [[ "${DHCP}" == [Yy1]* ]]; then
 
   if [[ "$GATEWAY" == "172."* ]]; then
-    error "You can only enable DHCP while the container is on a macvlan network!" && exit 86
+    if [[ "${DEBUG}" == [Yy1]* ]]; then
+      info "Warning: Are you sure the container is on a macvlan network?"
+    else
+      error "You can only enable DHCP while the container is on a macvlan network!" && exit 86
+    fi
   fi
 
   # Configuration for DHCP IP
