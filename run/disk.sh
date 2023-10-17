@@ -136,13 +136,6 @@ if [[ SIZE -ne DATA_SIZE ]]; then
   error "Virtual disk has the wrong size: ${SIZE}" && exit 89
 fi
 
-AGENT="${STORAGE}/${BASE}.agent"
-[ -f "$AGENT" ] && AGENT_VERSION=$(cat "${AGENT}") || AGENT_VERSION=1
-
-if ((AGENT_VERSION < 5)); then
-  info "The installed VirtualDSM Agent v${AGENT_VERSION} is an outdated version, please upgrade it."
-fi
-
 DISK_OPTS="\
     -device virtio-scsi-pci,id=hw-synoboot,bus=pcie.0,addr=0xa \
     -drive file=${BOOT},if=none,id=drive-synoboot,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=${DISK_DISCARD},detect-zeroes=on \
