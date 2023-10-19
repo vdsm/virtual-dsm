@@ -63,7 +63,7 @@ LABEL org.opencontainers.image.created=${DATE_ARG}
 LABEL org.opencontainers.image.revision=${BUILD_ARG}
 LABEL org.opencontainers.image.version=${VERSION_ARG}
 LABEL org.opencontainers.image.source="https://github.com/vdsm/virtual-dsm/"
-LABEL org.opencontainers.image.url="https://hub.docker.com/r/kroese/virtual-dsm/"
+LABEL org.opencontainers.image.url="https://hub.docker.com/r/vdsm/virtual-dsm/"
 LABEL org.opencontainers.image.description="Virtual DSM in a docker container"
 
 HEALTHCHECK --interval=60s --retries=2 CMD /run/check.sh

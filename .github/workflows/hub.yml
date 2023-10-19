@@ -22,3 +22,12 @@ jobs:
         repository: ${{ github.repository }}
         short-description: ${{ github.event.repository.description }}
         readme-filepath: ./readme.md
+    - 
+      name: Docker Hub Description
+      uses: peter-evans/dockerhub-description@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        repository: ${{ secrets.DOCKERHUB_MIRROR }}
+        short-description: ${{ github.event.repository.description }}
+        readme-filepath: ./readme.md        
