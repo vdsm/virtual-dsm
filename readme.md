@@ -1,6 +1,6 @@
 <h1 align="center">Virtual DSM for Docker<br />
 <div align="center">
-<img src="https://github.com/kroese/virtual-dsm/raw/master/.github/screen.jpg" title="Screenshot" style="max-width:100%;" width="432" />
+<img src="https://github.com/vdsm/virtual-dsm/raw/master/.github/screen.jpg" title="Screenshot" style="max-width:100%;" width="432" />
 </div>
 <div align="center">
 
@@ -198,11 +198,11 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
 Only run this container on Synology hardware, any other use is not permitted by their EULA. The product names, logos, brands, and other trademarks referred to within this project are the property of their respective trademark holders. This project is not affiliated, sponsored, or endorsed by Synology, Inc.
 
-[build_url]: https://github.com/kroese/virtual-dsm/
+[build_url]: https://github.com/vdsm/virtual-dsm/
 [hub_url]: https://hub.docker.com/r/kroese/virtual-dsm
 [tag_url]: https://hub.docker.com/r/kroese/virtual-dsm/tags
 
-[Build]: https://github.com/kroese/virtual-dsm/actions/workflows/build.yml/badge.svg
+[Build]: https://github.com/vdsm/virtual-dsm/actions/workflows/build.yml/badge.svg
 [Size]: https://img.shields.io/docker/image-size/kroese/virtual-dsm/latest?color=066da5&label=size
 [Pulls]: https://img.shields.io/docker/pulls/kroese/virtual-dsm.svg?style=flat&label=pulls&logo=docker
 [Version]: https://img.shields.io/docker/v/kroese/virtual-dsm/latest?arch=amd64&sort=semver&color=066da5

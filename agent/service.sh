@@ -28,7 +28,7 @@ start() {
 
   if [ ! -f "$SCRIPT" ]; then
 
-    URL="https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh"
+    URL="https://raw.githubusercontent.com/vdsm/virtual-dsm/master/agent/agent.sh"
 
     if ! curl -sfk -m 10 -o "${SCRIPT}" "${URL}"; then
       error 'Failed to download agent script.' > /dev/ttyS0
