@@ -2,7 +2,7 @@ version: "3"
 services:
     dsm:
         container_name: dsm
-        image: kroese/virtual-dsm:latest
+        image: vdsm/virtual-dsm:latest
         environment:
             CPU_CORES: "1"
             DISK_SIZE: "16G"
