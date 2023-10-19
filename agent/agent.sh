@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -u
 
-VERSION="7"
+VERSION="8"
 HEADER="VirtualDSM Agent"
 
 # Functions
@@ -38,7 +38,7 @@ function downloadUpdate {
 
   # Auto update the agent
 
-  URL="https://raw.githubusercontent.com/kroese/virtual-dsm/master/agent/agent.sh"
+  URL="https://raw.githubusercontent.com/vdsm/virtual-dsm/master/agent/agent.sh"
   
   remote_size=$(curl -sIk -m 4 "${URL}" | grep -i "content-length:" | tr -d " \t" | cut -d ':' -f 2)
   remote_size=${remote_size//$'\r'}
@@ -100,6 +100,8 @@ function installPackages {
 trap finish SIGINT SIGTERM
 
 ts=$(date +%s%N)
+
+echo ""
 echo "❯ Started $HEADER v$VERSION..."
 
 checkNMI
