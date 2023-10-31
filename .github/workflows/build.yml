@@ -44,8 +44,8 @@ jobs:
           TAGS=()
           TAGS=("${{ github.repository }}:latest")
           TAGS+=("${{ github.repository }}:${VERSION}")
-          TAGS+=("${{ secrets.DOCKERHUB_MIRROR }}:latest")
-          TAGS+=("${{ secrets.DOCKERHUB_MIRROR }}:${VERSION}")
+          #TAGS+=("${{ secrets.DOCKERHUB_MIRROR }}:latest")
+          #TAGS+=("${{ secrets.DOCKERHUB_MIRROR }}:${VERSION}")
           TAGS+=("ghcr.io/${{ github.repository }}:latest")
           TAGS+=("ghcr.io/${{ github.repository }}:${VERSION}")
           
@@ -89,25 +89,6 @@ jobs:
         run: |
           rm -f ${HOME}/.docker/config.json
       -
-        name: Get previous tag
-        id: previousTag
-        run: |
-          name=$(git --no-pager tag --sort=creatordate --merged ${{ github.ref_name }} | tail -1)
-          echo "previousTag: $name"
-          echo "previousTag=$name" >> $GITHUB_ENV
-      -
-        name: Generate changelog
-        id: changelog
-        uses: requarks/changelog-action@v1
-        with:
-          token: ${{ github.token }}
-          fromTag: ${{ github.ref_name }}
-          toTag: ${{ env.previousTag }}
-          writeToFile: false
-          reverseOrder: true
-          includeInvalidCommits: true
-          excludeTypes: "docs,build,chore"
-      -
         name: Create a release
         uses: action-pack/github-release@v2
         env:
@@ -115,10 +96,6 @@ jobs:
         with:
           tag: "v${{ steps.prepare.outputs.version }}"
           title: "v${{ steps.prepare.outputs.version }}"
-          body: |
-            ${{ steps.changelog.outputs.changes }}
-
-            **Full Changelog**: https://github.com/${{ github.repository }}/compare//${{ env.previousTag }}...v${{ steps.prepare.outputs.version }}
       -
         name: Increment version variable
         uses: action-pack/bump@v2
