@@ -62,7 +62,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
       DISK_SIZE: "256G"
     ```
     
-    This can also be used to resize the existing disk to a larger capacity without data loss. 
+    This can also be used to resize the existing disk to a larger capacity without any data loss. 
 
   * ### How do I change the location of the virtual disk?
 
@@ -162,18 +162,18 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I install a specific version of vDSM?
 
-    By default, version 7.2 will be installed, but if you prefer an older version, you can add its URL to your compose file as follows:
+    By default, version 7.2.1 will be installed, but if you prefer an older version, you can add its download URL to your compose file as follows:
 
     ```yaml
     environment:
       URL: "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
     ```
 
-    With this method, you are able to switch between different versions while keeping your file data.
+    With this method, it is even possible to switch between different versions while keeping all your file data intact.
 
   * ### How do I passthrough my GPU?
 
-    To passthrough your GPU, add the following lines to your compose file:
+    To passthrough your Intel GPU, add the following lines to your compose file:
 
     ```yaml
     environment:
@@ -182,11 +182,11 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
       - /dev/dri
     ```
 
-    This can be used to enable facial recognition in Synology Photos for example.
+    This can be used to enable the facial recognition function in Synology Photos for example.
     
   * ### What are the differences compared to the standard DSM?
 
-    There are only two minor differences: the Virtual Machine Manager package is not provided, and Surveillance Station doesn't include any free licenses.
+    There are only two minor differences: the Virtual Machine Manager package is not available, and Surveillance Station will not include any free licenses.
     
   * ### Is this project legal?
 
