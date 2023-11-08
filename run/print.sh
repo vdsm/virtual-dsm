@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-info () { echo -e "\E[1;34m❯\E[1;36m $1\E[0m" ; }
+info () { echo -e >&2 "\E[1;34m❯\E[1;36m $1\E[0m" ; }
 error () { echo -e >&2 "\E[1;31m❯ ERROR: $1\E[0m" ; }
 
 retry=true
@@ -10,9 +10,12 @@ while [ "$retry" = true ]
 do
 
   sleep 2
-  
+
   # Retrieve IP from guest VM
+
+  set +e
   RESPONSE=$(curl -s -m 16 -S http://127.0.0.1:2210/read?command=10 2>&1)
+  set -e
 
   if [[ ! "${RESPONSE}" =~ "\"success\"" ]] ; then
     error "Failed to connect to guest: $RESPONSE" && continue
@@ -53,8 +56,8 @@ else
   MSG="http://${IP}:${PORT}"
 fi
 
-echo ""
+echo "" >&2
 info "--------------------------------------------------------"
 info " You can now login to DSM at ${MSG}"
 info "--------------------------------------------------------"
-echo ""
+echo "" >&2
