@@ -39,13 +39,8 @@ _graceful_shutdown() {
 
     echo && error "Could not send shutdown command to the guest ($RESPONSE)"
 
-    # Send a NMI interrupt which will be detected by the agent script
-    if ! echo 'nmi' | nc -q 1 -w 1 localhost "${QEMU_MONPORT}" > /dev/null ; then
-
-      kill -15 "$(cat "${_QEMU_PID}")"
-      pkill -f qemu-system-x86_64 || true
-
-    fi
+    kill -15 "$(cat "${_QEMU_PID}")"
+    pkill -f qemu-system-x86_64 || true
 
   fi
 
@@ -58,8 +53,9 @@ _graceful_shutdown() {
     if echo 'info version'| nc -q 1 -w 1 localhost "${QEMU_MONPORT}" >/dev/null 2>&1 ; then
 
       sleep 1
-      CNT="$(cat ${_QEMU_SHUTDOWN_COUNTER})/${QEMU_POWERDOWN_TIMEOUT}"
-      [[ "${DEBUG}" == [Yy1]* ]] && info "Shutting down, waiting... (${CNT})"
+
+      #CNT="$(cat ${_QEMU_SHUTDOWN_COUNTER})/${QEMU_POWERDOWN_TIMEOUT}"
+      #[[ "${DEBUG}" == [Yy1]* ]] && info "Shutting down, waiting... (${CNT})"
 
     fi
 
