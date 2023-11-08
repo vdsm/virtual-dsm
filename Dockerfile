@@ -34,8 +34,6 @@ RUN apt-get update && apt-get -y upgrade && \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY run/*.sh /run/
-COPY agent/*.sh /agent/
-
 COPY --from=builder /qemu-host.bin /run/host.bin
 
 RUN chmod +x /run/*.sh && chmod +x /run/*.bin
