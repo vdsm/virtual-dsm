@@ -230,18 +230,6 @@ rm -f "$MOUNT/.SynoUpgradePackages/ActiveInsight-"*
 [ -f "$HDP.txz" ] && tar xpfJ "$HDP.txz" --absolute-names -C "$MOUNT/"
 [ -f "$IDB.txz" ] && tar xpfJ "$IDB.txz" --absolute-names -C "$MOUNT/usr/syno/synoman/indexdb/"
 
-# Install Agent
-
-LOC="$MOUNT/usr/local/bin"
-mkdir -p "$LOC"
-cp /agent/agent.sh "$LOC/agent.sh"
-chmod 755 "$LOC/agent.sh"
-
-LOC="$MOUNT/usr/local/etc/rc.d"
-mkdir -p "$LOC"
-cp /agent/service.sh "$LOC/agent.sh"
-chmod 755 "$LOC/agent.sh"
-
 info "Install: Installing system partition..."
 
 LABEL="1.44.1-42218"
