@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -u
 
-VERSION="8"
+VERSION="9"
 HEADER="VirtualDSM Agent"
 
 # Functions
@@ -45,8 +45,12 @@ function downloadUpdate {
 
   [[ "$remote_size" == "" || "$remote_size" == "0" ]] && return
 
+  remote_size=$(($remote_size+0))
+  ((remote_size<100)) && return
+
   SCRIPT=$(readlink -f "${BASH_SOURCE[0]}")
   local_size=$(stat -c%s "$SCRIPT")
+  local_size=$(($local_size+0))
 
   [[ remote_size -eq local_size ]] && return
 
@@ -125,31 +129,6 @@ else
   downloadUpdate
 
 fi
-
-delay=500
-elapsed=$((($(date +%s%N) - ts)/1000000))
-
-if [[ delay -gt elapsed ]]; then
-  difference=$((delay-elapsed))
-  float=$(echo | awk -v diff="${difference}" '{print diff * 0.001}')
-  sleep "$float"
-fi
-
-# Display message in docker log output
-
-IP=$(ip address show dev eth0 | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
-
-if [[ "$IP" == "20.20"* ]]; then
-  MSG="port 5000"
-else
-  MSG="http://${IP}:5000"
-fi
-
-echo ""
-info "--------------------------------------------------------"
-info " You can now login to DSM at ${MSG}"
-info "--------------------------------------------------------"
-echo ""
 
 # Wait for NMI interrupt as a shutdown signal
 
