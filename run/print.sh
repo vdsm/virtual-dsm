@@ -9,7 +9,7 @@ retry=true
 while [ "$retry" = true ]
 do
 
-  sleep 2
+  sleep 3
 
   # Retrieve IP from guest VM
 
