@@ -5,13 +5,10 @@ set -Eeuo pipefail
 
 : ${HOST_CPU:=''}
 : ${HOST_MAC:=''}
-: ${HOST_BUILD:=''}
 : ${HOST_DEBUG:=''}
 : ${HOST_SERIAL:=''}
-: ${GUEST_SERIAL:=''}
 : ${HOST_MODEL:=''}
-: ${HOST_VERSION:=''}
-: ${HOST_TIMESTAMP:=''}
+: ${GUEST_SERIAL:=''}
 
 if [ -z "$HOST_CPU" ]; then
   HOST_CPU=$(lscpu | grep 'Model name' | cut -f 2 -d ":" | awk '{$1=$1}1' | sed 's# @.*##g' | sed s/"(R)"//g | sed 's/[^[:alnum:] ]\+/ /g' | sed 's/  */ /g')
@@ -32,12 +29,9 @@ HOST_ARGS+=("-cpu=${CPU_CORES}")
 HOST_ARGS+=("-cpu_arch=${HOST_CPU}")
 
 [ -n "$HOST_MAC" ] && HOST_ARGS+=("-mac=${HOST_MAC}")
-[ -n "$HOST_BUILD" ] && HOST_ARGS+=("-build=${HOST_BUILD}")
 [ -n "$HOST_MODEL" ] && HOST_ARGS+=("-model=${HOST_MODEL}")
 [ -n "$HOST_SERIAL" ] && HOST_ARGS+=("-hostsn=${HOST_SERIAL}")
 [ -n "$GUEST_SERIAL" ] && HOST_ARGS+=("-guestsn=${GUEST_SERIAL}")
-[ -n "$HOST_VERSION" ] && HOST_ARGS+=("-version=${HOST_VERSION}")
-[ -n "$HOST_TIMESTAMP" ] && HOST_ARGS+=("-ts=${HOST_TIMESTAMP}")
 
 if [[ "${HOST_DEBUG}" == [Yy1]* ]]; then
   set -x

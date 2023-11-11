@@ -54,8 +54,8 @@ _graceful_shutdown() {
 
       sleep 1
 
-      #CNT="$(cat ${_QEMU_SHUTDOWN_COUNTER})/${QEMU_POWERDOWN_TIMEOUT}"
-      #[[ "${DEBUG}" == [Yy1]* ]] && info "Shutting down, waiting... (${CNT})"
+      CNT="$(cat ${_QEMU_SHUTDOWN_COUNTER})/${QEMU_POWERDOWN_TIMEOUT}"
+      [[ "${DEBUG}" == [Yy1]* ]] && info "Shutting down, waiting... (${CNT})"
 
     fi
 
