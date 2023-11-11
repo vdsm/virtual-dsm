@@ -182,7 +182,7 @@ if [ -d "$(dirname "${EXTRA_DISK}")" ]; then
   if [ ! -f "${EXTRA_DISK}" ]; then
     [ -z "$EXTRA_SIZE" ] && EXTRA_SIZE="16G"
     if ! truncate -s "${EXTRA_SIZE}" "${EXTRA_DISK}"; then
-      error "Could not create the file for the second disk." && exit 53
+      error "Could not create the file for the third disk." && exit 54
     fi
   fi
 
