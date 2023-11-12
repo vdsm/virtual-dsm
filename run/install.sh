@@ -32,14 +32,22 @@ rm -f "$STORAGE"/"$BASE".boot.img
 rm -f "$STORAGE"/"$BASE".system.img
 
 TMP="/tmp/dsm"
+MIN_SPACE=6442450944
 FS=$(stat -f -c %T "$STORAGE")
-[[ "$FS" == "ext"* ]] && TMP="$STORAGE/tmp"
+
+if [[ "$FS" != "fat"* && "$FS" != "vfat"* && "$FS" != "exfat"* && \
+        "$FS" != "ntfs"* && "$FS" != "fuse"* && "$FS" != "msdos"* ]]; then
+  TMP="$STORAGE/tmp"
+else
+  SPACE=$(df --output=avail -B 1 /tmp | tail -n 1)
+  (( MIN_SPACE > SPACE )) && TMP="$STORAGE/tmp"
+fi
+
 rm -rf "$TMP" && mkdir -p "$TMP"
 
 # Check free diskspace
-MIN_SPACE=5842450944
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
-(( MIN_SPACE > SPACE )) && error "Not enough free space for installation." && exit 95
+(( MIN_SPACE > SPACE )) && error "Not enough free space for installation, need at least 6 GB." && exit 95
 
 [[ "${DEBUG}" == [Yy1]* ]] && set -x
 
@@ -242,9 +250,11 @@ rm -rf "$MOUNT"
 
 echo "$BASE" > "$STORAGE"/dsm.ver
 
-# Check free diskspace
-SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
-(( MIN_SPACE > SPACE )) && error "Not enough free space in storage folder." && exit 94
+if [[ "$TMP" != "$STORAGE/tmp" ]]; then
+  # Check free diskspace
+  SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
+  (( MIN_SPACE > SPACE )) && error "Not enough free space in storage folder, need at least 6 GB." && exit 94
+fi
 
 mv -f "$PAT" "$STORAGE"/"$BASE".pat
 mv -f "$BOOT" "$STORAGE"/"$BASE".boot.img
