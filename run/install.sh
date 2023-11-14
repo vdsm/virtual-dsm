@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+rm -f /run/dsm.url
+rm -f /run/qemu.pid
+rm -f /run/qemu.counter
+
 # Display wait message
 /run/server.sh 5000 install &
 
