@@ -9,6 +9,7 @@ QEMU_POWERDOWN_TIMEOUT=50
 _QEMU_PID=/run/qemu.pid
 _QEMU_SHUTDOWN_COUNTER=/run/qemu.counter
 
+rm -f /run/dsm.url
 rm -f "${_QEMU_PID}"
 rm -f "${_QEMU_SHUTDOWN_COUNTER}"
 
