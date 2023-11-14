@@ -13,6 +13,7 @@ set -Eeuo pipefail
 : ${RAM_SIZE:='512M'}   # Maximum RAM amount
 
 echo "❯ Starting Virtual DSM for Docker v${VERSION}..."
+echo "❯ For support visit https://github.com/vdsm/virtual-dsm/"
 
 info () { echo -e "\E[1;34m❯ \E[1;36m$1\E[0m" ; }
 error () { echo -e >&2 "\E[1;31m❯ ERROR: $1\E[0m" ; }
