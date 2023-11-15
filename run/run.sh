@@ -22,7 +22,7 @@ trap 'error "Status $? while: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
 [ ! -f "/run/run.sh" ] && error "Script must run inside Docker container!" && exit 11
 [ "$(id -u)" -ne "0" ] && error "Script must be executed with root privileges." && exit 12
 
-. /run/reset.sh   # Cleanup files
+. /run/reset.sh   # Initialize system
 . /run/install.sh   # Run installation
 . /run/disk.sh     # Initialize disks
 . /run/gpu.sh     # Initialize graphics
