@@ -4,29 +4,16 @@ set -Eeuo pipefail
 echo "❯ Starting Virtual DSM for Docker v${VERSION}..."
 echo "❯ For support visit https://github.com/vdsm/virtual-dsm/"
 
-# shellcheck source=./reset.sh
-. /run/reset.sh   # Initialize system
+cd /run
 
-# shellcheck source=./install.sh
-. /run/install.sh   # Run installation
-
-# shellcheck source=./disk.sh
-. /run/disk.sh     # Initialize disks
-
-# shellcheck source=./network.sh
-. /run/network.sh  # Initialize network
-
-# shellcheck source=./gpu.sh
-. /run/gpu.sh     # Initialize graphics
-
-# shellcheck source=./serial.sh
-. /run/serial.sh   # Initialize serialport
-
-# shellcheck source=./power.sh
-. /run/power.sh    # Configure shutdown
-
-# shellcheck source=./config.sh
-. /run/config.sh    # Configure arguments
+. reset.sh   # Initialize system
+. install.sh   # Run installation
+. disk.sh     # Initialize disks
+. network.sh  # Initialize network
+. gpu.sh     # Initialize graphics
+. serial.sh   # Initialize serialport
+. power.sh    # Configure shutdown
+. config.sh    # Configure arguments
 
 trap - ERR
 
