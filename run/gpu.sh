@@ -41,3 +41,5 @@ if ! apt-mark showinstall | grep -q "qemu-system-modules-opengl"; then
   apt-get -qq --no-install-recommends -y install qemu-system-modules-opengl > /dev/null
 
 fi
+
+return 0
