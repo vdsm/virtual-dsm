@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+info () { echo -e "\E[1;34m❯ \E[1;36m$1\E[0m" ; }
+error () { echo -e >&2 "\E[1;31m❯ ERROR: $1\E[0m" ; }
+trap 'error "Status $? while: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
+
+[ ! -f "/run/run.sh" ] && error "Script must run inside Docker container!" && exit 11
+[ "$(id -u)" -ne "0" ] && error "Script must be executed with root privileges." && exit 12
+
 # Docker environment variables
 
 : ${URL:=''}            # URL of the PAT file
