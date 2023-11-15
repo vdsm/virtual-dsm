@@ -31,3 +31,5 @@ VERS=$(qemu-system-x86_64 --version | head -n 1 | cut -d '(' -f 1)
 rm -f /run/dsm.url
 rm -f /run/qemu.pid
 rm -f /run/qemu.count
+
+return 0
