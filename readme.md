@@ -84,6 +84,32 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
     ```
 
     Keep in mind that this will not affect any of your existing disks, it only applies to newly created disks.
+    
+  * ### How do I add multiple disks?
+
+    To mount extra volumes, modify your compose file like this:
+    
+    ```yaml
+    environment:
+      DISK2_SIZE: "32G"
+      DISK3_SIZE: "64G"
+    volumes:
+      - /home/example2:/storage2
+      - /home/example3:/storage3
+    ```
+
+    Additionally, it's also possible to passthrough raw disk devices like this:
+
+    ```yaml
+    environment:
+      DEVICE2: "/dev/vdc1"
+      DEVICE3: "/dev/vdc2"
+    devices:
+      - /dev/vdc1
+      - /dev/vdc2
+    ```    
+
+    Please beware that any pre-existing partitions and data on those devices will be wiped.
 
   * ### How do I increase the amount of CPU or RAM?
 
