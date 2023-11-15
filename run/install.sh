@@ -1,7 +1,20 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+STORAGE="/storage"
+[ ! -d "$STORAGE" ] && error "Storage folder (${STORAGE}) not found!" && exit 13
+
+if [ -f "$STORAGE"/dsm.ver ]; then
+  BASE=$(cat "${STORAGE}/dsm.ver")
+else
+  # Fallback for old installs
+  BASE="DSM_VirtualDSM_42962"
+fi
+
+[ -n "$URL" ] && BASE=$(basename "$URL" .pat)
+
 if [[ -f "$STORAGE/$BASE.boot.img" ]] && [[ -f "$STORAGE/$BASE.system.img" ]]; then
+  # Previous installation found
   return 0
 fi
 
