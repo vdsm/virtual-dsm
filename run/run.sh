@@ -39,11 +39,14 @@ fi
 
 [ -n "$URL" ] && BASE=$(basename "$URL" .pat)
 
+. /run/reset.sh   # Cleanup files
+
 if [[ ! -f "$STORAGE/$BASE.boot.img" ]] || [[ ! -f "$STORAGE/$BASE.system.img" ]]; then
-  . /run/install.sh
+  . /run/install.sh   # Run installation
 fi
 
 . /run/disk.sh     # Initialize disks
+. /run/gpu.sh     # Initialize graphics
 . /run/network.sh  # Initialize network
 . /run/serial.sh   # Initialize serialport
 . /run/power.sh    # Configure shutdown
@@ -76,7 +79,10 @@ EXTRA_OPTS="-device virtio-balloon-pci,id=balloon0,bus=pcie.0,addr=0x4"
 EXTRA_OPTS="$EXTRA_OPTS -object rng-random,id=objrng0,filename=/dev/urandom"
 EXTRA_OPTS="$EXTRA_OPTS -device virtio-rng-pci,rng=objrng0,id=rng0,bus=pcie.0,addr=0x1c"
 
-[[ "${GPU}" == [Yy1]* ]] && [[ "$ARCH" == "amd64" ]] && . /run/gpu.sh
+if [[ "${GPU}" == [Yy1]* ]] && [[ "$ARCH" == "amd64" ]]; then
+  DEF_OPTS="-nodefaults -boot strict=on -display egl-headless,rendernode=/dev/dri/renderD128"
+  DEF_OPTS="${DEF_OPTS} -device virtio-vga,id=video0,max_outputs=1,bus=pcie.0,addr=0x1"
+fi
 
 ARGS="${DEF_OPTS} ${CPU_OPTS} ${RAM_OPTS} ${MAC_OPTS} ${MON_OPTS} ${SERIAL_OPTS} ${NET_OPTS} ${DISK_OPTS} ${EXTRA_OPTS} ${ARGUMENTS}"
 ARGS=$(echo "$ARGS" | sed 's/\t/ /g' | tr -s ' ')
@@ -86,13 +92,13 @@ trap - ERR
 set -m
 (
   [[ "${DEBUG}" == [Yy1]* ]] && info "$VERS" && set -x
-  qemu-system-x86_64 ${ARGS:+ $ARGS} & echo $! > "${_QEMU_PID}"
+  qemu-system-x86_64 ${ARGS:+ $ARGS} & echo $! > "${QEMU_PID}"
   { set +x; } 2>/dev/null
 )
 set +m
 
 #if (( KERNEL > 5 )) || ( (( KERNEL == 5 )) && (( MINOR > 2 )) ); then
-#  pidwait -F "${_QEMU_PID}" & wait $!
+#  pidwait -F "${QEMU_PID}" & wait $!
 #else
 
-tail --pid "$(cat "${_QEMU_PID}")" --follow /dev/null & wait $!
+tail --pid "$(cat "${QEMU_PID}")" --follow /dev/null & wait $!
