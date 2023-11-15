@@ -1,6 +1,23 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+STORAGE="/storage"
+[ ! -d "$STORAGE" ] && error "Storage folder (${STORAGE}) not found!" && exit 13
+
+if [ -f "$STORAGE"/dsm.ver ]; then
+  BASE=$(cat "${STORAGE}/dsm.ver")
+else
+  # Fallback for old installs
+  BASE="DSM_VirtualDSM_42962"
+fi
+
+[ -n "$URL" ] && BASE=$(basename "$URL" .pat)
+
+if [[ -f "$STORAGE/$BASE.boot.img" ]] && [[ -f "$STORAGE/$BASE.system.img" ]]; then
+  # Previous installation found
+  return 0
+fi
+
 # Display wait message
 /run/server.sh 5000 install &
 
@@ -31,7 +48,6 @@ rm -f "$STORAGE"/"$BASE".agent
 rm -f "$STORAGE"/"$BASE".boot.img
 rm -f "$STORAGE"/"$BASE".system.img
 
-TMP="/tmp/dsm"
 MIN_SPACE=6442450944
 FS=$(stat -f -c %T "$STORAGE")
 
@@ -39,10 +55,13 @@ if [[ "$FS" != "fat"* && "$FS" != "vfat"* && "$FS" != "exfat"* && \
         "$FS" != "ntfs"* && "$FS" != "fuse"* && "$FS" != "msdos"* ]]; then
   TMP="$STORAGE/tmp"
 else
+  TMP="/tmp/dsm"
   SPACE=$(df --output=avail -B 1 /tmp | tail -n 1)
   (( MIN_SPACE > SPACE )) && TMP="$STORAGE/tmp"
 fi
 
+rm -rf /tmp/dsm
+rm -rf "$STORAGE/tmp"
 rm -rf "$TMP" && mkdir -p "$TMP"
 
 # Check free diskspace

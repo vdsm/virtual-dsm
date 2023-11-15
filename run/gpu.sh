@@ -1,6 +1,10 @@
 #!/bin/bash
 set -Eeuo pipefail
 
+if [[ "${GPU}" != [Yy1]* ]] || [[ "$ARCH" != "amd64" ]]; then
+  return 0
+fi
+
 [ ! -d /dev/dri ] && mkdir -m 755 /dev/dri
 
 if [ ! -c /dev/dri/card0 ]; then
@@ -13,9 +17,6 @@ fi
 
 chmod 666 /dev/dri/card0
 chmod 666 /dev/dri/renderD128
-
-DEF_OPTS="-nodefaults -boot strict=on -display egl-headless,rendernode=/dev/dri/renderD128"
-DEF_OPTS="${DEF_OPTS} -device virtio-vga,id=video0,max_outputs=1,bus=pcie.0,addr=0x1"
 
 if ! apt-mark showinstall | grep -q "xserver-xorg-video-intel"; then
 
@@ -40,3 +41,5 @@ if ! apt-mark showinstall | grep -q "qemu-system-modules-opengl"; then
   apt-get -qq --no-install-recommends -y install qemu-system-modules-opengl > /dev/null
 
 fi
+
+return 0

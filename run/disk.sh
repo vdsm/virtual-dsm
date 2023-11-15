@@ -237,3 +237,5 @@ if [ -n "${DEVICE3}" ]; then
     -device scsi-hd,bus=hw-userdata6.0,channel=0,scsi-id=0,lun=0,drive=drive-userdata6,id=userdata6,rotation_rate=${DISK_ROTATION},bootindex=8"
 
 fi
+
+return 0

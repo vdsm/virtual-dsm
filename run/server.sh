@@ -46,17 +46,15 @@ if [[ "$2" != "/run/ip.sh" ]]; then
 
 else
 
-  BODY="The location of DSM is <a href='http://\${IP}:\${PORT}'>http://\${IP}:\${PORT}</a><script>"
-  BODY="${BODY}setTimeout(function(){ window.location.assign('http://\${IP}:\${PORT}'); }, 3000);</script>"
+  BODY="The location of DSM is <a href='http://\${LOCATION}'>http://\${LOCATION}</a><script>"
+  BODY="${BODY}setTimeout(function(){ window.location.assign('http://\${LOCATION}'); }, 3000);</script>"
   WAIT="Please wait while discovering IP...<script>setTimeout(() => { document.location.reload(); }, 4999);</script>"
 
   HTML=$(html "xxx")
 
   { echo "#!/bin/bash"
-    echo "INFO=\$(curl -s -m 2 -S http://127.0.0.1:2210/read?command=10 2>/dev/null)"
-    echo "rest=\${INFO#*http_port}; rest=\${rest#*:}; rest=\${rest%%,*}; PORT=\${rest%%\\\"*}"
-    echo "rest=\${INFO#*eth0}; rest=\${rest#*ip}; rest=\${rest#*:}; rest=\${rest#*\\\"}; IP=\${rest%%\\\"*}"
-    echo "HTML=\"$HTML\"; [ -z \"\${IP}\" ] && BODY=\"$WAIT\" || BODY=\"$BODY\"; HTML=\${HTML/xxx/\$BODY}"
+    echo "[ -f \"/run/dsm.url\" ] && LOCATION=\$(cat \"/run/dsm.url\")"
+    echo "HTML=\"$HTML\"; [ -z \"\${LOCATION}\" ] && BODY=\"$WAIT\" || BODY=\"$BODY\"; HTML=\${HTML/xxx/\$BODY}"
     echo "printf '%b' \"HTTP/1.1 200 OK\\nContent-Length: \${#HTML}\\nConnection: close\\n\\n\$HTML\""
   } > "$TMP_FILE"
 

@@ -51,3 +51,5 @@ SERIAL_OPTS="\
         -device isa-serial,chardev=charserial0,id=serial0 \
         -chardev socket,id=charchannel0,host=127.0.0.1,port=12345,reconnect=10 \
         -device virtserialport,bus=virtio-serial0.0,nr=1,chardev=charchannel0,id=channel0,name=vchannel"
+
+return 0

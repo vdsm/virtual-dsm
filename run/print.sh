@@ -4,12 +4,13 @@ set -Eeuo pipefail
 info () { echo -e >&2 "\E[1;34m❯\E[1;36m $1\E[0m" ; }
 error () { echo -e >&2 "\E[1;31m❯ ERROR: $1\E[0m" ; }
 
-retry=true
+file="/run/dsm.url"
 
-while [ "$retry" = true ]
+while [ ! -f  "$file" ]
 do
 
   sleep 3
+  [ -f "$file" ] && continue
 
   # Retrieve IP from guest VM
 
@@ -46,14 +47,16 @@ do
 
   [ -z "${IP}" ] && continue
 
-  retry=false
+  echo "${IP}:${PORT}" > $file
 
 done
 
-if [[ "$IP" == "20.20"* ]]; then
-  MSG="port ${PORT}"
+LOCATION=$(cat "$file")
+
+if [[ "$LOCATION" == "20.20"* ]]; then
+  MSG="port ${LOCATION##*:}"
 else
-  MSG="http://${IP}:${PORT}"
+  MSG="http://${LOCATION}"
 fi
 
 echo "" >&2
