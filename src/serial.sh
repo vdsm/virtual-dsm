@@ -35,17 +35,34 @@ HOST_ARGS+=("-cpu_arch=${HOST_CPU}")
 
 if [[ "${HOST_DEBUG}" == [Yy1]* ]]; then
   set -x
-  ./run/host.bin "${HOST_ARGS[@]}" &
+  ./host.bin "${HOST_ARGS[@]}" &
   { set +x; } 2>/dev/null
   echo
 else
-  ./run/host.bin "${HOST_ARGS[@]}" >/dev/null &
+  ./host.bin "${HOST_ARGS[@]}" >/dev/null &
 fi
+
+cnt=0
+sleep 0.2
+
+while ! nc -z -w1 127.0.0.1 2210 > /dev/null 2>&1; do
+  sleep 0.1
+  cnt=$((cnt + 1))
+  (( cnt > 20 )) && error "Failed to connect to qemu-host.." && exit 58
+done
+
+cnt=0
+
+while ! nc -z -w1 127.0.0.1 12345 > /dev/null 2>&1; do
+  sleep 0.1
+  cnt=$((cnt + 1))
+  (( cnt > 20 )) && error "Failed to connect to qemu-host.." && exit 59
+done
 
 # Configure serial ports
 
 SERIAL_OPTS="\
-	-serial mon:stdio \
+        -serial mon:stdio \
         -device virtio-serial-pci,id=virtio-serial0,bus=pcie.0,addr=0x3 \
         -chardev pty,id=charserial0 \
         -device isa-serial,chardev=charserial0,id=serial0 \
