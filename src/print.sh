@@ -5,7 +5,7 @@ info () { echo -e >&2 "\E[1;34m❯\E[1;36m $1\E[0m" ; }
 error () { echo -e >&2 "\E[1;31m❯ ERROR: $1\E[0m" ; }
 
 file="/run/dsm.url"
-err(
+
 while [ ! -f  "$file" ]
 do
 
