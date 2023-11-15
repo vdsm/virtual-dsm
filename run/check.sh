@@ -2,7 +2,7 @@
 set -u
 
 [ ! -f "/run/qemu.pid" ] && echo "QEMU not running yet.." && exit 0
-[ -f "/run/qemu.counter" ] && echo "QEMU is shutting down.." && exit 1
+[ -f "/run/qemu.count" ] && echo "QEMU is shutting down.." && exit 1
 
 file="/run/dsm.url"
 
