@@ -19,10 +19,14 @@ trap 'error "Status $? while: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
 : ${DISK_SIZE:='16G'}   # Initial data disk size
 : ${RAM_SIZE:='512M'}   # Maximum RAM amount
 
+# Helper variables
+
 KERNEL=$(uname -r | cut -b 1)
 MINOR=$(uname -r | cut -d '.' -f2)
 ARCH=$(dpkg --print-architecture)
 VERS=$(qemu-system-x86_64 --version | head -n 1 | cut -d '(' -f 1)
+
+# Cleanup files
 
 rm -f /run/dsm.url
 rm -f /run/qemu.pid
