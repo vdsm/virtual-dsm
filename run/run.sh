@@ -22,29 +22,8 @@ trap 'error "Status $? while: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
 [ ! -f "/run/run.sh" ] && error "Script must run inside Docker container!" && exit 11
 [ "$(id -u)" -ne "0" ] && error "Script must be executed with root privileges." && exit 12
 
-STORAGE="/storage"
-KERNEL=$(uname -r | cut -b 1)
-MINOR=$(uname -r | cut -d '.' -f2)
-ARCH=$(dpkg --print-architecture)
-VERS=$(qemu-system-x86_64 --version | head -n 1 | cut -d '(' -f 1)
-
-[ ! -d "$STORAGE" ] && error "Storage folder (${STORAGE}) not found!" && exit 13
-
-if [ -f "$STORAGE"/dsm.ver ]; then
-  BASE=$(cat "${STORAGE}/dsm.ver")
-else
-  # Fallback for old installs
-  BASE="DSM_VirtualDSM_42962"
-fi
-
-[ -n "$URL" ] && BASE=$(basename "$URL" .pat)
-
 . /run/reset.sh   # Cleanup files
-
-if [[ ! -f "$STORAGE/$BASE.boot.img" ]] || [[ ! -f "$STORAGE/$BASE.system.img" ]]; then
-  . /run/install.sh   # Run installation
-fi
-
+. /run/install.sh   # Run installation
 . /run/disk.sh     # Initialize disks
 . /run/gpu.sh     # Initialize graphics
 . /run/network.sh  # Initialize network
@@ -96,9 +75,5 @@ set -m
   { set +x; } 2>/dev/null
 )
 set +m
-
-#if (( KERNEL > 5 )) || ( (( KERNEL == 5 )) && (( MINOR > 2 )) ); then
-#  pidwait -F "${QEMU_PID}" & wait $!
-#else
 
 tail --pid "$(cat "${QEMU_PID}")" --follow /dev/null & wait $!
