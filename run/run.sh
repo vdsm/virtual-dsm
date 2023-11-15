@@ -7,8 +7,8 @@ echo "❯ For support visit https://github.com/vdsm/virtual-dsm/"
 . /run/reset.sh   # Initialize system
 . /run/install.sh   # Run installation
 . /run/disk.sh     # Initialize disks
-. /run/gpu.sh     # Initialize graphics
 . /run/network.sh  # Initialize network
+. /run/gpu.sh     # Initialize graphics
 . /run/serial.sh   # Initialize serialport
 . /run/power.sh    # Configure shutdown
 . /run/config.sh    # Configure arguments
