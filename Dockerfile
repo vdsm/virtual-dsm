@@ -33,9 +33,8 @@ RUN apt-get update && apt-get -y upgrade && \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-COPY run/*.sh /run/
+COPY src/*.sh /run/
 COPY --from=builder /qemu-host.bin /run/host.bin
-
 RUN chmod +x /run/*.sh && chmod +x /run/*.bin
 
 VOLUME /storage
@@ -66,4 +65,4 @@ LABEL org.opencontainers.image.description="Virtual DSM in a docker container"
 
 HEALTHCHECK --interval=60s --retries=2 CMD /run/check.sh
 
-ENTRYPOINT ["/usr/bin/tini", "-s", "/run/run.sh"]
+ENTRYPOINT ["/usr/bin/tini", "-s", "/run/entry.sh"]
