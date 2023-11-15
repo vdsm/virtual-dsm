@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-rm -f /run/dsm.url
-rm -f /run/qemu.pid
-rm -f /run/qemu.counter
+if [[ -f "$STORAGE/$BASE.boot.img" ]] && [[ -f "$STORAGE/$BASE.system.img" ]]; then
+  return 0
+fi
 
 # Display wait message
 /run/server.sh 5000 install &
