@@ -17,7 +17,6 @@ Virtual DSM in a docker container.
  - Multi-platform
  - KVM acceleration
  - GPU passthrough
- - Graceful shutdowns
  - Upgrades supported
  
 ## Usage
