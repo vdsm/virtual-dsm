@@ -149,11 +149,41 @@ addDisk "userdata" "${DATA}" "DISK" "${DISK_SIZE}" "3" "0xc"
 : ${DISK5_SIZE:=''}
 : ${DISK6_SIZE:=''}
 
-addDisk "userdata2" "/storage2/data.img" "DISK2" "${DISK2_SIZE}" "4" "0xd"
-addDisk "userdata3" "/storage3/data.img" "DISK3" "${DISK3_SIZE}" "5" "0xe"
-addDisk "userdata4" "/storage4/data.img" "DISK4" "${DISK4_SIZE}" "9" "0x7"
-addDisk "userdata5" "/storage5/data.img" "DISK5" "${DISK5_SIZE}" "10" "0x8"
-addDisk "userdata6" "/storage6/data.img" "DISK6" "${DISK6_SIZE}" "11" "0x9"
+DISK2_FILE="/storage2/data2.img"
+FALLBACK="/storage2/data.img"
+
+if [ ! -f "${DISK2_FILE}" ]; then
+  if [ -f "${DATA}" -a -f "${FALLBACK}" ]; then
+    SIZE1=$(stat -c%s "${DATA}")
+    SIZE2=$(stat -c%s "${FALLBACK}")
+    if [[ SIZE1 -ne SIZE2 ]]; then
+      mv "${FALLBACK}" "${DISK2_FILE}"
+    fi
+  fi
+fi
+
+DISK3_FILE="/storage3/data3.img"
+FALLBACK="/storage3/data.img"
+
+if [ ! -f "${DISK3_FILE}" ]; then
+  if [ -f "${DATA}" -a -f "${FALLBACK}" ]; then
+    SIZE1=$(stat -c%s "${DATA}")
+    SIZE2=$(stat -c%s "${FALLBACK}")
+    if [[ SIZE1 -ne SIZE2 ]]; then
+      mv "${FALLBACK}" "${DISK3_FILE}"
+    fi
+  fi
+fi
+
+DISK4_FILE="/storage4/data4.img"
+DISK5_FILE="/storage5/data5.img"
+DISK6_FILE="/storage6/data6.img"
+
+addDisk "userdata2" "${DISK2_FILE}" "DISK2" "${DISK2_SIZE}" "4" "0xd"
+addDisk "userdata3" "${DISK3_FILE}" "DISK3" "${DISK3_SIZE}" "5" "0xe"
+addDisk "userdata4" "${DISK4_FILE}" "DISK4" "${DISK4_SIZE}" "9" "0x7"
+addDisk "userdata5" "${DISK5_FILE}" "DISK5" "${DISK5_SIZE}" "10" "0x8"
+addDisk "userdata6" "${DISK6_FILE}" "DISK6" "${DISK6_SIZE}" "11" "0x9"
 
 addDevice () {
 
@@ -176,9 +206,15 @@ addDevice () {
 : ${DEVICE:=''}        # Docker variable to passthrough a block device, like /dev/vdc1.
 : ${DEVICE2:=''}
 : ${DEVICE3:=''}
+: ${DEVICE4:=''}
+: ${DEVICE5:=''}
+: ${DEVICE6:=''}
 
 addDevice "userdata7" "${DEVICE}" "6" "0xf"
 addDevice "userdata8" "${DEVICE2}" "7" "0x5"
 addDevice "userdata9" "${DEVICE3}" "8" "0x6"
+addDevice "userdata4" "${DEVICE4}" "9" "0x7"
+addDevice "userdata5" "${DEVICE5}" "10" "0x8"
+addDevice "userdata6" "${DEVICE6}" "11" "0x9"
 
 return 0
