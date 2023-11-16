@@ -156,12 +156,15 @@ addDisk () {
 
   [ ! -d "$(dirname "${DISK_FILE}")" ] && return 0
 
-  if [ ! -f "${DISK_FILE}" ]; then
-    [ -z "$DISK_SPACE" ] && DISK_SPACE="16G"
+  if [ -n "$DISK_SPACE" ]; then
     DATA_SIZE=$(numfmt --from=iec "${DISK_SPACE}")
     if (( DATA_SIZE < MIN_SIZE )); then
       error "Please increase ${DISK_DESC}_SIZE to at least 6 GB." && exit 54
-    fi    
+    fi
+  fi
+  
+  if [ ! -f "${DISK_FILE}" ]; then
+    [ -z "$DISK_SPACE" ] && DISK_SPACE="16G"
     if ! truncate -s "${DISK_SPACE}" "${DISK_FILE}"; then
       error "Could not create file: ${DISK_FILE}" && exit 53
     fi
@@ -170,9 +173,6 @@ addDisk () {
   if [ -n "$DISK_SPACE" ]; then
     CUR_SIZE=$(stat -c%s "${DISK_FILE}")
     DATA_SIZE=$(numfmt --from=iec "${DISK_SPACE}")
-    if (( DATA_SIZE < MIN_SIZE )); then
-      error "Please increase ${DISK_DESC}_SIZE to at least 6 GB." && exit 54
-    fi
     if [ "$DATA_SIZE" -gt "$CUR_SIZE" ]; then
       if ! truncate -s "${DISK_SPACE}" "${DISK_FILE}"; then
         error "Could not resize file: ${DISK_FILE}" && exit 53
@@ -212,18 +212,18 @@ addDevice () {
 : ${DISK5_SIZE:=''}
 : ${DISK6_SIZE:=''}
 
-addDisk "userdata2" "/storage2/data.img" "DISK2" "$DISK2_SIZE" "4" "0xd"
-addDisk "userdata3" "/storage3/data.img" "DISK3" "$DISK3_SIZE" "5" "0xe"
-addDisk "userdata4" "/storage4/data.img" "DISK4" "$DISK4_SIZE" "9" "0x7"
-addDisk "userdata5" "/storage5/data.img" "DISK5" "$DISK5_SIZE" "10" "0x8"
-addDisk "userdata6" "/storage6/data.img" "DISK6" "$DISK6_SIZE" "11" "0x9"
+addDisk "userdata2" "/storage2/data.img" "DISK2" "${DISK2_SIZE}" "4" "0xd"
+addDisk "userdata3" "/storage3/data.img" "DISK3" "${DISK3_SIZE}" "5" "0xe"
+addDisk "userdata4" "/storage4/data.img" "DISK4" "${DISK4_SIZE}" "9" "0x7"
+addDisk "userdata5" "/storage5/data.img" "DISK5" "${DISK5_SIZE}" "10" "0x8"
+addDisk "userdata6" "/storage6/data.img" "DISK6" "${DISK6_SIZE}" "11" "0x9"
 
 : ${DEVICE:=''}        # Docker variable to passthrough a block device, like /dev/vdc1.
 : ${DEVICE2:=''}
 : ${DEVICE3:=''}
 
-addDevice "userdata7" "$DEVICE" "6" "0xf"
-addDevice "userdata8" "$DEVICE2" "7" "0x5"
-addDevice "userdata9" "$DEVICE3" "8" "0x6"
+addDevice "userdata7" "${DEVICE}" "6" "0xf"
+addDevice "userdata8" "${DEVICE2}" "7" "0x5"
+addDevice "userdata9" "${DEVICE3}" "8" "0x6"
 
 return 0
