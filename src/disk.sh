@@ -38,29 +38,29 @@ addDisk () {
   [ -z "$DISK_SPACE" ] && DISK_SPACE="16G"
   DISK_SPACE=$(echo "${DISK_SPACE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
   local DATA_SIZE=$(numfmt --from=iec "${DISK_SPACE}")
-    
+
   if (( DATA_SIZE < MIN_SIZE )); then
-    error "Please increase ${DISK_DESC}_SIZE to at least 6 GB." && exit 83
+    error "Please increase ${DISK_DESC^^}_SIZE to at least 6 GB." && exit 83
   fi
-  
+
   if [ -f "${DISK_FILE}" ]; then
-  
+
     local CUR_SIZE=$(stat -c%s "${DISK_FILE}")
-    
+
     if [ "$DATA_SIZE" -gt "$CUR_SIZE" ]; then
 
       local GB=$(( (CUR_SIZE + 1073741823)/1073741824 ))
       info "Resizing ${DISK_DESC} from ${GB}G to ${DISK_SPACE} .."
-      
+
       if [[ "${ALLOCATE}" == [Nn]* ]]; then
 
         # Resize file by changing its length
         if ! truncate -s "${DISK_SPACE}" "${DISK_FILE}"; then
           error "Could not resize ${DISK_DESC} file (${DISK_FILE}) to ${DISK_SPACE} .." && exit 85
         fi
-        
+
       else
-      
+
         local REQ=$((DATA_SIZE-CUR_SIZE))
 
         # Check free diskspace
@@ -77,28 +77,28 @@ addDisk () {
             error "Could not resize ${DISK_DESC} file (${DISK_FILE}) to ${DISK_SPACE} .." && exit 85
           fi
         fi
-      
+
       fi
     fi
   fi
-  
+
   if [ ! -f "${DISK_FILE}" ]; then
 
     if [[ "${ALLOCATE}" == [Nn]* ]]; then
-    
+
       # Create an empty file
       if ! truncate -s "${DISK_SPACE}" "${DISK_FILE}"; then
         rm -f "${DISK_FILE}"
-        error "Could not create ${DISK_DESC} file: ${DISK_FILE}" && exit 87
+        error "Could not create a file for ${DISK_DESC} (${DISK_FILE})" && exit 87
       fi
-      
+
     else
-    
+
       # Check free diskspace
       local SPACE=$(df --output=avail -B 1 "${DIR}" | tail -n 1)
 
       if (( DATA_SIZE > SPACE )); then
-        error "Not enough free space to create a ${DISK_DESC} of ${DISK_SPACE} .."
+        error "Not enough free space to create ${DISK_DESC} of ${DISK_SPACE} .."
         error "Specify a smaller size or disable preallocation with ALLOCATE=N." && exit 86
       fi
 
@@ -106,24 +106,24 @@ addDisk () {
       if ! fallocate -l "${DISK_SPACE}" "${DISK_FILE}"; then
         if ! truncate -s "${DISK_SPACE}" "${DISK_FILE}"; then
           rm -f "${DISK_FILE}"
-          error "Could not create ${DISK_DESC} file (${DISK_FILE}) of ${DISK_SPACE} .." && exit 87
-       fi
+          error "Could not create a file for ${DISK_DESC} (${DISK_FILE}) of ${DISK_SPACE} .." && exit 87
+        fi
       fi
-      
+
     fi
 
     # Check if file exists
     if [ ! -f "${DISK_FILE}" ]; then
-      error "File for ${DISK_DESC} does not exist ($DISK_FILE)" && exit 88
+      error "File for ${DISK_DESC} ($DISK_FILE) does not exist!" && exit 88
     fi
-    
+
   fi
 
   # Check the filesize
   local SIZE=$(stat -c%s "${DISK_FILE}")
 
   if [[ SIZE -ne DATA_SIZE ]]; then
-    error "File for ${DISK_DESC} has the wrong size: ${SIZE} bytes" && exit 89
+    error "File for ${DISK_DESC} (${DISK_FILE}) has the wrong size: ${SIZE} bytes" && exit 89
   fi
 
   DISK_OPTS="${DISK_OPTS} \
@@ -134,28 +134,21 @@ addDisk () {
   return 0
 }
 
-DATA="${STORAGE}/data.img"
+DISK1_FILE="${STORAGE}/data.img"
 
-if [[ ! -f "${DATA}" ]] && [[ -f "$STORAGE/data$DISK_SIZE.img" ]]; then
+if [[ ! -f "${DISK1_FILE}" ]] && [[ -f "${STORAGE}/data${DISK_SIZE}.img" ]]; then
   # Fallback for legacy installs
-  DATA="$STORAGE/data$DISK_SIZE.img"
+  mv "${STORAGE}/data${DISK_SIZE}.img" "${DISK1_FILE}"
 fi
 
-addDisk "userdata" "${DATA}" "DISK" "${DISK_SIZE}" "3" "0xc"
-
-: ${DISK2_SIZE:=''}
-: ${DISK3_SIZE:=''}
-: ${DISK4_SIZE:=''}
-: ${DISK5_SIZE:=''}
-: ${DISK6_SIZE:=''}
-
 DISK2_FILE="/storage2/data2.img"
-FALLBACK="/storage2/data.img"
 
 if [ ! -f "${DISK2_FILE}" ]; then
-  if [ -f "${DATA}" -a -f "${FALLBACK}" ]; then
-    SIZE1=$(stat -c%s "${DATA}")
-    SIZE2=$(stat -c%s "${FALLBACK}")
+  # Fallback for legacy installs
+  FALLBACK="/storage2/data.img"
+  if [ -f "${DISK1_FILE}" -a -f "${FALLBACK}" ]; then
+    SIZE1=$(stat -c%s "${FALLBACK}")
+    SIZE2=$(stat -c%s "${DISK1_FILE}")
     if [[ SIZE1 -ne SIZE2 ]]; then
       mv "${FALLBACK}" "${DISK2_FILE}"
     fi
@@ -163,12 +156,13 @@ if [ ! -f "${DISK2_FILE}" ]; then
 fi
 
 DISK3_FILE="/storage3/data3.img"
-FALLBACK="/storage3/data.img"
 
 if [ ! -f "${DISK3_FILE}" ]; then
-  if [ -f "${DATA}" -a -f "${FALLBACK}" ]; then
-    SIZE1=$(stat -c%s "${DATA}")
-    SIZE2=$(stat -c%s "${FALLBACK}")
+  # Fallback for legacy installs
+  FALLBACK="/storage3/data.img"
+  if [ -f "${DISK1_FILE}" -a -f "${FALLBACK}" ]; then
+    SIZE1=$(stat -c%s "${FALLBACK}")
+    SIZE2=$(stat -c%s "${DISK1_FILE}")
     if [[ SIZE1 -ne SIZE2 ]]; then
       mv "${FALLBACK}" "${DISK3_FILE}"
     fi
@@ -179,11 +173,18 @@ DISK4_FILE="/storage4/data4.img"
 DISK5_FILE="/storage5/data5.img"
 DISK6_FILE="/storage6/data6.img"
 
-addDisk "userdata2" "${DISK2_FILE}" "DISK2" "${DISK2_SIZE}" "4" "0xd"
-addDisk "userdata3" "${DISK3_FILE}" "DISK3" "${DISK3_SIZE}" "5" "0xe"
-addDisk "userdata4" "${DISK4_FILE}" "DISK4" "${DISK4_SIZE}" "9" "0x7"
-addDisk "userdata5" "${DISK5_FILE}" "DISK5" "${DISK5_SIZE}" "10" "0x8"
-addDisk "userdata6" "${DISK6_FILE}" "DISK6" "${DISK6_SIZE}" "11" "0x9"
+: ${DISK2_SIZE:=''}
+: ${DISK3_SIZE:=''}
+: ${DISK4_SIZE:=''}
+: ${DISK5_SIZE:=''}
+: ${DISK6_SIZE:=''}
+
+addDisk "userdata" "${DISK1_FILE}" "disk" "${DISK_SIZE}" "3" "0xc"
+addDisk "userdata2" "${DISK2_FILE}" "disk2" "${DISK2_SIZE}" "4" "0xd"
+addDisk "userdata3" "${DISK3_FILE}" "disk3" "${DISK3_SIZE}" "5" "0xe"
+addDisk "userdata4" "${DISK4_FILE}" "disk4" "${DISK4_SIZE}" "9" "0x7"
+addDisk "userdata5" "${DISK5_FILE}" "disk5" "${DISK5_SIZE}" "10" "0x8"
+addDisk "userdata6" "${DISK6_FILE}" "disk6" "${DISK6_SIZE}" "11" "0x9"
 
 addDevice () {
 
