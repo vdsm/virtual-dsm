@@ -27,9 +27,7 @@ addDisk () {
   local GB
   local DIR
   local REQ
-  local SIZE
   local SPACE
-  local MIN_SIZE
   local CUR_SIZE
   local DATA_SIZE
   local DISK_ID=$1
@@ -46,8 +44,7 @@ addDisk () {
   DISK_SPACE=$(echo "${DISK_SPACE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
   DATA_SIZE=$(numfmt --from=iec "${DISK_SPACE}")
 
-  MIN_SIZE=6442450944
-  if (( DATA_SIZE < MIN_SIZE )); then
+  if (( DATA_SIZE < 6442450944 )); then
     error "Please increase ${DISK_DESC^^}_SIZE to at least 6 GB." && exit 83
   fi
 
