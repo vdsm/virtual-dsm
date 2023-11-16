@@ -14,136 +14,13 @@ SYSTEM="$STORAGE/$BASE.system.img"
 [ ! -f "$BOOT" ] && error "Virtual DSM boot-image does not exist ($BOOT)" && exit 81
 [ ! -f "$SYSTEM" ] && error "Virtual DSM system-image does not exist ($SYSTEM)" && exit 82
 
-DATA="${STORAGE}/data.img"
-
-if [[ ! -f "${DATA}" ]] && [[ -f "$STORAGE/data$DISK_SIZE.img" ]]; then
-  # Fallback for legacy installs
-  DATA="$STORAGE/data$DISK_SIZE.img"
-fi
-
-MIN_SIZE=6442450944
-DISK_SIZE=$(echo "${DISK_SIZE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
-DATA_SIZE=$(numfmt --from=iec "${DISK_SIZE}")
-
-if (( DATA_SIZE < MIN_SIZE )); then
-  error "Please increase DISK_SIZE to at least 6 GB." && exit 83
-fi
-
-if [ -f "${DATA}" ]; then
-
-  OLD_SIZE=$(stat -c%s "${DATA}")
-
-  if [ "$DATA_SIZE" -gt "$OLD_SIZE" ]; then
-
-    info "Resizing data disk from $OLD_SIZE to $DATA_SIZE bytes.."
-
-    if [[ "${ALLOCATE}" == [Nn]* ]]; then
-
-      # Resize file by changing its length
-      if ! truncate -s "${DATA_SIZE}" "${DATA}"; then
-        error "Could not resize the file for the virtual disk." && exit 85
-      fi
-
-    else
-
-      REQ=$((DATA_SIZE-OLD_SIZE))
-
-      # Check free diskspace
-      SPACE=$(df --output=avail -B 1 "${STORAGE}" | tail -n 1)
-
-      if (( REQ > SPACE )); then
-        error "Not enough free space to resize virtual disk to ${DISK_SIZE}."
-        error "Specify a smaller size or disable preallocation with ALLOCATE=N." && exit 84
-      fi
-
-      # Resize file by allocating more space
-      if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
-        if ! truncate -s "${DATA_SIZE}" "${DATA}"; then
-          error "Could not resize the file for the virtual disk." && exit 85
-        fi
-      fi
-
-      if [[ "${ALLOCATE}" == [Zz]* ]]; then
-
-        GB=$(( (REQ + 1073741823)/1073741824 ))
-
-        info "Preallocating ${GB} GB of diskspace, please wait..."
-        dd if=/dev/urandom of="${DATA}" seek="${OLD_SIZE}" count="${REQ}" bs=1M iflag=count_bytes oflag=seek_bytes status=none
-
-      fi
-    fi
-  fi
-
-  if [ "$DATA_SIZE" -lt "$OLD_SIZE" ]; then
-
-    info "Shrinking existing disks is not supported yet!"
-    info "Creating backup of old drive in storage folder..."
-
-    mv -f "${DATA}" "${DATA}.bak"
-
-  fi
-fi
-
-if [ ! -f "${DATA}" ]; then
-
-  if [[ "${ALLOCATE}" == [Nn]* ]]; then
-
-    # Create an empty file
-    if ! truncate -s "${DATA_SIZE}" "${DATA}"; then
-      rm -f "${DATA}"
-      error "Could not create a file for the virtual disk." && exit 87
-    fi
-
-  else
-
-    # Check free diskspace
-    SPACE=$(df --output=avail -B 1 "${STORAGE}" | tail -n 1)
-
-    if (( DATA_SIZE > SPACE )); then
-      error "Not enough free space to create a virtual disk of ${DISK_SIZE}."
-      error "Specify a smaller size or disable preallocation with ALLOCATE=N." && exit 86
-    fi
-
-    # Create an empty file
-    if ! fallocate -l "${DATA_SIZE}" "${DATA}"; then
-      if ! truncate -s "${DATA_SIZE}" "${DATA}"; then
-        rm -f "${DATA}"
-        error "Could not create a file for the virtual disk." && exit 87
-      fi
-    fi
-
-    if [[ "${ALLOCATE}" == [Zz]* ]]; then
-
-      info "Preallocating ${DISK_SIZE} of diskspace, please wait..."
-      dd if=/dev/urandom of="${DATA}" count="${DATA_SIZE}" bs=1M iflag=count_bytes status=none
-
-    fi
-  fi
-
-  # Check if file exists
-  if [ ! -f "${DATA}" ]; then
-    error "Virtual disk does not exist ($DATA)" && exit 88
-  fi
-
-fi
-
-# Check the filesize
-SIZE=$(stat -c%s "${DATA}")
-
-if [[ SIZE -ne DATA_SIZE ]]; then
-  error "Virtual disk has the wrong size: ${SIZE}" && exit 89
-fi
-
 DISK_OPTS="\
     -device virtio-scsi-pci,id=hw-synoboot,bus=pcie.0,addr=0xa \
     -drive file=${BOOT},if=none,id=drive-synoboot,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=${DISK_DISCARD},detect-zeroes=on \
     -device scsi-hd,bus=hw-synoboot.0,channel=0,scsi-id=0,lun=0,drive=drive-synoboot,id=synoboot0,rotation_rate=${DISK_ROTATION},bootindex=1 \
     -device virtio-scsi-pci,id=hw-synosys,bus=pcie.0,addr=0xb \
     -drive file=${SYSTEM},if=none,id=drive-synosys,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=${DISK_DISCARD},detect-zeroes=on \
-    -device scsi-hd,bus=hw-synosys.0,channel=0,scsi-id=0,lun=0,drive=drive-synosys,id=synosys0,rotation_rate=${DISK_ROTATION},bootindex=2 \
-    -device virtio-scsi-pci,id=hw-userdata,bus=pcie.0,addr=0xc \
-    -drive file=${DATA},if=none,id=drive-userdata,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=${DISK_DISCARD},detect-zeroes=on \
-    -device scsi-hd,bus=hw-userdata.0,channel=0,scsi-id=0,lun=0,drive=drive-userdata,id=userdata0,rotation_rate=${DISK_ROTATION},bootindex=3"
+    -device scsi-hd,bus=hw-synosys.0,channel=0,scsi-id=0,lun=0,drive=drive-synosys,id=synosys0,rotation_rate=${DISK_ROTATION},bootindex=2"
 
 addDisk () {
 
@@ -154,30 +31,99 @@ addDisk () {
   local DISK_INDEX=$5
   local DISK_ADDRESS=$6
 
-  [ ! -d "$(dirname "${DISK_FILE}")" ] && return 0
+  local DIR=$(dirname "${DISK_FILE}")
+  [ ! -d "${DIR}" ] && return 0
 
-  if [ -n "$DISK_SPACE" ]; then
-    DATA_SIZE=$(numfmt --from=iec "${DISK_SPACE}")
-    if (( DATA_SIZE < MIN_SIZE )); then
-      error "Please increase ${DISK_DESC}_SIZE to at least 6 GB." && exit 54
+  local MIN_SIZE=6442450944
+  [ -z "$DISK_SPACE" ] && DISK_SPACE="16G"
+  DISK_SPACE=$(echo "${DISK_SPACE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
+  local DATA_SIZE=$(numfmt --from=iec "${DISK_SPACE}")
+    
+  if (( DATA_SIZE < MIN_SIZE )); then
+    error "Please increase ${DISK_DESC}_SIZE to at least 6 GB." && exit 83
+  fi
+  
+  if [ -f "${DISK_FILE}" ]; then
+  
+    local CUR_SIZE=$(stat -c%s "${DISK_FILE}")
+    
+    if [ "$DATA_SIZE" -gt "$CUR_SIZE" ]; then
+
+      local GB=$(( (CUR_SIZE + 1073741823)/1073741824 ))
+      info "Resizing ${DISK_DESC} from ${GB}G to ${DISK_SPACE} .."
+      
+      if [[ "${ALLOCATE}" == [Nn]* ]]; then
+
+        # Resize file by changing its length
+        if ! truncate -s "${DISK_SPACE}" "${DISK_FILE}"; then
+          error "Could not resize ${DISK_DESC} file (${DISK_FILE}) to ${DISK_SPACE} .." && exit 85
+        fi
+        
+      else
+      
+        local REQ=$((DATA_SIZE-CUR_SIZE))
+
+        # Check free diskspace
+        local SPACE=$(df --output=avail -B 1 "${DIR}" | tail -n 1)
+
+        if (( REQ > SPACE )); then
+          error "Not enough free space to resize ${DISK_DESC} to ${DISK_SPACE} .."
+          error "Specify a smaller size or disable preallocation with ALLOCATE=N." && exit 84
+        fi
+
+        # Resize file by allocating more space
+        if ! fallocate -l "${DISK_SPACE}" "${DISK_FILE}"; then
+          if ! truncate -s "${DISK_SPACE}" "${DISK_FILE}"; then
+            error "Could not resize ${DISK_DESC} file (${DISK_FILE}) to ${DISK_SPACE} .." && exit 85
+          fi
+        fi
+      
+      fi
     fi
   fi
   
   if [ ! -f "${DISK_FILE}" ]; then
-    [ -z "$DISK_SPACE" ] && DISK_SPACE="16G"
-    if ! truncate -s "${DISK_SPACE}" "${DISK_FILE}"; then
-      error "Could not create file: ${DISK_FILE}" && exit 53
+
+    if [[ "${ALLOCATE}" == [Nn]* ]]; then
+    
+      # Create an empty file
+      if ! truncate -s "${DISK_SPACE}" "${DISK_FILE}"; then
+        rm -f "${DISK_FILE}"
+        error "Could not create ${DISK_DESC} file: ${DISK_FILE}" && exit 87
+      fi
+      
+    else
+    
+      # Check free diskspace
+      local SPACE=$(df --output=avail -B 1 "${DIR}" | tail -n 1)
+
+      if (( DATA_SIZE > SPACE )); then
+        error "Not enough free space to create a ${DISK_DESC} of ${DISK_SPACE} .."
+        error "Specify a smaller size or disable preallocation with ALLOCATE=N." && exit 86
+      fi
+
+      # Create an empty file
+      if ! fallocate -l "${DISK_SPACE}" "${DISK_FILE}"; then
+        if ! truncate -s "${DISK_SPACE}" "${DISK_FILE}"; then
+          rm -f "${DISK_FILE}"
+          error "Could not create ${DISK_DESC} file (${DISK_FILE}) of ${DISK_SPACE} .." && exit 87
+       fi
+      fi
+      
     fi
+
+    # Check if file exists
+    if [ ! -f "${DISK_FILE}" ]; then
+      error "File for ${DISK_DESC} does not exist ($DISK_FILE)" && exit 88
+    fi
+    
   fi
 
-  if [ -n "$DISK_SPACE" ]; then
-    CUR_SIZE=$(stat -c%s "${DISK_FILE}")
-    DATA_SIZE=$(numfmt --from=iec "${DISK_SPACE}")
-    if [ "$DATA_SIZE" -gt "$CUR_SIZE" ]; then
-      if ! truncate -s "${DISK_SPACE}" "${DISK_FILE}"; then
-        error "Could not resize file: ${DISK_FILE}" && exit 53
-      fi
-    fi
+  # Check the filesize
+  local SIZE=$(stat -c%s "${DISK_FILE}")
+
+  if [[ SIZE -ne DATA_SIZE ]]; then
+    error "File for ${DISK_DESC} has the wrong size: ${SIZE} bytes" && exit 89
   fi
 
   DISK_OPTS="${DISK_OPTS} \
@@ -205,6 +151,15 @@ addDevice () {
 
   return 0
 }
+
+DATA="${STORAGE}/data.img"
+
+if [[ ! -f "${DATA}" ]] && [[ -f "$STORAGE/data$DISK_SIZE.img" ]]; then
+  # Fallback for legacy installs
+  DATA="$STORAGE/data$DISK_SIZE.img"
+fi
+
+addDisk "userdata" "${DATA}" "DISK" "${DISK_SIZE}" "3" "0xc"
 
 : ${DISK2_SIZE:=''}
 : ${DISK3_SIZE:=''}
