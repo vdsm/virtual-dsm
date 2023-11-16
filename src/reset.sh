@@ -10,7 +10,6 @@ trap 'error "Status $? while: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
 
 # Docker environment variables
 
-: ${URL:=''}            # URL of the PAT file
 : ${GPU:='N'}           # Enable GPU passthrough
 : ${DEBUG:='N'}         # Enable debugging mode
 : ${ALLOCATE:='Y'}      # Preallocate diskspace
@@ -31,5 +30,10 @@ VERS=$(qemu-system-x86_64 --version | head -n 1 | cut -d '(' -f 1)
 rm -f /run/dsm.url
 rm -f /run/qemu.pid
 rm -f /run/qemu.count
+
+# Check folder
+
+STORAGE="/storage"
+[ ! -d "$STORAGE" ] && error "Storage folder (${STORAGE}) not found!" && exit 13
 
 return 0
