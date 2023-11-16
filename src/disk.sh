@@ -119,19 +119,6 @@ addDisk () {
       fi
 
     fi
-
-    # Check if file exists
-    if [ ! -f "${DISK_FILE}" ]; then
-      error "File for ${DISK_DESC} ($DISK_FILE) does not exist!" && exit 88
-    fi
-
-  fi
-
-  # Check the filesize
-  SIZE=$(stat -c%s "${DISK_FILE}")
-
-  if [[ SIZE -ne DATA_SIZE ]]; then
-    error "File for ${DISK_DESC} (${DISK_FILE}) has the wrong size: ${SIZE} bytes" && exit 89
   fi
 
   DISK_OPTS="${DISK_OPTS} \
