@@ -184,14 +184,19 @@ addDisk () {
 
   local DISK_ID=$1
   local DISK_FILE=$2
-  local DISK_SPACE=$3
-  local DISK_INDEX=$4
-  local DISK_ADDRESS=$5
+  local DISK_DESC=$3
+  local DISK_SPACE=$4
+  local DISK_INDEX=$5
+  local DISK_ADDRESS=$6
 
   [ ! -d "$(dirname "${DISK_FILE}")" ] && return 0
 
   if [ ! -f "${DISK_FILE}" ]; then
     [ -z "$DISK_SPACE" ] && DISK_SPACE="16G"
+    DATA_SIZE=$(numfmt --from=iec "${DISK_SPACE}")
+    if (( DATA_SIZE < MIN_SIZE )); then
+      error "Please increase ${DISK_DESC}_SIZE to at least 6 GB." && exit 54
+    fi    
     if ! truncate -s "${DISK_SPACE}" "${DISK_FILE}"; then
       error "Could not create file: ${DISK_FILE}" && exit 53
     fi
@@ -200,8 +205,13 @@ addDisk () {
   if [ -n "$DISK_SPACE" ]; then
     CUR_SIZE=$(stat -c%s "${DISK_FILE}")
     DATA_SIZE=$(numfmt --from=iec "${DISK_SPACE}")
+    if (( DATA_SIZE < MIN_SIZE )); then
+      error "Please increase ${DISK_DESC}_SIZE to at least 6 GB." && exit 54
+    fi
     if [ "$DATA_SIZE" -gt "$CUR_SIZE" ]; then
-      truncate -s "${DISK_SPACE}" "${DISK_FILE}"
+      if ! truncate -s "${DISK_SPACE}" "${DISK_FILE}"; then
+        error "Could not resize file: ${DISK_FILE}" && exit 53
+      fi
     fi
   fi
 
@@ -221,7 +231,7 @@ addDevice () {
   local DISK_ADDRESS=$4
 
   [ -z "${DISK_DEV}" ] && return 0
-  [ ! -b "${DISK_DEV}" ] && error "Device ${DISK_DEV} cannot be found! Please add it to the 'devices' section of your compose file." && exit 54
+  [ ! -b "${DISK_DEV}" ] && error "Device ${DISK_DEV} cannot be found! Please add it to the 'devices' section of your compose file." && exit 55
 
   DISK_OPTS="${DISK_OPTS} \
     -device virtio-scsi-pci,id=hw-${DISK_ID},bus=pcie.0,addr=${DISK_ADDRESS} \
@@ -237,11 +247,11 @@ addDevice () {
 : ${DISK5_SIZE:=''}
 : ${DISK6_SIZE:=''}
 
-addDisk "userdata2" "/storage2/data.img" "$DISK2_SIZE" "4" "0xd"
-addDisk "userdata3" "/storage3/data.img" "$DISK3_SIZE" "5" "0xe"
-addDisk "userdata4" "/storage4/data.img" "$DISK4_SIZE" "6" "0xf"
-addDisk "userdata5" "/storage5/data.img" "$DISK5_SIZE" "7" "0x5"
-addDisk "userdata6" "/storage6/data.img" "$DISK6_SIZE" "8" "0x6"
+addDisk "userdata2" "/storage2/data.img" "DISK2" "$DISK2_SIZE" "4" "0xd"
+addDisk "userdata3" "/storage3/data.img" "DISK3" "$DISK3_SIZE" "5" "0xe"
+addDisk "userdata4" "/storage4/data.img" "DISK4" "$DISK4_SIZE" "6" "0xf"
+addDisk "userdata5" "/storage5/data.img" "DISK5" "$DISK5_SIZE" "7" "0x5"
+addDisk "userdata6" "/storage6/data.img" "DISK6" "$DISK6_SIZE" "8" "0x6"
 
 : ${DEVICE:=''}        # Docker variable to passthrough a block device, like /dev/vdc1.
 : ${DEVICE2:=''}
