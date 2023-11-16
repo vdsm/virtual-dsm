@@ -42,11 +42,11 @@ addDisk () {
   DIR=$(dirname "${DISK_FILE}")
   [ ! -d "${DIR}" ] && return 0
 
-  MIN_SIZE=6442450944
   [ -z "$DISK_SPACE" ] && DISK_SPACE="16G"
   DISK_SPACE=$(echo "${DISK_SPACE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
   DATA_SIZE=$(numfmt --from=iec "${DISK_SPACE}")
 
+  MIN_SIZE=6442450944
   if (( DATA_SIZE < MIN_SIZE )); then
     error "Please increase ${DISK_DESC^^}_SIZE to at least 6 GB." && exit 83
   fi
