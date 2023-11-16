@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-STORAGE="/storage"
-[ ! -d "$STORAGE" ] && error "Storage folder (${STORAGE}) not found!" && exit 13
-
 if [ -f "$STORAGE"/dsm.ver ]; then
   BASE=$(cat "${STORAGE}/dsm.ver")
 else
@@ -11,6 +8,7 @@ else
   BASE="DSM_VirtualDSM_42962"
 fi
 
+: ${URL:=''}
 [ -n "$URL" ] && BASE=$(basename "$URL" .pat)
 
 if [[ -f "$STORAGE/$BASE.boot.img" ]] && [[ -f "$STORAGE/$BASE.system.img" ]]; then
@@ -202,8 +200,6 @@ BOOT=$(find "$TMP" -name "*.bin.zip")
 BOOT=$(echo "$BOOT" | head -c -5)
 unzip -q -o "$BOOT".zip -d "$TMP"
 
-[[ "${ALLOCATE}" == [Zz]* ]] && info "Install: Allocating diskspace..."
-
 SYSTEM="$TMP/sys.img"
 SYSTEM_SIZE=4954537983
 
@@ -215,11 +211,6 @@ if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
   if ! truncate -s "${SYSTEM_SIZE}" "${SYSTEM}"; then
     rm -f "${SYSTEM}" && error "Could not allocate a file for the system disk." && exit 88
   fi
-fi
-
-if [[ "${ALLOCATE}" == [Zz]* ]]; then
-  info "Install: Preallocating 4 GB of diskspace..."
-  dd if=/dev/urandom of="${SYSTEM}" count="${SYSTEM_SIZE}" bs=1M iflag=count_bytes status=none
 fi
 
 # Check if file exists
