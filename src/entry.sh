@@ -6,14 +6,14 @@ echo "❯ For support visit https://github.com/vdsm/virtual-dsm/"
 
 cd /run
 
-. reset.sh   # Initialize system
-. install.sh   # Run installation
-. disk.sh     # Initialize disks
-. network.sh  # Initialize network
-. gpu.sh     # Initialize graphics
-. serial.sh   # Initialize serialport
-. power.sh    # Configure shutdown
-. config.sh    # Configure arguments
+. reset.sh      # Initialize system
+. install.sh    # Run installation
+. disk.sh       # Initialize disks
+. network.sh    # Initialize network
+. gpu.sh        # Initialize graphics
+. serial.sh     # Initialize serialport
+. power.sh      # Configure shutdown
+. config.sh     # Configure arguments
 
 trap - ERR
 
