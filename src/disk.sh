@@ -134,24 +134,6 @@ addDisk () {
   return 0
 }
 
-addDevice () {
-
-  local DISK_ID=$1
-  local DISK_DEV=$2
-  local DISK_INDEX=$3
-  local DISK_ADDRESS=$4
-
-  [ -z "${DISK_DEV}" ] && return 0
-  [ ! -b "${DISK_DEV}" ] && error "Device ${DISK_DEV} cannot be found! Please add it to the 'devices' section of your compose file." && exit 55
-
-  DISK_OPTS="${DISK_OPTS} \
-    -device virtio-scsi-pci,id=hw-${DISK_ID},bus=pcie.0,addr=${DISK_ADDRESS} \
-    -drive file=${DISK_DEV},if=none,id=drive-${DISK_ID},format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=${DISK_DISCARD},detect-zeroes=on \
-    -device scsi-hd,bus=hw-${DISK_ID}.0,channel=0,scsi-id=0,lun=0,drive=drive-${DISK_ID},id=${DISK_ID},rotation_rate=${DISK_ROTATION},bootindex=${DISK_INDEX}"
-
-  return 0
-}
-
 DATA="${STORAGE}/data.img"
 
 if [[ ! -f "${DATA}" ]] && [[ -f "$STORAGE/data$DISK_SIZE.img" ]]; then
@@ -172,6 +154,24 @@ addDisk "userdata3" "/storage3/data.img" "DISK3" "${DISK3_SIZE}" "5" "0xe"
 addDisk "userdata4" "/storage4/data.img" "DISK4" "${DISK4_SIZE}" "9" "0x7"
 addDisk "userdata5" "/storage5/data.img" "DISK5" "${DISK5_SIZE}" "10" "0x8"
 addDisk "userdata6" "/storage6/data.img" "DISK6" "${DISK6_SIZE}" "11" "0x9"
+
+addDevice () {
+
+  local DISK_ID=$1
+  local DISK_DEV=$2
+  local DISK_INDEX=$3
+  local DISK_ADDRESS=$4
+
+  [ -z "${DISK_DEV}" ] && return 0
+  [ ! -b "${DISK_DEV}" ] && error "Device ${DISK_DEV} cannot be found! Please add it to the 'devices' section of your compose file." && exit 55
+
+  DISK_OPTS="${DISK_OPTS} \
+    -device virtio-scsi-pci,id=hw-${DISK_ID},bus=pcie.0,addr=${DISK_ADDRESS} \
+    -drive file=${DISK_DEV},if=none,id=drive-${DISK_ID},format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=${DISK_DISCARD},detect-zeroes=on \
+    -device scsi-hd,bus=hw-${DISK_ID}.0,channel=0,scsi-id=0,lun=0,drive=drive-${DISK_ID},id=${DISK_ID},rotation_rate=${DISK_ROTATION},bootindex=${DISK_INDEX}"
+
+  return 0
+}
 
 : ${DEVICE:=''}        # Docker variable to passthrough a block device, like /dev/vdc1.
 : ${DEVICE2:=''}
