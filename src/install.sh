@@ -107,8 +107,9 @@ if [ -f "${RDC}" ]; then
   { xz -dc <"$RDC" >"$TMP/rd" 2>/dev/null; rc=$?; } || :
   (( rc != 1 )) && error "Failed to unxz $RDC, reason $rc" && exit 91
 
-  { (cd "$TMP" && cpio -idm <"$TMP/rd" 2>/dev/null); rc=$?; } || :
-  (( rc != 0 )) && error "Failed to cpio $RDC, reason $rc" && exit 92
+  if (cd "$TMP" && errors=$(cpio -idm <"$TMP/rd" 2>&1 | grep -E "mknod|block" || true); [ $? -ne 0 ]); then
+    error "Failed to run cpio extraction: $errors" && exit 92
+  fi
 
   mkdir -p /run/extract
   for file in $TMP/usr/lib/libcurl.so.4 \
@@ -240,7 +241,10 @@ MOUNT="$TMP/system"
 rm -rf "$MOUNT" && mkdir -p "$MOUNT"
 
 mv "$HDA.tgz" "$HDA.txz"
-tar xpfJ "$HDA.txz" --absolute-names -C "$MOUNT/"
+
+if (errors=$(tar xpfJ "$HDA.txz" --absolute-names -C "$MOUNT/" 2>&1 | grep -E "mknod|block" || true); [ $? -ne 0 ]); then
+  error "Tar extraction failed: $errors" && exit 93
+fi
 
 [ -d "$PKG" ] && mv "$PKG/" "$MOUNT/.SynoUpgradePackages/"
 rm -f "$MOUNT/.SynoUpgradePackages/ActiveInsight-"*
