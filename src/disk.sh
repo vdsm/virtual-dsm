@@ -149,41 +149,6 @@ addDisk () {
 
   local DISK_ID=$1
   local DISK_FILE=$2
-  local DISK_SPACE=$3
-  local DISK_INDEX=$4
-  local DISK_ADDRESS=$5
-
-  if [ -d "$(dirname "${DISK_FILE}")" ]; then
-
-    if [ ! -f "${DISK_FILE}" ]; then
-      [ -z "$DISK_SPACE" ] && DISK_SPACE="16G"
-      if ! truncate -s "${DISK_SPACE}" "${DISK_FILE}"; then
-        error "Could not create file: ${DISK_FILE}" && exit 53
-      fi
-    fi
-
-    if [ -n "$DISK_SPACE" ]; then
-      CUR_SIZE=$(stat -c%s "${DISK_FILE}")
-      DATA_SIZE=$(numfmt --from=iec "${DISK_SPACE}")
-      if [ "$DATA_SIZE" -gt "$CUR_SIZE" ]; then
-        truncate -s "${DISK_SPACE}" "${DISK_FILE}"
-      fi
-    fi
-  
-    DISK_OPTS="${DISK_OPTS} \
-      -device virtio-scsi-pci,id=hw-${DISK_ID},bus=pcie.0,addr=${DISK_ADDRESS} \
-      -drive file=${DISK_FILE},if=none,id=drive-${DISK_ID},format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=${DISK_DISCARD},detect-zeroes=on \
-      -device scsi-hd,bus=hw-${DISK_ID}.0,channel=0,scsi-id=0,lun=0,drive=drive-${DISK_ID},id=${DISK_ID},rotation_rate=${DISK_ROTATION},bootindex=${DISK_INDEX}"
-
-  fi
-  
-  return 0
-}
-
-addDisk () {
-
-  local DISK_ID=$1
-  local DISK_FILE=$2
   local DISK_DESC=$3
   local DISK_SPACE=$4
   local DISK_INDEX=$5
