@@ -24,6 +24,14 @@ DISK_OPTS="\
 
 addDisk () {
 
+  local GB
+  local DIR
+  local REQ
+  local SIZE
+  local SPACE
+  local MIN_SIZE
+  local CUR_SIZE
+  local DATA_SIZE
   local DISK_ID=$1
   local DISK_FILE=$2
   local DISK_DESC=$3
@@ -31,13 +39,13 @@ addDisk () {
   local DISK_INDEX=$5
   local DISK_ADDRESS=$6
 
-  local DIR=$(dirname "${DISK_FILE}")
+  DIR=$(dirname "${DISK_FILE}")
   [ ! -d "${DIR}" ] && return 0
 
-  local MIN_SIZE=6442450944
+  MIN_SIZE=6442450944
   [ -z "$DISK_SPACE" ] && DISK_SPACE="16G"
   DISK_SPACE=$(echo "${DISK_SPACE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
-  local DATA_SIZE=$(numfmt --from=iec "${DISK_SPACE}")
+  DATA_SIZE=$(numfmt --from=iec "${DISK_SPACE}")
 
   if (( DATA_SIZE < MIN_SIZE )); then
     error "Please increase ${DISK_DESC^^}_SIZE to at least 6 GB." && exit 83
@@ -45,11 +53,11 @@ addDisk () {
 
   if [ -f "${DISK_FILE}" ]; then
 
-    local CUR_SIZE=$(stat -c%s "${DISK_FILE}")
+    CUR_SIZE=$(stat -c%s "${DISK_FILE}")
 
     if [ "$DATA_SIZE" -gt "$CUR_SIZE" ]; then
 
-      local GB=$(( (CUR_SIZE + 1073741823)/1073741824 ))
+      GB=$(( (CUR_SIZE + 1073741823)/1073741824 ))
       info "Resizing ${DISK_DESC} from ${GB}G to ${DISK_SPACE} .."
 
       if [[ "${ALLOCATE}" == [Nn]* ]]; then
@@ -61,10 +69,10 @@ addDisk () {
 
       else
 
-        local REQ=$((DATA_SIZE-CUR_SIZE))
+        REQ=$((DATA_SIZE-CUR_SIZE))
 
         # Check free diskspace
-        local SPACE=$(df --output=avail -B 1 "${DIR}" | tail -n 1)
+        SPACE=$(df --output=avail -B 1 "${DIR}" | tail -n 1)
 
         if (( REQ > SPACE )); then
           error "Not enough free space to resize ${DISK_DESC} to ${DISK_SPACE} .."
@@ -95,7 +103,7 @@ addDisk () {
     else
 
       # Check free diskspace
-      local SPACE=$(df --output=avail -B 1 "${DIR}" | tail -n 1)
+      SPACE=$(df --output=avail -B 1 "${DIR}" | tail -n 1)
 
       if (( DATA_SIZE > SPACE )); then
         error "Not enough free space to create ${DISK_DESC} of ${DISK_SPACE} .."
@@ -120,7 +128,7 @@ addDisk () {
   fi
 
   # Check the filesize
-  local SIZE=$(stat -c%s "${DISK_FILE}")
+  SIZE=$(stat -c%s "${DISK_FILE}")
 
   if [[ SIZE -ne DATA_SIZE ]]; then
     error "File for ${DISK_DESC} (${DISK_FILE}) has the wrong size: ${SIZE} bytes" && exit 89
@@ -146,7 +154,7 @@ DISK2_FILE="/storage2/data2.img"
 if [ ! -f "${DISK2_FILE}" ]; then
   # Fallback for legacy installs
   FALLBACK="/storage2/data.img"
-  if [ -f "${DISK1_FILE}" -a -f "${FALLBACK}" ]; then
+  if [[ -f "${DISK1_FILE}" ]] && [[ -f "${FALLBACK}" ]]; then
     SIZE1=$(stat -c%s "${FALLBACK}")
     SIZE2=$(stat -c%s "${DISK1_FILE}")
     if [[ SIZE1 -ne SIZE2 ]]; then
@@ -160,7 +168,7 @@ DISK3_FILE="/storage3/data3.img"
 if [ ! -f "${DISK3_FILE}" ]; then
   # Fallback for legacy installs
   FALLBACK="/storage3/data.img"
-  if [ -f "${DISK1_FILE}" -a -f "${FALLBACK}" ]; then
+  if [[ -f "${DISK1_FILE}" ]] && [[ -f "${FALLBACK}" ]]; then
     SIZE1=$(stat -c%s "${FALLBACK}")
     SIZE2=$(stat -c%s "${DISK1_FILE}")
     if [[ SIZE1 -ne SIZE2 ]]; then
