@@ -215,11 +215,6 @@ if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
   fi
 fi
 
-if [[ "${ALLOCATE}" == [Zz]* ]]; then
-  info "Install: Preallocating 4 GB of diskspace..."
-  dd if=/dev/urandom of="${SYSTEM}" count="${SYSTEM_SIZE}" bs=1M iflag=count_bytes status=none
-fi
-
 # Check if file exists
 [ ! -f "${SYSTEM}" ] && error "System disk does not exist ($SYSTEM)" && exit 89
 
