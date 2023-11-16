@@ -214,16 +214,16 @@ addDevice () {
 
 addDisk "userdata2" "/storage2/data.img" "DISK2" "$DISK2_SIZE" "4" "0xd"
 addDisk "userdata3" "/storage3/data.img" "DISK3" "$DISK3_SIZE" "5" "0xe"
-addDisk "userdata4" "/storage4/data.img" "DISK4" "$DISK4_SIZE" "6" "0xf"
-addDisk "userdata5" "/storage5/data.img" "DISK5" "$DISK5_SIZE" "7" "0x5"
-addDisk "userdata6" "/storage6/data.img" "DISK6" "$DISK6_SIZE" "8" "0x6"
+addDisk "userdata4" "/storage4/data.img" "DISK4" "$DISK4_SIZE" "9" "0x7"
+addDisk "userdata5" "/storage5/data.img" "DISK5" "$DISK5_SIZE" "10" "0x8"
+addDisk "userdata6" "/storage6/data.img" "DISK6" "$DISK6_SIZE" "11" "0x9"
 
 : ${DEVICE:=''}        # Docker variable to passthrough a block device, like /dev/vdc1.
 : ${DEVICE2:=''}
 : ${DEVICE3:=''}
 
-addDevice "userdata7" "$DEVICE" "9" "0x7"
-addDevice "userdata8" "$DEVICE2" "10" "0x8"
-addDevice "userdata9" "$DEVICE3" "11" "0x9"
+addDevice "userdata7" "$DEVICE" "6" "0xf"
+addDevice "userdata8" "$DEVICE2" "7" "0x5"
+addDevice "userdata9" "$DEVICE3" "8" "0x6"
 
 return 0
