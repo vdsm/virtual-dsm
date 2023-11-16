@@ -31,4 +31,9 @@ rm -f /run/dsm.url
 rm -f /run/qemu.pid
 rm -f /run/qemu.count
 
+# Check folder
+
+STORAGE="/storage"
+[ ! -d "$STORAGE" ] && error "Storage folder (${STORAGE}) not found!" && exit 13
+
 return 0
