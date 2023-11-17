@@ -46,8 +46,11 @@ configureDHCP() {
   [[ ! -e "${TAP_PATH}" ]] && [[ -e "/dev0/${TAP_PATH##*/}" ]] && ln -s "/dev0/${TAP_PATH##*/}" "${TAP_PATH}"
 
   if [[ ! -e "${TAP_PATH}" ]]; then
-    { mknod "${TAP_PATH}" c "$MAJOR" "$MINOR" ; rc=$?; } || :
-    (( rc != 0 )) && error "Cannot mknod: ${TAP_PATH} ($rc)" && exit 20
+      if { mknod "${TAP_PATH}" c "${MAJOR}" "${MINOR}" ; rc=$?; } 2>&1 | grep -q "Cannot mknod"; then
+          info "Cannot perform mknod operation.."
+      else
+          error "Failed to mknod: ${TAP_PATH} ($rc)" && exit 20
+      fi
   fi
 
   { exec 30>>"$TAP_PATH"; rc=$?; } 2>/dev/null || :
