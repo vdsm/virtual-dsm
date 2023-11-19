@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-: ${DEV:='Y'}      # Controls whether device nodes are created.
+: ${URL:=''}    # URL of the PAT file to be downloaded.
+: ${DEV:='Y'}   # Controls whether device nodes are created.
 
 if [ -f "$STORAGE"/dsm.ver ]; then
   BASE=$(cat "${STORAGE}/dsm.ver")
@@ -10,7 +11,6 @@ else
   BASE="DSM_VirtualDSM_42962"
 fi
 
-: ${URL:=''}
 [ -n "$URL" ] && BASE=$(basename "$URL" .pat)
 
 if [[ -f "$STORAGE/$BASE.boot.img" ]] && [[ -f "$STORAGE/$BASE.system.img" ]]; then
@@ -112,11 +112,11 @@ if [ -f "${RDC}" ]; then
   if [[ "${DEV}" == [Nn]* ]]; then
     # Exclude dev/ from cpio extract
     { (cd "$TMP" && cpio -it < "$TMP/rd" | grep -Ev 'dev/' | while read -r entry; do cpio -idm "$entry" < "$TMP/rd" 2>/dev/null; done); rc=$?; } || :
-    (( rc != 0 )) && error "Failed to extract $RDC, reason $rc" && exit 92
   else
     { (cd "$TMP" && cpio -idm <"$TMP/rd" 2>/dev/null); rc=$?; } || :
-    (( rc != 0 )) && error "Failed to cpio $RDC, reason $rc" && exit 92
   fi
+
+  (( rc != 0 )) && error "Failed to extract $RDC, reason $rc" && exit 92
 
   mkdir -p /run/extract
   for file in $TMP/usr/lib/libcurl.so.4 \
