@@ -33,7 +33,7 @@ RUN apt-get update && apt-get -y upgrade && \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-COPY src/*.sh /run/
+COPY ./src /run/
 COPY --from=builder /qemu-host.bin /run/host.bin
 RUN chmod +x /run/*.sh && chmod +x /run/*.bin
 
@@ -63,6 +63,6 @@ LABEL org.opencontainers.image.source="https://github.com/vdsm/virtual-dsm/"
 LABEL org.opencontainers.image.url="https://hub.docker.com/r/vdsm/virtual-dsm/"
 LABEL org.opencontainers.image.description="Virtual DSM in a docker container"
 
-HEALTHCHECK --interval=60s --retries=2 CMD /run/check.sh
+HEALTHCHECK --interval=60s --start-period=45s --retries=2 CMD /run/check.sh
 
 ENTRYPOINT ["/usr/bin/tini", "-s", "/run/entry.sh"]
