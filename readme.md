@@ -10,6 +10,7 @@
 [![Pulls]][hub_url]
 
 </div></h1>
+
 Virtual DSM in a docker container.
 
 ## Features
@@ -94,8 +95,8 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
       DISK2_SIZE: "32G"
       DISK3_SIZE: "64G"
     volumes:
-      - /home/example2:/storage2
-      - /home/example3:/storage3
+      - /home/example:/storage2
+      - /mnt/data/example:/storage3
     ```
 
     Additionally, it's also possible to passthrough raw disk devices like this:
