@@ -75,17 +75,6 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     Replace the example path `/home/user/data` with the desired storage folder.
 
-  * ### How do I change the space reserved by the virtual disk? 
-
-    By default, the entire disk space is reserved in advance. To create a growable disk that only reserves the space that is actually used, add the following environment variable:
-
-    ```yaml
-    environment:
-      ALLOCATE: "N"
-    ```
-
-    Keep in mind that this will not affect any of your existing disks, it only applies to newly created disks.
-    
   * ### How do I add multiple disks?
 
     To mount extra volumes, modify your compose file like this:
@@ -99,18 +88,16 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
       - /mnt/data/example:/storage3
     ```
 
-    Additionally, it's also possible to passthrough raw disk devices like this:
+  * ### How do I change the space reserved by the virtual disk? 
+
+    By default, the entire disk space is reserved in advance. To create a growable disk that only reserves the space that is actually used, add the following environment variable:
 
     ```yaml
     environment:
-      DEVICE2: "/dev/vdc1"
-      DEVICE3: "/dev/vdc2"
-    devices:
-      - /dev/vdc1
-      - /dev/vdc2
-    ```    
+      ALLOCATE: "N"
+    ```
 
-    Please beware that any pre-existing partitions and data on those devices will be wiped.
+    Keep in mind that this will not affect any of your existing disks, it only applies to newly created disks.
 
   * ### How do I increase the amount of CPU or RAM?
 
@@ -186,17 +173,6 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     Please note that even if you don't need DHCP, it's still recommended to enable this feature as it prevents NAT issues and increases performance by using a `macvtap` interface.
 
-  * ### How do I install a specific version of vDSM?
-
-    By default, version 7.2.1 will be installed, but if you prefer an older version, you can add its download URL to your compose file as follows:
-
-    ```yaml
-    environment:
-      URL: "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
-    ```
-
-    With this method, it is even possible to switch between different versions while keeping all your file data intact.
-
   * ### How do I passthrough my GPU?
 
     To passthrough your Intel GPU, add the following lines to your compose file:
@@ -209,7 +185,18 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
     ```
 
     This can be used to enable the facial recognition function in Synology Photos for example.
-    
+
+  * ### How do I install a specific version of vDSM?
+
+    By default, version 7.2.1 will be installed, but if you prefer an older version, you can add its download URL to your compose file as follows:
+
+    ```yaml
+    environment:
+      URL: "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
+    ```
+
+    With this method, it is even possible to switch between different versions while keeping all your file data intact.
+
   * ### What are the differences compared to the standard DSM?
 
     There are only two minor differences: the Virtual Machine Manager package is not available, and Surveillance Station will not include any free licenses.
