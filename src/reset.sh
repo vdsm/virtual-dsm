@@ -25,15 +25,20 @@ MINOR=$(uname -r | cut -d '.' -f2)
 ARCH=$(dpkg --print-architecture)
 VERS=$(qemu-system-x86_64 --version | head -n 1 | cut -d '(' -f 1)
 
+# Check folder
+
+STORAGE="/storage"
+[ ! -d "$STORAGE" ] && error "Storage folder (${STORAGE}) not found!" && exit 13
+
 # Cleanup files
 
 rm -f /run/dsm.url
 rm -f /run/qemu.pid
 rm -f /run/qemu.count
 
-# Check folder
+# Cleanup dirs
 
-STORAGE="/storage"
-[ ! -d "$STORAGE" ] && error "Storage folder (${STORAGE}) not found!" && exit 13
+rm -rf /tmp/dsm
+rm -rf "$STORAGE/tmp"
 
 return 0
