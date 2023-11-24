@@ -13,6 +13,10 @@ on:
       - '.github/**'
       - '.github/workflows/**'
 
+concurrency:
+  group: build
+  cancel-in-progress: false
+
 jobs:
   shellcheck:
     name: Check
