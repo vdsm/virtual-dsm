@@ -48,8 +48,8 @@ jobs:
           TAGS=()
           TAGS=("${{ github.repository }}:latest")
           TAGS+=("${{ github.repository }}:${VERSION}")
-          #TAGS+=("${{ secrets.DOCKERHUB_MIRROR }}:latest")
-          #TAGS+=("${{ secrets.DOCKERHUB_MIRROR }}:${VERSION}")
+          TAGS+=("${{ secrets.DOCKERHUB_MIRROR }}:latest")
+          TAGS+=("${{ secrets.DOCKERHUB_MIRROR }}:${VERSION}")
           TAGS+=("ghcr.io/${{ github.repository }}:latest")
           TAGS+=("ghcr.io/${{ github.repository }}:${VERSION}")
           
