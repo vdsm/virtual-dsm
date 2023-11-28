@@ -77,7 +77,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I add multiple disks?
 
-    To mount extra volumes, modify your compose file like this:
+    To create additional disks, modify your compose file like this:
     
     ```yaml
     environment:
