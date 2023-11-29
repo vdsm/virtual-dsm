@@ -7,7 +7,7 @@ on:
       - master
     paths-ignore:
       - '**/*.md'
-      - '**/*.yml'      
+      - '**/*.yml'
       - '.gitignore'
       - '.dockerignore'
       - '.github/**'
@@ -26,37 +26,18 @@ jobs:
     needs: shellcheck
     runs-on: ubuntu-latest
     permissions:
+      actions: write
       packages: write
       contents: read
     steps:
-      - 
-        name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
       -
         name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-      -
-        name: Prepare Docker build
-        id: prepare
-        run: |
-        
-          PLATFORMS="linux/amd64,linux/arm64"
-          VERSION="${{ vars.MAJOR }}.${{ vars.MINOR }}"
-          
-          TAGS=()
-          TAGS=("${{ github.repository }}:latest")
-          TAGS+=("${{ github.repository }}:${VERSION}")
-          TAGS+=("${{ secrets.DOCKERHUB_MIRROR }}:latest")
-          TAGS+=("${{ secrets.DOCKERHUB_MIRROR }}:${VERSION}")
-          TAGS+=("ghcr.io/${{ github.repository }}:latest")
-          TAGS+=("ghcr.io/${{ github.repository }}:${VERSION}")
-          
-          echo "tags=${TAGS[@]}" >> $GITHUB_OUTPUT
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "docker_platforms=${PLATFORMS}" >> $GITHUB_OUTPUT
-          echo "build_date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          fetch-depth: 0    
+      - 
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       -
         name: Login into Docker Hub
         uses: docker/login-action@v3
@@ -72,25 +53,42 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - 
         name: Build Docker image
+        id: build
         run: |
-        
-          TAGS=(${{ steps.prepare.outputs.tags }})
 
-          echo "Build date: ${{ steps.prepare.outputs.build_date }}"
-          echo "Docker platform: ${{ steps.prepare.outputs.docker_platforms }}"
-          echo "Tags: ${{ steps.prepare.outputs.tags }}"
-
-          docker buildx build --platform ${{ steps.prepare.outputs.docker_platforms }} \
+          DIRECTORY="."
+          PLATFORMS="linux/amd64,linux/arm64"
+          VERSION="${{ vars.MAJOR }}.${{ vars.MINOR }}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          TITLE="$(grep --only-matching --perl-regex "(?<=image.title\=).*" $DIRECTORY/Dockerfile | sed -e 's/ /\xc2\xa0/g')"
+          DESC="$(grep --only-matching --perl-regex "(?<=image.description\=).*" $DIRECTORY/Dockerfile | sed -e 's/ /\xc2\xa0/g')"
+   
+          TAGS=()
+          TAGS=("${{ github.repository }}:latest")
+          TAGS+=("${{ github.repository }}:${VERSION}")
+          TAGS+=("ghcr.io/${{ github.repository }}:latest")
+          TAGS+=("ghcr.io/${{ github.repository }}:${VERSION}")
+          
+          LABELS=()
+          LABELS=("org.opencontainers.image.licenses=MIT")
+          LABELS+=("org.opencontainers.image.title=${TITLE}")
+          LABELS+=("org.opencontainers.image.description=${DESC}")
+          LABELS+=("org.opencontainers.image.version=${VERSION}")
+          LABELS+=("org.opencontainers.image.created=${BUILD_DATE}")
+          LABELS+=("org.opencontainers.image.revision=${GITHUB_RUN_ID}")
+          LABELS+=("org.opencontainers.image.url=https://hub.docker.com/r/${{ secrets.DOCKERHUB_REPO }}")
+          LABELS+=("org.opencontainers.image.source=https://github.com/${{ github.repository }}")
+          
+          docker buildx build --progress=plain \
+            --platform "${PLATFORMS}" \
             --output "type=image,push=true" \
-            --progress=plain \
-            --build-arg "BUILD_ARG=${GITHUB_RUN_ID}" \
-            --build-arg "VERSION_ARG=${{ steps.prepare.outputs.version }}" \
-            --build-arg "DATE_ARG=${{ steps.prepare.outputs.build_date }}" \
+            --build-arg "VERSION_ARG=${VERSION}" \
             --build-arg "VCS_REF=${GITHUB_SHA::8}" \
-            $(printf "%s" "${TAGS[@]/#/ --tag }" ) .
-      -
-        name: Clear Docker credentials
-        run: |
+            $(printf '%s' "${LABELS[@]/#/ --label }" ) \
+            $(printf '%s' "${LABELS[@]/#/ --annotation }" ) \
+            $(printf '%s' "${TAGS[@]/#/ --tag }" ) "${DIRECTORY}"
+          
           rm -f ${HOME}/.docker/config.json
       -
         name: Create a release
@@ -98,8 +96,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
         with:
-          tag: "v${{ steps.prepare.outputs.version }}"
-          title: "v${{ steps.prepare.outputs.version }}"
+          tag: "v${{ steps.build.outputs.version }}"
+          title: "v${{ steps.build.outputs.version }}"
       -
         name: Increment version variable
         uses: action-pack/bump@v2
