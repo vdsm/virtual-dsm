@@ -9,6 +9,7 @@ services:
             RAM_SIZE: "512M"
         devices:
             - /dev/kvm
+            - /dev/net/tun
             - /dev/vhost-net
         device_cgroup_rules:
             - 'c *:* rwm'
