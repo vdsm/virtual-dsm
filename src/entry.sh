@@ -18,7 +18,6 @@ cd /run
 trap - ERR
 
 if [[ "${CONSOLE}" == [Yy]* ]]; then
-  info "$VERS" && set -x
   exec qemu-system-x86_64 -pidfile "${QEMU_PID}" ${ARGS:+ $ARGS}
   exit $?
 fi
