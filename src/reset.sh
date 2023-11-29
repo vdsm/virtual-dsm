@@ -12,6 +12,7 @@ trap 'error "Status $? while: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
 
 : ${GPU:='N'}           # Enable GPU passthrough
 : ${DEBUG:='N'}         # Enable debugging mode
+: ${CONSOLE:='N'}       # Start in console mode
 : ${ALLOCATE:='Y'}      # Preallocate diskspace
 : ${ARGUMENTS:=''}      # Extra QEMU parameters
 : ${CPU_CORES:='1'}     # Amount of CPU cores
