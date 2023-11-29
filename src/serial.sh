@@ -48,7 +48,7 @@ sleep 0.2
 while ! nc -z -w1 127.0.0.1 2210 > /dev/null 2>&1; do
   sleep 0.1
   cnt=$((cnt + 1))
-  (( cnt > 20 )) && error "Failed to connect to qemu-host.." && exit 58
+  (( cnt > 50 )) && error "Failed to connect to qemu-host.." && exit 58
 done
 
 cnt=0
@@ -56,7 +56,7 @@ cnt=0
 while ! nc -z -w1 127.0.0.1 12345 > /dev/null 2>&1; do
   sleep 0.1
   cnt=$((cnt + 1))
-  (( cnt > 20 )) && error "Failed to connect to qemu-host.." && exit 59
+  (( cnt > 50 )) && error "Failed to connect to qemu-host.." && exit 59
 done
 
 # Configure serial ports
