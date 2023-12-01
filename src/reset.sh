@@ -17,7 +17,7 @@ trap 'error "Status $? while: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
 : ${ARGUMENTS:=''}      # Extra QEMU parameters
 : ${CPU_CORES:='1'}     # Amount of CPU cores
 : ${DISK_SIZE:='16G'}   # Initial data disk size
-: ${RAM_SIZE:='512M'}   # Maximum RAM amount
+: ${RAM_SIZE:='1G'}   # Maximum RAM amount
 
 # Helper variables
 
