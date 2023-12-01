@@ -16,8 +16,8 @@ trap 'error "Status $? while: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
 : ${ALLOCATE:='Y'}      # Preallocate diskspace
 : ${ARGUMENTS:=''}      # Extra QEMU parameters
 : ${CPU_CORES:='1'}     # Amount of CPU cores
+: ${RAM_SIZE:='1G'}     # Maximum RAM amount
 : ${DISK_SIZE:='16G'}   # Initial data disk size
-: ${RAM_SIZE:='1G'}   # Maximum RAM amount
 
 # Helper variables
 
