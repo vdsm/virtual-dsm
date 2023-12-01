@@ -15,7 +15,7 @@ Virtual DSM in a docker container.
 
 ## Features
 
- - Multi-platform
+ - Multiple disks
  - KVM acceleration
  - GPU passthrough
  - Upgrades supported
@@ -58,7 +58,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     ```yaml
     environment:
-      DISK_SIZE: "256G"
+      DISK_SIZE: "128G"
     ```
     
     This can also be used to resize the existing disk to a larger capacity without any data loss. 
