@@ -4,9 +4,9 @@ services:
         container_name: dsm
         image: vdsm/virtual-dsm:latest
         environment:
-            CPU_CORES: "1"
             DISK_SIZE: "16G"
-            RAM_SIZE: "512M"
+            RAM_SIZE: "1G"
+            CPU_CORES: "1"
         devices:
             - /dev/kvm
             - /dev/net/tun

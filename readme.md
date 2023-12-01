@@ -15,7 +15,7 @@ Virtual DSM in a docker container.
 
 ## Features
 
- - Multi-platform
+ - Multiple disks
  - KVM acceleration
  - GPU passthrough
  - Upgrades supported
@@ -58,7 +58,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     ```yaml
     environment:
-      DISK_SIZE: "256G"
+      DISK_SIZE: "128G"
     ```
     
     This can also be used to resize the existing disk to a larger capacity without any data loss. 
@@ -100,12 +100,12 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I increase the amount of CPU or RAM?
 
-    By default, a single core and 512 MB of RAM are allocated to the container. To increase this, add the following environment variables:
+    By default, a single core and 1 GB of RAM are allocated to the container. To increase this, add the following environment variables:
 
     ```yaml
     environment:
+      RAM_SIZE: "4G"
       CPU_CORES: "4"
-      RAM_SIZE: "2048M"
     ```
 
   * ### How do I verify if my system supports KVM?
@@ -172,7 +172,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     Please note that even if you don't need DHCP, it's still recommended to enable this feature as it prevents NAT issues and increases performance by using a `macvtap` interface.
 
-  * ### How do I passthrough my GPU?
+  * ### How do I passthrough the GPU?
 
     To passthrough your Intel GPU, add the following lines to your compose file:
 
