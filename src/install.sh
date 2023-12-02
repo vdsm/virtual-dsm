@@ -48,6 +48,8 @@ rm -f "$STORAGE"/"$BASE".agent
 rm -f "$STORAGE"/"$BASE".boot.img
 rm -f "$STORAGE"/"$BASE".system.img
 
+[[ "${DEBUG}" == [Yy1]* ]] && set -x
+
 MIN_SPACE=6442450944
 FS=$(stat -f -c %T "$STORAGE")
 
@@ -60,15 +62,12 @@ else
   (( MIN_SPACE > SPACE )) && TMP="$STORAGE/tmp"
 fi
 
-rm -rf /tmp/dsm
-rm -rf "$STORAGE/tmp"
 rm -rf "$TMP" && mkdir -p "$TMP"
 
 # Check free diskspace
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
-(( MIN_SPACE > SPACE )) && error "Not enough free space for installation, need at least 6 GB." && exit 95
-
-[[ "${DEBUG}" == [Yy1]* ]] && set -x
+SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
+(( MIN_SPACE > SPACE )) && error "Not enough free space for installation, has ${SPACE_GB} GB available but need at least 6 GB." && exit 95
 
 RDC="$STORAGE/dsm.rd"
 
@@ -213,7 +212,8 @@ SYSTEM_SIZE=4954537983
 
 # Check free diskspace
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
-(( SYSTEM_SIZE > SPACE )) && error "Not enough free space to create a 4 GB system disk." && exit 87
+SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
+(( SYSTEM_SIZE > SPACE )) && error "Not enough free space to create a 4 GB system disk, has only ${SPACE_GB} GB available." && exit 87
 
 if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
   if ! truncate -s "${SYSTEM_SIZE}" "${SYSTEM}"; then
@@ -277,7 +277,8 @@ echo "$BASE" > "$STORAGE"/dsm.ver
 if [[ "$TMP" != "$STORAGE/tmp" ]]; then
   # Check free diskspace
   SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
-  (( MIN_SPACE > SPACE )) && error "Not enough free space in storage folder, need at least 6 GB." && exit 94
+  SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
+  (( MIN_SPACE > SPACE )) && error "Not enough free space in ${STORAGE}, has ${SPACE_GB} GB available but need at least 6 GB." && exit 94
 fi
 
 mv -f "$PAT" "$STORAGE"/"$BASE".pat
