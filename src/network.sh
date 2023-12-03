@@ -90,12 +90,12 @@ configureDNS () {
 
   for nameserver in "${nameservers[@]}"; do
     nameserver=$(echo "$nameserver" | sed 's/#.*//' )
-    [[ "$nameserver" == "127.0"* ]] && nameserver=GATEWAY
+    [[ "$nameserver" == "127.0"* ]] && nameserver=$GATEWAY
     [[ "$nameserver" =~ .*:.* ]] && continue
     [[ -z "$DNS_SERVERS" ]] && DNS_SERVERS="$nameserver" || DNS_SERVERS="$DNS_SERVERS,$nameserver"
   done
 
-  [[ -z "$DNS_SERVERS" ]] && DNS_SERVERS=GATEWAY
+  [[ -z "$DNS_SERVERS" ]] && DNS_SERVERS=$GATEWAY
 
   DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:dns-server,$DNS_SERVERS --dhcp-option=option:router,${VM_NET_IP%.*}.1"
 
