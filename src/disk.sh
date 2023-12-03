@@ -70,16 +70,17 @@ addDisk () {
 
         # Check free diskspace
         SPACE=$(df --output=avail -B 1 "${DIR}" | tail -n 1)
+        SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
 
         if (( REQ > SPACE )); then
-          error "Not enough free space to resize ${DISK_DESC} to ${DISK_SPACE} .."
-          error "Specify a smaller size or disable preallocation with ALLOCATE=N." && exit 84
+          error "Not enough free space to resize ${DISK_DESC} to ${DISK_SPACE} in ${DIR}, it has only ${SPACE_GB} GB available.."
+          error "Specify a smaller ${DISK_DESC^^}_SIZE or disable preallocation with ALLOCATE=N." && exit 84
         fi
 
         # Resize file by allocating more space
         if ! fallocate -l "${DISK_SPACE}" "${DISK_FILE}"; then
           if ! truncate -s "${DISK_SPACE}" "${DISK_FILE}"; then
-            error "Could not resize ${DISK_DESC} file (${DISK_FILE}) to ${DISK_SPACE} .." && exit 85
+            error "Could not resize ${DISK_DESC} file (${DISK_FILE}) to ${DISK_SPACE}" && exit 85
           fi
         fi
 
@@ -94,24 +95,25 @@ addDisk () {
       # Create an empty file
       if ! truncate -s "${DISK_SPACE}" "${DISK_FILE}"; then
         rm -f "${DISK_FILE}"
-        error "Could not create a file for ${DISK_DESC} (${DISK_FILE})" && exit 87
+        error "Could not create a ${DISK_SPACE} file for ${DISK_DESC} (${DISK_FILE})" && exit 87
       fi
 
     else
 
       # Check free diskspace
       SPACE=$(df --output=avail -B 1 "${DIR}" | tail -n 1)
+      SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
 
       if (( DATA_SIZE > SPACE )); then
-        error "Not enough free space to create ${DISK_DESC} of ${DISK_SPACE} .."
-        error "Specify a smaller size or disable preallocation with ALLOCATE=N." && exit 86
+        error "Not enough free space to create ${DISK_DESC} of ${DISK_SPACE} in ${DIR}, it has only ${SPACE_GB} GB available.."
+        error "Specify a smaller ${DISK_DESC^^}_SIZE or disable preallocation with ALLOCATE=N." && exit 86
       fi
 
       # Create an empty file
       if ! fallocate -l "${DISK_SPACE}" "${DISK_FILE}"; then
         if ! truncate -s "${DISK_SPACE}" "${DISK_FILE}"; then
           rm -f "${DISK_FILE}"
-          error "Could not create a file for ${DISK_DESC} (${DISK_FILE}) of ${DISK_SPACE} .." && exit 87
+          error "Could not create a ${DISK_SPACE} file for ${DISK_DESC} (${DISK_FILE})" && exit 87
         fi
       fi
 
