@@ -90,12 +90,12 @@ configureDNS () {
 
   for nameserver in "${nameservers[@]}"; do
     nameserver=$(echo "$nameserver" | sed 's/#.*//' )
-    [[ "$nameserver" =~ .*:.* ]] && continue
-    [[ "$nameserver" == "127.0"* ]] && nameserver=$GATEWAY
-    [[ -z "$DNS_SERVERS" ]] && DNS_SERVERS="$nameserver" || DNS_SERVERS="$DNS_SERVERS,$nameserver"
+    if ! [[ "$nameserver" =~ .*:.* ]]; then
+      [[ -z "$DNS_SERVERS" ]] && DNS_SERVERS="$nameserver" || DNS_SERVERS="$DNS_SERVERS,$nameserver"
+    fi
   done
 
-  [[ -z "$DNS_SERVERS" ]] && DNS_SERVERS=$GATEWAY
+  [[ -z "$DNS_SERVERS" ]] && DNS_SERVERS="1.1.1.1"
 
   DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:dns-server,$DNS_SERVERS --dhcp-option=option:router,${VM_NET_IP%.*}.1"
 
@@ -147,6 +147,8 @@ configureNAT () {
   ip link set dev "${VM_NET_TAP}" master dockerbridge
 
   # Add internet connection to the VM
+  IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
+
   iptables -t nat -A POSTROUTING -o "${VM_NET_DEV}" -j MASQUERADE
   iptables -t nat -A PREROUTING -i "${VM_NET_DEV}" -d "${IP}" -p tcp  -j DNAT --to $VM_NET_IP
   iptables -t nat -A PREROUTING -i "${VM_NET_DEV}" -d "${IP}" -p udp  -j DNAT --to $VM_NET_IP
@@ -221,10 +223,12 @@ update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 
 VM_NET_MAC="${VM_NET_MAC//-/:}"
 GATEWAY=$(ip r | grep default | awk '{print $3}')
-IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
 
 if [[ "${DEBUG}" == [Yy1]* ]]; then
+
+  IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
   info "Container IP is ${IP} with gateway ${GATEWAY}" && echo
+
 fi
 
 if [[ "${DHCP}" == [Yy1]* ]]; then
