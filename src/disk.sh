@@ -24,6 +24,7 @@ DISK_OPTS="\
 
 addDisk () {
 
+  local FS
   local GB
   local DIR
   local REQ
@@ -39,6 +40,12 @@ addDisk () {
 
   DIR=$(dirname "${DISK_FILE}")
   [ ! -d "${DIR}" ] && return 0
+  
+  FS=$(stat -f -c %T "$DIR")
+
+  if [[ "$FS" == "overlay"* ]]; then
+    info "Warning: Directory ${DIR} is an OverlayFS, this usually means it was binded to an invalid path!"
+  fi
 
   [ -z "$DISK_SPACE" ] && DISK_SPACE="16G"
   DISK_SPACE=$(echo "${DISK_SPACE}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
