@@ -48,8 +48,15 @@ rm -f "$STORAGE"/"$BASE".agent
 rm -f "$STORAGE"/"$BASE".boot.img
 rm -f "$STORAGE"/"$BASE".system.img
 
+[[ "${DEBUG}" == [Yy1]* ]] && set -x
+
+# Check filesystem
 MIN_SPACE=6442450944
 FS=$(stat -f -c %T "$STORAGE")
+
+if [[ "$FS" == "overlay"* ]]; then
+  info "Warning: the filesystem of ${STORAGE} is OverlayFS, this usually means it was binded to an invalid path!"
+fi
 
 if [[ "$FS" != "fat"* && "$FS" != "vfat"* && "$FS" != "exfat"* && \
         "$FS" != "ntfs"* && "$FS" != "fuse"* && "$FS" != "msdos"* ]]; then
@@ -57,18 +64,24 @@ if [[ "$FS" != "fat"* && "$FS" != "vfat"* && "$FS" != "exfat"* && \
 else
   TMP="/tmp/dsm"
   SPACE=$(df --output=avail -B 1 /tmp | tail -n 1)
-  (( MIN_SPACE > SPACE )) && TMP="$STORAGE/tmp"
+  if (( MIN_SPACE > SPACE )); then
+    TMP="$STORAGE/tmp"
+    info "Warning: the ${FS} filesystem of ${STORAGE} does not support UNIX permissions.."
+  fi
 fi
 
-rm -rf /tmp/dsm
-rm -rf "$STORAGE/tmp"
 rm -rf "$TMP" && mkdir -p "$TMP"
 
 # Check free diskspace
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
-(( MIN_SPACE > SPACE )) && error "Not enough free space for installation, need at least 6 GB." && exit 95
+SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
+(( MIN_SPACE > SPACE )) && error "Not enough free space for installation in ${STORAGE}, have ${SPACE_GB} GB available but need at least 6 GB." && exit 95
 
-[[ "${DEBUG}" == [Yy1]* ]] && set -x
+if [[ "$TMP" != "$STORAGE/tmp" ]]; then
+  SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
+  SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
+  (( MIN_SPACE > SPACE )) && error "Not enough free space for installation in ${STORAGE}, have ${SPACE_GB} GB available but need at least 6 GB." && exit 94
+fi
 
 RDC="$STORAGE/dsm.rd"
 
@@ -213,7 +226,8 @@ SYSTEM_SIZE=4954537983
 
 # Check free diskspace
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
-(( SYSTEM_SIZE > SPACE )) && error "Not enough free space to create a 4 GB system disk." && exit 87
+SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
+(( SYSTEM_SIZE > SPACE )) && error "Not enough free space to create a 4 GB system disk, have only ${SPACE_GB} GB available." && exit 87
 
 if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
   if ! truncate -s "${SYSTEM_SIZE}" "${SYSTEM}"; then
@@ -273,12 +287,6 @@ mke2fs -q -t ext4 -b 4096 -d "$MOUNT/" -L "$LABEL" -F -E "offset=$OFFSET" "$SYST
 rm -rf "$MOUNT"
 
 echo "$BASE" > "$STORAGE"/dsm.ver
-
-if [[ "$TMP" != "$STORAGE/tmp" ]]; then
-  # Check free diskspace
-  SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
-  (( MIN_SPACE > SPACE )) && error "Not enough free space in storage folder, need at least 6 GB." && exit 94
-fi
 
 mv -f "$PAT" "$STORAGE"/"$BASE".pat
 mv -f "$BOOT" "$STORAGE"/"$BASE".boot.img
