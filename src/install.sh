@@ -55,7 +55,7 @@ MIN_SPACE=6442450944
 FS=$(stat -f -c %T "$STORAGE")
 
 if [[ "$FS" == "overlay"* ]]; then
-  info "Warning: the filesystem of the ${STORAGE} directory is OverlayFS, this usually means it was binded to an invalid path!"
+  info "Warning: the filesystem of ${STORAGE} is OverlayFS, this usually means it was binded to an invalid path!"
 fi
 
 if [[ "$FS" != "fat"* && "$FS" != "vfat"* && "$FS" != "exfat"* && \
@@ -66,7 +66,7 @@ else
   SPACE=$(df --output=avail -B 1 /tmp | tail -n 1)
   if (( MIN_SPACE > SPACE )); then
     TMP="$STORAGE/tmp"
-    info "Warning: the ${FS} filesystem of the ${STORAGE} directory does not support UNIX permissions.."
+    info "Warning: the ${FS} filesystem of ${STORAGE} does not support UNIX permissions.."
   fi
 fi
 
