@@ -44,7 +44,7 @@ addDisk () {
   FS=$(stat -f -c %T "$DIR")
 
   if [[ "$FS" == "overlay"* ]]; then
-    info "Warning: Directory ${DIR} is an OverlayFS, this usually means it was binded to an invalid path!"
+    info "Warning: the filesystem of ${DIR} is OverlayFS, this usually means it was binded to an invalid path!"
   fi
 
   [ -z "$DISK_SPACE" ] && DISK_SPACE="16G"
