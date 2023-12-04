@@ -23,7 +23,7 @@ fi
 
 # Detect country
 COUNTRY=""
-{ JSON=$(curl -sfk https://ipinfo.io); rc=$?; } || :
+{ JSON=$(curl -sfk https://ipinfo.io/json); rc=$?; } || :
 
 if (( rc == 0 )); then
   { COUNTRY=$(echo "$JSON" | jq -r '.country' 2> /dev/null); rc=$?; } || :
