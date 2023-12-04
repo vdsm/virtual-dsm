@@ -26,14 +26,14 @@ COUNTRY=""
 { JSON=$(curl -sfk https://ipinfo.io); rc=$?; } || :
 
 if (( rc == 0 )); then
-  { COUNTRY="$(echo $JSON | jq -r '.country' 2> /dev/null)"; rc=$?; } || :
+  { COUNTRY=$(echo "$JSON" | jq -r '.country' 2> /dev/null); rc=$?; } || :
   (( rc != 0 )) || [[ "$COUNTRY" == "null" ]] && COUNTRY=""
 fi
 
 if [[ -z "$COUNTRY" ]]; then
   { JSON=$(curl -sfk https://api.ipapi.is); rc=$?; } || :
   if (( rc == 0 )); then
-    { COUNTRY="$(echo $JSON | jq -r '.location.country_code' 2> /dev/null)"; rc=$?; } || :
+    { COUNTRY=$(echo "$JSON" | jq -r '.location.country_code' 2> /dev/null); rc=$?; } || :
     (( rc != 0 )) || [[ "$COUNTRY" == "null" ]] && COUNTRY=""
   fi
 fi
