@@ -11,7 +11,6 @@ set -Eeuo pipefail
 : ${VM_NET_MAC:="$MAC"}
 : ${VM_NET_HOST:='VirtualDSM'}
 
-: ${DNS_SERVERS:=''}
 : ${DNSMASQ_OPTS:=''}
 : ${DNSMASQ:='/usr/sbin/dnsmasq'}
 : ${DNSMASQ_CONF_DIR:='/etc/dnsmasq.d'}
@@ -78,33 +77,8 @@ configureDNS () {
   echo "0 $VM_NET_MAC $VM_NET_IP $VM_NET_HOST 01:${VM_NET_MAC}" > /var/lib/misc/dnsmasq.leases
   chmod 644 /var/lib/misc/dnsmasq.leases
 
-  # Build DNS options from container /etc/resolv.conf
-
-  if [[ "${DEBUG}" == [Yy1]* ]]; then
-    echo "/etc/resolv.conf:" && echo && cat /etc/resolv.conf && echo
-  fi
-
-  mapfile -t nameservers < <( { grep '^nameserver' /etc/resolv.conf || true; } | sed 's/\t/ /g' | sed 's/nameserver //' | sed 's/ //g')
-  searchdomains=$( { grep '^search' /etc/resolv.conf || true; } | sed 's/\t/ /g' | sed 's/search //' | sed 's/#.*//' | sed 's/\s*$//g' | sed 's/ /,/g')
-  domainname=$(echo "$searchdomains" | awk -F"," '{print $1}')
-
-  for nameserver in "${nameservers[@]}"; do
-    nameserver=$(echo "$nameserver" | sed 's/#.*//' )
-    [[ "$nameserver" =~ .*:.* ]] && continue
-    [[ "$nameserver" == "127.0"* ]] && nameserver=$GATEWAY
-    [[ -z "$DNS_SERVERS" ]] && DNS_SERVERS="$nameserver" || DNS_SERVERS="$DNS_SERVERS,$nameserver"
-  done
-
-  [[ -z "$DNS_SERVERS" ]] && DNS_SERVERS=$GATEWAY
-
-  DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:dns-server,$DNS_SERVERS --dhcp-option=option:router,${VM_NET_IP%.*}.1"
-
-  if [ -n "$searchdomains" ] && [ "$searchdomains" != "." ]; then
-    DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-search,$searchdomains --dhcp-option=option:domain-name,$domainname"
-  else
-    [[ -z $(hostname -d) ]] || DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:domain-name,$(hostname -d)"
-  fi
-
+  # Set DNS server and gateway
+  DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:dns-server,${VM_NET_IP%.*}.1 --dhcp-option=option:router,${VM_NET_IP%.*}.1"
   DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
 
   [[ "${DEBUG}" == [Yy1]* ]] && set -x
