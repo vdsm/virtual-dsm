@@ -11,7 +11,6 @@ set -Eeuo pipefail
 : ${VM_NET_MAC:="$MAC"}
 : ${VM_NET_HOST:='VirtualDSM'}
 
-: ${DNS_SERVERS:=''}
 : ${DNSMASQ_OPTS:=''}
 : ${DNSMASQ:='/usr/sbin/dnsmasq'}
 : ${DNSMASQ_CONF_DIR:='/etc/dnsmasq.d'}
