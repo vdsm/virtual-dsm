@@ -18,8 +18,8 @@ RUN apt-get update && apt-get -y upgrade && \
         tini \
         curl \
         cpio \
-        fdisk \
         wget \
+        fdisk \
         unzip \
         socat \
         procps \
