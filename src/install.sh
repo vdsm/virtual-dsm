@@ -26,26 +26,26 @@ COUNTRY=""
 { JSON=$(curl -sfk https://ipinfo.io); rc=$?; } || :
 
 if (( rc == 0 )); then
-  { COUNTRY=$(echo $JSON | jq -r '.country' 2> /dev/null); rc=$?; } || :
-  ((( rc != 0 )) || [[ $COUNTRY == "null" ]]) && COUNTRY=""
+  { COUNTRY="$(echo $JSON | jq -r '.country' 2> /dev/null)"; rc=$?; } || :
+  [[ (( rc != 0 )) || "$COUNTRY" == "null" ]] && COUNTRY=""
 fi
 
 if [[ -z "$COUNTRY" ]]; then
   { JSON=$(curl -sfk https://api.ipapi.is); rc=$?; } || :
   if (( rc == 0 )); then
-    { COUNTRY=$(echo $JSON | jq -r '.location.country_code' 2> /dev/null); rc=$?; } || :
-    ((( rc != 0 )) || [[ $COUNTRY == "null" ]]) && COUNTRY=""
+    { COUNTRY="$(echo $JSON | jq -r '.location.country_code' 2> /dev/null)"; rc=$?; } || :
+    [[ (( rc != 0 )) || "$COUNTRY" == "null" ]] && COUNTRY=""
   fi
 fi
 
-# Select download mirror
+# Select download mirror based on country
 if [ "$COUNTRY" == "CN" ]; then
   DL="https://cndl.synology.cn/download/DSM"
 else
   DL="https://global.synologydownload.com/download/DSM"
 fi
 
-# Select default version
+# Select default version based on architecture
 if [ -z "$URL" ]; then
   if [ "$ARCH" == "amd64" ]; then
     URL="$DL/release/7.2.1/69057-1/DSM_VirtualDSM_69057.pat"
