@@ -26,10 +26,8 @@ COUNTRY=""
 DL_CHINA="https://cndl.synology.cn/download/DSM"
 DL_GLOBAL="https://global.synologydownload.com/download/DSM"
 
-if [ -n "$URL" ]; then
-  [[ "${URL,,}" == *"cndl.synology"* ]] && DL="$DL_CHINA"
-  [[ "${URL,,}" == *"global.synology"* ]] && DL="$DL_GLOBAL"
-fi
+[[ "${URL,,}" == *"cndl.synology"* ]] && DL="$DL_CHINA"
+[[ "${URL,,}" == *"global.synology"* ]] && DL="$DL_GLOBAL"
 
 if [ -z "$DL" ]; then
 
