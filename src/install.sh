@@ -21,32 +21,46 @@ fi
 # Display wait message
 /run/server.sh 5000 install &
 
-# Detect country
+DL=""
 COUNTRY=""
-{ JSON=$(curl -sfk https://ipinfo.io/json); rc=$?; } || :
+DL_CHINA="https://cndl.synology.cn/download/DSM"
+DL_GLOBAL="https://global.synologydownload.com/download/DSM"
 
-if (( rc == 0 )); then
-  { COUNTRY=$(echo "$JSON" | jq -r '.country' 2> /dev/null); rc=$?; } || :
-  (( rc != 0 )) || [[ "$COUNTRY" == "null" ]] && COUNTRY=""
+if [ -n "$URL" ]; then
+  [[ "${URL,,}" == *"cndl.synology"* ]] && DL="$DL_CHINA"
+  [[ "${URL,,}" == *"global.synology"* ]] && DL="$DL_GLOBAL"
 fi
 
-if [[ -z "$COUNTRY" ]]; then
-  { JSON=$(curl -sfk https://api.ipapi.is); rc=$?; } || :
+if [ -z "$DL" ]; then
+
+  info "Install: Selecting download mirror..."
+
+  # Detect country
+  { JSON=$(curl -sfk https://ipinfo.io/json); rc=$?; } || :
+
   if (( rc == 0 )); then
-    { COUNTRY=$(echo "$JSON" | jq -r '.location.country_code' 2> /dev/null); rc=$?; } || :
+    { COUNTRY=$(echo "$JSON" | jq -r '.country' 2> /dev/null); rc=$?; } || :
     (( rc != 0 )) || [[ "$COUNTRY" == "null" ]] && COUNTRY=""
+  fi
+
+  if [[ -z "$COUNTRY" ]]; then
+    { JSON=$(curl -sfk https://api.ipapi.is); rc=$?; } || :
+    if (( rc == 0 )); then
+      { COUNTRY=$(echo "$JSON" | jq -r '.location.country_code' 2> /dev/null); rc=$?; } || :
+      (( rc != 0 )) || [[ "$COUNTRY" == "null" ]] && COUNTRY=""
+    fi
+  fi
+
+  # Select download mirror based on country
+  if [ "$COUNTRY" == "CN" ]; then
+    DL="$DL_CHINA"
+  else
+    DL="$DL_GLOBAL"
   fi
 fi
 
-# Select download mirror based on country
-if [ "$COUNTRY" == "CN" ]; then
-  DL="https://cndl.synology.cn/download/DSM"
-else
-  DL="https://global.synologydownload.com/download/DSM"
-fi
-
-# Select default version based on architecture
 if [ -z "$URL" ]; then
+  # Select default version based on architecture
   if [ "$ARCH" == "amd64" ]; then
     URL="$DL/release/7.2.1/69057-1/DSM_VirtualDSM_69057.pat"
   else
@@ -67,6 +81,8 @@ rm -f "$STORAGE"/"$BASE".pat
 rm -f "$STORAGE"/"$BASE".agent
 rm -f "$STORAGE"/"$BASE".boot.img
 rm -f "$STORAGE"/"$BASE".system.img
+
+info "Install: Checking filesystem..."
 
 [[ "${DEBUG}" == [Yy1]* ]] && set -x
 
