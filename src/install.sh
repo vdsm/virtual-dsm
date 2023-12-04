@@ -85,6 +85,7 @@ info "Install: Checking filesystem..."
 [[ "${DEBUG}" == [Yy1]* ]] && set -x
 
 # Check filesystem
+MIN_ROOT=471859200
 MIN_SPACE=6442450944
 FS=$(stat -f -c %T "$STORAGE")
 
@@ -107,6 +108,9 @@ fi
 rm -rf "$TMP" && mkdir -p "$TMP"
 
 # Check free diskspace
+SPACE=$(df --output=avail -B 1 / | tail -n 1)
+(( MIN_ROOT > SPACE )) && error "Not enough free space in container root, need at least 450 MB available." && exit 96
+
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
 SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
 (( MIN_SPACE > SPACE )) && error "Not enough free space for installation in ${STORAGE}, have ${SPACE_GB} GB available but need at least 6 GB." && exit 95
