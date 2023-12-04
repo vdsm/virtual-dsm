@@ -21,8 +21,17 @@ fi
 # Display wait message
 /run/server.sh 5000 install &
 
-# Download the required files from the Synology website
+# Default download location
 DL="https://global.synologydownload.com/download/DSM"
+
+# Detect country
+{ JSON=$(curl -sfk https://api.ipapi.is); rc=$?; } || :
+
+if (( rc == 0 )); then
+  { CONTINENT=$(echo $JSON | jq -r '.location.continent'); } || :
+  echo $CONTINENT
+  DL="https://cndl.synology.cn/download/DSM"
+fi
 
 if [ -z "$URL" ]; then
 
@@ -82,6 +91,8 @@ if [[ "$TMP" != "$STORAGE/tmp" ]]; then
   SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
   (( MIN_SPACE > SPACE )) && error "Not enough free space for installation in ${STORAGE}, have ${SPACE_GB} GB available but need at least 6 GB." && exit 94
 fi
+
+# Download the required files from the Synology website
 
 RDC="$STORAGE/dsm.rd"
 
