@@ -28,9 +28,10 @@ DL="https://global.synologydownload.com/download/DSM"
 { JSON=$(curl -sfk https://api.ipapi.is); rc=$?; } || :
 
 if (( rc == 0 )); then
-  { CONTINENT=$(echo $JSON | jq -r '.location.continent'); } || :
-  echo $CONTINENT
-  DL="https://cndl.synology.cn/download/DSM"
+  { COUNTRY=$(echo $JSON | jq -r '.location.country_code' 2> /dev/null); } || :
+  if [ "$COUNTRY" == "CN" ]; then
+    DL="https://cndl.synology.cn/download/DSM"
+  fi
 fi
 
 if [ -z "$URL" ]; then
