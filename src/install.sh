@@ -21,27 +21,37 @@ fi
 # Display wait message
 /run/server.sh 5000 install &
 
-# Default download location
-DL="https://global.synologydownload.com/download/DSM"
-
 # Detect country
+COUNTRY=""
 { JSON=$(curl -sfk https://api.ipapi.is); rc=$?; } || :
 
 if (( rc == 0 )); then
-  { COUNTRY=$(echo $JSON | jq -r '.location.country_code' 2> /dev/null); } || :
-  if [ "$COUNTRY" == "CN" ]; then
-    DL="https://cndl.synology.cn/download/DSM"
+  { COUNTRY=$(echo $JSON | jq -r '.location.country_code' 2> /dev/null); rc=$?; } || :
+  (( rc != 0 )) && COUNTRY=""
+fi
+
+if [[ -n "$COUNTRY" ]]; then
+  { JSON=$(curl -sfk https://ipinfo.io); rc=$?; } || :
+  if (( rc == 0 )); then
+    { COUNTRY=$(echo $JSON | jq -r '.country' 2> /dev/null); rc=$?; } || :
+    (( rc != 0 )) && COUNTRY=""
   fi
 fi
 
-if [ -z "$URL" ]; then
+# Select download mirror
+if [ "$COUNTRY" == "CN" ]; then
+  DL="https://cndl.synology.cn/download/DSM"
+else
+  DL="https://global.synologydownload.com/download/DSM"
+fi
 
+# Select default version
+if [ -z "$URL" ]; then
   if [ "$ARCH" == "amd64" ]; then
     URL="$DL/release/7.2.1/69057-1/DSM_VirtualDSM_69057.pat"
   else
     URL="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
   fi
-
 fi
 
 # Check if output is to interactive TTY
