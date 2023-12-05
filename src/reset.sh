@@ -82,7 +82,7 @@ addPackage () {
   local pkg=$1
   local desc=$2
 
-  if apt-mark showinstall | grep -q "$pkg"; then
+  if apt-mark showinstall | grep -qx "$pkg"; then
     return 0
   fi
 
