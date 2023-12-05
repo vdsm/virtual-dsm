@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 : ${URL:=''}    # URL of the PAT file to be downloaded.
 : ${DEV:='Y'}   # Controls whether device nodes are created.
+: ${COUNTRY:=''}  # Country code for download mirror selection
 
 if [ -f "$STORAGE"/dsm.ver ]; then
   BASE=$(cat "${STORAGE}/dsm.ver")
@@ -14,15 +15,13 @@ fi
 [ -n "$URL" ] && BASE=$(basename "$URL" .pat)
 
 if [[ -f "$STORAGE/$BASE.boot.img" ]] && [[ -f "$STORAGE/$BASE.system.img" ]]; then
-  # Previous installation found
-  return 0
+  return 0  # Previous installation found
 fi
 
 # Display wait message
 /run/server.sh 5000 install &
 
 DL=""
-COUNTRY=""
 DL_CHINA="https://cndl.synology.cn/download/DSM"
 DL_GLOBAL="https://global.synologydownload.com/download/DSM"
 
@@ -30,31 +29,9 @@ DL_GLOBAL="https://global.synologydownload.com/download/DSM"
 [[ "${URL,,}" == *"global.synology"* ]] && DL="$DL_GLOBAL"
 
 if [ -z "$DL" ]; then
-
   info "Install: Selecting download mirror..."
-
-  # Detect country
-  { JSON=$(curl -H "Accept: application/json" -sfk https://ipinfo.io/json); rc=$?; } || :
-
-  if (( rc == 0 )); then
-    { COUNTRY=$(echo "$JSON" | jq -r '.country' 2> /dev/null); rc=$?; } || :
-    (( rc != 0 )) || [[ "$COUNTRY" == "null" ]] && COUNTRY=""
-  fi
-
-  if [[ -z "$COUNTRY" ]]; then
-    { JSON=$(curl -H "Accept: application/json" -sfk https://api.ipapi.is); rc=$?; } || :
-    if (( rc == 0 )); then
-      { COUNTRY=$(echo "$JSON" | jq -r '.location.country_code' 2> /dev/null); rc=$?; } || :
-      (( rc != 0 )) || [[ "$COUNTRY" == "null" ]] && COUNTRY=""
-    fi
-  fi
-
-  # Select download mirror based on country
-  if [ "$COUNTRY" == "CN" ]; then
-    DL="$DL_CHINA"
-  else
-    DL="$DL_GLOBAL"
-  fi
+  [ -z "$COUNTRY" ] && setCountry
+  [[ "${COUNTRY^^}" == "CN" ]] && DL="$DL_CHINA" || DL="$DL_GLOBAL"
 fi
 
 if [ -z "$URL" ]; then
