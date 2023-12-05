@@ -70,7 +70,7 @@ getCountry () {
 setCountry () {
 
   [ -z "$COUNTRY" ] && getCountry "https://api.ipapi.is" ".location.country_code"
-  [ -z "$COUNTRY" ] && getCountry "https://ifconfig.co/json" ".country_iso"  
+  [ -z "$COUNTRY" ] && getCountry "https://ifconfig.co/json" ".country_iso"
   [ -z "$COUNTRY" ] && getCountry "https://ipinfo.io/json" ".country"
   [ -z "$COUNTRY" ] && getCountry "https://api.myip.com" ".cc"
 
@@ -81,11 +81,11 @@ addPackage () {
 
   local pkg=$1
   local desc=$2
-  
+
   if apt-mark showinstall | grep -q "$pkg"; then
     return 0
   fi
-  
+
   info "Installing $desc..."
 
   export DEBCONF_NOWARNINGS="yes"
