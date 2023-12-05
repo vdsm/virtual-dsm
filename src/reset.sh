@@ -12,6 +12,7 @@ trap 'error "Status $? while: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
 
 : ${GPU:='N'}           # Enable GPU passthrough
 : ${DEBUG:='N'}         # Enable debugging mode
+: ${COUNTRY:=''}        # Country code for mirror
 : ${CONSOLE:='N'}       # Start in console mode
 : ${ALLOCATE:='Y'}      # Preallocate diskspace
 : ${ARGUMENTS:=''}      # Extra QEMU parameters
@@ -41,5 +42,65 @@ rm -f /run/qemu.count
 
 rm -rf /tmp/dsm
 rm -rf "$STORAGE/tmp"
+
+# Helper functions
+
+getCountry () {
+
+  local rc
+  local json
+  local result
+  local url=$1
+  local query=$2
+
+  { json=$(curl -H "Accept: application/json" -sfk "$url"); rc=$?; } || :
+  (( rc != 0 )) && return 0
+
+  { result=$(echo "$json" | jq -r "$query" 2> /dev/null); rc=$?; } || :
+  (( rc != 0 )) && return 0
+
+  [[ ${#result} -ne 2 ]] && return 0
+  [[ "${result^^}" == "XX" ]] && return 0
+
+  COUNTRY="${result^^}"
+
+  return 0
+}
+
+setCountry () {
+
+  [ -z "$COUNTRY" ] && getCountry "https://api.ipapi.is" ".location.country_code"
+  [ -z "$COUNTRY" ] && getCountry "https://ifconfig.co/json" ".country_iso"
+  [ -z "$COUNTRY" ] && getCountry "https://ipinfo.io/json" ".country"
+  [ -z "$COUNTRY" ] && getCountry "https://api.myip.com" ".cc"
+
+  return 0
+}
+
+addPackage () {
+
+  local pkg=$1
+  local desc=$2
+
+  if apt-mark showinstall | grep -q "$pkg"; then
+    return 0
+  fi
+
+  info "Installing $desc..."
+
+  export DEBCONF_NOWARNINGS="yes"
+  export DEBIAN_FRONTEND="noninteractive"
+
+  [ -z "$COUNTRY" ] && setCountry
+
+  if [[ "${COUNTRY^^}" == "CN" ]]; then
+    sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debian.sources
+  fi
+
+  apt-get -qq update
+  apt-get -qq --no-install-recommends -y install "$pkg" > /dev/null
+
+  return 0
+}
 
 return 0
