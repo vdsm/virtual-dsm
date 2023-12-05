@@ -33,7 +33,6 @@ if [ -z "$DL" ]; then
 fi
 
 if [ -z "$URL" ]; then
-  # Select default version based on architecture
   if [ "$ARCH" == "amd64" ]; then
     URL="$DL/release/7.2.1/69057-1/DSM_VirtualDSM_69057.pat"
   else
@@ -50,7 +49,10 @@ fi
 
 BASE=$(basename "$URL" .pat)
 
-rm -f "$STORAGE"/"$BASE".pat
+if [[ "$URL" != "file://${STORAGE}/${BASE}.pat" ]]; then
+  rm -f "$STORAGE"/"$BASE".pat
+fi
+
 rm -f "$STORAGE"/"$BASE".agent
 rm -f "$STORAGE"/"$BASE".boot.img
 rm -f "$STORAGE"/"$BASE".system.img
@@ -175,9 +177,17 @@ info "Install: Downloading $(basename "$URL")..."
 PAT="/$BASE.pat"
 rm -f "$PAT"
 
-{ wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; rc=$?; } || :
+if [[ "$URL" == "file://"* ]]; then
 
-(( rc != 0 )) && error "Failed to download $URL, reason: $rc" && exit 69
+  cp "${URL:7}" "$PAT"
+
+else
+
+  { wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; rc=$?; } || :
+  (( rc != 0 )) && error "Failed to download $URL, reason: $rc" && exit 69
+
+fi
+
 [ ! -f "$PAT" ] && error "Failed to download $URL" && exit 69
 
 SIZE=$(stat -c%s "$PAT")
