@@ -28,7 +28,6 @@ DL_GLOBAL="https://global.synologydownload.com/download/DSM"
 [[ "${URL,,}" == *"global.synology"* ]] && DL="$DL_GLOBAL"
 
 if [ -z "$DL" ]; then
-  info "Install: Selecting download mirror..."
   [ -z "$COUNTRY" ] && setCountry
   [[ "${COUNTRY^^}" == "CN" ]] && DL="$DL_CHINA" || DL="$DL_GLOBAL"
 fi
@@ -55,8 +54,6 @@ rm -f "$STORAGE"/"$BASE".pat
 rm -f "$STORAGE"/"$BASE".agent
 rm -f "$STORAGE"/"$BASE".boot.img
 rm -f "$STORAGE"/"$BASE".system.img
-
-info "Install: Checking filesystem..."
 
 [[ "${DEBUG}" == [Yy1]* ]] && set -x
 
