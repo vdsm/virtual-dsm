@@ -14,15 +14,13 @@ fi
 [ -n "$URL" ] && BASE=$(basename "$URL" .pat)
 
 if [[ -f "$STORAGE/$BASE.boot.img" ]] && [[ -f "$STORAGE/$BASE.system.img" ]]; then
-  # Previous installation found
-  return 0
+  return 0  # Previous installation found
 fi
 
 # Display wait message
 /run/server.sh 5000 install &
 
 DL=""
-COUNTRY=""
 DL_CHINA="https://cndl.synology.cn/download/DSM"
 DL_GLOBAL="https://global.synologydownload.com/download/DSM"
 
@@ -30,35 +28,11 @@ DL_GLOBAL="https://global.synologydownload.com/download/DSM"
 [[ "${URL,,}" == *"global.synology"* ]] && DL="$DL_GLOBAL"
 
 if [ -z "$DL" ]; then
-
-  info "Install: Selecting download mirror..."
-
-  # Detect country
-  { JSON=$(curl -H "Accept: application/json" -sfk https://ipinfo.io/json); rc=$?; } || :
-
-  if (( rc == 0 )); then
-    { COUNTRY=$(echo "$JSON" | jq -r '.country' 2> /dev/null); rc=$?; } || :
-    (( rc != 0 )) || [[ "$COUNTRY" == "null" ]] && COUNTRY=""
-  fi
-
-  if [[ -z "$COUNTRY" ]]; then
-    { JSON=$(curl -H "Accept: application/json" -sfk https://api.ipapi.is); rc=$?; } || :
-    if (( rc == 0 )); then
-      { COUNTRY=$(echo "$JSON" | jq -r '.location.country_code' 2> /dev/null); rc=$?; } || :
-      (( rc != 0 )) || [[ "$COUNTRY" == "null" ]] && COUNTRY=""
-    fi
-  fi
-
-  # Select download mirror based on country
-  if [ "$COUNTRY" == "CN" ]; then
-    DL="$DL_CHINA"
-  else
-    DL="$DL_GLOBAL"
-  fi
+  [ -z "$COUNTRY" ] && setCountry
+  [[ "${COUNTRY^^}" == "CN" ]] && DL="$DL_CHINA" || DL="$DL_GLOBAL"
 fi
 
 if [ -z "$URL" ]; then
-  # Select default version based on architecture
   if [ "$ARCH" == "amd64" ]; then
     URL="$DL/release/7.2.1/69057-1/DSM_VirtualDSM_69057.pat"
   else
@@ -75,12 +49,13 @@ fi
 
 BASE=$(basename "$URL" .pat)
 
-rm -f "$STORAGE"/"$BASE".pat
+if [[ "$URL" != "file://${STORAGE}/${BASE}.pat" ]]; then
+  rm -f "$STORAGE"/"$BASE".pat
+fi
+
 rm -f "$STORAGE"/"$BASE".agent
 rm -f "$STORAGE"/"$BASE".boot.img
 rm -f "$STORAGE"/"$BASE".system.img
-
-info "Install: Checking filesystem..."
 
 [[ "${DEBUG}" == [Yy1]* ]] && set -x
 
@@ -202,9 +177,17 @@ info "Install: Downloading $(basename "$URL")..."
 PAT="/$BASE.pat"
 rm -f "$PAT"
 
-{ wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; rc=$?; } || :
+if [[ "$URL" == "file://"* ]]; then
 
-(( rc != 0 )) && error "Failed to download $URL, reason: $rc" && exit 69
+  cp "${URL:7}" "$PAT"
+
+else
+
+  { wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; rc=$?; } || :
+  (( rc != 0 )) && error "Failed to download $URL, reason: $rc" && exit 69
+
+fi
+
 [ ! -f "$PAT" ] && error "Failed to download $URL" && exit 69
 
 SIZE=$(stat -c%s "$PAT")
@@ -220,17 +203,7 @@ if { tar tf "$PAT"; } >/dev/null 2>&1; then
 
 else
 
-  if [ "$ARCH" != "amd64" ]; then
-
-    info "Install: Installing QEMU..."
-
-    export DEBCONF_NOWARNINGS="yes"
-    export DEBIAN_FRONTEND="noninteractive"
-
-    apt-get -qq update
-    apt-get -qq --no-install-recommends -y install qemu-user > /dev/null
-
-  fi
+  [ "$ARCH" != "amd64" ] && addPackage "qemu-user" "QEMU"
 
   info "Install: Extracting downloaded image..."
 
