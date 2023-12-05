@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-: ${URL:=''}     # URL of the PAT file to be downloaded.
-: ${DEV:='Y'}    # Controls whether device nodes are created.
+: ${URL:=''}    # URL of the PAT file to be downloaded.
+: ${DEV:='Y'}   # Controls whether device nodes are created.
 
 if [ -f "$STORAGE"/dsm.ver ]; then
   BASE=$(cat "${STORAGE}/dsm.ver")
