@@ -77,4 +77,30 @@ setCountry () {
   return 0
 }
 
+addPackage () {
+
+  local pkg=$1
+  local desc=$2
+  
+  if apt-mark showinstall | grep -q "$pkg"; then
+    return 0
+  fi
+  
+  info "Installing $desc..."
+
+  export DEBCONF_NOWARNINGS="yes"
+  export DEBIAN_FRONTEND="noninteractive"
+
+  [ -z "$COUNTRY" ] && setCountry
+
+  if [[ "${COUNTRY^^}" == "CN" ]]; then
+    sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debian.sources
+  fi
+
+  apt-get -qq update
+  apt-get -qq --no-install-recommends -y install "$pkg" > /dev/null
+
+  return 0
+}
+
 return 0
