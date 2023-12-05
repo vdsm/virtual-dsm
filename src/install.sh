@@ -3,7 +3,6 @@ set -Eeuo pipefail
 
 : ${URL:=''}     # URL of the PAT file to be downloaded.
 : ${DEV:='Y'}    # Controls whether device nodes are created.
-: ${COUNTRY:=''} # Country code for download mirror selection.
 
 if [ -f "$STORAGE"/dsm.ver ]; then
   BASE=$(cat "${STORAGE}/dsm.ver")
