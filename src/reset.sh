@@ -12,6 +12,7 @@ trap 'error "Status $? while: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
 
 : ${GPU:='N'}           # Enable GPU passthrough
 : ${DEBUG:='N'}         # Enable debugging mode
+: ${COUNTRY:=''}        # Country code for mirror
 : ${CONSOLE:='N'}       # Start in console mode
 : ${ALLOCATE:='Y'}      # Preallocate diskspace
 : ${ARGUMENTS:=''}      # Extra QEMU parameters
@@ -51,27 +52,29 @@ getCountry () {
   local result
   local url=$1
   local query=$2
-  
-  { json=$(curl -H "Accept: application/json" -sfk "$url"); rc=$?; } || :
 
-  if (( rc == 0 )); then
-    { result=$(echo "$json" | jq -r '"$query"' 2> /dev/null); rc=$?; } || :
-    if (( rc == 0 )); then
-      [[ ${#result} -ne 2 ]] && result=""
-      [[ "${result^^}" == "XX" ]] && result=""
-      [[ -n "$result" ]] && COUNTRY="${result^^}"
-    fi
-  fi
-  
+  { json=$(curl -H "Accept: application/json" -sfk "$url"); rc=$?; } || :
+  (( rc != 0 )) && return 0
+
+  { result=$(echo "$json" | jq -r "$query" 2> /dev/null); rc=$?; } || :
+  (( rc != 0 )) && return 0
+
+  [[ ${#result} -ne 2 ]] && return 0
+  [[ "${result^^}" == "XX" ]] && return 0
+
+  COUNTRY="${result^^}"
+
+  return 0
 }
 
 setCountry () {
 
   [ -z "$COUNTRY" ] && getCountry "https://api.ipapi.is" ".location.country_code"
+  [ -z "$COUNTRY" ] && getCountry "https://ifconfig.co/json" ".country_iso"  
   [ -z "$COUNTRY" ] && getCountry "https://ipinfo.io/json" ".country"
   [ -z "$COUNTRY" ] && getCountry "https://api.myip.com" ".cc"
-  [ -z "$COUNTRY" ] && getCountry "https://api.ip.sb/geoip" "country_code"
 
+  return 0
 }
 
 return 0
