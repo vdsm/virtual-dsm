@@ -18,28 +18,7 @@ fi
 chmod 666 /dev/dri/card0
 chmod 666 /dev/dri/renderD128
 
-if ! apt-mark showinstall | grep -q "xserver-xorg-video-intel"; then
-
-  info "Installing Intel GPU drivers..."
-
-  export DEBCONF_NOWARNINGS="yes"
-  export DEBIAN_FRONTEND="noninteractive"
-
-  apt-get -qq update
-  apt-get -qq --no-install-recommends -y install xserver-xorg-video-intel > /dev/null
-
-fi
-
-if ! apt-mark showinstall | grep -q "qemu-system-modules-opengl"; then
-
-  info "Installing OpenGL module..."
-
-  export DEBCONF_NOWARNINGS="yes"
-  export DEBIAN_FRONTEND="noninteractive"
-
-  apt-get -qq update
-  apt-get -qq --no-install-recommends -y install qemu-system-modules-opengl > /dev/null
-
-fi
+addPackage "xserver-xorg-video-intel" "Intel GPU drivers"
+addPackage "qemu-system-modules-opengl" "OpenGL module"
 
 return 0
