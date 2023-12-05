@@ -193,17 +193,7 @@ if { tar tf "$PAT"; } >/dev/null 2>&1; then
 
 else
 
-  if [ "$ARCH" != "amd64" ]; then
-
-    info "Install: Installing QEMU..."
-
-    export DEBCONF_NOWARNINGS="yes"
-    export DEBIAN_FRONTEND="noninteractive"
-
-    apt-get -qq update
-    apt-get -qq --no-install-recommends -y install qemu-user > /dev/null
-
-  fi
+  [ "$ARCH" != "amd64" ] && addPackage "qemu-user" "QEMU"
 
   info "Install: Extracting downloaded image..."
 
