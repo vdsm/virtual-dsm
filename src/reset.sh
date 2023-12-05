@@ -42,4 +42,36 @@ rm -f /run/qemu.count
 rm -rf /tmp/dsm
 rm -rf "$STORAGE/tmp"
 
+# Helper functions
+
+getCountry () {
+
+  local rc
+  local json
+  local result
+  local url=$1
+  local query=$2
+  
+  { json=$(curl -H "Accept: application/json" -sfk "$url"); rc=$?; } || :
+
+  if (( rc == 0 )); then
+    { result=$(echo "$json" | jq -r '"$query"' 2> /dev/null); rc=$?; } || :
+    if (( rc == 0 )); then
+      [[ ${#result} -ne 2 ]] && result=""
+      [[ "${result^^}" == "XX" ]] && result=""
+      [[ -n "$result" ]] && COUNTRY="${result^^}"
+    fi
+  fi
+  
+}
+
+setCountry () {
+
+  [ -z "$COUNTRY" ] && getCountry "https://api.ipapi.is" ".location.country_code"
+  [ -z "$COUNTRY" ] && getCountry "https://ipinfo.io/json" ".country"
+  [ -z "$COUNTRY" ] && getCountry "https://api.myip.com" ".cc"
+  [ -z "$COUNTRY" ] && getCountry "https://api.ip.sb/geoip" "country_code"
+
+}
+
 return 0
