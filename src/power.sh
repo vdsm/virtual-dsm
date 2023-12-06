@@ -55,9 +55,9 @@ _graceful_shutdown() {
     break
 
   done
-  
+
   echo 0 > "${QEMU_COUNT}"
-  
+
   while [ "$(cat ${QEMU_COUNT})" -lt "${QEMU_TIMEOUT}" ]; do
 
     # Increase the counter
