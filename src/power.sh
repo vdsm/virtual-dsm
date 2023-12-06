@@ -31,32 +31,17 @@ _graceful_shutdown() {
   # Don't send the powerdown signal because vDSM ignores ACPI signals
   # echo 'system_powerdown' | nc -q 1 -w 1 localhost "${QEMU_PORT}" > /dev/null
 
-  while true; do
-
-    # Send shutdown command to guest agent via serial port
-    RESPONSE=$(curl -s -m 5 -S http://127.0.0.1:2210/read?command=6 2>&1)
-    [[ "${RESPONSE}" =~ "\"success\"" ]] && break
-
-    # Increase the counter
-    echo $(($(cat ${QEMU_COUNT})+5)) > ${QEMU_COUNT}
-
-    if [ "$(cat ${QEMU_COUNT})" -lt "${QEMU_TIMEOUT}" ]; then
-      if [[ "${RESPONSE}" == "curl: (28)"* ]] ; then
-        CNT="$(cat ${QEMU_COUNT})/${QEMU_TIMEOUT}"
-        echo && info "Timeout while sending shutdown command (${CNT})"
-        continue
-      fi
-    fi
+  # Send shutdown command to guest agent via serial port
+  RESPONSE=$(curl -s -m 30 -S http://127.0.0.1:2210/read?command=6 2>&1)
+  
+  if [[ ! "${RESPONSE}" =~ "\"success\"" ]]; then
 
     echo && error "Failed to send shutdown command ( ${RESPONSE} )."
 
     kill -15 "$(cat "${QEMU_PID}")"
     pkill -f qemu-system-x86_64 || true
-    break
 
-  done
-
-  echo 0 > "${QEMU_COUNT}"
+  fi
 
   while [ "$(cat ${QEMU_COUNT})" -lt "${QEMU_TIMEOUT}" ]; do
 
