@@ -301,7 +301,12 @@ rm -rf "$MOUNT"
 
 echo "$BASE" > "$STORAGE"/dsm.ver
 
-mv -f "$PAT" "$STORAGE"/"$BASE".pat
+if [[ "$URL" == "file://${STORAGE}/${BASE}.pat" ]]; then
+  rm -f "$PAT"
+else
+  mv -f "$PAT" "$STORAGE"/"$BASE".pat
+fi
+
 mv -f "$BOOT" "$STORAGE"/"$BASE".boot.img
 mv -f "$SYSTEM" "$STORAGE"/"$BASE".system.img
 
