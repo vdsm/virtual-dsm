@@ -53,7 +53,7 @@ getCountry () {
   local url=$1
   local query=$2
 
-  { json=$(curl -H "Accept: application/json" -sfk "$url"); rc=$?; } || :
+  { json=$(curl -m 5 -H "Accept: application/json" -sfk "$url"); rc=$?; } || :
   (( rc != 0 )) && return 0
 
   { result=$(echo "$json" | jq -r "$query" 2> /dev/null); rc=$?; } || :
