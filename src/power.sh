@@ -33,7 +33,7 @@ _graceful_shutdown() {
 
   # Send shutdown command to guest agent via serial port
   RESPONSE=$(curl -s -m 30 -S http://127.0.0.1:2210/read?command=6 2>&1)
-  
+
   if [[ ! "${RESPONSE}" =~ "\"success\"" ]]; then
 
     echo && error "Failed to send shutdown command ( ${RESPONSE} )."
