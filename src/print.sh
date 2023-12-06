@@ -15,7 +15,7 @@ do
   # Retrieve IP from guest VM
 
   set +e
-  RESPONSE=$(curl -s -m 16 -S http://127.0.0.1:2210/read?command=10 2>&1)
+  RESPONSE=$(curl -s -m 30 -S http://127.0.0.1:2210/read?command=10 2>&1)
   set -e
 
   if [[ ! "${RESPONSE}" =~ "\"success\"" ]] ; then
