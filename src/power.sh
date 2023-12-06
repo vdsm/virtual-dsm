@@ -5,7 +5,6 @@ set -Eeuo pipefail
 
 QEMU_PORT=7100
 QEMU_TIMEOUT=50
-
 QEMU_PID=/run/qemu.pid
 QEMU_COUNT=/run/qemu.count
 
@@ -26,18 +25,18 @@ _graceful_shutdown() {
   [ ! -f "${QEMU_PID}" ] && exit 130
   [ -f "${QEMU_COUNT}" ] && return
 
-  echo && info "Received $1 signal, shutting down..."
   echo 0 > "${QEMU_COUNT}"
+  echo && info "Received $1 signal, shutting down..."
 
   # Don't send the powerdown signal because vDSM ignores ACPI signals
   # echo 'system_powerdown' | nc -q 1 -w 1 localhost "${QEMU_PORT}" > /dev/null
 
   # Send shutdown command to guest agent via serial port
-  RESPONSE=$(curl -s -m 5 -S http://127.0.0.1:2210/read?command=6 2>&1)
+  RESPONSE=$(curl -s -m 30 -S http://127.0.0.1:2210/read?command=6 2>&1)
 
-  if [[ ! "${RESPONSE}" =~ "\"success\"" ]] ; then
+  if [[ ! "${RESPONSE}" =~ "\"success\"" ]]; then
 
-    echo && error "Could not send shutdown command to the guest ($RESPONSE)"
+    echo && error "Failed to send shutdown command ( ${RESPONSE} )."
 
     kill -15 "$(cat "${QEMU_PID}")"
     pkill -f qemu-system-x86_64 || true
