@@ -37,14 +37,21 @@ do
   [ -z "${ip}" ] && continue
 
   echo "${ip}:${port}" > $file
-  # .data.data.uptime.data.uptime
-  
+
 done
 
 location=$(cat "$file")
 
 if [[ "$location" == "20.20"* ]]; then
-  msg="port ${location##*:}"
+
+  ip=$(ip address show dev eth0 | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
+
+  if [[ "$ip" == "172."* ]]; then
+    msg="port ${location##*:}"
+  else
+    msg="http://${ip}:${location##*:}"
+  fi
+
 else
   msg="http://${location}"
 fi
