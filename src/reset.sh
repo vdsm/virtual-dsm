@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-info () { echo -e "\E[1;34m❯ \E[1;36m$1\E[0m" ; }
-error () { echo -e >&2 "\E[1;31m❯ ERROR: $1\E[0m" ; }
+info () { printf "%b%s%b" "\E[1;34m❯ \E[1;36m" "$1" "\E[0m\n"; }
+error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: $1" "\E[0m\n" >&2; }
+
 trap 'error "Status $? while: ${BASH_COMMAND} (line $LINENO/$BASH_LINENO)"' ERR
 
 [ ! -f "/run/entry.sh" ] && error "Script must run inside Docker container!" && exit 11
