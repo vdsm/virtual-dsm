@@ -14,14 +14,25 @@ do
 
   # Retrieve IP from guest VM
 
-  set +e
-  RESPONSE=$(curl -s -m 30 -S http://127.0.0.1:2210/read?command=10 2>&1)
-  set -e
-
-  if [[ ! "${RESPONSE}" =~ "\"success\"" ]] ; then
-    error "Failed to connect to guest: $RESPONSE" && continue
+  { json=$(curl -m 30 -sfk http://127.0.0.1:2210/read?command=10); rc=$?; } || :
+  (( rc != 0 )) && error "Failed to connect to guest: curl error $rc" && continue
+  
+  { result=$(echo "$json" | jq -r '.status'); rc=$?; } || :
+  (( rc != 0 )) && error "Failed to parse response from guest: jq error $rc ( $json )" && continue
+  
+  if [[ "$result" != "success" ]] ; then
+    { msg=$(echo "$json" | jq -r '.message'); rc=$?; } || :
+    error "Failed to connect to guest: ${result}: $msg" && continue
   fi
+  
+  { json=$(echo "$json" | jq -r '.data'); rc=$?; } || :
+  (( rc != 0 )) && error "Failed to parse response from guest: jq error $rc ( $json )" && continue
 
+  echo $json
+  continue
+  
+  RESPONSE=""
+  
   # Retrieve the HTTP port number
   if [[ ! "${RESPONSE}" =~ "\"http_port\"" ]] ; then
     error "Failed to parse response from guest: $RESPONSE" && continue
