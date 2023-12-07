@@ -109,7 +109,7 @@ if [ ! -f "${RDC}" ]; then
   VERIFY="b4215a4b213ff5154db0488f92c87864"
   LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
-  { curl -r "$POS" -sfk -o "$RD" "$LOC"; rc=$?; } || :
+  { curl -r "$POS" -sfk -S -o "$RD" "$LOC"; rc=$?; } || :
   (( rc != 0 )) && error "Failed to download $LOC, reason: $rc" && exit 60
 
   SUM=$(md5sum "$RD" | cut -f 1 -d " ")
