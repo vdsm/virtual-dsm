@@ -14,64 +14,43 @@ do
 
   # Retrieve IP from guest VM
 
-  { json=$(curl -m 30 -sfk http://127.0.0.1:2210/read?command=10); rc=$?; } || :
+  { json=$(curl -m 30 -sk http://127.0.0.1:2210/read?command=10); rc=$?; } || :
   (( rc != 0 )) && error "Failed to connect to guest: curl error $rc" && continue
-  
+
   { result=$(echo "$json" | jq -r '.status'); rc=$?; } || :
   (( rc != 0 )) && error "Failed to parse response from guest: jq error $rc ( $json )" && continue
-  
+  [[ "$result" == "null" ]] && error "Guest returned invalid response: $json" && continue
+
   if [[ "$result" != "success" ]] ; then
     { msg=$(echo "$json" | jq -r '.message'); rc=$?; } || :
-    error "Failed to connect to guest: ${result}: $msg" && continue
+    error "Guest replied ${result}: $msg" && continue
   fi
-  
-  { json=$(echo "$json" | jq -r '.data'); rc=$?; } || :
+
+  { port=$(echo "$json" | jq -r '.data.data.dsm_setting.data.http_port'); rc=$?; } || :
   (( rc != 0 )) && error "Failed to parse response from guest: jq error $rc ( $json )" && continue
+  [[ "$port" == "null" ]] && error "Guest returned invalid response: $json" && continue
+  [ -z "${port}" ] && continue
 
-  echo $json
-  continue
+  { ip=$(echo "$json" | jq -r '.data.data.ip.data[] | select((.name=="eth0") and has("ip")).ip'); rc=$?; } || :
+  (( rc != 0 )) && error "Failed to parse response from guest: jq error $rc ( $json )" && continue
+  [[ "$ip" == "null" ]] && error "Guest returned invalid response: $json" && continue
+  [ -z "${ip}" ] && continue
+
+  echo "${ip}:${port}" > $file
+  # .data.data.uptime.data.uptime
   
-  RESPONSE=""
-  
-  # Retrieve the HTTP port number
-  if [[ ! "${RESPONSE}" =~ "\"http_port\"" ]] ; then
-    error "Failed to parse response from guest: $RESPONSE" && continue
-  fi
-
-  rest=${RESPONSE#*http_port}
-  rest=${rest#*:}
-  rest=${rest%%,*}
-  PORT=${rest%%\"*}
-
-  [ -z "${PORT}" ] && continue
-
-  # Retrieve the IP address
-  if [[ ! "${RESPONSE}" =~ "eth0" ]] ; then
-    error "Failed to parse response from guest: $RESPONSE" && continue
-  fi
-
-  rest=${RESPONSE#*eth0}
-  rest=${rest#*ip}
-  rest=${rest#*:}
-  rest=${rest#*\"}
-  IP=${rest%%\"*}
-
-  [ -z "${IP}" ] && continue
-
-  echo "${IP}:${PORT}" > $file
-
 done
 
-LOCATION=$(cat "$file")
+location=$(cat "$file")
 
-if [[ "$LOCATION" == "20.20"* ]]; then
-  MSG="port ${LOCATION##*:}"
+if [[ "$location" == "20.20"* ]]; then
+  msg="port ${location##*:}"
 else
-  MSG="http://${LOCATION}"
+  msg="http://${location}"
 fi
 
 echo "" >&2
 info "--------------------------------------------------------"
-info " You can now login to DSM at ${MSG}"
+info " You can now login to DSM at ${msg}"
 info "--------------------------------------------------------"
 echo "" >&2
