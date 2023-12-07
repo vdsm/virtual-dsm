@@ -49,7 +49,7 @@ if [[ "$location" != "20.20"* ]]; then
 else
 
   ip=$(ip address show dev eth0 | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
-  port="port ${location##*:}"
+  port="${location##*:}"
 
   if [[ "$ip" == "172."* ]]; then
     msg="port ${port}"
