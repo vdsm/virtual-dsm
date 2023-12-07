@@ -42,18 +42,21 @@ done
 
 location=$(cat "$file")
 
-if [[ "$location" == "20.20"* ]]; then
+if [[ "$location" != "20.20"* ]]; then
 
-  ip=$(ip address show dev eth0 | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
-
-  if [[ "$ip" == "172."* ]]; then
-    msg="port ${location##*:}"
-  else
-    msg="http://${ip}:${location##*:}"
-  fi
+  msg="http://${location}"
 
 else
-  msg="http://${location}"
+
+  ip=$(ip address show dev eth0 | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
+  port="port ${location##*:}"
+
+  if [[ "$ip" == "172."* ]]; then
+    msg="port ${port}"
+  else
+    msg="http://${ip}:${port}"
+  fi
+
 fi
 
 echo "" >&2
