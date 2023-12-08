@@ -239,15 +239,15 @@ addDisk () {
     PREV_FILE="${DISK_BASE}.${PREV_EXT}"
 
     if [ -f "${PREV_FILE}" ] ; then
-      
+
       info "Disk format change detected for ${DISK_DESC} (${PREV_FMT} to ${DISK_FMT}), converting ${PREV_FILE} ..."
 
       if ! convertDisk "${PREV_FILE}" "${PREV_FMT}" "${DISK_FILE}" "${DISK_FMT}" ; then
         info "Disk conversion failed, creating new disk image as fallback."
-        rm "${DISK_FILE}"
+        rm -f "${DISK_FILE}"
       else
-        info "Disk conversion completed succesfully, removing ${SOURCE_FILE} ..."
-        rm "${SOURCE_FILE}"
+        info "Disk conversion completed succesfully, removing ${PREV_FILE} ..."
+        rm -f "${PREV_FILE}"
       fi
     fi
   fi
@@ -281,6 +281,10 @@ addDisk () {
 
   return 0
 }
+
+if [[ "${DISK_FMT,,}" == "qcow2" ]]; then
+  addPackage "qemu-img" "QEMU image tools"
+fi
 
 DISK_EXT="$(fmt2ext "${DISK_FMT}")" || exit $?
 
