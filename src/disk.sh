@@ -283,7 +283,7 @@ addDisk () {
 }
 
 if [[ "${DISK_FMT,,}" == "qcow2" ]]; then
-  addPackage "qemu-img" "QEMU image tools"
+  addPackage "qemu-utils" "QEMU image tools"
 fi
 
 DISK_EXT="$(fmt2ext "${DISK_FMT}")" || exit $?
