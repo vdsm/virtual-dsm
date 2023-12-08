@@ -57,11 +57,26 @@ ext2fmt() {
 
 getSize() {
   local DISK_FILE=$1
+  local DISK_EXT
+  local DISK_FMT
 
-  qemu-img info "${DISK_FILE}" -f "${DISK_FMT}" | grep '^virtual size: ' | sed 's/.*(\(.*\) bytes)/\1/'
+  DISK_EXT="$(echo "${DISK_FILE//*./}" | sed 's/^.*\.//')"
+  DISK_FMT="$(ext2fmt "${DISK_EXT}")"
+
+  case "${DISK_FMT,,}" in
+    raw)
+      stat -c%s "${DISK_FILE}"
+      ;;
+    qcow2)
+      qemu-img info "${DISK_FILE}" -f "${DISK_FMT}" | grep '^virtual size: ' | sed 's/.*(\(.*\) bytes)/\1/'
+      ;;
+    *)
+      error "Unrecognized disk format: ${DISK_FMT}" && exit 88
+      ;;
+  esac
 }
 
-doResize() {
+resizeDisk() {
 
   local GB
   local REQ
@@ -125,8 +140,9 @@ convertDisk() {
   local DST_FMT=$4
 
   case "${DST_FMT}" in
-  qcow2)
-    CONV_FLAGS="${CONV_FLAGS} -c"
+    qcow2)
+      CONV_FLAGS="${CONV_FLAGS} -c"
+      ;;
   esac
 
   # shellcheck disable=SC2086
@@ -189,7 +205,6 @@ addDisk () {
   local CUR_SIZE
   local DATA_SIZE
   local DISK_FILE
-  local DISK_ROOT
   local DISK_ID=$1
   local DISK_BASE=$2
   local DISK_EXT=$3
@@ -200,7 +215,6 @@ addDisk () {
   local DISK_FMT=$8
 
   DISK_FILE="${DISK_BASE}.${DISK_EXT}"
-  DISK_ROOT="$(basename -- "${DISK_BASE}")"
 
   DIR=$(dirname "${DISK_FILE}")
   [ ! -d "${DIR}" ] && return 0
@@ -212,20 +226,23 @@ addDisk () {
   fi
 
   if ! [ -f "${DISK_FILE}" ] ; then
-    local OTHER_FORMS
-    OTHER_FORMS="$(find "${DIR}" -maxdepth 1 | sed -n -- "/\/${DISK_ROOT}\./p" | sed -- "/\.${DISK_EXT}$/d")"
+    local PREV_EXT
+    local PREV_FMT
+    local PREV_FILE
 
-    if [[ -n "${OTHER_FORMS}" ]] ; then
-      local SOURCE_FILE
-      local SOURCE_EXT
-      local SOURCE_FMT
-      SOURCE_FILE="$(echo "${OTHER_FORMS}" | head -n1)"
-      SOURCE_EXT="$(echo "${SOURCE_FILE//*./}" | sed 's/^.*\.//')"
-      SOURCE_FMT="$(ext2fmt "${SOURCE_EXT}")"
+    if [[ "${DISK_FMT,,}" != "raw" ]]; then
+      PREV_FMT="raw"
+    else
+      PREV_FMT="qcow2"
+    fi
+    PREV_EXT="$(fmt2ext "${PREV_FMT}")"
+    PREV_FILE="${DISK_BASE}.${PREV_EXT}"
 
-      info "Other disk format detected for ${DISK_DESC} (${OTHER_FORMS//$'\n'/, }), converting ${SOURCE_FILE} ..."
+    if [ -f "${PREV_FILE}" ] ; then
+      
+      info "Disk format change detected for ${DISK_DESC} (${PREV_FMT} to ${DISK_FMT}), converting ${PREV_FILE} ..."
 
-      if ! convertDisk "${SOURCE_FILE}" "${SOURCE_FMT}" "${DISK_FILE}" "${DISK_FMT}" ; then
+      if ! convertDisk "${PREV_FILE}" "${PREV_FMT}" "${DISK_FILE}" "${DISK_FMT}" ; then
         info "Disk conversion failed, creating new disk image as fallback."
         rm "${DISK_FILE}"
       else
@@ -248,7 +265,7 @@ addDisk () {
     CUR_SIZE=$(getSize "${DISK_FILE}")
 
     if [ "$DATA_SIZE" -gt "$CUR_SIZE" ]; then
-      doResize "${DISK_FILE}" "${CUR_SIZE}" "${DATA_SIZE}" "${DISK_SPACE}" "${DISK_DESC}" "${DISK_FMT}" || exit $?
+      resizeDisk "${DISK_FILE}" "${CUR_SIZE}" "${DATA_SIZE}" "${DISK_SPACE}" "${DISK_DESC}" "${DISK_FMT}" || exit $?
     fi
 
   else
@@ -309,7 +326,7 @@ DISK6_FILE="/storage6/data6"
 : ${DISK5_SIZE:=''}
 : ${DISK6_SIZE:=''}
 
-addDisk "userdata"  "${DISK1_FILE}" "${DISK_EXT}" "disk" "${DISK_SIZE}" "3" "0xc" "${DISK_FMT}"
+addDisk "userdata" "${DISK1_FILE}" "${DISK_EXT}" "disk" "${DISK_SIZE}" "3" "0xc" "${DISK_FMT}"
 addDisk "userdata2" "${DISK2_FILE}" "${DISK_EXT}" "disk2" "${DISK2_SIZE}" "4" "0xd" "${DISK_FMT}"
 addDisk "userdata3" "${DISK3_FILE}" "${DISK_EXT}" "disk3" "${DISK3_SIZE}" "5" "0xe" "${DISK_FMT}"
 addDisk "userdata4" "${DISK4_FILE}" "${DISK_EXT}" "disk4" "${DISK4_SIZE}" "9" "0x7" "${DISK_FMT}"
