@@ -23,20 +23,20 @@ do
 
   if [[ "$result" != "success" ]] ; then
     { msg=$(echo "$json" | jq -r '.message'); rc=$?; } || :
-    error "Guest replied ${result}: $msg" && continue
+    error "Guest replied $result: $msg" && continue
   fi
 
   { port=$(echo "$json" | jq -r '.data.data.dsm_setting.data.http_port'); rc=$?; } || :
   (( rc != 0 )) && error "Failed to parse response from guest: jq error $rc ( $json )" && continue
   [[ "$port" == "null" ]] && error "Guest returned invalid response: $json" && continue
-  [ -z "${port}" ] && continue
+  [ -z "$port" ] && continue
 
   { ip=$(echo "$json" | jq -r '.data.data.ip.data[] | select((.name=="eth0") and has("ip")).ip'); rc=$?; } || :
   (( rc != 0 )) && error "Failed to parse response from guest: jq error $rc ( $json )" && continue
   [[ "$ip" == "null" ]] && error "Guest returned invalid response: $json" && continue
-  [ -z "${ip}" ] && continue
+  [ -z "$ip" ] && continue
 
-  echo "${ip}:${port}" > $file
+  echo "$ip:$port" > $file
 
 done
 
@@ -44,7 +44,7 @@ location=$(cat "$file")
 
 if [[ "$location" != "20.20"* ]]; then
 
-  msg="http://${location}"
+  msg="http://$location"
 
 else
 
@@ -52,15 +52,15 @@ else
   port="${location##*:}"
 
   if [[ "$ip" == "172."* ]]; then
-    msg="port ${port}"
+    msg="port $port"
   else
-    msg="http://${ip}:${port}"
+    msg="http://$ip:$port"
   fi
 
 fi
 
 echo "" >&2
-info "--------------------------------------------------------"
-info " You can now login to DSM at ${msg}"
-info "--------------------------------------------------------"
+info "-----------------------------------------------------------"
+info " You can now login to DSM at $msg"
+info "-----------------------------------------------------------"
 echo "" >&2
