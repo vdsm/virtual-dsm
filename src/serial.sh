@@ -25,8 +25,8 @@ else
 fi
 
 HOST_ARGS=()
-HOST_ARGS+=("-cpu=${CPU_CORES}")
-HOST_ARGS+=("-cpu_arch=${HOST_CPU}")
+HOST_ARGS+=("-cpu=$CPU_CORES")
+HOST_ARGS+=("-cpu_arch=$HOST_CPU")
 
 [ -n "$HOST_MAC" ] && HOST_ARGS+=("-mac=$HOST_MAC")
 [ -n "$HOST_MODEL" ] && HOST_ARGS+=("-model=$HOST_MODEL")
