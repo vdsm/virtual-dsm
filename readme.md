@@ -89,7 +89,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I create a growable disk?
 
-    By default, the entire disk space is reserved in advance. To create a growable disk that only allocates space that is actually used, add the following environment variable:
+    By default, the entire capacity of the disk is reserved in advance. To create a growable disk that only allocates space that is actually used, add the following environment variable:
 
     ```yaml
     environment:
