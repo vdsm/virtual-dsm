@@ -23,37 +23,37 @@ configureDHCP() {
 
   # Create a macvtap network for the VM guest
 
-  { ip link add link "${VM_NET_DEV}" name "${VM_NET_TAP}" address "${VM_NET_MAC}" type macvtap mode bridge ; rc=$?; } || :
+  { ip link add link "$VM_NET_DEV" name "$VM_NET_TAP" address "$VM_NET_MAC" type macvtap mode bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
     error "Cannot create macvtap interface. Please make sure the network type is 'macvlan' and not 'ipvlan',"
     error "and that the NET_ADMIN capability has been added to the container config: --cap-add NET_ADMIN" && exit 16
   fi
 
-  while ! ip link set "${VM_NET_TAP}" up; do
+  while ! ip link set "$VM_NET_TAP" up; do
     info "Waiting for address to become available..."
     sleep 2
   done
 
-  TAP_NR=$(</sys/class/net/"${VM_NET_TAP}"/ifindex)
+  TAP_NR=$(</sys/class/net/"$VM_NET_TAP"/ifindex)
   TAP_PATH="/dev/tap${TAP_NR}"
 
   # Create dev file (there is no udev in container: need to be done manually)
-  IFS=: read -r MAJOR MINOR < <(cat /sys/devices/virtual/net/"${VM_NET_TAP}"/tap*/dev)
-  (( MAJOR < 1)) && error "Cannot find: sys/devices/virtual/net/${VM_NET_TAP}" && exit 18
+  IFS=: read -r MAJOR MINOR < <(cat /sys/devices/virtual/net/"$VM_NET_TAP"/tap*/dev)
+  (( MAJOR < 1)) && error "Cannot find: sys/devices/virtual/net/$VM_NET_TAP" && exit 18
 
-  [[ ! -e "${TAP_PATH}" ]] && [[ -e "/dev0/${TAP_PATH##*/}" ]] && ln -s "/dev0/${TAP_PATH##*/}" "${TAP_PATH}"
+  [[ ! -e "$TAP_PATH" ]] && [[ -e "/dev0/${TAP_PATH##*/}" ]] && ln -s "/dev0/${TAP_PATH##*/}" "$TAP_PATH"
 
-  if [[ ! -e "${TAP_PATH}" ]]; then
-    { mknod "${TAP_PATH}" c "$MAJOR" "$MINOR" ; rc=$?; } || :
-    (( rc != 0 )) && error "Cannot mknod: ${TAP_PATH} ($rc)" && exit 20
+  if [[ ! -e "$TAP_PATH" ]]; then
+    { mknod "$TAP_PATH" c "$MAJOR" "$MINOR" ; rc=$?; } || :
+    (( rc != 0 )) && error "Cannot mknod: $TAP_PATH ($rc)" && exit 20
   fi
 
   { exec 30>>"$TAP_PATH"; rc=$?; } 2>/dev/null || :
 
   if (( rc != 0 )); then
     error "Cannot create TAP interface ($rc). Please add the following docker settings to your "
-    error "container: --device-cgroup-rule='c ${MAJOR}:* rwm' --device=/dev/vhost-net" && exit 21
+    error "container: --device-cgroup-rule='c $MAJOR:* rwm' --device=/dev/vhost-net" && exit 21
   fi
 
   { exec 40>>/dev/vhost-net; rc=$?; } 2>/dev/null || :
@@ -74,17 +74,17 @@ configureDNS () {
   DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-range=$VM_NET_IP,$VM_NET_IP --dhcp-host=$VM_NET_MAC,,$VM_NET_IP,$VM_NET_HOST,infinite --dhcp-option=option:netmask,255.255.255.0"
 
   # Create lease file for faster resolve
-  echo "0 $VM_NET_MAC $VM_NET_IP $VM_NET_HOST 01:${VM_NET_MAC}" > /var/lib/misc/dnsmasq.leases
+  echo "0 $VM_NET_MAC $VM_NET_IP $VM_NET_HOST 01:$VM_NET_MAC" > /var/lib/misc/dnsmasq.leases
   chmod 644 /var/lib/misc/dnsmasq.leases
 
   # Set DNS server and gateway
   DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:dns-server,${VM_NET_IP%.*}.1 --dhcp-option=option:router,${VM_NET_IP%.*}.1"
   DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
 
-  [[ "${DEBUG}" == [Yy1]* ]] && set -x
+  [[ "$DEBUG" == [Yy1]* ]] && set -x
   $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS}
   { set +x; } 2>/dev/null
-  [[ "${DEBUG}" == [Yy1]* ]] && echo
+  [[ "$DEBUG" == [Yy1]* ]] && echo
 
   return 0
 }
@@ -94,7 +94,7 @@ configureNAT () {
   # Create a bridge with a static IP for the VM guest
 
   VM_NET_IP='20.20.20.21'
-  [[ "${DEBUG}" == [Yy1]* ]] && set -x
+  [[ "$DEBUG" == [Yy1]* ]] && set -x
 
   { ip link add dev dockerbridge type bridge ; rc=$?; } || :
 
@@ -111,19 +111,19 @@ configureNAT () {
   done
 
   # QEMU Works with taps, set tap to the bridge created
-  ip tuntap add dev "${VM_NET_TAP}" mode tap
+  ip tuntap add dev "$VM_NET_TAP" mode tap
 
-  while ! ip link set "${VM_NET_TAP}" up promisc on; do
+  while ! ip link set "$VM_NET_TAP" up promisc on; do
     info "Waiting for tap to become available..."
     sleep 2
   done
 
-  ip link set dev "${VM_NET_TAP}" master dockerbridge
+  ip link set dev "$VM_NET_TAP" master dockerbridge
 
   # Add internet connection to the VM
-  iptables -t nat -A POSTROUTING -o "${VM_NET_DEV}" -j MASQUERADE
-  iptables -t nat -A PREROUTING -i "${VM_NET_DEV}" -d "${IP}" -p tcp  -j DNAT --to $VM_NET_IP
-  iptables -t nat -A PREROUTING -i "${VM_NET_DEV}" -d "${IP}" -p udp  -j DNAT --to $VM_NET_IP
+  iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -j MASQUERADE
+  iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p tcp  -j DNAT --to "$VM_NET_IP"
+  iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p udp  -j DNAT --to "$VM_NET_IP"
 
   if (( KERNEL > 4 )); then
     # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
@@ -131,7 +131,7 @@ configureNAT () {
   fi
 
   { set +x; } 2>/dev/null
-  [[ "${DEBUG}" == [Yy1]* ]] && echo
+  [[ "$DEBUG" == [Yy1]* ]] && echo
 
   # Check port forwarding flag
   if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
@@ -141,7 +141,7 @@ configureNAT () {
     fi
   fi
 
-  NET_OPTS="-netdev tap,ifname=${VM_NET_TAP},script=no,downscript=no,id=hostnet0"
+  NET_OPTS="-netdev tap,ifname=$VM_NET_TAP,script=no,downscript=no,id=hostnet0"
 
   { exec 40>>/dev/vhost-net; rc=$?; } 2>/dev/null || :
   (( rc == 0 )) && NET_OPTS="$NET_OPTS,vhost=on,vhostfd=40"
@@ -153,15 +153,15 @@ configureNAT () {
 
 closeNetwork () {
 
-  if [[ "${DHCP}" == [Yy1]* ]]; then
+  if [[ "$DHCP" == [Yy1]* ]]; then
 
-    ip link set "${VM_NET_TAP}" down || true
-    ip link delete "${VM_NET_TAP}" || true
+    ip link set "$VM_NET_TAP" down || true
+    ip link delete "$VM_NET_TAP" || true
 
   else
 
-    ip link set "${VM_NET_TAP}" down promisc off || true
-    ip link delete "${VM_NET_TAP}" || true
+    ip link set "$VM_NET_TAP" down promisc off || true
+    ip link delete "$VM_NET_TAP" || true
 
     ip link set dockerbridge down || true
     ip link delete dockerbridge || true
@@ -195,16 +195,16 @@ update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 
 VM_NET_MAC="${VM_NET_MAC//-/:}"
 GATEWAY=$(ip r | grep default | awk '{print $3}')
-IP=$(ip address show dev "${VM_NET_DEV}" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
+IP=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
 
-if [[ "${DEBUG}" == [Yy1]* ]]; then
-  info "Container IP is ${IP} with gateway ${GATEWAY}" && echo
+if [[ "$DEBUG" == [Yy1]* ]]; then
+  info "Container IP is $IP with gateway $GATEWAY" && echo
 fi
 
-if [[ "${DHCP}" == [Yy1]* ]]; then
+if [[ "$DHCP" == [Yy1]* ]]; then
 
   if [[ "$GATEWAY" == "172."* ]]; then
-    if [[ "${DEBUG}" == [Yy1]* ]]; then
+    if [[ "$DEBUG" == [Yy1]* ]]; then
       info "Warning: Are you sure the container is on a macvlan network?"
     else
       error "You can only enable DHCP while the container is on a macvlan network!" && exit 86
@@ -224,6 +224,6 @@ else
 
 fi
 
-NET_OPTS="${NET_OPTS} -device virtio-net-pci,romfile=,netdev=hostnet0,mac=${VM_NET_MAC},id=net0"
+NET_OPTS="$NET_OPTS -device virtio-net-pci,romfile=,netdev=hostnet0,mac=$VM_NET_MAC,id=net0"
 
 return 0
