@@ -87,16 +87,16 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
       - /mnt/data/example:/storage3
     ```
 
-  * ### How do I change the space reserved by the virtual disk? 
+  * ### How do I create a growable disk?
 
-    By default, the entire disk space is reserved in advance. To create a growable disk that only reserves the space that is actually used, add the following environment variable:
+    By default, the entire disk space is reserved in advance. To create a growable disk that only allocates space that is actually used, add the following environment variable:
 
     ```yaml
     environment:
-      ALLOCATE: "N"
+      DISK_FMT: "qcow2"
     ```
 
-    Keep in mind that this will not affect any of your existing disks, it only applies to newly created disks.
+    This can also be used to convert any existing disks to the ```qcow2``` format.
 
   * ### How do I increase the amount of CPU or RAM?
 
