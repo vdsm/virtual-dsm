@@ -8,8 +8,8 @@ QEMU_TIMEOUT=50
 QEMU_PID=/run/qemu.pid
 QEMU_COUNT=/run/qemu.count
 
-rm -f "${QEMU_PID}"
-rm -f "${QEMU_COUNT}"
+rm -f "$QEMU_PID"
+rm -f "$QEMU_COUNT"
 
 _trap(){
     func="$1" ; shift
@@ -22,10 +22,10 @@ _graceful_shutdown() {
 
   set +e
 
-  [ ! -f "${QEMU_PID}" ] && exit 130
-  [ -f "${QEMU_COUNT}" ] && return
+  [ ! -f "$QEMU_PID" ] && exit 130
+  [ -f "$QEMU_COUNT" ] && return
 
-  echo 0 > "${QEMU_COUNT}"
+  echo 0 > "$QEMU_COUNT"
   echo && info "Received $1 signal, shutting down..."
 
   # Don't send the powerdown signal because vDSM ignores ACPI signals
@@ -34,34 +34,34 @@ _graceful_shutdown() {
   # Send shutdown command to guest agent via serial port
   RESPONSE=$(curl -sk -m 30 -S http://127.0.0.1:2210/read?command=6 2>&1)
 
-  if [[ ! "${RESPONSE}" =~ "\"success\"" ]]; then
+  if [[ ! "$RESPONSE" =~ "\"success\"" ]]; then
 
     echo && error "Failed to send shutdown command ( ${RESPONSE} )."
 
-    kill -15 "$(cat "${QEMU_PID}")"
+    kill -15 "$(cat "$QEMU_PID")"
     pkill -f qemu-system-x86_64 || true
 
   fi
 
-  while [ "$(cat ${QEMU_COUNT})" -lt "${QEMU_TIMEOUT}" ]; do
+  while [ "$(cat $QEMU_COUNT)" -lt "$QEMU_TIMEOUT" ]; do
 
     # Increase the counter
-    echo $(($(cat ${QEMU_COUNT})+1)) > ${QEMU_COUNT}
+    echo $(($(cat $QEMU_COUNT)+1)) > $QEMU_COUNT
 
     # Try to connect to qemu
-    if echo 'info version'| nc -q 1 -w 1 localhost "${QEMU_PORT}" >/dev/null 2>&1 ; then
+    if echo 'info version'| nc -q 1 -w 1 localhost "$QEMU_PORT" >/dev/null 2>&1 ; then
 
       sleep 1
 
-      CNT="$(cat ${QEMU_COUNT})/${QEMU_TIMEOUT}"
-      [[ "${DEBUG}" == [Yy1]* ]] && info "Shutting down, waiting... (${CNT})"
+      CNT="$(cat $QEMU_COUNT)/$QEMU_TIMEOUT"
+      [[ "$DEBUG" == [Yy1]* ]] && info "Shutting down, waiting... ($CNT)"
 
     fi
 
   done
 
   echo && echo "❯ Quitting..."
-  echo 'quit' | nc -q 1 -w 1 localhost "${QEMU_PORT}" >/dev/null 2>&1 || true
+  echo 'quit' | nc -q 1 -w 1 localhost "$QEMU_PORT" >/dev/null 2>&1 || true
 
   closeNetwork
 
@@ -70,4 +70,4 @@ _graceful_shutdown() {
 
 _trap _graceful_shutdown SIGTERM SIGHUP SIGINT SIGABRT SIGQUIT
 
-MON_OPTS="-monitor telnet:localhost:${QEMU_PORT},server,nowait,nodelay"
+MON_OPTS="-monitor telnet:localhost:$QEMU_PORT,server,nowait,nodelay"
