@@ -19,28 +19,28 @@ if [ ! -f  "$file" ]; then
 
   if [[ "$result" != "success" ]] ; then
     { msg=$(echo "$json" | jq -r '.message'); rc=$?; } || :
-    echo "Guest replied ${result}: $msg" && exit 1
+    echo "Guest replied $result: $msg" && exit 1
   fi
 
   { port=$(echo "$json" | jq -r '.data.data.dsm_setting.data.http_port'); rc=$?; } || :
   (( rc != 0 )) && echo "Failed to parse response from guest: jq error $rc ( $json )" && exit 1
   [[ "$port" == "null" ]] && echo "Guest has not set a portnumber yet.." && exit 1
-  [ -z "${port}" ] && echo "Guest has not set a portnumber yet.." && exit 1
+  [ -z "$port" ] && echo "Guest has not set a portnumber yet.." && exit 1
 
   { ip=$(echo "$json" | jq -r '.data.data.ip.data[] | select((.name=="eth0") and has("ip")).ip'); rc=$?; } || :
   (( rc != 0 )) && echo "Failed to parse response from guest: jq error $rc ( $json )" && exit 1
   [[ "$ip" == "null" ]] && echo "Guest returned invalid response: $json" && exit 1
-  [ -z "${ip}" ] && echo "Guest has not received an IP yet.." && exit 1
+  [ -z "$ip" ] && echo "Guest has not received an IP yet.." && exit 1
 
-  echo "${ip}:${port}" > $file
+  echo "$ip:$port" > $file
 
 fi
 
 location=$(cat "$file")
 
-if ! curl -m 20 -ILfSs "http://${location}/" > /dev/null; then
+if ! curl -m 20 -ILfSs "http://$location/" > /dev/null; then
   rm -f $file
-  echo "Failed to reach http://${location}"
+  echo "Failed to reach http://$location"
   exit 1
 fi
 
