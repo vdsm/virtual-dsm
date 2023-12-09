@@ -241,7 +241,8 @@ addDisk () {
     if [ -f "${PREV_FILE}" ] ; then
 
       info "Disk format change detected for ${DISK_DESC} (${PREV_FMT} to ${DISK_FMT}), converting ${PREV_FILE} ..."
-
+      addPackage "qemu-utils" "QEMU image tools"
+      
       if ! convertDisk "${PREV_FILE}" "${PREV_FMT}" "${DISK_FILE}" "${DISK_FMT}" ; then
         info "Disk conversion failed, creating new disk image as fallback."
         rm -f "${DISK_FILE}"
