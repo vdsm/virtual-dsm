@@ -5,7 +5,7 @@ set -Eeuo pipefail
 : ${DEV:='Y'}   # Controls whether device nodes are created.
 
 if [ -f "$STORAGE"/dsm.ver ]; then
-  BASE=$(cat "${STORAGE}/dsm.ver")
+  BASE=$(cat "$STORAGE/dsm.ver")
 else
   # Fallback for old installs
   BASE="DSM_VirtualDSM_42962"
@@ -42,7 +42,7 @@ fi
 
 BASE=$(basename "$URL" .pat)
 
-if [[ "$URL" != "file://${STORAGE}/${BASE}.pat" ]]; then
+if [[ "$URL" != "file://$STORAGE/$BASE.pat" ]]; then
   rm -f "$STORAGE"/"$BASE".pat
 fi
 
@@ -50,7 +50,7 @@ rm -f "$STORAGE"/"$BASE".agent
 rm -f "$STORAGE"/"$BASE".boot.img
 rm -f "$STORAGE"/"$BASE".system.img
 
-[[ "${DEBUG}" == [Yy1]* ]] && set -x
+[[ "$DEBUG" == [Yy1]* ]] && set -x
 
 # Check filesystem
 MIN_ROOT=471859200
@@ -58,7 +58,7 @@ MIN_SPACE=6442450944
 FS=$(stat -f -c %T "$STORAGE")
 
 if [[ "$FS" == "overlay"* ]]; then
-  info "Warning: the filesystem of ${STORAGE} is OverlayFS, this usually means it was binded to an invalid path!"
+  info "Warning: the filesystem of $STORAGE is OverlayFS, this usually means it was binded to an invalid path!"
 fi
 
 if [[ "$FS" != "fat"* && "$FS" != "vfat"* && "$FS" != "exfat"* && \
@@ -69,7 +69,7 @@ else
   SPACE=$(df --output=avail -B 1 /tmp | tail -n 1)
   if (( MIN_SPACE > SPACE )); then
     TMP="$STORAGE/tmp"
-    info "Warning: the ${FS} filesystem of ${STORAGE} does not support UNIX permissions.."
+    info "Warning: the $FS filesystem of $STORAGE does not support UNIX permissions.."
   fi
 fi
 
@@ -81,12 +81,12 @@ SPACE=$(df --output=avail -B 1 / | tail -n 1)
 
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
 SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
-(( MIN_SPACE > SPACE )) && error "Not enough free space for installation in ${STORAGE}, have ${SPACE_GB} GB available but need at least 6 GB." && exit 95
+(( MIN_SPACE > SPACE )) && error "Not enough free space for installation in $STORAGE, have $SPACE_GB GB available but need at least 6 GB." && exit 95
 
 if [[ "$TMP" != "$STORAGE/tmp" ]]; then
   SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
   SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
-  (( MIN_SPACE > SPACE )) && error "Not enough free space for installation in ${STORAGE}, have ${SPACE_GB} GB available but need at least 6 GB." && exit 94
+  (( MIN_SPACE > SPACE )) && error "Not enough free space for installation in $STORAGE, have $SPACE_GB GB available but need at least 6 GB." && exit 94
 fi
 
 # Check if output is to interactive TTY
@@ -100,7 +100,7 @@ fi
 
 RDC="$STORAGE/dsm.rd"
 
-if [ ! -f "${RDC}" ]; then
+if [ ! -f "$RDC" ]; then
 
   info "Install: Downloading installer..."
 
@@ -123,7 +123,7 @@ if [ ! -f "${RDC}" ]; then
     { wget "$LOC" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; rc=$?; } || :
     (( rc != 0 )) && error "Failed to download $LOC, reason: $rc" && exit 60
 
-    tar --extract --file="$PAT" --directory="$(dirname "${RD}")"/. "$(basename "${RD}")"
+    tar --extract --file="$PAT" --directory="$(dirname "$RD")"/. "$(basename "$RD")"
     rm "$PAT"
 
   fi
@@ -132,12 +132,12 @@ if [ ! -f "${RDC}" ]; then
 
 fi
 
-if [ -f "${RDC}" ]; then
+if [ -f "$RDC" ]; then
 
   { xz -dc <"$RDC" >"$TMP/rd" 2>/dev/null; rc=$?; } || :
   (( rc != 1 )) && error "Failed to unxz $RDC, reason $rc" && exit 91
 
-  if [[ "${DEV}" == [Nn]* ]]; then
+  if [[ "$DEV" == [Nn]* ]]; then
     # Exclude dev/ from cpio extract
     { (cd "$TMP" && cpio -it < "$TMP/rd" | grep -Ev 'dev/' | while read -r entry; do cpio -idm "$entry" < "$TMP/rd" 2>/dev/null; done); rc=$?; } || :
   else
@@ -240,26 +240,26 @@ SYSTEM_SIZE=4954537983
 # Check free diskspace
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
 SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
-(( SYSTEM_SIZE > SPACE )) && error "Not enough free space to create a 4 GB system disk, have only ${SPACE_GB} GB available." && exit 87
+(( SYSTEM_SIZE > SPACE )) && error "Not enough free space to create a 4 GB system disk, have only $SPACE_GB GB available." && exit 87
 
-if ! fallocate -l "${SYSTEM_SIZE}" "${SYSTEM}"; then
-  if ! truncate -s "${SYSTEM_SIZE}" "${SYSTEM}"; then
-    rm -f "${SYSTEM}" && error "Could not allocate a file for the system disk." && exit 88
+if ! fallocate -l "$SYSTEM_SIZE" "$SYSTEM"; then
+  if ! truncate -s "$SYSTEM_SIZE" "$SYSTEM"; then
+    rm -f "$SYSTEM" && error "Could not allocate a file for the system disk." && exit 88
   fi
 fi
 
 # Check if file exists
-[ ! -f "${SYSTEM}" ] && error "System disk does not exist ($SYSTEM)" && exit 89
+[ ! -f "$SYSTEM" ] && error "System disk does not exist ($SYSTEM)" && exit 89
 
 # Check the filesize
-SIZE=$(stat -c%s "${SYSTEM}")
-[[ SIZE -ne SYSTEM_SIZE ]] && rm -f "${SYSTEM}" && error "System disk has the wrong size: ${SIZE}" && exit 90
+SIZE=$(stat -c%s "$SYSTEM")
+[[ SIZE -ne SYSTEM_SIZE ]] && rm -f "$SYSTEM" && error "System disk has the wrong size: $SIZE" && exit 90
 
 PART="$TMP/partition.fdisk"
 
 {       echo "label: dos"
         echo "label-id: 0x6f9ee2e9"
-        echo "device: ${SYSTEM}"
+        echo "device: $SYSTEM"
         echo "unit: sectors"
         echo "sector-size: 512"
         echo ""
@@ -276,7 +276,7 @@ rm -rf "$MOUNT" && mkdir -p "$MOUNT"
 
 mv "$HDA.tgz" "$HDA.txz"
 
-if [[ "${DEV}" == [Nn]* ]]; then
+if [[ "$DEV" == [Nn]* ]]; then
   # Exclude dev/ from tar extract
   tar xpfJ "$HDA.txz" --absolute-names --exclude="dev" -C "$MOUNT/"
 else
@@ -301,7 +301,7 @@ rm -rf "$MOUNT"
 
 echo "$BASE" > "$STORAGE"/dsm.ver
 
-if [[ "$URL" == "file://${STORAGE}/${BASE}.pat" ]]; then
+if [[ "$URL" == "file://$STORAGE/$BASE.pat" ]]; then
   rm -f "$PAT"
 else
   mv -f "$PAT" "$STORAGE"/"$BASE".pat
@@ -313,6 +313,6 @@ mv -f "$SYSTEM" "$STORAGE"/"$BASE".system.img
 rm -rf "$TMP"
 
 { set +x; } 2>/dev/null
-[[ "${DEBUG}" == [Yy1]* ]] && echo
+[[ "$DEBUG" == [Yy1]* ]] && echo
 
 return 0
