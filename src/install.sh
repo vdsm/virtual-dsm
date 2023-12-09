@@ -100,7 +100,7 @@ fi
 
 RDC="$STORAGE/dsm.rd"
 
-if [ ! -f "${RDC}" ]; then
+if [ ! -f "$RDC" ]; then
 
   info "Install: Downloading installer..."
 
@@ -240,7 +240,7 @@ SYSTEM_SIZE=4954537983
 # Check free diskspace
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
 SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
-(( SYSTEM_SIZE > SPACE )) && error "Not enough free space to create a 4 GB system disk, have only ${SPACE_GB} GB available." && exit 87
+(( SYSTEM_SIZE > SPACE )) && error "Not enough free space to create a 4 GB system disk, have only $SPACE_GB GB available." && exit 87
 
 if ! fallocate -l "$SYSTEM_SIZE" "$SYSTEM"; then
   if ! truncate -s "$SYSTEM_SIZE" "$SYSTEM"; then
