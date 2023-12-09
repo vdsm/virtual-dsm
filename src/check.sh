@@ -39,7 +39,6 @@ fi
 location=$(cat "$file")
 
 if ! curl -m 20 -ILfSs "http://$location/" > /dev/null; then
-  rm -f $file
   echo "Failed to reach http://$location"
   exit 1
 fi

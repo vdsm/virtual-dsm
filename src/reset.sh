@@ -48,11 +48,9 @@ rm -rf "$STORAGE/tmp"
 
 getCountry () {
 
-  local rc
-  local json
-  local result
   local url=$1
   local query=$2
+  local rc json result
 
   { json=$(curl -m 5 -H "Accept: application/json" -sfk "$url"); rc=$?; } || :
   (( rc != 0 )) && return 0
