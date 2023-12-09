@@ -92,7 +92,7 @@ resizeDisk() {
 
   GB=$(( (CUR_SIZE + 1073741823)/1073741824 ))
   info "Resizing $DISK_DESC from ${GB}G to $DISK_SPACE .."
-  FAIL="Could not resize $DISK_FMT file of $DISK_DESC (${DISK_FILE}) from ${GB}G to $DISK_SPACE .."
+  FAIL="Could not resize $DISK_FMT file of $DISK_DESC ($DISK_FILE) from ${GB}G to $DISK_SPACE .."
 
   REQ=$((DATA_SIZE-CUR_SIZE))
   (( REQ < 1 )) && error "Shrinking disks is not supported!" && exit 84
@@ -167,7 +167,7 @@ createDisk() {
 
   case "${DISK_FMT,,}" in
     raw)
-      if [[ "${ALLOCATE}" == [Nn]* ]]; then
+      if [[ "$ALLOCATE" == [Nn]* ]]; then
 
         # Create an empty file
         if ! truncate -s "$DISK_SPACE" "$DISK_FILE"; then
@@ -221,7 +221,7 @@ addDisk () {
   local DISK_ADDRESS=$7
   local DISK_FMT=$8
 
-  DISK_FILE="${DISK_BASE}.${DISK_EXT}"
+  DISK_FILE="$DISK_BASE.$DISK_EXT"
   DIR=$(dirname "$DISK_FILE")
   [ ! -d "$DIR" ] && return 0
 
@@ -249,7 +249,7 @@ addDisk () {
       PREV_FMT="qcow2"
     fi
     PREV_EXT="$(fmt2ext "$PREV_FMT")"
-    PREV_FILE="${DISK_BASE}.${PREV_EXT}"
+    PREV_FILE="$DISK_BASE.$PREV_EXT"
 
     if [ -f "$PREV_FILE" ] ; then
 
@@ -257,7 +257,7 @@ addDisk () {
       info "Starting conversion of $DISK_DESC to this new format, please wait until completed..."
 
       local TMP_FILE
-      TMP_FILE="${DISK_BASE}.tmp"
+      TMP_FILE="$DISK_BASE.tmp"
       rm -f "$TMP_FILE"
 
       if ! convertDisk "$PREV_FILE" "$PREV_FMT" "$TMP_FILE" "$DISK_FMT" ; then
@@ -285,10 +285,10 @@ addDisk () {
 
   fi
 
-  DISK_OPTS="${DISK_OPTS} \
-    -device virtio-scsi-pci,id=hw-${DISK_ID},bus=pcie.0,addr=${DISK_ADDRESS} \
-    -drive file=${DISK_FILE},if=none,id=drive-${DISK_ID},format=${DISK_FMT},cache=${DISK_CACHE},aio=${DISK_IO},discard=${DISK_DISCARD},detect-zeroes=on \
-    -device scsi-hd,bus=hw-${DISK_ID}.0,channel=0,scsi-id=0,lun=0,drive=drive-${DISK_ID},id=${DISK_ID},rotation_rate=${DISK_ROTATION},bootindex=${DISK_INDEX}"
+  DISK_OPTS="$DISK_OPTS \
+    -device virtio-scsi-pci,id=hw-$DISK_ID,bus=pcie.0,addr=$DISK_ADDRESS \
+    -drive file=$DISK_FILE,if=none,id=drive-$DISK_ID,format=$DISK_FMT,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on \
+    -device scsi-hd,bus=hw-$DISK_ID.0,channel=0,scsi-id=0,lun=0,drive=drive-$DISK_ID,id=$DISK_ID,rotation_rate=$DISK_ROTATION,bootindex=$DISK_INDEX"
 
   return 0
 }
@@ -296,33 +296,33 @@ addDisk () {
 DISK_EXT="$(fmt2ext "$DISK_FMT")" || exit $?
 
 DISK1_FILE="${STORAGE}/data"
-if [[ ! -f "${DISK1_FILE}.img" ]] && [[ -f "${STORAGE}/data${DISK_SIZE}.img" ]]; then
+if [[ ! -f "$DISK1_FILE.img" ]] && [[ -f "$STORAGE/data${DISK_SIZE}.img" ]]; then
   # Fallback for legacy installs
-  mv "${STORAGE}/data${DISK_SIZE}.img" "${DISK1_FILE}.img"
+  mv "$STORAGE/data${DISK_SIZE}.img" "$DISK1_FILE.img"
 fi
 
 DISK2_FILE="/storage2/data2"
-if [ ! -f "${DISK2_FILE}.img" ]; then
+if [ ! -f "$DISK2_FILE.img" ]; then
   # Fallback for legacy installs
   FALLBACK="/storage2/data.img"
-  if [[ -f "${DISK1_FILE}.img" ]] && [[ -f "$FALLBACK" ]]; then
+  if [[ -f "$DISK1_FILE.img" ]] && [[ -f "$FALLBACK" ]]; then
     SIZE1=$(stat -c%s "$FALLBACK")
-    SIZE2=$(stat -c%s "${DISK1_FILE}.img")
+    SIZE2=$(stat -c%s "$DISK1_FILE.img")
     if [[ SIZE1 -ne SIZE2 ]]; then
-      mv "$FALLBACK" "${DISK2_FILE}.img"
+      mv "$FALLBACK" "$DISK2_FILE.img"
     fi
   fi
 fi
 
 DISK3_FILE="/storage3/data3"
-if [ ! -f "${DISK3_FILE}.img" ]; then
+if [ ! -f "$DISK3_FILE.img" ]; then
   # Fallback for legacy installs
   FALLBACK="/storage3/data.img"
-  if [[ -f "${DISK1_FILE}.img" ]] && [[ -f "$FALLBACK" ]]; then
+  if [[ -f "$DISK1_FILE.img" ]] && [[ -f "$FALLBACK" ]]; then
     SIZE1=$(stat -c%s "$FALLBACK")
-    SIZE2=$(stat -c%s "${DISK1_FILE}.img")
+    SIZE2=$(stat -c%s "$DISK1_FILE.img")
     if [[ SIZE1 -ne SIZE2 ]]; then
-      mv "$FALLBACK" "${DISK3_FILE}.img"
+      mv "$FALLBACK" "$DISK3_FILE.img"
     fi
   fi
 fi
@@ -354,10 +354,10 @@ addDevice () {
   [ -z "$DISK_DEV" ] && return 0
   [ ! -b "$DISK_DEV" ] && error "Device $DISK_DEV cannot be found! Please add it to the 'devices' section of your compose file." && exit 55
 
-  DISK_OPTS="${DISK_OPTS} \
-    -device virtio-scsi-pci,id=hw-${DISK_ID},bus=pcie.0,addr=${DISK_ADDRESS} \
-    -drive file=${DISK_DEV},if=none,id=drive-${DISK_ID},format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=${DISK_DISCARD},detect-zeroes=on \
-    -device scsi-hd,bus=hw-${DISK_ID}.0,channel=0,scsi-id=0,lun=0,drive=drive-${DISK_ID},id=${DISK_ID},rotation_rate=${DISK_ROTATION},bootindex=${DISK_INDEX}"
+  DISK_OPTS="$DISK_OPTS \
+    -device virtio-scsi-pci,id=hw-$DISK_ID,bus=pcie.0,addr=$DISK_ADDRESS \
+    -drive file=$DISK_DEV,if=none,id=drive-$DISK_ID,format=raw,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on \
+    -device scsi-hd,bus=hw-$DISK_ID.0,channel=0,scsi-id=0,lun=0,drive=drive-$DISK_ID,id=$DISK_ID,rotation_rate=$DISK_ROTATION,bootindex=$DISK_INDEX"
 
   return 0
 }
