@@ -17,11 +17,11 @@ SYSTEM="$STORAGE/$BASE.system.img"
 
 DISK_OPTS="\
     -device virtio-scsi-pci,id=hw-synoboot,bus=pcie.0,addr=0xa \
-    -drive file=${BOOT},if=none,id=drive-synoboot,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=${DISK_DISCARD},detect-zeroes=on \
-    -device scsi-hd,bus=hw-synoboot.0,channel=0,scsi-id=0,lun=0,drive=drive-synoboot,id=synoboot0,rotation_rate=${DISK_ROTATION},bootindex=1 \
+    -drive file=$BOOT,if=none,id=drive-synoboot,format=raw,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on \
+    -device scsi-hd,bus=hw-synoboot.0,channel=0,scsi-id=0,lun=0,drive=drive-synoboot,id=synoboot0,rotation_rate=$DISK_ROTATION,bootindex=1 \
     -device virtio-scsi-pci,id=hw-synosys,bus=pcie.0,addr=0xb \
-    -drive file=${SYSTEM},if=none,id=drive-synosys,format=raw,cache=${DISK_CACHE},aio=${DISK_IO},discard=${DISK_DISCARD},detect-zeroes=on \
-    -device scsi-hd,bus=hw-synosys.0,channel=0,scsi-id=0,lun=0,drive=drive-synosys,id=synosys0,rotation_rate=${DISK_ROTATION},bootindex=2"
+    -drive file=$SYSTEM,if=none,id=drive-synosys,format=raw,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on \
+    -device scsi-hd,bus=hw-synosys.0,channel=0,scsi-id=0,lun=0,drive=drive-synosys,id=synosys0,rotation_rate=$DISK_ROTATION,bootindex=2"
 
 fmt2ext() {
   local DISK_FMT=$1
@@ -50,7 +50,7 @@ ext2fmt() {
       echo "raw"
       ;;
     *)
-      error "Unrecognized file extension: .${DISK_EXT}" && exit 88
+      error "Unrecognized file extension: .$DISK_EXT" && exit 88
       ;;
   esac
 }
@@ -253,7 +253,7 @@ addDisk () {
 
     if [ -f "$PREV_FILE" ] ; then
 
-      info "Detected that ${DISK_DESC^^}_FMT changed from \"${PREV_FMT}\" to \"${DISK_FMT}\"."
+      info "Detected that ${DISK_DESC^^}_FMT changed from \"$PREV_FMT\" to \"$DISK_FMT\"."
       info "Starting conversion of $DISK_DESC to this new format, please wait until completed..."
 
       local TMP_FILE
@@ -295,7 +295,7 @@ addDisk () {
 
 DISK_EXT="$(fmt2ext "$DISK_FMT")" || exit $?
 
-DISK1_FILE="${STORAGE}/data"
+DISK1_FILE="$STORAGE/data"
 if [[ ! -f "$DISK1_FILE.img" ]] && [[ -f "$STORAGE/data${DISK_SIZE}.img" ]]; then
   # Fallback for legacy installs
   mv "$STORAGE/data${DISK_SIZE}.img" "$DISK1_FILE.img"
