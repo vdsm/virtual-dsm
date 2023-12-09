@@ -21,6 +21,7 @@ _trap(){
 _graceful_shutdown() {
 
   set +e
+  local cnt response
 
   [ ! -f "$QEMU_PID" ] && exit 130
   [ -f "$QEMU_COUNT" ] && return
@@ -32,11 +33,11 @@ _graceful_shutdown() {
   # echo 'system_powerdown' | nc -q 1 -w 1 localhost "${QEMU_PORT}" > /dev/null
 
   # Send shutdown command to guest agent via serial port
-  RESPONSE=$(curl -sk -m 30 -S http://127.0.0.1:2210/read?command=6 2>&1)
+  response=$(curl -sk -m 30 -S http://127.0.0.1:2210/read?command=6 2>&1)
 
-  if [[ ! "$RESPONSE" =~ "\"success\"" ]]; then
+  if [[ ! "$response" =~ "\"success\"" ]]; then
 
-    echo && error "Failed to send shutdown command ( ${RESPONSE} )."
+    echo && error "Failed to send shutdown command ( $response )."
 
     kill -15 "$(cat "$QEMU_PID")"
     pkill -f qemu-system-x86_64 || true
@@ -46,15 +47,15 @@ _graceful_shutdown() {
   while [ "$(cat $QEMU_COUNT)" -lt "$QEMU_TIMEOUT" ]; do
 
     # Increase the counter
-    echo $(($(cat $QEMU_COUNT)+1)) > $QEMU_COUNT
+    echo $(($(cat $QEMU_COUNT)+1)) > "$QEMU_COUNT"
 
     # Try to connect to qemu
     if echo 'info version'| nc -q 1 -w 1 localhost "$QEMU_PORT" >/dev/null 2>&1 ; then
 
       sleep 1
 
-      CNT="$(cat $QEMU_COUNT)/$QEMU_TIMEOUT"
-      [[ "$DEBUG" == [Yy1]* ]] && info "Shutting down, waiting... ($CNT)"
+      cnt="$(cat $QEMU_COUNT)/$QEMU_TIMEOUT"
+      [[ "$DEBUG" == [Yy1]* ]] && info "Shutting down, waiting... ($cnt)"
 
     fi
 
