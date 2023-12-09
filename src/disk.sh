@@ -111,7 +111,7 @@ resizeDisk() {
 
         if (( REQ > SPACE )); then
           error "Not enough free space to resize ${DISK_DESC} to ${DISK_SPACE} in ${DIR}, it has only ${SPACE_GB} GB available.."
-          error "Specify a smaller ${DISK_DESC^^}_SIZE or disable preallocation with ALLOCATE=N." && exit 84
+          error "Specify a smaller ${DISK_DESC^^}_SIZE or switch to a growable disk with DISK_FMT=qcow2." && exit 84
         fi
 
         # Resize file by allocating more space
@@ -177,7 +177,7 @@ createDisk() {
 
         if (( DATA_SIZE > SPACE )); then
           error "Not enough free space to create ${DISK_DESC} of ${DISK_SPACE} in ${DIR}, it has only ${SPACE_GB} GB available.."
-          error "Specify a smaller ${DISK_DESC^^}_SIZE or disable preallocation with ALLOCATE=N." && exit 86
+          error "Specify a smaller ${DISK_DESC^^}_SIZE or switch to a growable disk with DISK_FMT=qcow2." && exit 86
         fi
 
         # Create an empty file
@@ -239,9 +239,7 @@ addDisk () {
     PREV_FILE="${DISK_BASE}.${PREV_EXT}"
 
     if [ -f "${PREV_FILE}" ] ; then
-
       info "Disk format change detected for ${DISK_DESC} (${PREV_FMT} to ${DISK_FMT}), converting ${PREV_FILE} ..."
-      addPackage "qemu-utils" "QEMU image tools"
       
       if ! convertDisk "${PREV_FILE}" "${PREV_FMT}" "${DISK_FILE}" "${DISK_FMT}" ; then
         info "Disk conversion failed, creating new disk image as fallback."
@@ -282,10 +280,6 @@ addDisk () {
 
   return 0
 }
-
-if [[ "${DISK_FMT,,}" == "qcow2" ]]; then
-  addPackage "qemu-utils" "QEMU image tools"
-fi
 
 DISK_EXT="$(fmt2ext "${DISK_FMT}")" || exit $?
 
