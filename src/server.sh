@@ -33,8 +33,8 @@ if [[ "$2" != "/"* ]]; then
   HTML=$(html "$BODY")
   printf '%b' "HTTP/1.1 200 OK\nContent-Length: ${#HTML}\nConnection: close\n\n$HTML" > "$TMP_FILE"
 
-  socat TCP4-LISTEN:80,reuseaddr,fork,crlf SYSTEM:"cat ${TMP_FILE}" 2> /dev/null &
-  socat TCP4-LISTEN:"${1:-5000}",reuseaddr,fork,crlf SYSTEM:"cat ${TMP_FILE}" 2> /dev/null & wait $!
+  socat TCP4-LISTEN:80,reuseaddr,fork,crlf SYSTEM:"cat $TMP_FILE" 2> /dev/null &
+  socat TCP4-LISTEN:"${1:-5000}",reuseaddr,fork,crlf SYSTEM:"cat $TMP_FILE" 2> /dev/null & wait $!
   
   exit
   
