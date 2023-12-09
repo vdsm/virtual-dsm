@@ -17,17 +17,17 @@ cd /run
 
 trap - ERR
 
-if [[ "${CONSOLE}" == [Yy]* ]]; then
-  exec qemu-system-x86_64 -pidfile "${QEMU_PID}" ${ARGS:+ $ARGS}
+if [[ "$CONSOLE" == [Yy]* ]]; then
+  exec qemu-system-x86_64 -pidfile "$QEMU_PID" ${ARGS:+ $ARGS}
   exit $?
 fi
 
 set -m
 (
-  [[ "${DEBUG}" == [Yy1]* ]] && info "$VERS" && set -x
-  qemu-system-x86_64 ${ARGS:+ $ARGS} & echo $! > "${QEMU_PID}"
+  [[ "$DEBUG" == [Yy1]* ]] && info "$VERS" && set -x
+  qemu-system-x86_64 ${ARGS:+ $ARGS} & echo $! > "$QEMU_PID"
   { set +x; } 2>/dev/null
 )
 set +m
 
-tail --pid "$(cat "${QEMU_PID}")" --follow /dev/null & wait $!
+tail --pid "$(cat "$QEMU_PID")" --follow /dev/null & wait $!
