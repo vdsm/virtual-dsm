@@ -40,13 +40,6 @@ if [ -z "$URL" ]; then
   fi
 fi
 
-# Check if output is to interactive TTY
-if [ -t 1 ]; then
-  PROGRESS="--progress=bar:noscroll"
-else
-  PROGRESS="--progress=dot:giga"
-fi
-
 BASE=$(basename "$URL" .pat)
 
 if [[ "$URL" != "file://${STORAGE}/${BASE}.pat" ]]; then
@@ -94,6 +87,13 @@ if [[ "$TMP" != "$STORAGE/tmp" ]]; then
   SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
   SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
   (( MIN_SPACE > SPACE )) && error "Not enough free space for installation in ${STORAGE}, have ${SPACE_GB} GB available but need at least 6 GB." && exit 94
+fi
+
+# Check if output is to interactive TTY
+if [ -t 1 ]; then
+  PROGRESS="--progress=bar:noscroll"
+else
+  PROGRESS="--progress=dot:giga"
 fi
 
 # Download the required files from the Synology website
