@@ -28,6 +28,7 @@ RUN apt-get update && apt-get -y upgrade && \
         iproute2 \
         dnsmasq \
         net-tools \
+        qemu-utils \
         ca-certificates \
         netcat-openbsd \
         qemu-system-x86 \
