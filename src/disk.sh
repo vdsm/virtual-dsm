@@ -163,7 +163,7 @@ createDisk() {
   local DISK_DESC=$3
   local DISK_FMT=$4
 
-  FAIL="Could not create a $DISK_SPACE $DISK_FMT file for $DISK_DESC (${DISK_FILE})"
+  FAIL="Could not create a $DISK_SPACE $DISK_FMT file for $DISK_DESC ($DISK_FILE)"
 
   case "${DISK_FMT,,}" in
     raw)
