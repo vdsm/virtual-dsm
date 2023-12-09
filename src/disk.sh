@@ -111,7 +111,7 @@ resizeDisk() {
 
         if (( REQ > SPACE )); then
           error "Not enough free space to resize ${DISK_DESC} to ${DISK_SPACE} in ${DIR}, it has only ${SPACE_GB} GB available.."
-          error "Specify a smaller ${DISK_DESC^^}_SIZE or switch to a growable disk with DISK_FMT=qcow2." && exit 84
+          error "Please specify a smaller ${DISK_DESC^^}_SIZE or disable preallocation by setting DISK_FMT to \"qcow2\"." && exit 84
         fi
 
         # Resize file by allocating more space
@@ -176,8 +176,8 @@ createDisk() {
         SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
 
         if (( DATA_SIZE > SPACE )); then
-          error "Not enough free space to create ${DISK_DESC} of ${DISK_SPACE} in ${DIR}, it has only ${SPACE_GB} GB available.."
-          error "Specify a smaller ${DISK_DESC^^}_SIZE or switch to a growable disk with DISK_FMT=qcow2." && exit 86
+          error "Not enough free space to create a ${DISK_DESC} of ${DISK_SPACE} in ${DIR}, it has only ${SPACE_GB} GB available.."
+          error "Please specify a smaller ${DISK_DESC^^}_SIZE or disable preallocation by setting DISK_FMT to \"qcow2\"." && exit 86
         fi
 
         # Create an empty file
