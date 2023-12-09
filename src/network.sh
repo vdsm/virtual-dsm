@@ -35,6 +35,7 @@ configureDHCP() {
     sleep 2
   done
 
+  local TAP_NR TAP_PATH MAJOR MINOR
   TAP_NR=$(</sys/class/net/"$VM_NET_TAP"/ifindex)
   TAP_PATH="/dev/tap${TAP_NR}"
 
