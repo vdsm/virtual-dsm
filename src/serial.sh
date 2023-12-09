@@ -28,12 +28,12 @@ HOST_ARGS=()
 HOST_ARGS+=("-cpu=${CPU_CORES}")
 HOST_ARGS+=("-cpu_arch=${HOST_CPU}")
 
-[ -n "$HOST_MAC" ] && HOST_ARGS+=("-mac=${HOST_MAC}")
-[ -n "$HOST_MODEL" ] && HOST_ARGS+=("-model=${HOST_MODEL}")
-[ -n "$HOST_SERIAL" ] && HOST_ARGS+=("-hostsn=${HOST_SERIAL}")
-[ -n "$GUEST_SERIAL" ] && HOST_ARGS+=("-guestsn=${GUEST_SERIAL}")
+[ -n "$HOST_MAC" ] && HOST_ARGS+=("-mac=$HOST_MAC")
+[ -n "$HOST_MODEL" ] && HOST_ARGS+=("-model=$HOST_MODEL")
+[ -n "$HOST_SERIAL" ] && HOST_ARGS+=("-hostsn=$HOST_SERIAL")
+[ -n "$GUEST_SERIAL" ] && HOST_ARGS+=("-guestsn=$GUEST_SERIAL")
 
-if [[ "${HOST_DEBUG}" == [Yy1]* ]]; then
+if [[ "$HOST_DEBUG" == [Yy1]* ]]; then
   set -x
   ./host.bin "${HOST_ARGS[@]}" &
   { set +x; } 2>/dev/null
