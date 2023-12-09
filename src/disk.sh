@@ -93,10 +93,10 @@ resizeDisk() {
   GB=$(( (CUR_SIZE + 1073741823)/1073741824 ))
   info "Resizing $DISK_DESC from ${GB}G to $DISK_SPACE .."
   FAIL="Could not resize $DISK_FMT file of $DISK_DESC (${DISK_FILE}) from ${GB}G to $DISK_SPACE .."
-  
+
   REQ=$((DATA_SIZE-CUR_SIZE))
   (( REQ < 1 )) && error "Shrinking disks is not supported!" && exit 84
-        
+
   case "${DISK_FMT,,}" in
     raw)
       if [[ "$ALLOCATE" == [Nn]* ]]; then
@@ -162,7 +162,7 @@ createDisk() {
   local DISK_SPACE=$2
   local DISK_DESC=$3
   local DISK_FMT=$4
-  
+
   FAIL="Could not create a $DISK_SPACE $DISK_FMT file for $DISK_DESC (${DISK_FILE})"
 
   case "${DISK_FMT,,}" in
@@ -252,23 +252,22 @@ addDisk () {
     PREV_FILE="${DISK_BASE}.${PREV_EXT}"
 
     if [ -f "$PREV_FILE" ] ; then
-      
+
       info "Detected that ${DISK_DESC^^}_FMT changed from \"${PREV_FMT}\" to \"${DISK_FMT}\"."
       info "Starting conversion of $DISK_DESC to this new format, please wait until completed..."
-      
+
       local TMP_FILE
       TMP_FILE="${DISK_BASE}.tmp"
       rm -f "$TMP_FILE"
-      
+
       if ! convertDisk "$PREV_FILE" "$PREV_FMT" "$TMP_FILE" "$DISK_FMT" ; then
         rm -f "$TMP_FILE"
         error "Failed to convert $DISK_DESC to $DISK_FMT format." && exit 89
       fi
 
-       mv "$TMP_FILE" "$DISK_FILE"
-       rm -f "$PREV_FILE"
-       info "Conversion of $DISK_DESC completed succesfully!"
-      fi
+      mv "$TMP_FILE" "$DISK_FILE"
+      rm -f "$PREV_FILE"
+      info "Conversion of $DISK_DESC completed succesfully!"
     fi
   fi
 
