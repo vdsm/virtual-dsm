@@ -30,7 +30,7 @@ do
   (( rc != 0 )) && error "Failed to connect to guest: curl error $rc" && continue
 
   { result=$(echo "$json" | jq -r '.status'); rc=$?; } || :
-  (( rc != 0 )) && error "$jq_error $rc ( $json )" && continue
+  (( rc != 0 )) && error "$jq_err $rc ( $json )" && continue
   [[ "$result" == "null" ]] && error "$resp_err $json" && continue
 
   if [[ "$result" != "success" ]] ; then
@@ -39,12 +39,12 @@ do
   fi
 
   { port=$(echo "$json" | jq -r '.data.data.dsm_setting.data.http_port'); rc=$?; } || :
-  (( rc != 0 )) && error "$jq_error $rc ( $json )" && continue
+  (( rc != 0 )) && error "$jq_err $rc ( $json )" && continue
   [[ "$port" == "null" ]] && error "$resp_err $json" && continue
   [ -z "$port" ] && continue
 
   { ip=$(echo "$json" | jq -r '.data.data.ip.data[] | select((.name=="eth0") and has("ip")).ip'); rc=$?; } || :
-  (( rc != 0 )) && error "$jq_error $rc ( $json )" && continue
+  (( rc != 0 )) && error "$jq_err $rc ( $json )" && continue
   [[ "$ip" == "null" ]] && error "$resp_err $json" && continue
   [ -z "$ip" ] && continue
 
