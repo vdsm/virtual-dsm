@@ -38,7 +38,7 @@ _graceful_shutdown() {
 
   if [[ ! "$response" =~ "\"success\"" ]]; then
 
-    echo && error "Failed to send shutdown command ( $response )."
+    echo && error "Failed to send shutdown command (${response#*message\"\: \"})."
 
     kill -15 "$(cat "$QEMU_PID")"
     pkill -f qemu-system-x86_64 || true
