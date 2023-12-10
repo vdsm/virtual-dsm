@@ -7,17 +7,17 @@ error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: $1" "\E[0m\n" >&2; }
 file="/run/dsm.url"
 shutdown="/run/qemu.count"
 url="http://127.0.0.1:2210/read?command=10"
-  
+
 while [ ! -f  "$file" ]
 do
 
   # Check if not shutting down
   [ -f "$shutdown" ] && exit 1
-  
+
   sleep 3
 
   [ -f "$shutdown" ] && exit 1
-  
+
   # Healthcheck may have intervened
   [ -f "$file" ] && break
 
