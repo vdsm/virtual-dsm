@@ -15,7 +15,7 @@ do
   [ -f "$file" ] && break
 
   # Retrieve IP from guest VM
-  { json=$(curl -m 50 -sk http://127.0.0.1:2210/read?command=10); rc=$?; } || :
+  { json=$(curl -m 50 -sk "http://127.0.0.1:2210/read?command=10"); rc=$?; } || :
   (( rc != 0 )) && error "Failed to connect to guest: curl error $rc" && continue
 
   { result=$(echo "$json" | jq -r '.status'); rc=$?; } || :
