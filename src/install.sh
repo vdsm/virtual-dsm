@@ -29,6 +29,7 @@ DL_GLOBAL="https://global.synologydownload.com/download/DSM"
 
 if [ -z "$DL" ]; then
   [ -z "$COUNTRY" ] && setCountry
+  [ -z "$COUNTRY" ] && info "Warning: could not detect country to select mirror!"
   [[ "${COUNTRY^^}" == "CN" ]] && DL="$DL_CHINA" || DL="$DL_GLOBAL"
 fi
 

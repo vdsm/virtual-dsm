@@ -7,6 +7,8 @@ error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: $1" "\E[0m\n" >&2; }
 file="/run/dsm.url"
 shutdown="/run/qemu.count"
 url="http://127.0.0.1:2210/read?command=10"
+resp_err="Guest returned an invalid response:"
+jq_err="Failed to parse response from guest: jq error"
 
 while [ ! -f  "$file" ]
 do
@@ -28,8 +30,8 @@ do
   (( rc != 0 )) && error "Failed to connect to guest: curl error $rc" && continue
 
   { result=$(echo "$json" | jq -r '.status'); rc=$?; } || :
-  (( rc != 0 )) && error "Failed to parse response from guest: jq error $rc ( $json )" && continue
-  [[ "$result" == "null" ]] && error "Guest returned invalid response: $json" && continue
+  (( rc != 0 )) && error "$jq_err $rc ( $json )" && continue
+  [[ "$result" == "null" ]] && error "$resp_err $json" && continue
 
   if [[ "$result" != "success" ]] ; then
     { msg=$(echo "$json" | jq -r '.message'); rc=$?; } || :
@@ -37,13 +39,13 @@ do
   fi
 
   { port=$(echo "$json" | jq -r '.data.data.dsm_setting.data.http_port'); rc=$?; } || :
-  (( rc != 0 )) && error "Failed to parse response from guest: jq error $rc ( $json )" && continue
-  [[ "$port" == "null" ]] && error "Guest returned invalid response: $json" && continue
+  (( rc != 0 )) && error "$jq_err $rc ( $json )" && continue
+  [[ "$port" == "null" ]] && error "$resp_err $json" && continue
   [ -z "$port" ] && continue
 
   { ip=$(echo "$json" | jq -r '.data.data.ip.data[] | select((.name=="eth0") and has("ip")).ip'); rc=$?; } || :
-  (( rc != 0 )) && error "Failed to parse response from guest: jq error $rc ( $json )" && continue
-  [[ "$ip" == "null" ]] && error "Guest returned invalid response: $json" && continue
+  (( rc != 0 )) && error "$jq_err $rc ( $json )" && continue
+  [[ "$ip" == "null" ]] && error "$resp_err $json" && continue
   [ -z "$ip" ] && continue
 
   echo "$ip:$port" > $file
