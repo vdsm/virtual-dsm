@@ -33,7 +33,8 @@ _graceful_shutdown() {
   # echo 'system_powerdown' | nc -q 1 -w 1 localhost "${QEMU_PORT}" > /dev/null
 
   # Send shutdown command to guest agent via serial port
-  response=$(curl -sk -m 30 -S http://127.0.0.1:2210/read?command=6 2>&1)
+  url="http://127.0.0.1:2210/read?command=6&timeout=50"
+  response=$(curl -sk -m 60 -S "$url" 2>&1)
 
   if [[ ! "$response" =~ "\"success\"" ]]; then
 
@@ -64,7 +65,9 @@ _graceful_shutdown() {
   echo && echo "❯ Quitting..."
   echo 'quit' | nc -q 1 -w 1 localhost "$QEMU_PORT" >/dev/null 2>&1 || true
 
+  pkill -f host.bin || true
   closeNetwork
+  sleep 1
 
   return
 }
