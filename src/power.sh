@@ -27,7 +27,7 @@ _graceful_shutdown() {
   [ -f "$QEMU_COUNT" ] && return
 
   echo 0 > "$QEMU_COUNT"
-  echo && info "Received $1 signal, shutting down..."
+  echo && info "Received $1 signal, sending shutdown command..."
 
   # Don't send the powerdown signal because vDSM ignores ACPI signals
   # echo 'system_powerdown' | nc -q 1 -w 1 localhost "${QEMU_PORT}" > /dev/null
@@ -36,7 +36,11 @@ _graceful_shutdown() {
   url="http://127.0.0.1:2210/read?command=6&timeout=50"
   response=$(curl -sk -m 60 -S "$url" 2>&1)
 
-  if [[ ! "$response" =~ "\"success\"" ]]; then
+  if [[ "$response" =~ "\"success\"" ]]; then
+
+    echo && info "Virtual DSM is now ready to shutdown..."
+
+  else
 
     echo && error "Failed to send shutdown command (${response#*message\"\: \"})."
 
