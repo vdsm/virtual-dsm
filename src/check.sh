@@ -9,8 +9,9 @@ file="/run/dsm.url"
 if [ ! -f  "$file" ]; then
 
   # Retrieve IP from guest VM for Docker healthcheck
+  url="http://127.0.0.1:2210/read?command=10"
 
-  { json=$(curl -m 50 -sk "http://127.0.0.1:2210/read?command=10"); rc=$?; } || :
+  { json=$(curl -m 20 -sk "$url"); rc=$?; } || :
   (( rc != 0 )) && echo "Failed to connect to guest: curl error $rc" && exit 1
 
   { result=$(echo "$json" | jq -r '.status'); rc=$?; } || :
@@ -38,7 +39,7 @@ fi
 
 location=$(cat "$file")
 
-if ! curl -m 10 -ILfSs "http://$location/" > /dev/null; then
+if ! curl -m 20 -ILfSs "http://$location/" > /dev/null; then
   echo "Failed to reach http://$location"
   exit 1
 fi
