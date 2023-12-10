@@ -27,18 +27,23 @@ _graceful_shutdown() {
   [ -f "$QEMU_COUNT" ] && return
 
   echo 0 > "$QEMU_COUNT"
-  echo && info "Received $1 signal, shutting down..."
+  echo && info "Received $1 signal, sending shutdown command..."
 
   # Don't send the powerdown signal because vDSM ignores ACPI signals
   # echo 'system_powerdown' | nc -q 1 -w 1 localhost "${QEMU_PORT}" > /dev/null
 
   # Send shutdown command to guest agent via serial port
   url="http://127.0.0.1:2210/read?command=6&timeout=50"
-  response=$(curl -sk -m 60 -S "$url" 2>&1)
+  response=$(curl -sk -m 52 -S "$url" 2>&1)
 
-  if [[ ! "$response" =~ "\"success\"" ]]; then
+  if [[ "$response" =~ "\"success\"" ]]; then
 
-    echo && error "Failed to send shutdown command (${response#*message\"\: \"})."
+    echo && info "Virtual DSM is now ready to shutdown..."
+
+  else
+
+    response="${response#*message\"\: \"}"
+    echo && error "Failed to send shutdown command: ${response%%\"*}"
 
     kill -15 "$(cat "$QEMU_PID")"
     pkill -f qemu-system-x86_64 || true
@@ -65,7 +70,9 @@ _graceful_shutdown() {
   echo && echo "❯ Quitting..."
   echo 'quit' | nc -q 1 -w 1 localhost "$QEMU_PORT" >/dev/null 2>&1 || true
 
-  pkill -f host.bin || true
+  { pkill -f print.sh || true; } 2>/dev/null
+  { pkill -f host.bin || true; } 2>/dev/null
+
   closeNetwork
   sleep 1
 
