@@ -34,7 +34,7 @@ _graceful_shutdown() {
 
   # Send shutdown command to guest agent via serial port
   url="http://127.0.0.1:2210/read?command=6&timeout=50"
-  response=$(curl -sk -m 60 -S "$url" 2>&1)
+  response=$(curl -sk -m 52 -S "$url" 2>&1)
 
   if [[ "$response" =~ "\"success\"" ]]; then
 
@@ -43,8 +43,7 @@ _graceful_shutdown() {
   else
 
     response="${response#*message\"\: \"}"
-    response="${response%%\"*}" 
-    echo && error "Failed to send shutdown command: $response"
+    echo && error "Failed to send shutdown command: ${response%%\"*}"
 
     kill -15 "$(cat "$QEMU_PID")"
     pkill -f qemu-system-x86_64 || true
