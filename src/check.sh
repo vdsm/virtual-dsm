@@ -8,7 +8,7 @@ url="http://127.0.0.1:2210/read?command=10"
 
 active_msg="QEMU not running yet.."
 shutdown_msg="QEMU is shutting down.."
-resp_err= "Guest returned an invalid response:"
+resp_err="Guest returned an invalid response:"
 jq_err="Failed to parse response from guest: jq error"
 
 [ ! -f "$active" ] && echo "$active_msg" && exit 0
