@@ -10,7 +10,7 @@ if [ ! -f  "$file" ]; then
 
   # Retrieve IP from guest VM for Docker healthcheck
 
-  { json=$(curl -m 30 -sk http://127.0.0.1:2210/read?command=10); rc=$?; } || :
+  { json=$(curl -m 60 -sk http://127.0.0.1:2210/read?command=10); rc=$?; } || :
   (( rc != 0 )) && echo "Failed to connect to guest: curl error $rc" && exit 1
 
   { result=$(echo "$json" | jq -r '.status'); rc=$?; } || :
