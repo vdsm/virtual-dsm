@@ -7,7 +7,7 @@ error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: $1" "\E[0m\n" >&2; }
 file="/run/dsm.url"
 shutdown="/run/qemu.count"
 url="http://127.0.0.1:2210/read?command=10"
-resp_err= "Guest returned an invalid response:"
+resp_err="Guest returned an invalid response:"
 jq_err="Failed to parse response from guest: jq error"
 
 while [ ! -f  "$file" ]
