@@ -42,6 +42,8 @@ if [ ! -f  "$file" ]; then
 
 fi
 
+[ -f "$shutdown" ] && echo "$shutdown_msg" && exit 1
+
 location=$(cat "$file")
 
 if ! curl -m 20 -ILfSs "http://$location/" > /dev/null; then
