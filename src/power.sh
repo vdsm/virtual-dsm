@@ -65,7 +65,9 @@ _graceful_shutdown() {
   echo && echo "❯ Quitting..."
   echo 'quit' | nc -q 1 -w 1 localhost "$QEMU_PORT" >/dev/null 2>&1 || true
 
+  pkill -f print.sh || true
   pkill -f host.bin || true
+
   closeNetwork
   sleep 1
 
