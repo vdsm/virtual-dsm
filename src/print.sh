@@ -50,6 +50,8 @@ do
 
 done
 
+[ -f "$shutdown" ] && exit 1
+
 location=$(cat "$file")
 
 if [[ "$location" != "20.20"* ]]; then
