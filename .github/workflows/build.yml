@@ -79,16 +79,14 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           annotations: ${{ steps.meta.outputs.annotations }}
           build-args: |
-            VCS_REF=${GITHUB_SHA::8}
             VERSION_ARG=${{ steps.meta.outputs.version }}
       -
         name: Create a release
         uses: action-pack/github-release@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
         with:
           tag: "v${{ steps.meta.outputs.version }}"
           title: "v${{ steps.meta.outputs.version }}"
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
       -
         name: Increment version variable
         uses: action-pack/bump@v2
