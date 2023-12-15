@@ -141,11 +141,12 @@ if [ -f "$RDC" ]; then
   if [[ "$DEV" == [Nn]* ]]; then
     # Exclude dev/ from cpio extract
     { (cd "$TMP" && cpio -it < "$TMP/rd" | grep -Ev 'dev/' | while read -r entry; do cpio -idm "$entry" < "$TMP/rd" 2>/dev/null; done); rc=$?; } || :
+    (( rc != 0 )) && error "Failed to extract $RDC, reason $rc" && exit 92
   else
     { (cd "$TMP" && cpio -idm <"$TMP/rd" 2>/dev/null); rc=$?; } || :
+    (( rc != 0 )) && error "Failed to extract $RDC, reason $rc"
+    (( rc != 0 )) && error "If the container runs unprivileged, please set DEV=N to exclude device nodes." && exit 92
   fi
-
-  (( rc != 0 )) && error "Failed to extract $RDC, reason $rc" && exit 92
 
   mkdir -p /run/extract
   for file in $TMP/usr/lib/libcurl.so.4 \
