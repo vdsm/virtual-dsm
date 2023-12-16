@@ -33,13 +33,7 @@ if [ -z "$DL" ]; then
   [[ "${COUNTRY^^}" == "CN" ]] && DL="$DL_CHINA" || DL="$DL_GLOBAL"
 fi
 
-if [ -z "$URL" ]; then
-  if [ "$ARCH" == "amd64" ]; then
-    URL="$DL/release/7.2.1/69057-1/DSM_VirtualDSM_69057.pat"
-  else
-    URL="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
-  fi
-fi
+[ -z "$URL" ] && URL="$DL/release/7.2.1/69057-1/DSM_VirtualDSM_69057.pat"
 
 BASE=$(basename "$URL" .pat)
 
@@ -204,8 +198,6 @@ if { tar tf "$PAT"; } >/dev/null 2>&1; then
   tar xpf "$PAT" -C "$TMP/."
 
 else
-
-  [ "$ARCH" != "amd64" ] && addPackage "qemu-user" "QEMU"
 
   info "Install: Extracting downloaded image..."
 
