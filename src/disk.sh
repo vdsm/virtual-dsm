@@ -34,7 +34,7 @@ fmt2ext() {
       echo "img"
       ;;
     *)
-      error "Unrecognized disk format: $DISK_FMT" && exit 88
+      error "Unrecognized disk format: $DISK_FMT" && exit 78
       ;;
   esac
 }
@@ -50,7 +50,7 @@ ext2fmt() {
       echo "raw"
       ;;
     *)
-      error "Unrecognized file extension: .$DISK_EXT" && exit 88
+      error "Unrecognized file extension: .$DISK_EXT" && exit 78
       ;;
   esac
 }
@@ -70,7 +70,7 @@ getSize() {
       qemu-img info "$DISK_FILE" -f "$DISK_FMT" | grep '^virtual size: ' | sed 's/.*(\(.*\) bytes)/\1/'
       ;;
     *)
-      error "Unrecognized disk format: $DISK_FMT" && exit 88
+      error "Unrecognized disk format: $DISK_FMT" && exit 78
       ;;
   esac
 }
@@ -89,7 +89,7 @@ resizeDisk() {
   FAIL="Could not resize $DISK_FMT file of $DISK_DESC ($DISK_FILE) from ${GB}G to $DISK_SPACE .."
 
   REQ=$((DATA_SIZE-CUR_SIZE))
-  (( REQ < 1 )) && error "Shrinking disks is not supported!" && exit 84
+  (( REQ < 1 )) && error "Shrinking disks is not supported!" && exit 71
 
   case "${DISK_FMT,,}" in
     raw)
@@ -97,7 +97,7 @@ resizeDisk() {
 
         # Resize file by changing its length
         if ! truncate -s "$DISK_SPACE" "$DISK_FILE"; then
-          error "$FAIL" && exit 85
+          error "$FAIL" && exit 75
         fi
 
       else
@@ -108,13 +108,13 @@ resizeDisk() {
 
         if (( REQ > SPACE )); then
           error "Not enough free space to resize $DISK_DESC to $DISK_SPACE in $DIR, it has only $SPACE_GB GB available.."
-          error "Please specify a smaller ${DISK_DESC^^}_SIZE or disable preallocation by setting DISK_FMT to \"qcow2\"." && exit 84
+          error "Please specify a smaller ${DISK_DESC^^}_SIZE or disable preallocation by setting DISK_FMT to \"qcow2\"." && exit 74
         fi
 
         # Resize file by allocating more space
         if ! fallocate -l "$DISK_SPACE" "$DISK_FILE"; then
           if ! truncate -s "$DISK_SPACE" "$DISK_FILE"; then
-            error "$FAIL" && exit 85
+            error "$FAIL" && exit 75
           fi
         fi
 
@@ -122,7 +122,7 @@ resizeDisk() {
       ;;
     qcow2)
       if ! qemu-img resize -f "$DISK_FMT" "$DISK_FILE" "$DISK_SPACE" ; then
-        error "$FAIL" && exit 85
+        error "$FAIL" && exit 72
       fi
       ;;
   esac
@@ -161,7 +161,7 @@ createDisk() {
         # Create an empty file
         if ! truncate -s "$DISK_SPACE" "$DISK_FILE"; then
           rm -f "$DISK_FILE"
-          error "$FAIL" && exit 87
+          error "$FAIL" && exit 77
         fi
 
       else
@@ -172,14 +172,14 @@ createDisk() {
 
         if (( DATA_SIZE > SPACE )); then
           error "Not enough free space to create a $DISK_DESC of $DISK_SPACE in $DIR, it has only $SPACE_GB GB available.."
-          error "Please specify a smaller ${DISK_DESC^^}_SIZE or disable preallocation by setting DISK_FMT to \"qcow2\"." && exit 86
+          error "Please specify a smaller ${DISK_DESC^^}_SIZE or disable preallocation by setting DISK_FMT to \"qcow2\"." && exit 76
         fi
 
         # Create an empty file
         if ! fallocate -l "$DISK_SPACE" "$DISK_FILE"; then
           if ! truncate -s "$DISK_SPACE" "$DISK_FILE"; then
             rm -f "$DISK_FILE"
-            error "$FAIL" && exit 87
+            error "$FAIL" && exit 77
           fi
         fi
 
@@ -188,7 +188,7 @@ createDisk() {
     qcow2)
       if ! qemu-img create -f "$DISK_FMT" -- "$DISK_FILE" "$DISK_SPACE" ; then
         rm -f "$DISK_FILE"
-        error "$FAIL" && exit 89
+        error "$FAIL" && exit 70
       fi
       ;;
   esac
@@ -219,7 +219,7 @@ addDisk () {
   DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
 
   if (( DATA_SIZE < 6442450944 )); then
-    error "Please increase ${DISK_DESC^^}_SIZE to at least 6 GB." && exit 83
+    error "Please increase ${DISK_DESC^^}_SIZE to at least 6 GB." && exit 73
   fi
 
   if ! [ -f "$DISK_FILE" ] ; then
@@ -243,7 +243,7 @@ addDisk () {
 
       if ! convertDisk "$PREV_FILE" "$PREV_FMT" "$TMP_FILE" "$DISK_FMT" ; then
         rm -f "$TMP_FILE"
-        error "Failed to convert $DISK_DESC to $DISK_FMT format." && exit 89
+        error "Failed to convert $DISK_DESC to $DISK_FMT format." && exit 79
       fi
 
       mv "$TMP_FILE" "$DISK_FILE"
