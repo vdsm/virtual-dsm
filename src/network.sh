@@ -187,7 +187,7 @@ if [ ! -c /dev/net/tun ]; then
   chmod 666 /dev/net/tun
 fi
 
-[ ! -c /dev/net/tun ] && error "TUN network interface not available..." && exit 85
+[ ! -c /dev/net/tun ] && error "TUN network interface not available..." && exit 25
 
 # Create the necessary file structure for /dev/vhost-net
 if [ ! -c /dev/vhost-net ]; then
@@ -212,7 +212,7 @@ if [[ "$DHCP" == [Yy1]* ]]; then
     if [[ "$DEBUG" == [Yy1]* ]]; then
       info "Warning: Are you sure the container is on a macvlan network?"
     else
-      error "You can only enable DHCP while the container is on a macvlan network!" && exit 86
+      error "You can only enable DHCP while the container is on a macvlan network!" && exit 26
     fi
   fi
 
