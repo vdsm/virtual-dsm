@@ -3,31 +3,11 @@ set -Eeuo pipefail
 
 # Docker environment variables
 
-: ${HOST_CPU:=''}
 : ${HOST_MAC:=''}
 : ${HOST_DEBUG:=''}
 : ${HOST_SERIAL:=''}
 : ${HOST_MODEL:=''}
 : ${GUEST_SERIAL:=''}
-
-if [ -z "$HOST_CPU" ] && [ "$CPU_MODEL" == "host"* ]; then
-  HOST_CPU=$(lscpu | grep 'Model name' | cut -f 2 -d ":" | awk '{$1=$1}1' | sed 's# @.*##g' | sed s/"(R)"//g | sed 's/[^[:alnum:] ]\+/ /g' | sed 's/  */ /g')
-fi
-
-if [ -n "$HOST_CPU" ]; then
-  HOST_CPU="${HOST_CPU%%,*},,"
-else
-  if [ "$CPU_MODEL" == "host"* ] || [ "$CPU_MODEL" == "qemu"* ]; then
-    HOST_CPU="QEMU"
-  else
-    HOST_CPU="${CPU_MODEL%%,*}"
-  fi
-  if [ "$ARCH" == "amd64" ]; then
-    HOST_CPU="${HOST_CPU%%,*}, Virtual CPU, X86_64"
-  else
-    HOST_CPU="${HOST_CPU%%,*}, Virtual CPU, $ARCH"
-  fi
-fi
 
 HOST_ARGS=()
 HOST_ARGS+=("-cpu=$CPU_CORES")
