@@ -11,10 +11,11 @@ trap 'error "Status $? while: $BASH_COMMAND (line $LINENO/$BASH_LINENO)"' ERR
 
 # Docker environment variables
 
-: ${GPU:='N'}           # Enable GPU passthrough
-: ${DEBUG:='N'}         # Enable debugging mode
+: ${GPU:='N'}           # Disable GPU passthrough
+: ${KVM:='Y'}           # Enable KVM acceleration
+: ${DEBUG:='N'}         # Disable debugging mode
 : ${COUNTRY:=''}        # Country code for mirror
-: ${CONSOLE:='N'}       # Start in console mode
+: ${CONSOLE:='N'}       # Disable console mode
 : ${ALLOCATE:='Y'}      # Preallocate diskspace
 : ${ARGUMENTS:=''}      # Extra QEMU parameters
 : ${CPU_CORES:='1'}     # Amount of CPU cores

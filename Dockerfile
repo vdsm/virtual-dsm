@@ -9,11 +9,13 @@ FROM qemux/qemu-host as builder
 
 FROM debian:trixie-slim
 
+ARG TARGETPLATFORM
 ARG DEBCONF_NOWARNINGS="yes"
 ARG DEBIAN_FRONTEND noninteractive
 
-RUN apt-get update && apt-get -y upgrade && \
-    apt-get --no-install-recommends -y install \
+RUN apt-get update && apt-get -y upgrade \
+    && if [ "$TARGETPLATFORM" != "linux/amd64" ]; then extra="qemu-user"; fi \
+    && apt-get --no-install-recommends -y install \
         jq \
         tini \
         curl \
@@ -32,6 +34,7 @@ RUN apt-get update && apt-get -y upgrade && \
         ca-certificates \
         netcat-openbsd \
         qemu-system-x86 \
+        "$extra" \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

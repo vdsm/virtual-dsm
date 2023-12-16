@@ -33,13 +33,7 @@ if [ -z "$DL" ]; then
   [[ "${COUNTRY^^}" == "CN" ]] && DL="$DL_CHINA" || DL="$DL_GLOBAL"
 fi
 
-if [ -z "$URL" ]; then
-  if [ "$ARCH" == "amd64" ]; then
-    URL="$DL/release/7.2.1/69057-1/DSM_VirtualDSM_69057.pat"
-  else
-    URL="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
-  fi
-fi
+[ -z "$URL" ] && URL="$DL/release/7.2.1/69057-1/DSM_VirtualDSM_69057.pat"
 
 BASE=$(basename "$URL" .pat)
 
@@ -205,8 +199,6 @@ if { tar tf "$PAT"; } >/dev/null 2>&1; then
 
 else
 
-  [ "$ARCH" != "amd64" ] && addPackage "qemu-user" "QEMU"
-
   info "Install: Extracting downloaded image..."
 
   export LD_LIBRARY_PATH="/run/extract"
@@ -242,16 +234,16 @@ SYSTEM_SIZE=4954537983
 # Check free diskspace
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
 SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
-(( SYSTEM_SIZE > SPACE )) && error "Not enough free space to create a 4 GB system disk, have only $SPACE_GB GB available." && exit 87
+(( SYSTEM_SIZE > SPACE )) && error "Not enough free space to create a 4 GB system disk, have only $SPACE_GB GB available." && exit 97
 
 if ! fallocate -l "$SYSTEM_SIZE" "$SYSTEM"; then
   if ! truncate -s "$SYSTEM_SIZE" "$SYSTEM"; then
-    rm -f "$SYSTEM" && error "Could not allocate a file for the system disk." && exit 88
+    rm -f "$SYSTEM" && error "Could not allocate a file for the system disk." && exit 98
   fi
 fi
 
 # Check if file exists
-[ ! -f "$SYSTEM" ] && error "System disk does not exist ($SYSTEM)" && exit 89
+[ ! -f "$SYSTEM" ] && error "System disk does not exist ($SYSTEM)" && exit 99
 
 # Check the filesize
 SIZE=$(stat -c%s "$SYSTEM")
