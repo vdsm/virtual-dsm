@@ -10,17 +10,22 @@ set -Eeuo pipefail
 : ${HOST_MODEL:=''}
 : ${GUEST_SERIAL:=''}
 
-if [ -z "$HOST_CPU" ]; then
+if [ -z "$HOST_CPU" ] && [ "$CPU_MODEL" == "host" ]; then
   HOST_CPU=$(lscpu | grep 'Model name' | cut -f 2 -d ":" | awk '{$1=$1}1' | sed 's# @.*##g' | sed s/"(R)"//g | sed 's/[^[:alnum:] ]\+/ /g' | sed 's/  */ /g')
 fi
 
 if [ -n "$HOST_CPU" ]; then
-  HOST_CPU="$HOST_CPU,,"
+  HOST_CPU="${HOST_CPU%%,*},,"
 else
-  if [ "$ARCH" == "amd64" ]; then
-    HOST_CPU="QEMU, Virtual CPU, X86_64"
+  if [ "$CPU_MODEL" == "host" ]; then
+    HOST_CPU="QEMU"
   else
-    HOST_CPU="QEMU, Virtual CPU, $ARCH"
+    HOST_CPU="${CPU_MODEL%%,*}"
+  fi
+  if [ "$ARCH" == "amd64" ]; then
+    HOST_CPU="${HOST_CPU%%,*}, Virtual CPU, X86_64"
+  else
+    HOST_CPU="${HOST_CPU%%,*}, Virtual CPU, $ARCH"
   fi
 fi
 
