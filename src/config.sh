@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -Eeuo pipefail
 
 DEF_OPTS="-nographic -nodefaults -boot strict=on -display none"
