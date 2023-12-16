@@ -242,16 +242,16 @@ SYSTEM_SIZE=4954537983
 # Check free diskspace
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
 SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
-(( SYSTEM_SIZE > SPACE )) && error "Not enough free space to create a 4 GB system disk, have only $SPACE_GB GB available." && exit 87
+(( SYSTEM_SIZE > SPACE )) && error "Not enough free space to create a 4 GB system disk, have only $SPACE_GB GB available." && exit 97
 
 if ! fallocate -l "$SYSTEM_SIZE" "$SYSTEM"; then
   if ! truncate -s "$SYSTEM_SIZE" "$SYSTEM"; then
-    rm -f "$SYSTEM" && error "Could not allocate a file for the system disk." && exit 88
+    rm -f "$SYSTEM" && error "Could not allocate a file for the system disk." && exit 98
   fi
 fi
 
 # Check if file exists
-[ ! -f "$SYSTEM" ] && error "System disk does not exist ($SYSTEM)" && exit 89
+[ ! -f "$SYSTEM" ] && error "System disk does not exist ($SYSTEM)" && exit 99
 
 # Check the filesize
 SIZE=$(stat -c%s "$SYSTEM")
