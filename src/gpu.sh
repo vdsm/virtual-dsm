@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -Eeuo pipefail
 
 if [[ "$GPU" != [Yy1]* ]] || [[ "$ARCH" != "amd64" ]]; then
