@@ -17,7 +17,7 @@ fi
 if [ -n "$HOST_CPU" ]; then
   HOST_CPU="${HOST_CPU%%,*},,"
 else
-  if [ "$CPU_MODEL" == "host" ]; then
+  if [ "$CPU_MODEL" == "host" ] || [ "$CPU_MODEL" == "qemu"* ]; then
     HOST_CPU="QEMU"
   else
     HOST_CPU="${CPU_MODEL%%,*}"
