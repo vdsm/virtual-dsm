@@ -5,7 +5,7 @@ KVM_ERR=""
 KVM_OPTS=""
 QEMU_CPU="qemu64,+ssse3,+sse4,+sse4.1,+sse4.2"
 
-if [ "$ARCH" == "amd64" ]; then
+if [ "$ARCH" == "amd64" ] && [[ "$KVM" != [Nn]* ]]; then
 
   if [ -e /dev/kvm ] && sh -c 'echo -n > /dev/kvm' &> /dev/null; then
     if ! grep -q -e vmx -e svm /proc/cpuinfo; then
@@ -18,7 +18,7 @@ if [ "$ARCH" == "amd64" ]; then
   if [ -n "$KVM_ERR" ]; then
     error "KVM acceleration not detected $KVM_ERR, this will cause a major loss of performance."
     error "See the FAQ on how to enable it, or skip this error by setting KVM=N (not recommended)."
-    [[ "$KVM" != [Nn]* ]] && [[ "$DEBUG" != [Yy1]* ]] && exit 88
+    [[ "$DEBUG" != [Yy1]* ]] && exit 88
     [ "$CPU_MODEL" == "host"* ] && CPU_MODEL="$QEMU_CPU"
   else
     KVM_OPTS=",accel=kvm -enable-kvm"
@@ -30,8 +30,11 @@ if [ "$ARCH" == "amd64" ]; then
       CPU_MODEL="host,+ssse3,+sse4,+sse4.1,+sse4.2"
     fi
   fi
+
 else
+
   [ "$CPU_MODEL" == "host"* ] && CPU_MODEL="$QEMU_CPU"
+
 fi
 
 return 0
