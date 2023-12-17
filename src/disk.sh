@@ -23,6 +23,8 @@ DISK_OPTS="\
     -drive file=$SYSTEM,if=none,id=drive-synosys,format=raw,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on \
     -device scsi-hd,bus=hw-synosys.0,channel=0,scsi-id=0,lun=0,drive=drive-synosys,id=synosys0,rotation_rate=$DISK_ROTATION,bootindex=2"
 
+: ${QCOW_FLAGS:='nocow=on,preallocation=metadata,lazy_refcounts=on'}
+
 fmt2ext() {
   local DISK_FMT=$1
 
@@ -137,7 +139,7 @@ convertDisk() {
 
   case "$DST_FMT" in
     qcow2)
-      CONV_FLAGS="$CONV_FLAGS -c"
+      CONV_FLAGS="$CONV_FLAGS -c -o $QCOW_FLAGS"
       ;;
   esac
 
@@ -186,7 +188,7 @@ createDisk() {
       fi
       ;;
     qcow2)
-      if ! qemu-img create -f "$DISK_FMT" -- "$DISK_FILE" "$DISK_SPACE" ; then
+      if ! qemu-img create -f "$DISK_FMT" -o "$QCOW_FLAGS" -- "$DISK_FILE" "$DISK_SPACE" ; then
         rm -f "$DISK_FILE"
         error "$FAIL" && exit 70
       fi
