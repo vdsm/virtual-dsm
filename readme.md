@@ -170,7 +170,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
       - 'c *:* rwm'
     ```
 
-    Please note that even if you don't need DHCP, it's still recommended to enable this feature as it prevents NAT issues and increases performance by using a `macvtap` interface.
+    Please note that even if you don't want DHCP, it's still recommended to enable this feature as it prevents NAT issues and increases performance by using a `macvtap` interface. In that case just set a static IP from the DSM control panel after you enabled this mode.
 
   * ### How do I passthrough the GPU?
 
