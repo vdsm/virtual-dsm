@@ -43,6 +43,7 @@ rm -f /run/qemu.count
 # Cleanup dirs
 
 rm -rf /tmp/dsm
+rm -f /tmp/server.*
 rm -rf "$STORAGE/tmp"
 
 # Helper functions

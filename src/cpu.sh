@@ -31,7 +31,7 @@ if [[ "$ARCH" == "amd64" && "$KVM" != [Nn]* ]]; then
 
   if [ -n "$KVM_OPTS" ]; then
     if ! grep -qE '^flags.* (sse4_2)' /proc/cpuinfo; then
-      error "Your host CPU does not has the SSE4.2 instruction set that Virtual DSM requires to boot."
+      error "Your host CPU does not have the SSE4.2 instruction set that Virtual DSM requires to boot."
       error "Disable KVM by setting KVM=N to emulate a compatible CPU, at the cost of performance."
       [[ "$DEBUG" != [Yy1]* ]] && exit 89
     fi

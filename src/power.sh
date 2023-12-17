@@ -5,8 +5,8 @@ set -Eeuo pipefail
 
 QEMU_PORT=7100
 QEMU_TIMEOUT=50
-QEMU_PID=/run/qemu.pid
-QEMU_COUNT=/run/qemu.count
+QEMU_PID="/run/qemu.pid"
+QEMU_COUNT="/run/qemu.count"
 
 rm -f "$QEMU_PID"
 rm -f "$QEMU_COUNT"

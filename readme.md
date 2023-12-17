@@ -39,7 +39,7 @@ services:
     ports:
       - 5000:5000
     volumes:
-      - /opt/dsm:/storage
+      - /var/dsm:/storage
     restart: on-failure
     stop_grace_period: 2m
 ```
@@ -65,14 +65,14 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I change the location of the virtual disk?
 
-    To change the virtual disk's location from the default Docker volume, include the following bind mount in your compose file:
+    To change the location of the virtual disk, include the following bind mount in your compose file:
 
     ```yaml
     volumes:
-      - /home/user/data:/storage
+      - /var/dsm:/storage
     ```
 
-    Replace the example path `/home/user/data` with the desired storage folder.
+    Replace the example path `/var/dsm` with the desired storage folder.
 
   * ### How do I add multiple disks?
 
@@ -170,7 +170,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
       - 'c *:* rwm'
     ```
 
-    Please note that even if you don't need DHCP, it's still recommended to enable this feature as it prevents NAT issues and increases performance by using a `macvtap` interface.
+    Please note that even if you don't want DHCP, it's still recommended to enable this feature as it prevents NAT issues and increases performance by using a `macvtap` interface. In that case just set a static IP from the DSM control panel after you enabled this mode.
 
   * ### How do I passthrough the GPU?
 
