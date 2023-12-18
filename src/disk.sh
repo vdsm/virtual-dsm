@@ -3,11 +3,11 @@ set -Eeuo pipefail
 
 # Docker environment variables
 
-: ${DISK_IO:='native'}          # I/O Mode, can be set to 'native', 'threads' or 'io_turing'
-: ${DISK_FMT:='raw'}            # Disk file format, 'raw' by default for best performance
-: ${DISK_CACHE:='none'}         # Caching mode, can be set to 'writeback' for better performance
-: ${DISK_DISCARD:='on'}         # Controls whether unmap (TRIM) commands are passed to the host.
-: ${DISK_ROTATION:='1'}         # Rotation rate, set to 1 for SSD storage and increase for HDD
+: ${DISK_IO:='native'}                          # I/O Mode, can be set to 'native', 'threads' or 'io_turing'
+: ${DISK_FMT:='raw'}                            # Disk file format, 'raw' by default for best performance
+: ${DISK_CACHE:='none'}                         # Caching mode, can be set to 'writeback' for better performance
+: ${DISK_DISCARD:='on'}                         # Controls whether unmap (TRIM) commands are passed to the host.
+: ${DISK_ROTATION:='1'}                         # Rotation rate, set to 1 for SSD storage and increase for HDD
 : ${DISK_FLAGS:='nocow=on,cluster_size=2M'}     # Specifies the options for use with the qcow2 disk format
 
 BOOT="$STORAGE/$BASE.boot.img"
