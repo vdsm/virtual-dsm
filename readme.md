@@ -99,8 +99,6 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
       DISK_FMT: "qcow2"
     ```
 
-    This can also be used to convert your existing disks to the ```qcow2``` format.
-
     Please note that disabling preallocation will negatively affect write performance any time the image needs to grow.
 
   * ### How do I increase the amount of CPU or RAM?
