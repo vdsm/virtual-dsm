@@ -240,9 +240,7 @@ addDisk () {
     local PREV_FILE="$DISK_BASE.$PREV_EXT"
 
     if [ -f "$PREV_FILE" ] ; then
-
-      info "Detected that ${DISK_DESC^^}_FMT changed from \"$PREV_FMT\" to \"$DISK_FMT\"."
-      info "Starting conversion of $DISK_DESC to this new format, please wait until completed..."
+      info "Starting conversion of $DISK_DESC to $DISK_FMT format, please wait until completed..."
 
       local TMP_FILE="$DISK_BASE.tmp"
       rm -f "$TMP_FILE"
