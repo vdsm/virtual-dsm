@@ -8,7 +8,7 @@ set -Eeuo pipefail
 : ${DISK_CACHE:='none'}         # Caching mode, can be set to 'writeback' for better performance
 : ${DISK_DISCARD:='on'}         # Controls whether unmap (TRIM) commands are passed to the host.
 : ${DISK_ROTATION:='1'}         # Rotation rate, set to 1 for SSD storage and increase for HDD
-: ${DISK_FLAGS:='nocow=on'}     # Specify the options for use with the qcow2 format
+: ${DISK_FLAGS:='nocow=on'}     # Specifies the options for use with the qcow2 disk format
 
 BOOT="$STORAGE/$BASE.boot.img"
 SYSTEM="$STORAGE/$BASE.system.img"
@@ -83,13 +83,13 @@ resizeDisk() {
   local DISK_SPACE=$4
   local DISK_DESC=$5
   local DISK_FMT=$6
-  local GB REQ FAIL SPACE SPACE_GB
+  local SPACE SPACE_GB
 
-  GB=$(( (CUR_SIZE + 1073741823)/1073741824 ))
+  local GB=$(( (CUR_SIZE + 1073741823)/1073741824 ))
   info "Resizing $DISK_DESC from ${GB}G to $DISK_SPACE .."
-  FAIL="Could not resize $DISK_FMT file of $DISK_DESC ($DISK_FILE) from ${GB}G to $DISK_SPACE .."
+  local FAIL="Could not resize $DISK_FMT file of $DISK_DESC ($DISK_FILE) from ${GB}G to $DISK_SPACE .."
 
-  REQ=$((DATA_SIZE-CUR_SIZE))
+  local REQ=$((DATA_SIZE-CUR_SIZE))
   (( REQ < 1 )) && error "Shrinking disks is not supported!" && exit 71
 
   case "${DISK_FMT,,}" in
@@ -122,7 +122,7 @@ resizeDisk() {
       fi
       ;;
     qcow2)
-      if ! qemu-img resize -f "$DISK_FMT" "$DISK_FILE" "$DISK_SPACE" ; then
+      if ! qemu-img resize -f "$DISK_FMT" "--$DISK_ALLOC" "$DISK_FILE" "$DISK_SPACE" ; then
         error "$FAIL" && exit 72
       fi
       ;;
@@ -130,25 +130,24 @@ resizeDisk() {
 }
 
 convertDisk() {
-  local CONV_FLAGS="-p"
   local SOURCE_FILE=$1
   local SOURCE_FMT=$2
   local DST_FILE=$3
   local DST_FMT=$4
+  local CONV_FLAGS="-p"
+  local DISK_OPTS="$DISK_ALLOC"
 
   case "$DST_FMT" in
     qcow2)
       if [[ "$ALLOCATE" == [Nn]* ]]; then
         CONV_FLAGS="$CONV_FLAGS -c"
       fi
-      if [ -n "$DISK_FLAGS" ]; then
-        CONV_FLAGS="$CONV_FLAGS -o $DISK_FLAGS"
-      fi
+      [ -n "$DISK_FLAGS" ] && DISK_OPTS="$DISK_OPTS,$DISK_FLAGS"
       ;;
   esac
 
   # shellcheck disable=SC2086
-  qemu-img convert -f "$SOURCE_FMT" $CONV_FLAGS -O "$DST_FMT" -- "$SOURCE_FILE" "$DST_FILE"
+  qemu-img convert -f "$SOURCE_FMT" $CONV_FLAGS -o "$DISK_OPTS" -O "$DST_FMT" -- "$SOURCE_FILE" "$DST_FILE"
 }
 
 createDisk() {
@@ -156,9 +155,8 @@ createDisk() {
   local DISK_SPACE=$2
   local DISK_DESC=$3
   local DISK_FMT=$4
-  local GB FAIL SPACE SPACE_GB
-
-  FAIL="Could not create a $DISK_SPACE $DISK_FMT file for $DISK_DESC ($DISK_FILE)"
+  local SPACE SPACE_GB
+  local FAIL="Could not create a $DISK_SPACE $DISK_FMT file for $DISK_DESC ($DISK_FILE)"
 
   case "${DISK_FMT,,}" in
     raw)
@@ -192,17 +190,12 @@ createDisk() {
       fi
       ;;
     qcow2)
-      if [ -z "$DISK_FLAGS" ]; then
-        if ! qemu-img create -f "$DISK_FMT" -- "$DISK_FILE" "$DISK_SPACE" ; then
-          rm -f "$DISK_FILE"
-          error "$FAIL" && exit 70
-        fi
-      else
-        if ! qemu-img create -f "$DISK_FMT" -o "$DISK_FLAGS" -- "$DISK_FILE" "$DISK_SPACE" ; then
-          rm -f "$DISK_FILE"
-          error "$FAIL" && exit 70
-        fi
-      fi
+      local DISK_OPTS="$DISK_ALLOC"
+      [ -n "$DISK_FLAGS" ] && DISK_OPTS="$DISK_OPTS,$DISK_FLAGS"
+      if ! qemu-img create -f "$DISK_FMT" -o "$DISK_OPTS" -- "$DISK_FILE" "$DISK_SPACE" ; then
+        rm -f "$DISK_FILE"
+        error "$FAIL" && exit 70
+      fi      
       ;;
   esac
 }
@@ -216,13 +209,13 @@ addDisk () {
   local DISK_INDEX=$6
   local DISK_ADDRESS=$7
   local DISK_FMT=$8
-  local FS DIR CUR_SIZE DATA_SIZE DISK_FILE
+  local CUR_SIZE DATA_SIZE
 
-  DISK_FILE="$DISK_BASE.$DISK_EXT"
-  DIR=$(dirname "$DISK_FILE")
+  local DISK_FILE="$DISK_BASE.$DISK_EXT"
+  local DIR=$(dirname "$DISK_FILE")
   [ ! -d "$DIR" ] && return 0
 
-  FS=$(stat -f -c %T "$DIR")
+  local FS=$(stat -f -c %T "$DIR")
   if [[ "$FS" == "overlay"* ]]; then
     info "Warning: the filesystem of $DIR is OverlayFS, this usually means it was binded to an invalid path!"
   fi
@@ -236,7 +229,7 @@ addDisk () {
   fi
 
   if ! [ -f "$DISK_FILE" ] ; then
-    local PREV_EXT PREV_FMT PREV_FILE TMP_FILE
+    local PREV_EXT PREV_FMT
 
     if [[ "${DISK_FMT,,}" != "raw" ]]; then
       PREV_FMT="raw"
@@ -244,14 +237,14 @@ addDisk () {
       PREV_FMT="qcow2"
     fi
     PREV_EXT="$(fmt2ext "$PREV_FMT")"
-    PREV_FILE="$DISK_BASE.$PREV_EXT"
+    local PREV_FILE="$DISK_BASE.$PREV_EXT"
 
     if [ -f "$PREV_FILE" ] ; then
 
       info "Detected that ${DISK_DESC^^}_FMT changed from \"$PREV_FMT\" to \"$DISK_FMT\"."
       info "Starting conversion of $DISK_DESC to this new format, please wait until completed..."
 
-      TMP_FILE="$DISK_BASE.tmp"
+      local TMP_FILE="$DISK_BASE.tmp"
       rm -f "$TMP_FILE"
 
       if ! convertDisk "$PREV_FILE" "$PREV_FMT" "$TMP_FILE" "$DISK_FMT" ; then
@@ -289,12 +282,10 @@ addDisk () {
 
 DISK_EXT="$(fmt2ext "$DISK_FMT")" || exit $?
 
-if [[ "$ALLOCATE" != [Nn]* ]]; then
-  if [ -z "$DISK_FLAGS" ]; then
-    DISK_FLAGS="preallocation=metadata"
-  else
-    DISK_FLAGS="preallocation=metadata,$DISK_FLAGS"
-  fi
+if [[ "$ALLOCATE" == [Nn]* ]]; then
+  DISK_ALLOC="preallocation=off"
+else
+  DISK_ALLOC="preallocation=falloc"
 fi
 
 DISK1_FILE="$STORAGE/data"
