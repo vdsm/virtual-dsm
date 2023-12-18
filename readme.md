@@ -89,7 +89,9 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I create a growable disk?
 
-    By default, the entire capacity of the disk is reserved in advance. To create a growable disk that only allocates space that is actually used, add the following environment variables:
+    By default, the entire capacity of the disk is reserved in advance.
+
+    To create a growable disk that only allocates space that is actually used, add the following environment variables:
 
     ```yaml
     environment:
@@ -103,7 +105,9 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I increase the amount of CPU or RAM?
 
-    By default, a single core and 1 GB of RAM are allocated to the container. To increase this, add the following environment variables:
+    By default, a single core and 1 GB of RAM are allocated to the container.
+
+    To increase this, add the following environment variables:
 
     ```yaml
     environment:
