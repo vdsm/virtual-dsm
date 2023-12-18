@@ -195,7 +195,7 @@ createDisk() {
       if ! qemu-img create -f "$DISK_FMT" -o "$DISK_OPTS" -- "$DISK_FILE" "$DISK_SPACE" ; then
         rm -f "$DISK_FILE"
         error "$FAIL" && exit 70
-      fi      
+      fi
       ;;
   esac
 }
