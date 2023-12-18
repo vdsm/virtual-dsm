@@ -89,14 +89,17 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I create a growable disk?
 
-    By default, the entire capacity of the disk is reserved in advance. To create a growable disk that only allocates space that is actually used, add the following environment variable:
+    By default, the entire capacity of the disk is reserved in advance. To create a growable disk that only allocates space that is actually used, add the following environment variables:
 
     ```yaml
     environment:
+      ALLOCATE: "N"
       DISK_FMT: "qcow2"
     ```
 
-    This can also be used to convert any existing disks to the ```qcow2``` format.
+    This can also be used to convert your existing disks to the ```qcow2``` format.
+
+    Please note that disabling preallocation will negatively affect write performance any time the image needs to grow.
 
   * ### How do I increase the amount of CPU or RAM?
 
