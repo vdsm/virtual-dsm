@@ -138,7 +138,12 @@ convertDisk() {
 
   case "$DST_FMT" in
     qcow2)
-      CONV_FLAGS="$CONV_FLAGS -c -o $DISK_FLAGS"
+      if [[ "$ALLOCATE" == [Nn]* ]]; then
+        CONV_FLAGS="$CONV_FLAGS -c"
+      fi
+      if [ -n "$DISK_FLAGS" ]; then
+        CONV_FLAGS="$CONV_FLAGS -o $DISK_FLAGS"
+      fi
       ;;
   esac
 
@@ -187,9 +192,16 @@ createDisk() {
       fi
       ;;
     qcow2)
-      if ! qemu-img create -f "$DISK_FMT" -o "$DISK_FLAGS" -- "$DISK_FILE" "$DISK_SPACE" ; then
-        rm -f "$DISK_FILE"
-        error "$FAIL" && exit 70
+      if [ -z "$DISK_FLAGS" ]; then
+        if ! qemu-img create -f "$DISK_FMT" -- "$DISK_FILE" "$DISK_SPACE" ; then
+          rm -f "$DISK_FILE"
+          error "$FAIL" && exit 70
+        fi
+      else
+        if ! qemu-img create -f "$DISK_FMT" -o "$DISK_FLAGS" -- "$DISK_FILE" "$DISK_SPACE" ; then
+          rm -f "$DISK_FILE"
+          error "$FAIL" && exit 70
+        fi
       fi
       ;;
   esac
@@ -276,6 +288,14 @@ addDisk () {
 }
 
 DISK_EXT="$(fmt2ext "$DISK_FMT")" || exit $?
+
+if [[ "$ALLOCATE" != [Nn]* ]]; then
+  if [ -z "$DISK_FLAGS" ]; then
+    DISK_FLAGS="preallocation=metadata"
+  else
+    DISK_FLAGS="preallocation=metadata,$DISK_FLAGS"
+  fi
+fi
 
 DISK1_FILE="$STORAGE/data"
 if [[ ! -f "$DISK1_FILE.img" ]] && [[ -f "$STORAGE/data${DISK_SIZE}.img" ]]; then
