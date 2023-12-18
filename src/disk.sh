@@ -209,13 +209,13 @@ addDisk () {
   local DISK_INDEX=$6
   local DISK_ADDRESS=$7
   local DISK_FMT=$8
-  local CUR_SIZE DATA_SIZE
-
   local DISK_FILE="$DISK_BASE.$DISK_EXT"
-  local DIR=$(dirname "$DISK_FILE")
+  local FS DIR CUR_SIZE DATA_SIZE
+
+  DIR=$(dirname "$DISK_FILE")
   [ ! -d "$DIR" ] && return 0
 
-  local FS=$(stat -f -c %T "$DIR")
+  FS=$(stat -f -c %T "$DIR")
   if [[ "$FS" == "overlay"* ]]; then
     info "Warning: the filesystem of $DIR is OverlayFS, this usually means it was binded to an invalid path!"
   fi
