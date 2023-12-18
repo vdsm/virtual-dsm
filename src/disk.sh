@@ -86,7 +86,7 @@ resizeDisk() {
   local SPACE SPACE_GB
 
   local GB=$(( (CUR_SIZE + 1073741823)/1073741824 ))
-  info "Resizing $DISK_DESC from ${GB}G to $DISK_SPACE .."
+  info "Resizing $DISK_DESC from ${GB}G to $DISK_SPACE..."
   local FAIL="Could not resize $DISK_FMT file of $DISK_DESC ($DISK_FILE) from ${GB}G to $DISK_SPACE .."
 
   local REQ=$((DATA_SIZE-CUR_SIZE))
@@ -127,6 +127,8 @@ resizeDisk() {
       fi
       ;;
   esac
+
+  return 0
 }
 
 convertDisk() {
@@ -134,8 +136,12 @@ convertDisk() {
   local SOURCE_FMT=$2
   local DST_FILE=$3
   local DST_FMT=$4
+  local DISK_BASE=$5
+  local DISK_DESC=$6
   local CONV_FLAGS="-p"
   local DISK_OPTS="$DISK_ALLOC"
+
+  info "Converting $DISK_DESC to $DST_FMT, please wait until completed..."
 
   case "$DST_FMT" in
     qcow2)
@@ -146,8 +152,20 @@ convertDisk() {
       ;;
   esac
 
+  local TMP_FILE="$DISK_BASE.tmp"
+  rm -f "$TMP_FILE"
+
   # shellcheck disable=SC2086
-  qemu-img convert -f "$SOURCE_FMT" $CONV_FLAGS -o "$DISK_OPTS" -O "$DST_FMT" -- "$SOURCE_FILE" "$DST_FILE"
+  if ! qemu-img convert -f "$SOURCE_FMT" $CONV_FLAGS -o "$DISK_OPTS" -O "$DST_FMT" -- "$SOURCE_FILE" "$TMP_FILE"; then
+    rm -f "$TMP_FILE"
+    error "Failed to convert $DISK_DESC to $DST_FMT format." && exit 79
+  fi
+
+  mv "$TMP_FILE" "$DST_FILE"
+  rm -f "$SOURCE_FILE"
+  info "Conversion of $DISK_DESC to $DST_FMT completed succesfully!"
+
+  return 0
 }
 
 createDisk() {
@@ -198,6 +216,8 @@ createDisk() {
       fi
       ;;
   esac
+
+  return 0
 }
 
 addDisk () {
@@ -240,19 +260,7 @@ addDisk () {
     local PREV_FILE="$DISK_BASE.$PREV_EXT"
 
     if [ -f "$PREV_FILE" ] ; then
-      info "Starting conversion of $DISK_DESC to $DISK_FMT format, please wait until completed..."
-
-      local TMP_FILE="$DISK_BASE.tmp"
-      rm -f "$TMP_FILE"
-
-      if ! convertDisk "$PREV_FILE" "$PREV_FMT" "$TMP_FILE" "$DISK_FMT" ; then
-        rm -f "$TMP_FILE"
-        error "Failed to convert $DISK_DESC to $DISK_FMT format." && exit 79
-      fi
-
-      mv "$TMP_FILE" "$DISK_FILE"
-      rm -f "$PREV_FILE"
-      info "Conversion of $DISK_DESC completed succesfully!"
+      convertDisk "$PREV_FILE" "$PREV_FMT" "$DISK_FILE" "$DISK_FMT" "$DISK_BASE" "$DISK_DESC" || exit $?
     fi
   fi
 
