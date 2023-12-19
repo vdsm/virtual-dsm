@@ -269,6 +269,13 @@ addDisk () {
   if [[ "$FS" == "overlay"* ]]; then
     info "Warning: the filesystem of $DIR is OverlayFS, this usually means it was binded to an invalid path!"
   fi
+  if [[ "$FS" == "btrfs"* ]]; then
+    FA=$(lsattr -d "$DIR")
+    if [[ "$FA" != *"C"* ]]; then
+      info "Warning: the filesystem of $DIR is BTRFS, and COW (copy on write) is not disabled for that folder!"
+      info "This will negatively affect write performance, please empty the folder and disable COW (chattr +C <path>)."
+    fi
+  fi
 
   [ -z "$DISK_SPACE" ] && DISK_SPACE="16G"
   DISK_SPACE=$(echo "$DISK_SPACE" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
