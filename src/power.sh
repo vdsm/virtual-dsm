@@ -4,7 +4,7 @@ set -Eeuo pipefail
 # Configure QEMU for graceful shutdown
 
 QEMU_PORT=7100
-QEMU_TIMEOUT=50
+QEMU_TIMEOUT=55
 QEMU_PID="/run/qemu.pid"
 QEMU_COUNT="/run/qemu.count"
 
@@ -66,6 +66,10 @@ _graceful_shutdown() {
     fi
 
   done
+
+  if [ "$(cat $QEMU_COUNT)" -ge "$QEMU_TIMEOUT" ]; then
+    echo && error "Shutdown timeout reached, forcefully quitting.."
+  fi
 
   echo && echo "❯ Quitting..."
   echo 'quit' | nc -q 1 -w 1 localhost "$QEMU_PORT" >/dev/null 2>&1 || true
