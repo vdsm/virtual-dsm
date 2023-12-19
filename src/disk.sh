@@ -260,7 +260,7 @@ addDisk () {
   local DISK_ADDRESS=$7
   local DISK_FMT=$8
   local DISK_FILE="$DISK_BASE.$DISK_EXT"
-  local DIR FS DATA_SIZE PREV_FMT PREV_EXT CUR_SIZE
+  local DIR FS FA DATA_SIZE PREV_FMT PREV_EXT CUR_SIZE
 
   DIR=$(dirname "$DISK_FILE")
   [ ! -d "$DIR" ] && return 0
@@ -270,7 +270,12 @@ addDisk () {
     info "Warning: the filesystem of $DIR is OverlayFS, this usually means it was binded to an invalid path!"
   fi
   if [[ "$FS" == "btrfs"* ]]; then
-    FA=$(lsattr -d "$DIR")
+    if [ -f "$DISK_FILE" ] ; then
+      FA=$(lsattr "$DISK_FILE")
+      [[ "$FA" == *"C"* ]] && FA=$(lsattr -d "$DIR")
+    else
+      FA=$(lsattr -d "$DIR")
+    fi
     if [[ "$FA" != *"C"* ]]; then
       info "Warning: the filesystem of $DIR is BTRFS, and COW (copy on write) is not disabled for that folder!"
       info "This will negatively affect write performance, please empty the folder and disable COW (chattr +C <path>)."
