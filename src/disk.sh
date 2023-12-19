@@ -146,7 +146,7 @@ resizeDisk() {
   DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
   local REQ=$((DATA_SIZE-CUR_SIZE))
   (( REQ < 1 )) && error "Shrinking disks is not supported yet, please increase ${DISK_DESC^^}_SIZE." && exit 71
-  
+
   if [[ "$ALLOCATE" != [Nn]* ]]; then
 
     # Check free diskspace
