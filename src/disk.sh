@@ -84,15 +84,16 @@ createDisk() {
   local DISK_FMT=$4
   local DIR SPACE DATA_SIZE
 
+  DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
+
   if [[ "$ALLOCATE" != [Nn]* ]]; then
 
     # Check free diskspace
     DIR=$(dirname "$DISK_FILE")
     SPACE=$(df --output=avail -B 1 "$DIR" | tail -n 1)
-    local SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
-    DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
 
     if (( DATA_SIZE > SPACE )); then
+      local SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
       error "Not enough free space to create a $DISK_DESC of $DISK_SPACE in $DIR, it has only $SPACE_GB GB available..."
       error "Please specify a smaller ${DISK_DESC^^}_SIZE or disable preallocation by setting ALLOCATE=N." && exit 76
     fi
@@ -105,7 +106,7 @@ createDisk() {
       if [[ "$ALLOCATE" == [Nn]* ]]; then
 
         # Create an empty file
-        if ! truncate -s "$DISK_SPACE" "$DISK_FILE"; then
+        if ! truncate -s "$DATA_SIZE" "$DISK_FILE"; then
           rm -f "$DISK_FILE"
           error "$FAIL" && exit 77
         fi
@@ -113,8 +114,8 @@ createDisk() {
       else
 
         # Create an empty file
-        if ! fallocate -l "$DISK_SPACE" "$DISK_FILE"; then
-          if ! truncate -s "$DISK_SPACE" "$DISK_FILE"; then
+        if ! fallocate -l "$DATA_SIZE" "$DISK_FILE"; then
+          if ! truncate -s "$DATA_SIZE" "$DISK_FILE"; then
             rm -f "$DISK_FILE"
             error "$FAIL" && exit 77
           fi
@@ -125,7 +126,7 @@ createDisk() {
     qcow2)
       local DISK_OPTS="$DISK_ALLOC"
       [ -n "$DISK_FLAGS" ] && DISK_OPTS="$DISK_OPTS,$DISK_FLAGS"
-      if ! qemu-img create -f "$DISK_FMT" -o "$DISK_OPTS" -- "$DISK_FILE" "$DISK_SPACE" ; then
+      if ! qemu-img create -f "$DISK_FMT" -o "$DISK_OPTS" -- "$DISK_FILE" "$DATA_SIZE" ; then
         rm -f "$DISK_FILE"
         error "$FAIL" && exit 70
       fi
@@ -152,9 +153,9 @@ resizeDisk() {
     # Check free diskspace
     DIR=$(dirname "$DISK_FILE")
     SPACE=$(df --output=avail -B 1 "$DIR" | tail -n 1)
-    local SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
 
     if (( REQ > SPACE )); then
+      local SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
       error "Not enough free space to resize $DISK_DESC to $DISK_SPACE in $DIR, it has only $SPACE_GB GB available.."
       error "Please specify a smaller ${DISK_DESC^^}_SIZE or disable preallocation by setting ALLOCATE=N." && exit 74
     fi
@@ -169,15 +170,15 @@ resizeDisk() {
       if [[ "$ALLOCATE" == [Nn]* ]]; then
 
         # Resize file by changing its length
-        if ! truncate -s "$DISK_SPACE" "$DISK_FILE"; then
+        if ! truncate -s "$DATA_SIZE" "$DISK_FILE"; then
           error "$FAIL" && exit 75
         fi
 
       else
 
         # Resize file by allocating more space
-        if ! fallocate -l "$DISK_SPACE" "$DISK_FILE"; then
-          if ! truncate -s "$DISK_SPACE" "$DISK_FILE"; then
+        if ! fallocate -l "$DATA_SIZE" "$DISK_FILE"; then
+          if ! truncate -s "$DATA_SIZE" "$DISK_FILE"; then
             error "$FAIL" && exit 75
           fi
         fi
@@ -185,7 +186,7 @@ resizeDisk() {
       fi
       ;;
     qcow2)
-      if ! qemu-img resize -f "$DISK_FMT" "--$DISK_ALLOC" "$DISK_FILE" "$DISK_SPACE" ; then
+      if ! qemu-img resize -f "$DISK_FMT" "--$DISK_ALLOC" "$DISK_FILE" "$DATA_SIZE" ; then
         error "$FAIL" && exit 72
       fi
       ;;
@@ -215,9 +216,9 @@ convertDisk() {
     DIR=$(dirname "$TMP_FILE")
     CUR_SIZE=$(getSize "$SOURCE_FILE")
     SPACE=$(df --output=avail -B 1 "$DIR" | tail -n 1)
-    local SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
 
     if (( CUR_SIZE > SPACE )); then
+      local SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
       error "Not enough free space to convert $DISK_DESC to $DST_FMT in $DIR, it has only $SPACE_GB GB available..."
       error "Please free up some disk space or disable preallocation by setting ALLOCATE=N." && exit 76
     fi
@@ -225,14 +226,12 @@ convertDisk() {
 
   info "Converting $DISK_DESC to $DST_FMT, please wait until completed..."
 
-  case "$DST_FMT" in
-    qcow2)
+  if [[ "$DST_FMT" != "raw" ]]; then
       if [[ "$ALLOCATE" == [Nn]* ]]; then
         CONV_FLAGS="$CONV_FLAGS -c"
       fi
       [ -n "$DISK_FLAGS" ] && DISK_OPTS="$DISK_OPTS,$DISK_FLAGS"
-      ;;
-  esac
+  fi
 
   rm -f "$TMP_FILE"
 
@@ -240,6 +239,15 @@ convertDisk() {
   if ! qemu-img convert -f "$SOURCE_FMT" $CONV_FLAGS -o "$DISK_OPTS" -O "$DST_FMT" -- "$SOURCE_FILE" "$TMP_FILE"; then
     rm -f "$TMP_FILE"
     error "Failed to convert $DISK_DESC to $DST_FMT format in $DIR, is there enough space available?" && exit 79
+  fi
+
+  if [[ "$DST_FMT" == "raw" ]]; then
+      if [[ "$ALLOCATE" != [Nn]* ]]; then
+        CUR_SIZE=$(stat -c%s "$TMP_FILE")
+        if ! fallocate -l "$CUR_SIZE" "$TMP_FILE"; then
+            info "Failed to allocate $CUR_SIZE bytes for $TMP_FILE"
+        fi
+      fi
   fi
 
   rm -f "$SOURCE_FILE"
@@ -287,7 +295,11 @@ addDisk () {
   DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
 
   if (( DATA_SIZE < 6442450944 )); then
-    error "Please increase ${DISK_DESC^^}_SIZE to at least 6 GB." && exit 73
+    if (( DATA_SIZE < 1 )); then
+      error "Invalid value for ${DISK_DESC^^}_SIZE: $DISK_SPACE" && exit 73
+    else
+      error "Please increase ${DISK_DESC^^}_SIZE to at least 6 GB." && exit 73
+    fi
   fi
 
   if ! [ -f "$DISK_FILE" ] ; then
