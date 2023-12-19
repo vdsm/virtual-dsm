@@ -3,12 +3,12 @@ set -Eeuo pipefail
 
 # Docker environment variables
 
-: ${DISK_IO:='native'}                          # I/O Mode, can be set to 'native', 'threads' or 'io_turing'
-: ${DISK_FMT:='raw'}                            # Disk file format, 'raw' by default for best performance
-: ${DISK_CACHE:='none'}                         # Caching mode, can be set to 'writeback' for better performance
-: ${DISK_DISCARD:='on'}                         # Controls whether unmap (TRIM) commands are passed to the host.
-: ${DISK_ROTATION:='1'}                         # Rotation rate, set to 1 for SSD storage and increase for HDD
-: ${DISK_FLAGS:='nocow=on,cluster_size=2M'}     # Specifies the options for use with the qcow2 disk format
+: ${DISK_IO:='native'}          # I/O Mode, can be set to 'native', 'threads' or 'io_turing'
+: ${DISK_FMT:='raw'}            # Disk file format, 'raw' by default for best performance
+: ${DISK_CACHE:='none'}         # Caching mode, can be set to 'writeback' for better performance
+: ${DISK_DISCARD:='on'}         # Controls whether unmap (TRIM) commands are passed to the host.
+: ${DISK_ROTATION:='1'}         # Rotation rate, set to 1 for SSD storage and increase for HDD
+: ${DISK_FLAGS:='nocow=on'}     # Specifies the options for use with the qcow2 disk format
 
 BOOT="$STORAGE/$BASE.boot.img"
 SYSTEM="$STORAGE/$BASE.system.img"
@@ -17,10 +17,11 @@ SYSTEM="$STORAGE/$BASE.system.img"
 [ ! -f "$SYSTEM" ] && error "Virtual DSM system-image does not exist ($SYSTEM)" && exit 82
 
 DISK_OPTS="\
-    -device virtio-scsi-pci,id=hw-synoboot,bus=pcie.0,addr=0xa \
+    -object iothread,id=io1 -object iothread,id=io2 \
+    -device virtio-scsi-pci,id=hw-synoboot,iothread=io1,bus=pcie.0,addr=0xa \
     -drive file=$BOOT,if=none,id=drive-synoboot,format=raw,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on \
     -device scsi-hd,bus=hw-synoboot.0,channel=0,scsi-id=0,lun=0,drive=drive-synoboot,id=synoboot0,rotation_rate=$DISK_ROTATION,bootindex=1 \
-    -device virtio-scsi-pci,id=hw-synosys,bus=pcie.0,addr=0xb \
+    -device virtio-scsi-pci,id=hw-synosys,iothread=io1,bus=pcie.0,addr=0xb \
     -drive file=$SYSTEM,if=none,id=drive-synosys,format=raw,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on \
     -device scsi-hd,bus=hw-synosys.0,channel=0,scsi-id=0,lun=0,drive=drive-synosys,id=synosys0,rotation_rate=$DISK_ROTATION,bootindex=2"
 
@@ -306,7 +307,7 @@ addDisk () {
   fi
 
   DISK_OPTS="$DISK_OPTS \
-    -device virtio-scsi-pci,id=hw-$DISK_ID,bus=pcie.0,addr=$DISK_ADDRESS \
+    -device virtio-scsi-pci,id=hw-$DISK_ID,iothread=io2,bus=pcie.0,addr=$DISK_ADDRESS \
     -drive file=$DISK_FILE,if=none,id=drive-$DISK_ID,format=$DISK_FMT,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on \
     -device scsi-hd,bus=hw-$DISK_ID.0,channel=0,scsi-id=0,lun=0,drive=drive-$DISK_ID,id=$DISK_ID,rotation_rate=$DISK_ROTATION,bootindex=$DISK_INDEX"
 
@@ -381,7 +382,7 @@ addDevice () {
   [ ! -b "$DISK_DEV" ] && error "Device $DISK_DEV cannot be found! Please add it to the 'devices' section of your compose file." && exit 55
 
   DISK_OPTS="$DISK_OPTS \
-    -device virtio-scsi-pci,id=hw-$DISK_ID,bus=pcie.0,addr=$DISK_ADDRESS \
+    -device virtio-scsi-pci,id=hw-$DISK_ID,iothread=io2,bus=pcie.0,addr=$DISK_ADDRESS \
     -drive file=$DISK_DEV,if=none,id=drive-$DISK_ID,format=raw,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on \
     -device scsi-hd,bus=hw-$DISK_ID.0,channel=0,scsi-id=0,lun=0,drive=drive-$DISK_ID,id=$DISK_ID,rotation_rate=$DISK_ROTATION,bootindex=$DISK_INDEX"
 
