@@ -82,7 +82,7 @@ createDisk() {
   local DISK_SPACE=$2
   local DISK_DESC=$3
   local DISK_FMT=$4
-  local DIR SPACE DATA_SIZE
+  local DATA_SIZE DIR SPACE
 
   DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
 
@@ -99,7 +99,8 @@ createDisk() {
     fi
   fi
 
-  local FAIL="Could not create a $DISK_SPACE $DISK_FMT file for $DISK_DESC ($DISK_FILE)"
+  info "Creating a $DISK_TYPE $DISK_DESC image in $DISK_FMT format with a size of $DISK_SPACE..."
+  local FAIL="Could not create a $DISK_TYPE $DISK_FMT $DISK_DESC image of $DISK_SPACE ($DISK_FILE)"
 
   case "${DISK_FMT,,}" in
     raw)
@@ -163,7 +164,7 @@ resizeDisk() {
 
   local GB=$(( (CUR_SIZE + 1073741823)/1073741824 ))
   info "Resizing $DISK_DESC from ${GB}G to $DISK_SPACE..."
-  local FAIL="Could not resize $DISK_FMT file of $DISK_DESC ($DISK_FILE) from ${GB}G to $DISK_SPACE .."
+  local FAIL="Could not resize the $DISK_TYPE $DISK_FMT $DISK_DESC image from ${GB}G to $DISK_SPACE ($DISK_FILE)"
 
   case "${DISK_FMT,,}" in
     raw)
@@ -238,7 +239,7 @@ convertDisk() {
   # shellcheck disable=SC2086
   if ! qemu-img convert -f "$SOURCE_FMT" $CONV_FLAGS -o "$DISK_OPTS" -O "$DST_FMT" -- "$SOURCE_FILE" "$TMP_FILE"; then
     rm -f "$TMP_FILE"
-    error "Failed to convert $DISK_DESC to $DST_FMT format in $DIR, is there enough space available?" && exit 79
+    error "Failed to convert $DISK_TYPE $DISK_DESC image to $DST_FMT format in $DIR, is there enough space available?" && exit 79
   fi
 
   if [[ "$DST_FMT" == "raw" ]]; then
@@ -341,8 +342,10 @@ addDisk () {
 DISK_EXT="$(fmt2ext "$DISK_FMT")" || exit $?
 
 if [[ "$ALLOCATE" == [Nn]* ]]; then
+  DISK_TYPE="growable"
   DISK_ALLOC="preallocation=off"
 else
+  DISK_TYPE="preallocated"
   DISK_ALLOC="preallocation=falloc"
 fi
 
