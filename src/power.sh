@@ -52,17 +52,19 @@ _graceful_shutdown() {
 
   while [ "$(cat $QEMU_COUNT)" -lt "$QEMU_TIMEOUT" ]; do
 
-    # Increase the counter
-    echo $(($(cat $QEMU_COUNT)+1)) > "$QEMU_COUNT"
-
     # Try to connect to qemu
     if echo 'info version'| nc -q 1 -w 1 localhost "$QEMU_PORT" >/dev/null 2>&1 ; then
 
       sleep 1
 
-      cnt="$(cat $QEMU_COUNT)/$QEMU_TIMEOUT"
-      [[ "$DEBUG" == [Yy1]* ]] && info "Shutting down, waiting... ($cnt)"
+      # Increase the counter
+      cnt=$(($(cat $QEMU_COUNT)+1))
+      echo $cnt > "$QEMU_COUNT"
 
+      [[ "$DEBUG" == [Yy1]* ]] && info "Shutting down, waiting... ($cnt/$QEMU_TIMEOUT)"
+
+    else
+      break 
     fi
 
   done
