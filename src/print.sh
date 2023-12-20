@@ -20,7 +20,7 @@ do
   # Check if not shutting down
   [ -f "$shutdown" ] && exit 1
 
-  sleep $delay
+  sleep "$delay"
   [[ "$delay" == "1" ]] && delay="3"
 
   [ -f "$shutdown" ] && exit 1
@@ -46,13 +46,13 @@ do
   [[ "$port" == "null" ]] && error "$resp_err $json" && continue
   [ -z "$port" ] && continue
 
-  if [[ "$DHCP" != [Yy1]* ]]; then
+  { ip=$(echo "$json" | jq -r '.data.data.ip.data[] | select((.name=="eth0") and has("ip")).ip'); rc=$?; } || :
+  (( rc != 0 )) && error "$jq_err $rc ( $json )" && continue
+  [[ "$ip" == "null" ]] && error "$resp_err $json" && continue
+
+  if [ -z "$ip" ]; then
+    [[ "$DHCP" == [Yy1]* ]] && continue
     ip="20.20.20.21"
-  else
-    { ip=$(echo "$json" | jq -r '.data.data.ip.data[] | select((.name=="eth0") and has("ip")).ip'); rc=$?; } || :
-    (( rc != 0 )) && error "$jq_err $rc ( $json )" && continue
-    [[ "$ip" == "null" ]] && error "$resp_err $json" && continue
-    [ -z "$ip" ] && continue
   fi
 
   echo "$ip:$port" > $file
