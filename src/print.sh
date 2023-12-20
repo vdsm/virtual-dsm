@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+: ${DHCP:='N'}
+
 info () { printf "%b%s%b" "\E[1;34m❯ \E[1;36m" "$1" "\E[0m\n" >&2; }
 error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: $1" "\E[0m\n" >&2; }
 
+delay="1"
 file="/run/dsm.url"
 shutdown="/run/qemu.count"
 url="http://127.0.0.1:2210/read?command=10"
@@ -17,12 +20,13 @@ do
   # Check if not shutting down
   [ -f "$shutdown" ] && exit 1
 
-  sleep 3
+  sleep $delay
+  [[ "$delay" == "1" ]] && delay="3"
 
   [ -f "$shutdown" ] && exit 1
   [ -f "$file" ] && break
 
-  # Retrieve IP from guest VM
+  # Retrieve network info from guest VM
   { json=$(curl -m 20 -sk "$url"); rc=$?; } || :
 
   [ -f "$shutdown" ] && exit 1
@@ -42,10 +46,14 @@ do
   [[ "$port" == "null" ]] && error "$resp_err $json" && continue
   [ -z "$port" ] && continue
 
-  { ip=$(echo "$json" | jq -r '.data.data.ip.data[] | select((.name=="eth0") and has("ip")).ip'); rc=$?; } || :
-  (( rc != 0 )) && error "$jq_err $rc ( $json )" && continue
-  [[ "$ip" == "null" ]] && error "$resp_err $json" && continue
-  [ -z "$ip" ] && continue
+  if [[ "$DHCP" != [Yy1]* ]]; then
+    ip="20.20.20.21"
+  else
+    { ip=$(echo "$json" | jq -r '.data.data.ip.data[] | select((.name=="eth0") and has("ip")).ip'); rc=$?; } || :
+    (( rc != 0 )) && error "$jq_err $rc ( $json )" && continue
+    [[ "$ip" == "null" ]] && error "$resp_err $json" && continue
+    [ -z "$ip" ] && continue
+  fi
 
   echo "$ip:$port" > $file
 
