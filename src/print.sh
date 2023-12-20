@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+: ${DHCP:='N'}
+
 info () { printf "%b%s%b" "\E[1;34m❯ \E[1;36m" "$1" "\E[0m\n" >&2; }
 error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: $1" "\E[0m\n" >&2; }
 
@@ -22,7 +24,7 @@ do
   [ -f "$shutdown" ] && exit 1
   [ -f "$file" ] && break
 
-  # Retrieve IP from guest VM
+  # Retrieve network info from guest VM
   { json=$(curl -m 20 -sk "$url"); rc=$?; } || :
 
   [ -f "$shutdown" ] && exit 1
@@ -45,7 +47,11 @@ do
   { ip=$(echo "$json" | jq -r '.data.data.ip.data[] | select((.name=="eth0") and has("ip")).ip'); rc=$?; } || :
   (( rc != 0 )) && error "$jq_err $rc ( $json )" && continue
   [[ "$ip" == "null" ]] && error "$resp_err $json" && continue
-  [ -z "$ip" ] && continue
+
+  if [ -z "$ip" ]; then
+    [[ "$DHCP" == [Yy1]* ]] && continue
+    ip="20.20.20.21"
+  fi
 
   echo "$ip:$port" > $file
 
