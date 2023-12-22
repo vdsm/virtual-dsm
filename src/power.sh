@@ -67,9 +67,10 @@ _graceful_shutdown() {
 
   if [ "$(cat $QEMU_COUNT)" -ge "$QEMU_TIMEOUT" ]; then
     echo && error "Shutdown timeout reached, forcefully quitting.."
+  else
+    echo && echo "❯ Quitting..."
   fi
 
-  echo && echo "❯ Quitting..."
   echo 'quit' | nc -q 1 -w 1 localhost "$QEMU_PORT" >/dev/null 2>&1 || true
 
   { pkill -f print.sh || true; } 2>/dev/null

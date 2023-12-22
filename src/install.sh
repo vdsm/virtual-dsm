@@ -70,6 +70,7 @@ else
   TMP="/tmp/dsm"
   SPACE=$(df --output=avail -B 1 /tmp | tail -n 1)
   if (( MIN_SPACE > SPACE )); then
+    DEV="N"
     TMP="$STORAGE/tmp"
     info "Warning: the $FS filesystem of $STORAGE does not support UNIX permissions.."
   fi
@@ -199,14 +200,13 @@ if ((SIZE<250000000)); then
   error "The specified PAT file is probably an update pack as it's too small." && exit 62
 fi
 
+info "Install: Extracting downloaded image..."
+
 if { tar tf "$PAT"; } >/dev/null 2>&1; then
 
-  info "Install: Extracting downloaded image..."
   tar xpf "$PAT" -C "$TMP/."
 
 else
-
-  info "Install: Extracting downloaded image..."
 
   export LD_LIBRARY_PATH="/run/extract"
 

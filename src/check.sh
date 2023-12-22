@@ -10,7 +10,18 @@ file="/run/dsm.url"
 location=$(cat "$file")
 
 if ! curl -m 20 -ILfSs "http://$location/" > /dev/null; then
-  echo "Failed to reach page at http://$location" && exit 1
+
+  if [[ "$location" == "20.20"* ]]; then
+    ip="20.20.20.1"
+    port="${location##*:}"
+    echo "Failed to reach DSM at port $port"
+  else
+    echo "Failed to reach DSM at http://$location"
+    ip=$(ip address show dev eth0 | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
+  fi
+
+  echo "You might need to whitelist IP $ip in the DSM firewall." && exit 1
+
 fi
 
 echo "Healthcheck OK"
