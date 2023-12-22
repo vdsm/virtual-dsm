@@ -8,7 +8,7 @@ set -Eeuo pipefail
 : ${DISK_CACHE:='none'}         # Caching mode, can be set to 'writeback' for better performance
 : ${DISK_DISCARD:='on'}         # Controls whether unmap (TRIM) commands are passed to the host.
 : ${DISK_ROTATION:='1'}         # Rotation rate, set to 1 for SSD storage and increase for HDD
-: ${DISK_FLAGS:='nocow=on'}     # Specifies the options for use with the qcow2 disk format
+: ${DISK_FLAGS:=''}     # Specifies the options for use with the qcow2 disk format
 
 BOOT="$STORAGE/$BASE.boot.img"
 SYSTEM="$STORAGE/$BASE.system.img"
@@ -272,8 +272,16 @@ checkFS () {
     info "Warning: the filesystem of $DIR is OverlayFS, this usually means it was binded to an invalid path!"
   fi
 
-  if [[ "$FS" == "btrfs"* ]]; then
-  
+  if [[ "$FS" == "zfs"* ]] || [[ "$FS" == "btrfs"* ]]; then
+    local FLAG="nocow"
+    if [[ "$DISK_FLAGS" != *"$FLAG="* ]]; then
+      if [ -z "$DISK_FLAGS" ]; then
+        DISK_FLAGS="$FLAG=on"
+      else
+        DISK_FLAGS="$DISK_FLAGS,$FLAG=on"
+      fi
+    fi
+
     if [ -f "$DISK_FILE" ] ; then
       FA=$(lsattr "$DISK_FILE")
       [[ "$FA" == *"C"* ]] && FA=$(lsattr -d "$DIR")
@@ -282,8 +290,8 @@ checkFS () {
     fi
 
     if [[ "$FA" != *"C"* ]]; then
-      info "Warning: the filesystem of $DIR is BTRFS, and COW (copy on write) is not disabled for that folder!"
-      info "This will negatively affect write performance, please empty the folder and disable COW (chattr +C <path>)."
+      info "Warning: the filesystem of $DIR is ${FS^^}, and COW (copy on write) is not disabled for that folder!"
+      info "This will negatively affect performance, please empty the folder and disable COW (chattr +C <path>)."
     fi
   fi
 
