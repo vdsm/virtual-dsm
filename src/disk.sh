@@ -272,7 +272,7 @@ checkFS () {
     info "Warning: the filesystem of $DIR is OverlayFS, this usually means it was binded to an invalid path!"
   fi
 
-  if [[ "$FS" == "zfs"* ]] || [[ "$FS" == "btrfs"* ]]; then
+  if [[ "$FS" == "xfs" || "$FS" == "zfs" || "$FS" == "btrfs" || "$FS" == "bcachefs" ]]; then
     local FLAG="nocow"
     if [[ "$DISK_FLAGS" != *"$FLAG="* ]]; then
       if [ -z "$DISK_FLAGS" ]; then
