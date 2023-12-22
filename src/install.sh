@@ -55,11 +55,11 @@ FS=$(stat -f -c %T "$STORAGE")
 if [[ "$FS" == "overlay"* ]]; then
   info "Warning: the filesystem of $STORAGE is OverlayFS, this usually means it was binded to an invalid path!"
 fi
-if [[ "$FS" == "btrfs"* ]]; then
+if [[ "$FS" == "xfs" || "$FS" == "zfs" || "$FS" == "btrfs" || "$FS" == "bcachefs" ]]; then
   FA=$(lsattr -d "$STORAGE")
   if [[ "$FA" != *"C"* ]]; then
-    info "Warning: the filesystem of $STORAGE is BTRFS, and COW (copy on write) is not disabled for that folder!"
-    info "This will negatively affect write performance, please empty the folder and disable COW (chattr +C <path>)."
+    info "Warning: the filesystem of $STORAGE is ${FS^^}, and COW (copy on write) is not disabled for that folder!"
+    info "This will negatively affect performance, please empty the folder and disable COW (chattr +C <path>)."
   fi
 fi
 
