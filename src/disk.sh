@@ -259,6 +259,37 @@ convertDisk() {
   return 0
 }
 
+checkFS () {
+  local DISK_FILE=$1
+  local DIR FS FA
+
+  DIR=$(dirname "$DISK_FILE")
+  [ ! -d "$DIR" ] && return 0
+
+  FS=$(stat -f -c %T "$DIR")
+
+  if [[ "$FS" == "overlay"* ]]; then
+    info "Warning: the filesystem of $DIR is OverlayFS, this usually means it was binded to an invalid path!"
+  fi
+
+  if [[ "$FS" == "btrfs"* ]]; then
+  
+    if [ -f "$DISK_FILE" ] ; then
+      FA=$(lsattr "$DISK_FILE")
+      [[ "$FA" == *"C"* ]] && FA=$(lsattr -d "$DIR")
+    else
+      FA=$(lsattr -d "$DIR")
+    fi
+
+    if [[ "$FA" != *"C"* ]]; then
+      info "Warning: the filesystem of $DIR is BTRFS, and COW (copy on write) is not disabled for that folder!"
+      info "This will negatively affect write performance, please empty the folder and disable COW (chattr +C <path>)."
+    fi
+  fi
+
+  return 0
+}
+
 addDisk () {
   local DISK_ID=$1
   local DISK_BASE=$2
@@ -269,30 +300,13 @@ addDisk () {
   local DISK_ADDRESS=$7
   local DISK_FMT=$8
   local DISK_FILE="$DISK_BASE.$DISK_EXT"
-  local DIR FS FA DATA_SIZE PREV_FMT PREV_EXT CUR_SIZE
+  local DIR DATA_SIZE PREV_FMT PREV_EXT CUR_SIZE
 
   DIR=$(dirname "$DISK_FILE")
   [ ! -d "$DIR" ] && return 0
 
-  FS=$(stat -f -c %T "$DIR")
-  if [[ "$FS" == "overlay"* ]]; then
-    info "Warning: the filesystem of $DIR is OverlayFS, this usually means it was binded to an invalid path!"
-  fi
-  if [[ "$FS" == "btrfs"* ]]; then
-    if [ -f "$DISK_FILE" ] ; then
-      FA=$(lsattr "$DISK_FILE")
-      [[ "$FA" == *"C"* ]] && FA=$(lsattr -d "$DIR")
-    else
-      FA=$(lsattr -d "$DIR")
-    fi
-    if [[ "$FA" != *"C"* ]]; then
-      info "Warning: the filesystem of $DIR is BTRFS, and COW (copy on write) is not disabled for that folder!"
-      info "This will negatively affect write performance, please empty the folder and disable COW (chattr +C <path>)."
-    fi
-  fi
-
   [ -z "$DISK_SPACE" ] && DISK_SPACE="16G"
-  DISK_SPACE=$(echo "$DISK_SPACE" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
+  DISK_SPACE=$(echo "${DISK_SPACE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
   DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
 
   if (( DATA_SIZE < 6442450944 )); then
@@ -302,6 +316,8 @@ addDisk () {
       error "Please increase ${DISK_DESC^^}_SIZE to at least 6 GB." && exit 73
     fi
   fi
+
+  checkFS "$DISK_FILE" || exit $?
 
   if ! [ -f "$DISK_FILE" ] ; then
 
