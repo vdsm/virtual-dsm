@@ -8,7 +8,7 @@ set -Eeuo pipefail
 : ${DISK_CACHE:='none'}         # Caching mode, can be set to 'writeback' for better performance
 : ${DISK_DISCARD:='on'}         # Controls whether unmap (TRIM) commands are passed to the host.
 : ${DISK_ROTATION:='1'}         # Rotation rate, set to 1 for SSD storage and increase for HDD
-: ${DISK_FLAGS:=''}     # Specifies the options for use with the qcow2 disk format
+: ${DISK_FLAGS:=''}             # Specifies the options for use with the qcow2 disk format
 
 BOOT="$STORAGE/$BASE.boot.img"
 SYSTEM="$STORAGE/$BASE.system.img"
