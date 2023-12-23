@@ -11,6 +11,7 @@ trap 'error "Status $? while: $BASH_COMMAND (line $LINENO/$BASH_LINENO)"' ERR
 
 # Docker environment variables
 
+: ${TZ:=''}             # System local timezone
 : ${GPU:='N'}           # Disable GPU passthrough
 : ${KVM:='Y'}           # Enable KVM acceleration
 : ${DEBUG:='N'}         # Disable debugging mode
@@ -69,6 +70,13 @@ getCountry () {
 }
 
 setCountry () {
+
+  [[ "${TZ,,}" == "asia/harbin" ]] && COUNTRY="CN"
+  [[ "${TZ,,}" == "asia/beijing" ]] && COUNTRY="CN"
+  [[ "${TZ,,}" == "asia/urumqi" ]] && COUNTRY="CN"
+  [[ "${TZ,,}" == "asia/kashgar" ]] && COUNTRY="CN"
+  [[ "${TZ,,}" == "asia/shanghai" ]] && COUNTRY="CN"
+  [[ "${TZ,,}" == "asia/chongqing" ]] && COUNTRY="CN"
 
   [ -z "$COUNTRY" ] && getCountry "https://api.ipapi.is" ".location.country_code"
   [ -z "$COUNTRY" ] && getCountry "https://ifconfig.co/json" ".country_iso"
