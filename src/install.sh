@@ -62,8 +62,9 @@ if [[ "$FS" == "xfs" || "$FS" == "zfs" || "$FS" == "btrfs" || "$FS" == "bcachefs
     FA=$(lsattr -d "$STORAGE")
   fi
   if [[ "$FA" != *"C"* ]]; then  
-    info "Warning: the filesystem of $STORAGE is ${FS^^}, and COW (copy on write) is not disabled for that folder!"
-    info "This will negatively affect performance, please empty the folder and disable COW (chattr +C <path>)."
+    error "The filesystem of $STORAGE is ${FS^^}, and COW (copy on write) is not disabled for that folder!"
+    error "Please add the LINUX_IMMUTABLE flag to the 'cap_add' section of your compose file to continue."
+    [[ "$DEBUG" != [Yy1]* ]] && exit 93
   fi
 fi
 
@@ -74,8 +75,7 @@ else
   TMP="/tmp/dsm"
   SPACE=$(df --output=avail -B 1 /tmp | tail -n 1)
   if (( MIN_SPACE > SPACE )); then
-    TMP="$STORAGE/tmp"
-    info "Warning: the $FS filesystem of $STORAGE does not support UNIX permissions.."
+    error "The $FS filesystem of $STORAGE does not support UNIX permissions, and no space left in container.." && exit 83
   fi
 fi
 
