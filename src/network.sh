@@ -183,16 +183,20 @@ closeNetwork () {
 # Create the necessary file structure for /dev/net/tun
 if [ ! -c /dev/net/tun ]; then
   [ ! -d /dev/net ] && mkdir -m 755 /dev/net
-  mknod /dev/net/tun c 10 200
-  chmod 666 /dev/net/tun
+  if mknod /dev/net/tun c 10 200; then
+    chmod 666 /dev/net/tun
+  fi
 fi
 
-[ ! -c /dev/net/tun ] && error "TUN network interface not available..." && exit 25
+if [ ! -c /dev/net/tun ]; then
+  error "Please add the following docker settings to your container: --device=/dev/net/tun" && exit 25
+fi
 
 # Create the necessary file structure for /dev/vhost-net
 if [ ! -c /dev/vhost-net ]; then
-  mknod /dev/vhost-net c 10 238
-  chmod 660 /dev/vhost-net
+  if mknod /dev/vhost-net c 10 238; then
+    chmod 660 /dev/vhost-net
+  fi
 fi
 
 update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
