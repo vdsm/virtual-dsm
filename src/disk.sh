@@ -82,9 +82,11 @@ createDisk() {
   local DISK_SPACE=$2
   local DISK_DESC=$3
   local DISK_FMT=$4
-  local DATA_SIZE DIR SPACE
+  local DATA_SIZE DIR SPACE FA
 
   DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
+
+  rm -f "$DISK_FILE"
 
   if [[ "$ALLOCATE" != [Nn]* ]]; then
 
@@ -104,8 +106,20 @@ createDisk() {
 
   case "${DISK_FMT,,}" in
     raw)
-      if [[ "$ALLOCATE" == [Nn]* ]]; then
 
+      if [[ "${DISK_FLAGS,,}" == *"nocow=on"* ]]; then
+        if ! touch "$DISK_FILE"; then
+          error "$FAIL" && exit 77
+        fi
+        { chattr +C "$DISK_FILE"; } || :
+        FA=$(lsattr "$DISK_FILE")
+        if [[ "$FA" != *"C"* ]]; then
+          error "Failed to disable COW attribute for $DISK_DESC image $DISK_FILE (returned $FA)"
+        fi
+      fi
+
+      if [[ "$ALLOCATE" == [Nn]* ]]; then
+    
         # Create an empty file
         if ! truncate -s "$DATA_SIZE" "$DISK_FILE"; then
           rm -f "$DISK_FILE"
@@ -125,12 +139,22 @@ createDisk() {
       fi
       ;;
     qcow2)
+
       local DISK_OPTS="$DISK_ALLOC"
       [ -n "$DISK_FLAGS" ] && DISK_OPTS="$DISK_OPTS,$DISK_FLAGS"
+
       if ! qemu-img create -f "$DISK_FMT" -o "$DISK_OPTS" -- "$DISK_FILE" "$DATA_SIZE" ; then
         rm -f "$DISK_FILE"
         error "$FAIL" && exit 70
       fi
+
+      if [[ "${DISK_FLAGS,,}" == *"nocow=on"* ]]; then
+        FA=$(lsattr "$DISK_FILE")
+        if [[ "$FA" != *"C"* ]]; then
+          error "Failed to disable COW attribute for $DISK_DESC image $DISK_FILE (returned $FA)"
+        fi
+      fi
+
       ;;
   esac
 
@@ -168,6 +192,7 @@ resizeDisk() {
 
   case "${DISK_FMT,,}" in
     raw)
+
       if [[ "$ALLOCATE" == [Nn]* ]]; then
 
         # Resize file by changing its length
@@ -187,9 +212,11 @@ resizeDisk() {
       fi
       ;;
     qcow2)
+
       if ! qemu-img resize -f "$DISK_FMT" "--$DISK_ALLOC" "$DISK_FILE" "$DATA_SIZE" ; then
         error "$FAIL" && exit 72
       fi
+
       ;;
   esac
 
@@ -227,7 +254,11 @@ convertDisk() {
 
   info "Converting $DISK_DESC to $DST_FMT, please wait until completed..."
 
-  if [[ "$DST_FMT" != "raw" ]]; then
+  if [[ "$DST_FMT" == "raw" ]]; then
+    if [[ "${DISK_FLAGS,,}" == *"nocow=on"* ]]; then
+      DISK_OPTS="$DISK_OPTS,nocow=on"
+    fi
+  else
       if [[ "$ALLOCATE" == [Nn]* ]]; then
         CONV_FLAGS="$CONV_FLAGS -c"
       fi
@@ -244,15 +275,23 @@ convertDisk() {
 
   if [[ "$DST_FMT" == "raw" ]]; then
       if [[ "$ALLOCATE" != [Nn]* ]]; then
+        # Work around qemu-img bug
         CUR_SIZE=$(stat -c%s "$TMP_FILE")
         if ! fallocate -l "$CUR_SIZE" "$TMP_FILE"; then
-            info "Failed to allocate $CUR_SIZE bytes for $TMP_FILE"
+            error "Failed to allocate $CUR_SIZE bytes for $DISK_DESC image $TMP_FILE"
         fi
       fi
   fi
 
   rm -f "$SOURCE_FILE"
   mv "$TMP_FILE" "$DST_FILE"
+
+  if [[ "${DISK_FLAGS,,}" == *"nocow=on"* ]]; then
+    FA=$(lsattr "$DST_FILE")
+    if [[ "$FA" != *"C"* ]]; then
+      error "Failed to disable COW attribute for $DISK_DESC image $DST_FILE (returned $FA)"
+    fi
+  fi
 
   info "Conversion of $DISK_DESC to $DST_FMT completed succesfully!"
 
@@ -261,20 +300,23 @@ convertDisk() {
 
 checkFS () {
   local DISK_FILE=$1
-  local DIR FS
+  local DISK_DESC=$2
+  local DIR FS FA
 
   DIR=$(dirname "$DISK_FILE")
   [ ! -d "$DIR" ] && return 0
 
   FS=$(stat -f -c %T "$DIR")
 
-  if [[ "$FS" == "overlay"* ]]; then
+  if [[ "${FS,,}" == "overlay"* ]]; then
     info "Warning: the filesystem of $DIR is OverlayFS, this usually means it was binded to an invalid path!"
   fi
 
-  if [[ "$FS" == "xfs" || "$FS" == "zfs" || "$FS" == "btrfs" || "$FS" == "bcachefs" ]]; then
+  if [[ "${FS,,}" == "xfs" || "${FS,,}" == "zfs" || "${FS,,}" == "btrfs" || "${FS,,}" == "bcachefs" ]]; then
+
     local FLAG="nocow"
-    if [[ "$DISK_FLAGS" != *"$FLAG="* ]]; then
+
+    if [[ "${DISK_FLAGS,,}" != *"$FLAG="* ]]; then
       if [ -z "$DISK_FLAGS" ]; then
         DISK_FLAGS="$FLAG=on"
       else
@@ -282,20 +324,11 @@ checkFS () {
       fi
     fi
 
-    local FA=""
-    [ -f "$DISK_FILE" ] && FA=$(lsattr "$DISK_FILE")
-
-    if [[ "$FA" == "" || "$FA" == *"C"* ]]; then
-      FA=$(lsattr -d "$DIR")
+    if [ -f "$DISK_FILE" ]; then
+      FA=$(lsattr "$DISK_FILE")
       if [[ "$FA" != *"C"* ]]; then
-        { chattr -R +C "$DIR"; } || :
-        FA=$(lsattr -d "$DIR")
-      fi      
-    fi
-
-    if [[ "$FA" != *"C"* ]]; then
-      info "Warning: the filesystem of $DIR is ${FS^^}, and COW (copy on write) is not disabled for that folder!"
-      info "This will negatively affect performance, please empty the folder and disable COW first (chattr +C <path>)."
+        info "Warning: COW (copy on write) is not disabled for the $DISK_DESC image file in $DIR, this is recommended on ${FS^^} filesystems!"
+      fi
     fi
   fi
 
@@ -329,7 +362,7 @@ addDisk () {
     fi
   fi
 
-  checkFS "$DISK_FILE" || exit $?
+  checkFS "$DISK_FILE" "$DISK_DESC" || exit $?
 
   if ! [ -f "$DISK_FILE" ] ; then
 
