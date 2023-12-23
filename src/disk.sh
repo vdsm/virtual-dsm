@@ -295,7 +295,8 @@ checkFS () {
 
     if [[ "$FA" != *"C"* ]]; then
       info "Warning: the filesystem of $DIR is ${FS^^}, and COW (copy on write) is not disabled for that folder!"
-      info "This will negatively affect performance, please empty the folder and disable COW (chattr +C <path>)."
+      info "This will negatively affect performance, please empty the folder and add the LINUX_IMMUTABLE flag"
+      info "to the 'cap_add' section of your compose file, or disable COW manually by executing: chattr +C <path>"
     fi
   fi
 
