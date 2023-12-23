@@ -261,7 +261,7 @@ convertDisk() {
 
 checkFS () {
   local DISK_FILE=$1
-  local DIR FS FA
+  local DIR FS
 
   DIR=$(dirname "$DISK_FILE")
   [ ! -d "$DIR" ] && return 0
@@ -282,11 +282,15 @@ checkFS () {
       fi
     fi
 
-    if [ -f "$DISK_FILE" ] ; then
-      FA=$(lsattr "$DISK_FILE")
-      [[ "$FA" == *"C"* ]] && FA=$(lsattr -d "$DIR")
-    else
+    local FA=""
+    [ -f "$DISK_FILE" ] && FA=$(lsattr "$DISK_FILE")
+
+    if [[ "$FA" == "" || "$FA" == *"C"* ]]; then
       FA=$(lsattr -d "$DIR")
+      if [[ "$FA" != *"C"* ]]; then
+        { chattr -R +C "$DIR"; } || :
+        FA=$(lsattr -d "$DIR")
+      fi      
     fi
 
     if [[ "$FA" != *"C"* ]]; then
