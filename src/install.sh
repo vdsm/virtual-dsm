@@ -2,7 +2,6 @@
 set -Eeuo pipefail
 
 : ${URL:=''}    # URL of the PAT file to be downloaded.
-: ${DEV:='Y'}   # Controls whether device nodes are created.
 
 if [ -f "$STORAGE"/dsm.ver ]; then
   BASE=$(cat "$STORAGE/dsm.ver")
@@ -100,6 +99,7 @@ fi
 
 # Download the required files from the Synology website
 
+ROOT="Y"
 RDC="$STORAGE/dsm.rd"
 
 if [ ! -f "$RDC" ]; then
@@ -142,7 +142,7 @@ if [ -f "$RDC" ]; then
   { (cd "$TMP" && cpio -idm <"$TMP/rd" 2>/dev/null); rc=$?; } || :
 
   if (( rc != 0 )); then
-    DEV="N"
+    ROOT="N"
     { (cd "$TMP" && fakeroot cpio -idmu <"$TMP/rd" 2>/dev/null); rc=$?; } || :
     (( rc != 0 )) && error "Failed to extract $RDC, reason $rc" && exit 92
   fi
@@ -269,31 +269,46 @@ sfdisk -q "$SYSTEM" < "$PART"
 
 info "Install: Extracting system partition..."
 
+LABEL="1.44.1-42218"
+OFFSET="1048576" # 2048 * 512
+NUMBLOCKS="622560" # (4980480 * 512) / 4096
+
 MOUNT="$TMP/system"
 rm -rf "$MOUNT" && mkdir -p "$MOUNT"
 
 mv "$HDA.tgz" "$HDA.txz"
 
-if [[ "$DEV" != [Nn]* ]]; then
+if [[ "$ROOT" != [Nn]* ]]; then
+
   tar xpfJ "$HDA.txz" --absolute-names -C "$MOUNT/"
-else
-  # Exclude dev/ from tar extract
-  tar xpfJ "$HDA.txz" --absolute-names --exclude="dev" -C "$MOUNT/"
+
 fi
 
 [ -d "$PKG" ] && mv "$PKG/" "$MOUNT/.SynoUpgradePackages/"
 rm -f "$MOUNT/.SynoUpgradePackages/ActiveInsight-"*
 
 [ -f "$HDP.txz" ] && tar xpfJ "$HDP.txz" --absolute-names -C "$MOUNT/"
-[ -f "$IDB.txz" ] && tar xpfJ "$IDB.txz" --absolute-names -C "$MOUNT/usr/syno/synoman/indexdb/"
 
-info "Install: Installing system partition..."
+if [ -f "$IDB.txz" ]; then
+  INDEX_DB="$MOUNT/usr/syno/synoman/indexdb/"
+  mkdir -p "$INDEX_DB"
+  tar xpfJ "$IDB.txz" --absolute-names -C "$INDEX_DB"
+fi
 
-LABEL="1.44.1-42218"
-OFFSET="1048576" # 2048 * 512
-NUMBLOCKS="622560" # (4980480 * 512) / 4096
+if [[ "$ROOT" != [Nn]* ]]; then
 
-mke2fs -q -t ext4 -b 4096 -d "$MOUNT/" -L "$LABEL" -F -E "offset=$OFFSET" "$SYSTEM" "$NUMBLOCKS"
+  info "Install: Installing system partition..."
+
+  mke2fs -q -t ext4 -b 4096 -d "$MOUNT/" -L "$LABEL" -F -E "offset=$OFFSET" "$SYSTEM" "$NUMBLOCKS"
+
+else
+
+  fakeroot -- bash -c "set -Eeu;\
+        tar xpfJ $HDA.txz --absolute-names --skip-old-files -C $MOUNT/;\
+        printf '%b%s%b' '\E[1;34m❯ \E[1;36m' 'Install: Installing system partition...' '\E[0m\n';\
+        mke2fs -q -t ext4 -b 4096 -d $MOUNT/ -L $LABEL -F -E offset=$OFFSET $SYSTEM $NUMBLOCKS"
+
+fi
 
 rm -rf "$MOUNT"
 
