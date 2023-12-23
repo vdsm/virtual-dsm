@@ -82,6 +82,7 @@ createDisk() {
   local DISK_SPACE=$2
   local DISK_DESC=$3
   local DISK_FMT=$4
+  local FS=$5
   local DATA_SIZE DIR SPACE FA
 
   DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
@@ -107,7 +108,7 @@ createDisk() {
   case "${DISK_FMT,,}" in
     raw)
 
-      if [[ "${DISK_FLAGS,,}" == *"nocow=on"* ]]; then
+      if [[ "${FS,,}" == "xfs" || "${FS,,}" == "zfs" || "${FS,,}" == "btrfs" || "${FS,,}" == "bcachefs" ]]; then
         if ! touch "$DISK_FILE"; then
           error "$FAIL" && exit 77
         fi
@@ -148,7 +149,7 @@ createDisk() {
         error "$FAIL" && exit 70
       fi
 
-      if [[ "${DISK_FLAGS,,}" == *"nocow=on"* ]]; then
+      if [[ "${FS,,}" == "xfs" || "${FS,,}" == "zfs" || "${FS,,}" == "btrfs" || "${FS,,}" == "bcachefs" ]]; then
         FA=$(lsattr "$DISK_FILE")
         if [[ "$FA" != *"C"* ]]; then
           error "Failed to disable COW attribute for $DISK_DESC image $DISK_FILE (returned $FA)"
@@ -166,6 +167,7 @@ resizeDisk() {
   local DISK_SPACE=$2
   local DISK_DESC=$3
   local DISK_FMT=$4
+  local FS=$5
   local CUR_SIZE DATA_SIZE DIR SPACE
 
   CUR_SIZE=$(getSize "$DISK_FILE")
@@ -230,6 +232,7 @@ convertDisk() {
   local DST_FMT=$4
   local DISK_BASE=$5
   local DISK_DESC=$6
+  local FS=$7
   local CONV_FLAGS="-p"
   local DISK_OPTS="$DISK_ALLOC"
   local TMP_FILE="$DISK_BASE.tmp"
@@ -255,7 +258,7 @@ convertDisk() {
   info "Converting $DISK_DESC to $DST_FMT, please wait until completed..."
 
   if [[ "$DST_FMT" == "raw" ]]; then
-    if [[ "${DISK_FLAGS,,}" == *"nocow=on"* ]]; then
+    if [[ "${FS,,}" == "xfs" || "${FS,,}" == "zfs" || "${FS,,}" == "btrfs" || "${FS,,}" == "bcachefs" ]]; then
       DISK_OPTS="$DISK_OPTS,nocow=on"
     fi
   else
@@ -286,7 +289,7 @@ convertDisk() {
   rm -f "$SOURCE_FILE"
   mv "$TMP_FILE" "$DST_FILE"
 
-  if [[ "${DISK_FLAGS,,}" == *"nocow=on"* ]]; then
+  if [[ "${FS,,}" == "xfs" || "${FS,,}" == "zfs" || "${FS,,}" == "btrfs" || "${FS,,}" == "bcachefs" ]]; then
     FA=$(lsattr "$DST_FILE")
     if [[ "$FA" != *"C"* ]]; then
       error "Failed to disable COW attribute for $DISK_DESC image $DST_FILE (returned $FA)"
@@ -299,14 +302,13 @@ convertDisk() {
 }
 
 checkFS () {
-  local DISK_FILE=$1
-  local DISK_DESC=$2
-  local DIR FS FA
+  local FS=$1
+  local DISK_FILE=$2
+  local DISK_DESC=$3
+  local DIR FA
 
   DIR=$(dirname "$DISK_FILE")
   [ ! -d "$DIR" ] && return 0
-
-  FS=$(stat -f -c %T "$DIR")
 
   if [[ "${FS,,}" == "overlay"* ]]; then
     info "Warning: the filesystem of $DIR is OverlayFS, this usually means it was binded to an invalid path!"
@@ -345,7 +347,7 @@ addDisk () {
   local DISK_ADDRESS=$7
   local DISK_FMT=$8
   local DISK_FILE="$DISK_BASE.$DISK_EXT"
-  local DIR DATA_SIZE PREV_FMT PREV_EXT CUR_SIZE
+  local DIR DATA_SIZE FS PREV_FMT PREV_EXT CUR_SIZE
 
   DIR=$(dirname "$DISK_FILE")
   [ ! -d "$DIR" ] && return 0
@@ -362,7 +364,8 @@ addDisk () {
     fi
   fi
 
-  checkFS "$DISK_FILE" "$DISK_DESC" || exit $?
+  FS=$(stat -f -c %T "$DIR")
+  checkFS "$FS" "$DISK_FILE" "$DISK_DESC" || exit $?
 
   if ! [ -f "$DISK_FILE" ] ; then
 
@@ -374,7 +377,7 @@ addDisk () {
     PREV_EXT="$(fmt2ext "$PREV_FMT")"
 
     if [ -f "$DISK_BASE.$PREV_EXT" ] ; then
-      convertDisk "$DISK_BASE.$PREV_EXT" "$PREV_FMT" "$DISK_FILE" "$DISK_FMT" "$DISK_BASE" "$DISK_DESC" || exit $?
+      convertDisk "$DISK_BASE.$PREV_EXT" "$PREV_FMT" "$DISK_FILE" "$DISK_FMT" "$DISK_BASE" "$DISK_DESC" "$FS" || exit $?
     fi
   fi
 
@@ -383,12 +386,12 @@ addDisk () {
     CUR_SIZE=$(getSize "$DISK_FILE")
 
     if (( DATA_SIZE > CUR_SIZE )); then
-      resizeDisk "$DISK_FILE" "$DISK_SPACE" "$DISK_DESC" "$DISK_FMT" || exit $?
+      resizeDisk "$DISK_FILE" "$DISK_SPACE" "$DISK_DESC" "$DISK_FMT" "$FS" || exit $?
     fi
 
   else
 
-    createDisk "$DISK_FILE" "$DISK_SPACE" "$DISK_DESC" "$DISK_FMT" || exit $?
+    createDisk "$DISK_FILE" "$DISK_SPACE" "$DISK_DESC" "$DISK_FMT" "$FS" || exit $?
 
   fi
 
