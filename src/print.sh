@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 
 : ${DHCP:='N'}
+: ${VM_NET_DEV:='eth0'}
 
 info () { printf "%b%s%b" "\E[1;34m❯ \E[1;36m" "$1" "\E[0m\n" >&2; }
 error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: $1" "\E[0m\n" >&2; }
@@ -67,7 +68,7 @@ if [[ "$location" != "20.20"* ]]; then
 
 else
 
-  ip=$(ip address show dev eth0 | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
+  ip=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
   port="${location##*:}"
 
   if [[ "$ip" == "172."* ]]; then
