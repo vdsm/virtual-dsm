@@ -29,6 +29,7 @@ RUN apt-get update && apt-get -y upgrade \
         iptables \
         iproute2 \
         dnsmasq \
+        fakeroot \        
         net-tools \
         qemu-utils \
         ca-certificates \
