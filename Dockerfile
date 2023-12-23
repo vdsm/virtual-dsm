@@ -21,7 +21,6 @@ RUN apt-get update && apt-get -y upgrade \
         curl \
         cpio \
         wget \
-        fakeroot \
         fdisk \
         unzip \
         socat \
@@ -30,6 +29,7 @@ RUN apt-get update && apt-get -y upgrade \
         iptables \
         iproute2 \
         dnsmasq \
+        fakeroot \        
         net-tools \
         qemu-utils \
         ca-certificates \
