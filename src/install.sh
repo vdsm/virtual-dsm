@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 
 : ${URL:=''}    # URL of the PAT file to be downloaded.
+: ${DEV:='Y'}   # Controls whether device nodes are created.
 
 if [ -f "$STORAGE"/dsm.ver ]; then
   BASE=$(cat "$STORAGE/dsm.ver")
@@ -69,7 +70,6 @@ else
   TMP="/tmp/dsm"
   SPACE=$(df --output=avail -B 1 /tmp | tail -n 1)
   if (( MIN_SPACE > SPACE )); then
-    DEV="N"
     TMP="$STORAGE/tmp"
     info "Warning: the $FS filesystem of $STORAGE does not support UNIX permissions.."
   fi
@@ -139,8 +139,13 @@ if [ -f "$RDC" ]; then
   { xz -dc <"$RDC" >"$TMP/rd" 2>/dev/null; rc=$?; } || :
   (( rc != 1 )) && error "Failed to unxz $RDC, reason $rc" && exit 91
 
-  { (cd "$TMP" && fakeroot cpio -idm <"$TMP/rd" 2>/dev/null); rc=$?; } || :
-  (( rc != 0 )) && error "Failed to extract $RDC, reason $rc" && exit 92
+  { (cd "$TMP" && cpio -idm <"$TMP/rd" 2>/dev/null); rc=$?; } || :
+
+  if (( rc != 0 )); then
+    DEV="N"
+    { (cd "$TMP" && fakeroot cpio -idmu <"$TMP/rd" 2>/dev/null); rc=$?; } || :
+    (( rc != 0 )) && error "Failed to extract $RDC, reason $rc" && exit 92
+  fi
 
   mkdir -p /run/extract
   for file in $TMP/usr/lib/libcurl.so.4 \
@@ -269,7 +274,12 @@ rm -rf "$MOUNT" && mkdir -p "$MOUNT"
 
 mv "$HDA.tgz" "$HDA.txz"
 
-fakeroot tar xpfJ "$HDA.txz" --absolute-names -C "$MOUNT/"
+if [[ "$DEV" != [Nn]* ]]; then
+  tar xpfJ "$HDA.txz" --absolute-names -C "$MOUNT/"
+else
+  # Exclude dev/ from tar extract
+  tar xpfJ "$HDA.txz" --absolute-names --exclude="dev" -C "$MOUNT/"
+fi
 
 [ -d "$PKG" ] && mv "$PKG/" "$MOUNT/.SynoUpgradePackages/"
 rm -f "$MOUNT/.SynoUpgradePackages/ActiveInsight-"*
