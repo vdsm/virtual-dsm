@@ -36,6 +36,7 @@ services:
       - /dev/kvm
     cap_add:
       - NET_ADMIN
+      - LINUX_IMMUTABLE
     ports:
       - 5000:5000
     volumes:
