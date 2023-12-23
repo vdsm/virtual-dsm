@@ -21,6 +21,7 @@ RUN apt-get update && apt-get -y upgrade \
         curl \
         cpio \
         wget \
+        fakeroot \
         fdisk \
         unzip \
         socat \

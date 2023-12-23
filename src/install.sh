@@ -2,7 +2,6 @@
 set -Eeuo pipefail
 
 : ${URL:=''}    # URL of the PAT file to be downloaded.
-: ${DEV:='Y'}   # Controls whether device nodes are created.
 
 if [ -f "$STORAGE"/dsm.ver ]; then
   BASE=$(cat "$STORAGE/dsm.ver")
@@ -140,15 +139,8 @@ if [ -f "$RDC" ]; then
   { xz -dc <"$RDC" >"$TMP/rd" 2>/dev/null; rc=$?; } || :
   (( rc != 1 )) && error "Failed to unxz $RDC, reason $rc" && exit 91
 
-  if [[ "$DEV" == [Nn]* ]]; then
-    # Exclude dev/ from cpio extract
-    { (cd "$TMP" && cpio -it < "$TMP/rd" | grep -Ev 'dev/' | while read -r entry; do cpio -idm "$entry" < "$TMP/rd" 2>/dev/null; done); rc=$?; } || :
-    (( rc != 0 )) && error "Failed to extract $RDC, reason $rc" && exit 92
-  else
-    { (cd "$TMP" && cpio -idm <"$TMP/rd" 2>/dev/null); rc=$?; } || :
-    (( rc != 0 )) && error "Failed to extract $RDC, reason $rc"
-    (( rc != 0 )) && error "If the container runs unprivileged, please set DEV=N to exclude device nodes." && exit 92
-  fi
+  { (cd "$TMP" && fakeroot cpio -idm <"$TMP/rd" 2>/dev/null); rc=$?; } || :
+  (( rc != 0 )) && error "Failed to extract $RDC, reason $rc" && exit 92
 
   mkdir -p /run/extract
   for file in $TMP/usr/lib/libcurl.so.4 \
@@ -277,12 +269,7 @@ rm -rf "$MOUNT" && mkdir -p "$MOUNT"
 
 mv "$HDA.tgz" "$HDA.txz"
 
-if [[ "$DEV" == [Nn]* ]]; then
-  # Exclude dev/ from tar extract
-  tar xpfJ "$HDA.txz" --absolute-names --exclude="dev" -C "$MOUNT/"
-else
-  tar xpfJ "$HDA.txz" --absolute-names -C "$MOUNT/"
-fi
+fakeroot tar xpfJ "$HDA.txz" --absolute-names -C "$MOUNT/"
 
 [ -d "$PKG" ] && mv "$PKG/" "$MOUNT/.SynoUpgradePackages/"
 rm -f "$MOUNT/.SynoUpgradePackages/ActiveInsight-"*
