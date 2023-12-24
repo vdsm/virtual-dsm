@@ -51,30 +51,18 @@ MIN_ROOT=471859200
 MIN_SPACE=6442450944
 FS=$(stat -f -c %T "$STORAGE")
 
-if [[ "$FS" == "overlay"* ]]; then
+if [[ "${FS,,}" == "overlay"* ]]; then
   info "Warning: the filesystem of $STORAGE is OverlayFS, this usually means it was binded to an invalid path!"
 fi
 
-if [[ "$FS" == "xfs" || "$FS" == "zfs" || "$FS" == "btrfs" || "$FS" == "bcachefs" ]]; then
-  FA=$(lsattr -d "$STORAGE")
-  if [[ "$FA" != *"C"* ]]; then
-    { chattr -R +C "$STORAGE"; } || :
-    FA=$(lsattr -d "$STORAGE")
-  fi
-  if [[ "$FA" != *"C"* ]]; then
-    info "Warning: the filesystem of $STORAGE is ${FS^^}, and COW (copy on write) is not disabled for that folder!"
-    info "This will negatively affect performance, please empty the folder and disable COW first (chattr +C <path>)."
-  fi
-fi
-
-if [[ "$FS" != "fat"* && "$FS" != "vfat"* && "$FS" != "exfat"* && \
-        "$FS" != "ntfs"* && "$FS" != "fuse"* && "$FS" != "msdos"* ]]; then
+if [[ "${FS,,}" != "fat"* && "${FS,,}" != "vfat"* && "${FS,,}" != "exfat"* && \
+        "${FS,,}" != "ntfs"* && "${FS,,}" != "fuse"* && "${FS,,}" != "msdos"* ]]; then
   TMP="$STORAGE/tmp"
 else
   TMP="/tmp/dsm"
   SPACE=$(df --output=avail -B 1 /tmp | tail -n 1)
   if (( MIN_SPACE > SPACE )); then
-    error "The $FS filesystem of $STORAGE does not support UNIX permissions, and no space left in container.." && exit 93
+    error "The ${FS^^} filesystem of $STORAGE does not support UNIX permissions, and no space left in container!" && exit 93
   fi
 fi
 
@@ -84,15 +72,9 @@ rm -rf "$TMP" && mkdir -p "$TMP"
 SPACE=$(df --output=avail -B 1 / | tail -n 1)
 (( MIN_ROOT > SPACE )) && error "Not enough free space in container root, need at least 450 MB available." && exit 96
 
-SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
+SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
 SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
-(( MIN_SPACE > SPACE )) && error "Not enough free space for installation in $STORAGE, have $SPACE_GB GB available but need at least 6 GB." && exit 95
-
-if [[ "$TMP" != "$STORAGE/tmp" ]]; then
-  SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
-  SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
-  (( MIN_SPACE > SPACE )) && error "Not enough free space for installation in $STORAGE, have $SPACE_GB GB available but need at least 6 GB." && exit 94
-fi
+(( MIN_SPACE > SPACE )) && error "Not enough free space for installation in $STORAGE, have $SPACE_GB GB available but need at least 6 GB." && exit 94
 
 # Check if output is to interactive TTY
 if [ -t 1 ]; then
@@ -238,15 +220,29 @@ unzip -q -o "$BOOT".zip -d "$TMP"
 
 SYSTEM="$TMP/sys.img"
 SYSTEM_SIZE=4954537983
+rm -f "$SYSTEM"
 
 # Check free diskspace
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
 SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
 (( SYSTEM_SIZE > SPACE )) && error "Not enough free space to create a 4 GB system disk, have only $SPACE_GB GB available." && exit 97
 
+if ! touch "$SYSTEM"; then
+  error "Could not create file $SYSTEM for the system disk." && exit 98
+fi
+  
+if [[ "${FS,,}" == "xfs" || "${FS,,}" == "zfs" || "${FS,,}" == "btrfs" || "${FS,,}" == "bcachefs" ]]; then
+  { chattr +C "$SYSTEM"; } || :
+  FA=$(lsattr "$SYSTEM")
+  if [[ "$FA" != *"C"* ]]; then
+    error "Failed to disable COW for system image $SYSTEM on ${FS^^} filesystem (returned $FA)"
+  fi
+fi
+
 if ! fallocate -l "$SYSTEM_SIZE" "$SYSTEM"; then
   if ! truncate -s "$SYSTEM_SIZE" "$SYSTEM"; then
-    rm -f "$SYSTEM" && error "Could not allocate a file for the system disk." && exit 98
+    rm -f "$SYSTEM"
+    error "Could not allocate file $SYSTEM for the system disk." && exit 98
   fi
 fi
 
@@ -255,7 +251,11 @@ fi
 
 # Check the filesize
 SIZE=$(stat -c%s "$SYSTEM")
-[[ SIZE -ne SYSTEM_SIZE ]] && rm -f "$SYSTEM" && error "System disk has the wrong size: $SIZE" && exit 90
+
+if [[ SIZE -ne SYSTEM_SIZE ]]; then
+  rm -f "$SYSTEM"
+  error "System disk has the wrong size: $SIZE vs $SYSTEM_SIZE" && exit 90
+fi
 
 PART="$TMP/partition.fdisk"
 
