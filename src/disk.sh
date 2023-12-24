@@ -125,7 +125,7 @@ createDisk() {
         { chattr +C "$DISK_FILE"; } || :
         FA=$(lsattr "$DISK_FILE")
         if [[ "$FA" != *"C"* ]]; then
-          error "Failed to disable COW for $DISK_DESC image $DISK_FILE (returned $FA)"
+          error "Failed to disable COW for $DISK_DESC image $DISK_FILE on ${FS^^} filesystem (returned $FA)"
         fi
       fi
 
@@ -163,7 +163,7 @@ createDisk() {
       if isCow "$FS"; then
         FA=$(lsattr "$DISK_FILE")
         if [[ "$FA" != *"C"* ]]; then
-          error "Failed to disable COW for $DISK_DESC image $DISK_FILE (returned $FA)"
+          error "Failed to disable COW for $DISK_DESC image $DISK_FILE on ${FS^^} filesystem (returned $FA)"
         fi
       fi
 
@@ -302,7 +302,7 @@ convertDisk() {
   if isCow "$FS"; then
     FA=$(lsattr "$DST_FILE")
     if [[ "$FA" != *"C"* ]]; then
-      error "Failed to disable COW for $DISK_DESC image $DST_FILE (returned $FA)"
+      error "Failed to disable COW for $DISK_DESC image $DST_FILE on ${FS^^} filesystem (returned $FA)"
     fi
   fi
 
