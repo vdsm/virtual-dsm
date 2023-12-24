@@ -123,10 +123,6 @@ createDisk() {
           error "$FAIL" && exit 77
         fi
         { chattr +C "$DISK_FILE"; } || :
-        FA=$(lsattr "$DISK_FILE")
-        if [[ "$FA" != *"C"* ]]; then
-          error "Failed to disable COW for $DISK_DESC image $DISK_FILE on ${FS^^} filesystem (returned $FA)"
-        fi
       fi
 
       if [[ "$ALLOCATE" == [Nn]* ]]; then
@@ -159,16 +155,15 @@ createDisk() {
         rm -f "$DISK_FILE"
         error "$FAIL" && exit 70
       fi
-
-      if isCow "$FS"; then
-        FA=$(lsattr "$DISK_FILE")
-        if [[ "$FA" != *"C"* ]]; then
-          error "Failed to disable COW for $DISK_DESC image $DISK_FILE on ${FS^^} filesystem (returned $FA)"
-        fi
-      fi
-
       ;;
   esac
+
+  if isCow "$FS"; then
+    FA=$(lsattr "$DISK_FILE")
+    if [[ "$FA" != *"C"* ]]; then
+      error "Failed to disable COW for $DISK_DESC image $DISK_FILE on ${FS^^} filesystem (returned $FA)"
+    fi
+  fi
 
   return 0
 }
@@ -328,7 +323,7 @@ checkFS () {
     if [ -f "$DISK_FILE" ]; then
       FA=$(lsattr "$DISK_FILE")
       if [[ "$FA" != *"C"* ]]; then
-        info "Warning: COW (copy on write) is not disabled for the $DISK_DESC image file $DISK_FILE, this is recommended on ${FS^^} filesystems!"
+        info "Warning: COW (copy on write) is not disabled for $DISK_DESC image file $DISK_FILE, this is recommended on ${FS^^} filesystems!"
       fi
     fi
   fi
