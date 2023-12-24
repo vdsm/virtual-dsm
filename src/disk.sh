@@ -351,6 +351,8 @@ addDisk () {
   DIR=$(dirname "$DISK_FILE")
   [ ! -d "$DIR" ] && return 0
 
+  [ -z "$DISK_SPACE" ] && DISK_SPACE="16G"
+  DISK_SPACE=$(echo "${DISK_SPACE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
   DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
 
   if (( DATA_SIZE < 6442450944 )); then
@@ -401,9 +403,6 @@ addDisk () {
 }
 
 DISK_EXT="$(fmt2ext "$DISK_FMT")" || exit $?
-
-[ -z "$DISK_SPACE" ] && DISK_SPACE="16G"
-DISK_SPACE=$(echo "${DISK_SPACE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
 
 if [[ "$ALLOCATE" == [Nn]* ]]; then
   DISK_TYPE="growable"
