@@ -77,6 +77,16 @@ getSize() {
   esac
 }
 
+isCow() {
+  local FS=$1
+
+  if [[ "${FS,,}" == "xfs" || "${FS,,}" == "zfs" || "${FS,,}" == "btrfs" || "${FS,,}" == "bcachefs" ]]; then
+    return 0
+  fi
+       
+  return 1
+}
+
 createDisk() {
   local DISK_FILE=$1
   local DISK_SPACE=$2
@@ -108,14 +118,14 @@ createDisk() {
   case "${DISK_FMT,,}" in
     raw)
 
-      if [[ "${FS,,}" == "xfs" || "${FS,,}" == "zfs" || "${FS,,}" == "btrfs" || "${FS,,}" == "bcachefs" ]]; then
+      if isCow "$FS"; then
         if ! touch "$DISK_FILE"; then
           error "$FAIL" && exit 77
         fi
         { chattr +C "$DISK_FILE"; } || :
         FA=$(lsattr "$DISK_FILE")
         if [[ "$FA" != *"C"* ]]; then
-          error "Failed to disable COW attribute for $DISK_DESC image $DISK_FILE (returned $FA)"
+          error "Failed to disable COW for $DISK_DESC image $DISK_FILE (returned $FA)"
         fi
       fi
 
@@ -141,18 +151,19 @@ createDisk() {
       ;;
     qcow2)
 
-      local DISK_OPTS="$DISK_ALLOC"
-      [ -n "$DISK_FLAGS" ] && DISK_OPTS="$DISK_OPTS,$DISK_FLAGS"
+      local DISK_PARAM="$DISK_ALLOC"
+      isCow "$FS" && DISK_PARAM="$DISK_PARAM,nocow=on"
+      [ -n "$DISK_FLAGS" ] && DISK_PARAM="$DISK_PARAM,$DISK_FLAGS"
 
-      if ! qemu-img create -f "$DISK_FMT" -o "$DISK_OPTS" -- "$DISK_FILE" "$DATA_SIZE" ; then
+      if ! qemu-img create -f "$DISK_FMT" -o "$DISK_PARAM" -- "$DISK_FILE" "$DATA_SIZE" ; then
         rm -f "$DISK_FILE"
         error "$FAIL" && exit 70
       fi
 
-      if [[ "${FS,,}" == "xfs" || "${FS,,}" == "zfs" || "${FS,,}" == "btrfs" || "${FS,,}" == "bcachefs" ]]; then
+      if isCow "$FS"; then
         FA=$(lsattr "$DISK_FILE")
         if [[ "$FA" != *"C"* ]]; then
-          error "Failed to disable COW attribute for $DISK_DESC image $DISK_FILE (returned $FA)"
+          error "Failed to disable COW for $DISK_DESC image $DISK_FILE (returned $FA)"
         fi
       fi
 
@@ -233,15 +244,16 @@ convertDisk() {
   local DISK_BASE=$5
   local DISK_DESC=$6
   local FS=$7
-  local CONV_FLAGS="-p"
-  local DISK_OPTS="$DISK_ALLOC"
-  local TMP_FILE="$DISK_BASE.tmp"
-  local DIR CUR_SIZE SPACE
 
   [ -f "$DST_FILE" ] && error "Conversion failed, destination file $DST_FILE already exists?" && exit 79
   [ ! -f "$SOURCE_FILE" ] && error "Conversion failed, source file $SOURCE_FILE does not exists?" && exit 79
 
+  local TMP_FILE="$DISK_BASE.tmp"
+  rm -f "$TMP_FILE"
+
   if [[ "$ALLOCATE" != [Nn]* ]]; then
+
+    local DIR CUR_SIZE SPACE
 
     # Check free diskspace
     DIR=$(dirname "$TMP_FILE")
@@ -257,21 +269,19 @@ convertDisk() {
 
   info "Converting $DISK_DESC to $DST_FMT, please wait until completed..."
 
-  if [[ "$DST_FMT" == "raw" ]]; then
-    if [[ "${FS,,}" == "xfs" || "${FS,,}" == "zfs" || "${FS,,}" == "btrfs" || "${FS,,}" == "bcachefs" ]]; then
-      DISK_OPTS="$DISK_OPTS,nocow=on"
-    fi
-  else
+  local CONV_FLAGS="-p"
+  local DISK_PARAM="$DISK_ALLOC"
+  isCow "$FS" && DISK_PARAM="$DISK_PARAM,nocow=on"
+
+  if [[ "$DST_FMT" != "raw" ]]; then
       if [[ "$ALLOCATE" == [Nn]* ]]; then
         CONV_FLAGS="$CONV_FLAGS -c"
       fi
-      [ -n "$DISK_FLAGS" ] && DISK_OPTS="$DISK_OPTS,$DISK_FLAGS"
+      [ -n "$DISK_FLAGS" ] && DISK_PARAM="$DISK_PARAM,$DISK_FLAGS"
   fi
 
-  rm -f "$TMP_FILE"
-
   # shellcheck disable=SC2086
-  if ! qemu-img convert -f "$SOURCE_FMT" $CONV_FLAGS -o "$DISK_OPTS" -O "$DST_FMT" -- "$SOURCE_FILE" "$TMP_FILE"; then
+  if ! qemu-img convert -f "$SOURCE_FMT" $CONV_FLAGS -o "$DISK_PARAM" -O "$DST_FMT" -- "$SOURCE_FILE" "$TMP_FILE"; then
     rm -f "$TMP_FILE"
     error "Failed to convert $DISK_TYPE $DISK_DESC image to $DST_FMT format in $DIR, is there enough space available?" && exit 79
   fi
@@ -289,10 +299,10 @@ convertDisk() {
   rm -f "$SOURCE_FILE"
   mv "$TMP_FILE" "$DST_FILE"
 
-  if [[ "${FS,,}" == "xfs" || "${FS,,}" == "zfs" || "${FS,,}" == "btrfs" || "${FS,,}" == "bcachefs" ]]; then
+  if isCow "$FS"; then
     FA=$(lsattr "$DST_FILE")
     if [[ "$FA" != *"C"* ]]; then
-      error "Failed to disable COW attribute for $DISK_DESC image $DST_FILE (returned $FA)"
+      error "Failed to disable COW for $DISK_DESC image $DST_FILE (returned $FA)"
     fi
   fi
 
@@ -314,22 +324,11 @@ checkFS () {
     info "Warning: the filesystem of $DIR is OverlayFS, this usually means it was binded to an invalid path!"
   fi
 
-  if [[ "${FS,,}" == "xfs" || "${FS,,}" == "zfs" || "${FS,,}" == "btrfs" || "${FS,,}" == "bcachefs" ]]; then
-
-    local FLAG="nocow"
-
-    if [[ "${DISK_FLAGS,,}" != *"$FLAG="* ]]; then
-      if [ -z "$DISK_FLAGS" ]; then
-        DISK_FLAGS="$FLAG=on"
-      else
-        DISK_FLAGS="$DISK_FLAGS,$FLAG=on"
-      fi
-    fi
-
+  if isCow "$FS"; then
     if [ -f "$DISK_FILE" ]; then
       FA=$(lsattr "$DISK_FILE")
       if [[ "$FA" != *"C"* ]]; then
-        info "Warning: COW (copy on write) is not disabled for the $DISK_DESC image file in $DIR, this is recommended on ${FS^^} filesystems!"
+        info "Warning: COW (copy on write) is not disabled for the $DISK_DESC image file $DISK_FILE, this is recommended on ${FS^^} filesystems!"
       fi
     fi
   fi
@@ -352,8 +351,6 @@ addDisk () {
   DIR=$(dirname "$DISK_FILE")
   [ ! -d "$DIR" ] && return 0
 
-  [ -z "$DISK_SPACE" ] && DISK_SPACE="16G"
-  DISK_SPACE=$(echo "${DISK_SPACE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
   DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
 
   if (( DATA_SIZE < 6442450944 )); then
@@ -404,6 +401,9 @@ addDisk () {
 }
 
 DISK_EXT="$(fmt2ext "$DISK_FMT")" || exit $?
+
+[ -z "$DISK_SPACE" ] && DISK_SPACE="16G"
+DISK_SPACE=$(echo "${DISK_SPACE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
 
 if [[ "$ALLOCATE" == [Nn]* ]]; then
   DISK_TYPE="growable"
