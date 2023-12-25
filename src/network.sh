@@ -192,7 +192,7 @@ if [ ! -c /dev/net/tun ]; then
 fi
 
 if [ ! -c /dev/net/tun ]; then
-  error "Please add the following docker settings to your container: --device=/dev/net/tun" && exit 25
+  error "Please add the following docker setting to your container: --device=/dev/net/tun" && exit 25
 fi
 
 # Create the necessary file structure for /dev/vhost-net
