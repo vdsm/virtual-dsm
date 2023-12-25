@@ -39,7 +39,13 @@ if [[ "$ARCH" == "amd64" && "$KVM" != [Nn]* ]]; then
 
 else
 
-  [[ "$CPU_MODEL" == "host"* ]] && CPU_MODEL="max,$CPU_FEATURES"
+  if [[ "$CPU_MODEL" == "host"* ]]; then
+    if [[ "$ARCH" == "amd64" ]]; then
+      CPU_MODEL="max,$CPU_FEATURES"
+    else
+      CPU_MODEL="qemu64,$CPU_FEATURES"
+    fi
+  fi
 
 fi
 
