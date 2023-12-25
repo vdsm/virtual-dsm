@@ -169,8 +169,6 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
     ```yaml
     environment:
       DHCP: "Y"
-    devices:
-      - /dev/vhost-net
     device_cgroup_rules:
       - 'c *:* rwm'
     ```
