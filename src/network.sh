@@ -15,6 +15,8 @@ set -Eeuo pipefail
 : ${DNSMASQ:='/usr/sbin/dnsmasq'}
 : ${DNSMASQ_CONF_DIR:='/etc/dnsmasq.d'}
 
+ADD_ERR="Please add the following setting to your container:"
+
 # ######################################
 #  Functions
 # ######################################
@@ -53,13 +55,13 @@ configureDHCP() {
   { exec 30>>"$TAP_PATH"; rc=$?; } 2>/dev/null || :
 
   if (( rc != 0 )); then
-    error "Cannot create TAP interface ($rc). Please add the following setting to your container: --device-cgroup-rule='c *:* rwm'" && exit 21
+    error "Cannot create TAP interface ($rc). $ADD_ERR --device-cgroup-rule='c *:* rwm'" && exit 21
   fi
 
   { exec 40>>/dev/vhost-net; rc=$?; } 2>/dev/null || :
 
   if (( rc != 0 )); then
-    error "VHOST can not be found ($rc). Please add the following setting to your container: --device=/dev/vhost-net" && exit 22
+    error "VHOST can not be found ($rc). $ADD_ERR --device=/dev/vhost-net" && exit 22
   fi
 
   NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30"
@@ -98,7 +100,7 @@ configureNAT () {
   { ip link add dev dockerbridge type bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
-    error "Failed to create bridge. Please add the following setting to your container: --cap-add NET_ADMIN" && exit 23
+    error "Failed to create bridge. $ADD_ERR --cap-add NET_ADMIN" && exit 23
   fi
 
   ip address add ${VM_NET_IP%.*}.1/24 broadcast ${VM_NET_IP%.*}.255 dev dockerbridge
@@ -135,7 +137,7 @@ configureNAT () {
   if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
     { sysctl -w net.ipv4.ip_forward=1 ; rc=$?; } || :
     if (( rc != 0 )); then
-      error "IP forwarding is disabled. Please add the following setting to your container: --sysctl net.ipv4.ip_forward=1" && exit 24
+      error "IP forwarding is disabled. $ADD_ERR --sysctl net.ipv4.ip_forward=1" && exit 24
     fi
   fi
 
@@ -189,7 +191,7 @@ if [ ! -c /dev/net/tun ]; then
 fi
 
 if [ ! -c /dev/net/tun ]; then
-  error "TUN device missing. Please add the following setting to your container: --cap-add NET_ADMIN" && exit 25
+  error "TUN device missing. $ADD_ERR --cap-add NET_ADMIN" && exit 25
 fi
 
 # Create the necessary file structure for /dev/vhost-net
