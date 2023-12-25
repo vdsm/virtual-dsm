@@ -154,6 +154,9 @@ configureNAT () {
 
 closeNetwork () {
 
+  exec 30<&- || true
+  exec 40<&- || true
+
   if [[ "$DHCP" == [Yy1]* ]]; then
 
     { pkill -f server.sh || true; } 2>/dev/null
