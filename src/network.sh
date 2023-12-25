@@ -27,7 +27,7 @@ configureDHCP() {
 
   if (( rc != 0 )); then
     error "Cannot create macvtap interface. Please make sure the network type is 'macvlan' and not 'ipvlan',"
-    error "and that the NET_ADMIN capability has been added to the container config: --cap-add NET_ADMIN" && exit 16
+    error "and that the NET_ADMIN capability has been added to the container: --cap-add NET_ADMIN" && exit 16
   fi
 
   while ! ip link set "$VM_NET_TAP" up; do
@@ -53,15 +53,13 @@ configureDHCP() {
   { exec 30>>"$TAP_PATH"; rc=$?; } 2>/dev/null || :
 
   if (( rc != 0 )); then
-    error "Cannot create TAP interface ($rc). Please add the following docker settings to your "
-    error "container: --device-cgroup-rule='c $MAJOR:* rwm' --device=/dev/vhost-net" && exit 21
+    error "Cannot create TAP interface ($rc). Please add the following setting to your container: --device-cgroup-rule='c *:* rwm'" && exit 21
   fi
 
   { exec 40>>/dev/vhost-net; rc=$?; } 2>/dev/null || :
 
   if (( rc != 0 )); then
-    error "VHOST can not be found ($rc). Please add the following "
-    error "docker setting to your container: --device=/dev/vhost-net" && exit 22
+    error "VHOST can not be found ($rc). Please add the following setting to your container: --device=/dev/vhost-net" && exit 22
   fi
 
   NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30"
@@ -100,8 +98,7 @@ configureNAT () {
   { ip link add dev dockerbridge type bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
-    error "Capability NET_ADMIN has not been set most likely. Please add the "
-    error "following docker setting to your container: --cap-add NET_ADMIN" && exit 23
+    error "Failed to create bridge. Please add the following setting to your container: --cap-add NET_ADMIN" && exit 23
   fi
 
   ip address add ${VM_NET_IP%.*}.1/24 broadcast ${VM_NET_IP%.*}.255 dev dockerbridge
@@ -138,7 +135,7 @@ configureNAT () {
   if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
     { sysctl -w net.ipv4.ip_forward=1 ; rc=$?; } || :
     if (( rc != 0 )); then
-      error "Please add the following docker setting to your container: --sysctl net.ipv4.ip_forward=1" && exit 24
+      error "IP forwarding is disabled. Please add the following setting to your container: --sysctl net.ipv4.ip_forward=1" && exit 24
     fi
   fi
 
@@ -192,7 +189,7 @@ if [ ! -c /dev/net/tun ]; then
 fi
 
 if [ ! -c /dev/net/tun ]; then
-  error "Please add the following docker setting to your container: --device=/dev/net/tun" && exit 25
+  error "TUN device missing. Please add the following setting to your container: --cap-add NET_ADMIN" && exit 25
 fi
 
 # Create the necessary file structure for /dev/vhost-net
@@ -216,9 +213,7 @@ fi
 if [[ "$DHCP" == [Yy1]* ]]; then
 
   if [[ "$GATEWAY" == "172."* ]]; then
-    if [[ "$DEBUG" == [Yy1]* ]]; then
-      info "Warning: Are you sure the container is on a macvlan network?"
-    else
+    if [[ "$DEBUG" != [Yy1]* ]]; then
       error "You can only enable DHCP while the container is on a macvlan network!" && exit 26
     fi
   fi
