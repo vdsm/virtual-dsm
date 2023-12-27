@@ -33,19 +33,23 @@ finish() {
   fKill "host.bin"
 
   closeNetwork
+
   sleep 0.5
+  return 0
 }
 
 _graceful_shutdown() {
 
-  set +e
+  local code=$?
   local cnt response
 
-  [ ! -f "$QEMU_PID" ] && exit 130
   [ -f "$QEMU_COUNT" ] && return
-
   echo 0 > "$QEMU_COUNT"
+
+  set +e
   echo && info "Received $1 signal, sending shutdown command..."
+
+  [ ! -f "$QEMU_PID" ] && finish && exit $code
 
   if ! isAlive "$(cat "$QEMU_PID")"; then
     echo && error "QEMU process does not exist?"
@@ -91,7 +95,7 @@ _graceful_shutdown() {
   fi
 
   finish
-  return
+  exit $code
 }
 
 _trap _graceful_shutdown SIGTERM SIGHUP SIGINT SIGABRT SIGQUIT
