@@ -27,6 +27,15 @@ _trap() {
   done
 }
 
+finish() {
+
+  fKill "print.sh"
+  fKill "host.bin"
+
+  closeNetwork
+  sleep 0.5
+}
+
 _graceful_shutdown() {
 
   set +e
@@ -81,13 +90,7 @@ _graceful_shutdown() {
     echo && error "Shutdown timeout reached, forcefully quitting..."
   fi
 
-  fKill "print.sh"
-  fKill "host.bin"
-  pKill "$(cat "$QEMU_PID")"
-
-  closeNetwork
-  sleep 0.5
-
+  finish
   return
 }
 
