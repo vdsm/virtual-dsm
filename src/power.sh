@@ -3,10 +3,19 @@ set -Eeuo pipefail
 
 # Configure QEMU for graceful shutdown
 
+API_CMD=6
+API_TIMEOUT=50
+API_HOST="127.0.0.1:2210"
+
 QEMU_PORT=7100
 QEMU_TIMEOUT=55
 QEMU_PID="/run/qemu.pid"
 QEMU_COUNT="/run/qemu.count"
+
+if [[ "$KVM" == [Nn]* ]]; then
+  API_TIMEOUT=$(( API_TIMEOUT*2 ))
+  QEMU_TIMEOUT=$(( QEMU_TIMEOUT*2 ))
+fi
 
 rm -f "$QEMU_PID"
 rm -f "$QEMU_COUNT"
@@ -40,8 +49,8 @@ _graceful_shutdown() {
   # echo 'system_powerdown' | nc -q 1 -w 1 localhost "${QEMU_PORT}" > /dev/null
 
   # Send shutdown command to guest agent via serial port
-  url="http://127.0.0.1:2210/read?command=6&timeout=50"
-  response=$(curl -sk -m 52 -S "$url" 2>&1)
+  url="http://$API_HOST/read?command=$API_CMD&timeout=$API_TIMEOUT"
+  response=$(curl -sk -m "$(( API_TIMEOUT+2 ))" -S "$url" 2>&1)
 
   if [[ "$response" =~ "\"success\"" ]]; then
 
@@ -72,19 +81,16 @@ _graceful_shutdown() {
   done
 
   if [ "$(cat $QEMU_COUNT)" -ge "$QEMU_TIMEOUT" ]; then
-
     echo && error "Shutdown timeout reached, forcefully quitting..."
-
-    _kill "$(cat "$QEMU_PID")"
-
   else
     echo && echo "❯ Quitting..."
   fi
 
   echo 'quit' | nc -q 1 -w 1 localhost "$QEMU_PORT" >/dev/null 2>&1 || true
 
-  { pkill -f print.sh || true; } 2>/dev/null
-  { pkill -f host.bin || true; } 2>/dev/null
+  _kill "$(cat "$QEMU_PID")"
+  pKill "print.sh"
+  pKill "host.bin"
 
   closeNetwork
   sleep 1
