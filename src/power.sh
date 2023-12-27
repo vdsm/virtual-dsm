@@ -59,7 +59,7 @@ _graceful_shutdown() {
   else
 
     response="${response#*message\"\: \"}"
-    echo && error "Failed to send shutdown command: ${response%%\"*}"
+    echo && error "Forcefully quitting because of: ${response%%\"*}"
 
     _kill "$(cat "$QEMU_PID")"
 
@@ -93,7 +93,7 @@ _graceful_shutdown() {
   pKill "host.bin"
 
   closeNetwork
-  sleep 1
+  sleep 0.5
 
   return
 }
