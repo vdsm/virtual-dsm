@@ -49,12 +49,22 @@ rm -rf "$STORAGE/tmp"
 
 # Helper functions
 
-pKill() {
-
+isAlive() {
   local pid=$1
+
+  if $(kill -0 "$pid" 2>/dev/null); then
+    return 0
+  fi
+
+  return 1
+}
+
+pKill() {
+  local pid=$1
+
   { kill -15 "$pid" || true; } 2>/dev/null
-  
-  while $(kill -0 "$pid" 2>/dev/null); do
+
+  while isAlive "$pid"; do
     sleep 0.1
   done
 
@@ -62,11 +72,11 @@ pKill() {
 }
 
 fKill () {
-
   local name=$1
+
   { pkill -f "$name" || true; } 2>/dev/null
 
-  while $(pgrep -f -l "$name" >/dev/null); do
+  while pgrep -f -l "$name" >/dev/null; do
     sleep 0.1
   done
 
@@ -74,7 +84,6 @@ fKill () {
 }
 
 getCountry () {
-
   local url=$1
   local query=$2
   local rc json result
@@ -111,7 +120,6 @@ setCountry () {
 }
 
 addPackage () {
-
   local pkg=$1
   local desc=$2
 
