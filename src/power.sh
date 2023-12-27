@@ -63,8 +63,11 @@ _graceful_shutdown() {
 
   while [ "$(cat $QEMU_COUNT)" -lt "$QEMU_TIMEOUT" ]; do
 
-    ! isAlive "$(cat "$QEMU_PID")" && break
-    sleep 1
+    # Try to connect to qemu
+    if ! echo 'info version'| nc -q 1 -w 1 localhost "$QEMU_PORT" >/dev/null 2>&1 ; then
+      echo && echo "❯ Quitting..."
+      break
+    fi
 
     # Increase the counter
     cnt=$(($(cat $QEMU_COUNT)+1))
@@ -74,15 +77,13 @@ _graceful_shutdown() {
 
   done
 
-  if [ "$(cat $QEMU_COUNT)" -lt "$QEMU_TIMEOUT" ]; then
+  if [ "$(cat $QEMU_COUNT)" -ge "$QEMU_TIMEOUT" ]; then
     echo && error "Shutdown timeout reached, forcefully quitting..."
-    pKill "$(cat "$QEMU_PID")"
-  else
-    echo && echo "❯ Quitting..."
   fi
 
   fKill "print.sh"
   fKill "host.bin"
+  pKill "$(cat "$QEMU_PID")"
 
   closeNetwork
   sleep 0.5
