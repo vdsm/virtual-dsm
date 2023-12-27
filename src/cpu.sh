@@ -53,9 +53,9 @@ if [ -z "$HOST_CPU" ]; then
   HOST_CPU=$(lscpu | grep 'Model name' | cut -f 2 -d ":" | awk '{$1=$1}1' | sed 's# @.*##g' | sed s/"(R)"//g | sed 's/[^[:alnum:] ]\+/ /g' | sed 's/  */ /g')
 fi
 
-HOST_CPU="${HOST_CPU%%,*},,"
-
-if [ -z "$HOST_CPU" ]; then
+if [ -n "$HOST_CPU" ]; then
+  HOST_CPU="${HOST_CPU%%,*},,"
+else
   HOST_CPU="QEMU, Virtual CPU,"
   if [ "$ARCH" == "amd64" ]; then
     HOST_CPU="$HOST_CPU X86_64"
