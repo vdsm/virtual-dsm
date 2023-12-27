@@ -27,13 +27,6 @@ _trap() {
   done
 }
 
-_kill() {
-  local pid=$1
-  kill -15 "$pid" 2> /dev/null
-  tail "--pid=$pid" -f /dev/null
-  return 0
-}
-
 _graceful_shutdown() {
 
   set +e
@@ -61,7 +54,7 @@ _graceful_shutdown() {
     response="${response#*message\"\: \"}"
     echo && error "Forcefully quitting because of: ${response%%\"*}"
 
-    _kill "$(cat "$QEMU_PID")"
+    pKill "$(cat "$QEMU_PID")"
 
   fi
 
@@ -88,9 +81,9 @@ _graceful_shutdown() {
 
   echo 'quit' | nc -q 1 -w 1 localhost "$QEMU_PORT" >/dev/null 2>&1 || true
 
-  _kill "$(cat "$QEMU_PID")"
-  pKill "print.sh"
-  pKill "host.bin"
+  pKill "$(cat "$QEMU_PID")"
+  fKill "print.sh"
+  fKill "host.bin"
 
   closeNetwork
   sleep 0.5
