@@ -89,6 +89,8 @@ _graceful_shutdown() {
   while [ "$(cat $QEMU_COUNT)" -lt "$QEMU_TIMEOUT" ]; do
 
     ! isAlive "$pid" && break
+    [ ! -f "$QEMU_PID" ] && break
+
     sleep 1
 
     # Increase the counter
