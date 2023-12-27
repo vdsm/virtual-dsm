@@ -29,6 +29,11 @@ _trap() {
 
 finish() {
 
+  if [ -f "$QEMU_PID" ]; then
+    echo && error "QEMU process was not terminated? Waiting..."
+    tail --pid "$(cat "$QEMU_PID")" --follow /dev/null || true
+  fi
+
   fKill "print.sh"
   fKill "host.bin"
 
