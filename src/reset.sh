@@ -49,7 +49,17 @@ rm -rf "$STORAGE/tmp"
 
 # Helper functions
 
-pKill () {
+pKill() {
+
+  local pid=$1
+
+  { kill -15 "$pid" || true; } 2>/dev/null
+  tail "--pid=$pid" -f /dev/null || true
+
+  return 0
+}
+
+fKill () {
 
   local name=$1
   { pkill -f "$name" || true; } 2>/dev/null
