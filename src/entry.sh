@@ -29,9 +29,5 @@ qemu-system-x86_64 -daemonize -pidfile "$QEMU_PID" ${ARGS:+ $ARGS}
 { set +x; } 2>/dev/null
 cat /dev/pts/1 2>/dev/null & wait $! || true
 
-if [ -f "$QEMU_PID" ]; then
-  tail --pid "$(cat "$QEMU_PID")" --follow /dev/null & wait $! || true
-fi
-
 finish
 exit 0
