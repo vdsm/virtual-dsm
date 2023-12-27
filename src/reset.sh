@@ -52,9 +52,11 @@ rm -rf "$STORAGE/tmp"
 pKill() {
 
   local pid=$1
-
   { kill -15 "$pid" || true; } 2>/dev/null
-  tail "--pid=$pid" -f /dev/null || true
+  
+  while $(kill -0 "$pid" 2>/dev/null); do
+    sleep 0.1
+  done
 
   return 0
 }
@@ -64,7 +66,7 @@ fKill () {
   local name=$1
   { pkill -f "$name" || true; } 2>/dev/null
 
-  while pgrep -f -l "$name" > /dev/null; do
+  while $(pgrep -f -l "$name" >/dev/null); do
     sleep 0.1
   done
 
