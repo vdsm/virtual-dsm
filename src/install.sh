@@ -205,12 +205,7 @@ else
 
 fi
 
-HDA="$TMP/hda1"
-IDB="$TMP/indexdb"
-PKG="$TMP/packages"
-HDP="$TMP/synohdpack_img"
-
-[ ! -f "$HDA.tgz" ] && error "The PAT file contains no OS image." && exit 64
+info "Install: Preparing system partition..."
 
 BOOT=$(find "$TMP" -name "*.bin.zip")
 [ ! -f "$BOOT" ] && error "The PAT file contains no boot image." && exit 67
@@ -271,14 +266,17 @@ PART="$TMP/partition.fdisk"
 
 sfdisk -q "$SYSTEM" < "$PART"
 
-info "Install: Extracting system partition..."
-
-LABEL="1.44.1-42218"
-OFFSET="1048576" # 2048 * 512
-NUMBLOCKS="622560" # (4980480 * 512) / 4096
-
 MOUNT="$TMP/system"
 rm -rf "$MOUNT" && mkdir -p "$MOUNT"
+
+info "Install: Extracting system partition..."
+
+HDA="$TMP/hda1"
+IDB="$TMP/indexdb"
+PKG="$TMP/packages"
+HDP="$TMP/synohdpack_img"
+
+[ ! -f "$HDA.tgz" ] && error "The PAT file contains no OS image." && exit 64
 
 mv "$HDA.tgz" "$HDA.txz"
 
@@ -298,6 +296,10 @@ if [ -f "$IDB.txz" ]; then
   mkdir -p "$INDEX_DB"
   tar xpfJ "$IDB.txz" --absolute-names -C "$INDEX_DB"
 fi
+
+LABEL="1.44.1-42218"
+OFFSET="1048576" # 2048 * 512
+NUMBLOCKS="622560" # (4980480 * 512) / 4096
 
 if [[ "$ROOT" != [Nn]* ]]; then
 
