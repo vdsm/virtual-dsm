@@ -30,8 +30,8 @@ _trap() {
 finish() {
 
   if [ -f "$QEMU_PID" ]; then
-    echo && error "QEMU process was not terminated? Waiting..."
-    tail --pid "$(cat "$QEMU_PID")" --follow /dev/null || true
+    echo && error "Forcefully quitting QEMU process..."
+    pKill "$(cat "$QEMU_PID")"
   fi
 
   fKill "print.sh"
@@ -40,6 +40,7 @@ finish() {
   closeNetwork
 
   sleep 0.5
+  echo "❯ Shutdown completed!"
   return 0
 }
 
@@ -54,10 +55,14 @@ _graceful_shutdown() {
   set +e
   echo && info "Received $1 signal, sending shutdown command..."
 
-  [ ! -f "$QEMU_PID" ] && finish && exit $code
+  if [ ! -f "$QEMU_PID" ]; then
+    echo && error "QEMU PID file does not exist?"
+    finish && exit $code
+  fi
 
   if ! isAlive "$(cat "$QEMU_PID")"; then
     echo && error "QEMU process does not exist?"
+    finish && exit $code
   fi
 
   # Don't send the powerdown signal because vDSM ignores ACPI signals
@@ -75,17 +80,16 @@ _graceful_shutdown() {
 
     response="${response#*message\"\: \"}"
     echo && error "Forcefully quitting because of: ${response%%\"*}"
-    pKill "$(cat "$QEMU_PID")"
+    [ -f "$QEMU_PID" ] && kill -15 "$(cat "$QEMU_PID")"
 
   fi
 
   while [ "$(cat $QEMU_COUNT)" -lt "$QEMU_TIMEOUT" ]; do
 
-    # Try to connect to qemu
-    if ! echo 'info version'| nc -q 1 -w 1 localhost "$QEMU_PORT" >/dev/null 2>&1 ; then
-      echo && echo "❯ Quitting..."
-      break
-    fi
+    [ ! -f "$QEMU_PID" ] && break
+    ! isAlive "$(cat "$QEMU_PID")" && break
+
+    sleep 1
 
     # Increase the counter
     cnt=$(($(cat $QEMU_COUNT)+1))
@@ -96,7 +100,7 @@ _graceful_shutdown() {
   done
 
   if [ "$(cat $QEMU_COUNT)" -ge "$QEMU_TIMEOUT" ]; then
-    echo && error "Shutdown timeout reached, forcefully quitting..."
+    echo && error "Shutdown timeout reached!"
   fi
 
   finish && exit $code
