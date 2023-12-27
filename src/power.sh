@@ -39,7 +39,7 @@ _graceful_shutdown() {
   echo && info "Received $1 signal, sending shutdown command..."
 
   if ! isAlive "$(cat "$QEMU_PID")"; then
-    error "QEMU process does not exist?"
+    echo && error "QEMU process does not exist?"
   fi
 
   # Don't send the powerdown signal because vDSM ignores ACPI signals
@@ -92,7 +92,7 @@ _graceful_shutdown() {
   sleep 0.5
 
   if isAlive "$(cat "$QEMU_PID")"; then
-    error "QEMU process does still exist?"
+    echo && error "QEMU process does still exist?"
   fi
 
   return
