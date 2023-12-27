@@ -7,10 +7,11 @@ set -Eeuo pipefail
 : ${CPU_MODEL:='host'}
 : ${CPU_FEATURES:='+ssse3,+sse4.1,+sse4.2'}
 
-KVM_ERR=""
-KVM_OPTS=""
+[ "$ARCH" != "amd64" ] && KVM="N"
 
-if [[ "$ARCH" == "amd64" && "$KVM" != [Nn]* ]]; then
+if [[ "$KVM" != [Nn]* ]]; then
+
+  KVM_ERR=""
 
   if [ -e /dev/kvm ] && sh -c 'echo -n > /dev/kvm' &> /dev/null; then
     if ! grep -q -e vmx -e svm /proc/cpuinfo; then
@@ -21,23 +22,27 @@ if [[ "$ARCH" == "amd64" && "$KVM" != [Nn]* ]]; then
   fi
 
   if [ -n "$KVM_ERR" ]; then
+    KVM="N"
     error "KVM acceleration not detected $KVM_ERR, this will cause a major loss of performance."
-    error "See the FAQ on how to enable it, or skip this error by setting KVM=N (not recommended)."
+    error "See the FAQ on how to enable it, or continue without KVM by setting KVM=N (not recommended)."
     [[ "$DEBUG" != [Yy1]* ]] && exit 88
-    [[ "$CPU_MODEL" == "host"* ]] && CPU_MODEL="max,$CPU_FEATURES"
-  else
-    KVM_OPTS=",accel=kvm -enable-kvm"
   fi
 
-  if [ -n "$KVM_OPTS" ]; then
-    if ! grep -qE '^flags.* (sse4_2)' /proc/cpuinfo; then
-      error "Your host CPU does not have the SSE4.2 instruction set that Virtual DSM requires to boot."
-      error "Disable KVM by setting KVM=N to emulate a compatible CPU, at the cost of performance."
-      [[ "$DEBUG" != [Yy1]* ]] && exit 89
-    fi
+fi
+
+if [[ "$KVM" != [Nn]* ]]; then
+
+  KVM_OPTS=",accel=kvm -enable-kvm"
+
+  if ! grep -qE '^flags.* (sse4_2)' /proc/cpuinfo; then
+    error "Your host CPU does not have the SSE4.2 instruction set that Virtual DSM requires to boot."
+    error "Disable KVM by setting KVM=N to emulate a compatible CPU, at the cost of performance."
+    [[ "$DEBUG" != [Yy1]* ]] && exit 89
   fi
 
 else
+
+  KVM_OPTS=""
 
   if [[ "$CPU_MODEL" == "host"* ]]; then
     if [[ "$ARCH" == "amd64" ]]; then
