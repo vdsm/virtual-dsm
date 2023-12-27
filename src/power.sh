@@ -53,7 +53,6 @@ _graceful_shutdown() {
 
     response="${response#*message\"\: \"}"
     echo && error "Forcefully quitting because of: ${response%%\"*}"
-
     pKill "$(cat "$QEMU_PID")"
 
   fi
@@ -73,15 +72,15 @@ _graceful_shutdown() {
 
   done
 
-  if [ "$(cat $QEMU_COUNT)" -ge "$QEMU_TIMEOUT" ]; then
-    echo && error "Shutdown timeout reached, forcefully quitting..."
-  else
+  if [ "$(cat $QEMU_COUNT)" -lt "$QEMU_TIMEOUT" ]; then
     echo && echo "❯ Quitting..."
+  else
+    echo && error "Shutdown timeout reached, forcefully quitting..."
+    pKill "$(cat "$QEMU_PID")"
   fi
 
   echo 'quit' | nc -q 1 -w 1 localhost "$QEMU_PORT" >/dev/null 2>&1 || true
 
-  pKill "$(cat "$QEMU_PID")"
   fKill "print.sh"
   fKill "host.bin"
 
