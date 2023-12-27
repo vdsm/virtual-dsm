@@ -94,8 +94,7 @@ _graceful_shutdown() {
     echo && error "Shutdown timeout reached, forcefully quitting..."
   fi
 
-  finish
-  exit $code
+  finish && exit $code
 }
 
 _trap _graceful_shutdown SIGTERM SIGHUP SIGINT SIGABRT SIGQUIT
