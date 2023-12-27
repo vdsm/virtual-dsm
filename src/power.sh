@@ -11,11 +11,20 @@ QEMU_COUNT="/run/qemu.count"
 rm -f "$QEMU_PID"
 rm -f "$QEMU_COUNT"
 
-_trap(){
-    func="$1" ; shift
-    for sig ; do
-        trap "$func $sig" "$sig"
-    done
+_trap() {
+  func="$1" ; shift
+  for sig ; do
+    trap "$func $sig" "$sig"
+  done
+}
+
+_kill() {
+  local pid=$1
+  kill -15 "$pid"
+  while kill -0 "$pid"; do 
+    sleep 1
+  done
+  return 0
 }
 
 _graceful_shutdown() {
@@ -45,8 +54,7 @@ _graceful_shutdown() {
     response="${response#*message\"\: \"}"
     echo && error "Failed to send shutdown command: ${response%%\"*}"
 
-    kill -15 "$(cat "$QEMU_PID")"
-    pkill -f qemu-system-x86_64 || true
+    _kill "$(cat "$QEMU_PID")"
 
   fi
 
@@ -66,7 +74,11 @@ _graceful_shutdown() {
   done
 
   if [ "$(cat $QEMU_COUNT)" -ge "$QEMU_TIMEOUT" ]; then
-    echo && error "Shutdown timeout reached, forcefully quitting.."
+
+    echo && error "Shutdown timeout reached, forcefully quitting..."
+
+    _kill "$(cat "$QEMU_PID")"
+
   else
     echo && echo "❯ Quitting..."
   fi
