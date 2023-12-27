@@ -20,10 +20,8 @@ _trap() {
 
 _kill() {
   local pid=$1
-  kill -15 "$pid"
-  while kill -0 "$pid"; do 
-    sleep 1
-  done
+  kill -15 "$pid" 2> /dev/null
+  tail "--pid=$pid" -f /dev/null
   return 0
 }
 
