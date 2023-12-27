@@ -158,14 +158,14 @@ closeNetwork () {
 
   if [[ "$DHCP" == [Yy1]* ]]; then
 
-    pKill "server.sh"
+    fKill "server.sh"
 
     ip link set "$VM_NET_TAP" down || true
     ip link delete "$VM_NET_TAP" || true
 
   else
 
-    pKill "dnsmasq"
+    fKill "dnsmasq"
 
     ip link set "$VM_NET_TAP" down promisc off || true
     ip link delete "$VM_NET_TAP" || true
@@ -180,7 +180,7 @@ closeNetwork () {
 #  Configure Network
 # ######################################
 
-pKill "server.sh"
+fKill "server.sh"
 
 # Create the necessary file structure for /dev/net/tun
 if [ ! -c /dev/net/tun ]; then
