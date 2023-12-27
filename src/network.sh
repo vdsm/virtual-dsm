@@ -160,18 +160,18 @@ closeNetwork () {
 
     fKill "server.sh"
 
-    ip link set "$VM_NET_TAP" down || true
-    ip link delete "$VM_NET_TAP" || true
+    ip link set "$VM_NET_TAP" down 2>/dev/null || true
+    ip link delete "$VM_NET_TAP" 2>/dev/null || true
 
   else
 
     fKill "dnsmasq"
 
-    ip link set "$VM_NET_TAP" down promisc off || true
-    ip link delete "$VM_NET_TAP" || true
+    ip link set "$VM_NET_TAP" down promisc off 2>/dev/null || true
+    ip link delete "$VM_NET_TAP" 2>/dev/null || true
 
-    ip link set dockerbridge down || true
-    ip link delete dockerbridge || true
+    ip link set dockerbridge down 2>/dev/null || true
+    ip link delete dockerbridge 2>/dev/null || true
 
   fi
 }
