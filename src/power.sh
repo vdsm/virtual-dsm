@@ -60,7 +60,9 @@ _graceful_shutdown() {
     finish && exit $code
   fi
 
-  if ! isAlive "$(cat "$QEMU_PID")"; then
+  local pid="$(cat "$QEMU_PID")"
+
+  if ! isAlive "$pid"; then
     echo && error "QEMU process does not exist?"
     finish && exit $code
   fi
@@ -80,15 +82,13 @@ _graceful_shutdown() {
 
     response="${response#*message\"\: \"}"
     echo && error "Forcefully quitting because of: ${response%%\"*}"
-    [ -f "$QEMU_PID" ] && kill -15 "$(cat "$QEMU_PID")"
+    { kill -15 "$pid" || true; } 2>/dev/null
 
   fi
 
   while [ "$(cat $QEMU_COUNT)" -lt "$QEMU_TIMEOUT" ]; do
 
-    [ ! -f "$QEMU_PID" ] && break
-    ! isAlive "$(cat "$QEMU_PID")" && break
-
+    ! isAlive "$pid" && break
     sleep 1
 
     # Increase the counter
