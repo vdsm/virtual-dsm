@@ -7,6 +7,7 @@ API_CMD=6
 API_TIMEOUT=50
 API_HOST="127.0.0.1:2210"
 
+QEMU_TERM=""
 QEMU_PORT=7100
 QEMU_TIMEOUT=50
 QEMU_PID="/run/qemu.pid"
@@ -59,6 +60,11 @@ finish() {
 terminal() {
 
   local msg=$1
+
+  if [[ "${msg,,}" != "char"* ||  "$msg" != *"serial0)" ]];
+    echo "$msg"
+  fi
+
   local dev="${msg#*/dev/p}"
   dev="/dev/p${dev%% *}"
 
@@ -75,7 +81,7 @@ terminal() {
     finish 34 && return 34
   fi
 
-  echo "$dev"
+  QEMU_TERM="$dev"
   return 0
 }
 
