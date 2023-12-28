@@ -92,6 +92,7 @@ _graceful_shutdown() {
   else
 
     response="${response#*message\"\: \"}"
+    [ -z "$response" ] && response="second signal"
     echo && error "Forcefully quitting because of: ${response%%\"*}"
     { kill -15 "$pid" || true; } 2>/dev/null
 
