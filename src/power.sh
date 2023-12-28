@@ -29,10 +29,14 @@ _trap() {
 
 finish() {
 
+  local reason=$1
+
+  [ -f "$QEMU_PID" ] && sleep 1
+
   if [ -f "$QEMU_PID" ]; then
 
     local pid="$(cat "$QEMU_PID")"
-    echo && error "Forcefully quitting QEMU process..."
+    echo && error "Forcefully quitting QEMU process, reason $reason..."
     { kill -15 "$pid" || true; } 2>/dev/null
 
     while isAlive "$pid"; do
@@ -48,7 +52,8 @@ finish() {
 
   sleep 0.5
   echo && info "Shutdown completed!"
-  return 0
+  
+  exit $reason
 }
 
 _graceful_shutdown() {
@@ -64,14 +69,14 @@ _graceful_shutdown() {
 
   if [ ! -f "$QEMU_PID" ]; then
     echo && error "QEMU PID file does not exist?"
-    finish && exit $code
+    finish "$code"
   fi
 
   local pid="$(cat "$QEMU_PID")"
 
   if ! isAlive "$pid"; then
     echo && error "QEMU process does not exist?"
-    finish && exit $code
+    finish "$code"
   fi
 
   # Don't send the powerdown signal because vDSM ignores ACPI signals
@@ -112,7 +117,7 @@ _graceful_shutdown() {
     echo && error "Shutdown timeout reached!"
   fi
 
-  finish && exit $code
+  finish "$code"
 }
 
 _trap _graceful_shutdown SIGTERM SIGHUP SIGINT SIGABRT SIGQUIT
