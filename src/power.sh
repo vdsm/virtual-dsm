@@ -35,7 +35,7 @@ finish() {
   if [ -f "$QEMU_PID" ]; then
 
     pid="$(cat "$QEMU_PID")"
-    echo && error "Forcefully quitting QEMU process, reason: $reason..."
+    echo && error "Forcefully terminating QEMU process, reason: $reason..."
     { kill -15 "$pid" || true; } 2>/dev/null
 
     while isAlive "$pid"; do
@@ -51,7 +51,7 @@ finish() {
   closeNetwork
 
   sleep 1
-  echo && info "Shutdown completed!"
+  echo && echo "❯ Shutdown completed!"
 
   exit "$reason"
 }
@@ -98,7 +98,7 @@ _graceful_shutdown() {
 
     response="${response#*message\"\: \"}"
     [ -z "$response" ] && response="second signal"
-    echo && error "Forcefully quitting because of: ${response%%\"*}"
+    echo && error "Forcefully terminating because of: ${response%%\"*}"
     { kill -15 "$pid" || true; } 2>/dev/null
 
   fi
