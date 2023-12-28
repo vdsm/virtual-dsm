@@ -61,7 +61,7 @@ terminal() {
 
   local msg=$1
 
-  if [[ "${msg,,}" != "char"* ||  "$msg" != *"serial0)" ]];
+  if [[ "${msg,,}" != "char"* ||  "$msg" != *"serial0)" ]]; then
     echo "$msg"
   fi
 
