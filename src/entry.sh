@@ -32,15 +32,15 @@ if [[ "$dev" != *"redirected to /dev/"* ]]; then
   finish 33
 fi
 
-dev=${dev#*redirected to /dev/}
-dev=${dev%% *}
+dev="${dev#*redirected to /dev/}"
+dev="/dev/${dev%% *}"
 
 if [ ! -c "$dev" ]; then
   error "Device $dev not found!"
   finish 34
 fi
 
-cat "/dev/$dev" & wait $! || true
+cat "$dev" & wait $! || true
 
 sleep 1
 finish 0
