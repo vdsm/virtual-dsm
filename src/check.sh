@@ -5,6 +5,8 @@ set -Eeuo pipefail
 [ ! -f "/run/qemu.pid" ] && echo "QEMU is not running yet.." && exit 0
 
 file="/run/dsm.url"
+address="/run/qemu.ip"
+
 [ ! -f  "$file" ] && echo "DSM has not enabled networking yet.." && exit 1
 
 location=$(cat "$file")
@@ -17,7 +19,7 @@ if ! curl -m 20 -ILfSs "http://$location/" > /dev/null; then
     echo "Failed to reach DSM at port $port"
   else
     echo "Failed to reach DSM at http://$location"
-    ip=$(cat /run/qemu.ip)
+    ip="$(cat "$address")"
   fi
 
   echo "You might need to whitelist IP $ip in the DSM firewall." && exit 1
