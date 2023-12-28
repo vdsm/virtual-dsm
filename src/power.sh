@@ -157,7 +157,9 @@ _graceful_shutdown() {
   finish "$code" && return "$code"
 }
 
-_trap _graceful_shutdown SIGTERM SIGHUP SIGINT SIGABRT SIGQUIT
+if [[ "$CONSOLE" != [Yy]* ]]; then
+  _trap _graceful_shutdown SIGTERM SIGHUP SIGINT SIGABRT SIGQUIT
+fi
 
 MON_OPTS="\
         -pidfile $QEMU_PID \
