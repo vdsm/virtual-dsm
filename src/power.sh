@@ -11,6 +11,7 @@ QEMU_TERM=""
 QEMU_PORT=7100
 QEMU_TIMEOUT=50
 QEMU_PID="/run/qemu.pid"
+QEMU_LOG="/run/qemu.log"
 QEMU_COUNT="/run/qemu.count"
 
 if [[ "$KVM" == [Nn]* ]]; then
@@ -19,7 +20,9 @@ if [[ "$KVM" == [Nn]* ]]; then
 fi
 
 rm -f "$QEMU_PID"
+rm -f "$QEMU_LOG"
 rm -f "$QEMU_COUNT"
+echo "" > "$QEMU_LOG"
 
 _trap() {
   func="$1" ; shift
