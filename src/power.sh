@@ -38,7 +38,8 @@ finish() {
     { kill -15 "$pid" || true; } 2>/dev/null
 
     while isAlive "$pid"; do
-      sleep 0.1
+      sleep 1
+      # Workaround for zombie pid
       [ ! -f "$QEMU_PID" ] && break
     done
   fi
@@ -48,7 +49,7 @@ finish() {
 
   closeNetwork
 
-  sleep 0.5
+  sleep 1
   echo && info "Shutdown completed!"
   
   exit $reason
@@ -74,7 +75,7 @@ _graceful_shutdown() {
 
   if ! isAlive "$pid"; then
     echo && error "QEMU process does not exist?"
-    finish "$code" && return $code
+    finish $code && return $code
   fi
 
   # Don't send the powerdown signal because vDSM ignores ACPI signals
@@ -99,6 +100,7 @@ _graceful_shutdown() {
   while [ "$(cat $QEMU_COUNT)" -lt "$QEMU_TIMEOUT" ]; do
 
     ! isAlive "$pid" && break
+    # Workaround for zombie pid
     [ ! -f "$QEMU_PID" ] && break
 
     sleep 1
@@ -115,7 +117,7 @@ _graceful_shutdown() {
     echo && error "Shutdown timeout reached!"
   fi
 
-  finish "$code" && return $code
+  finish $code && return $code
 }
 
 _trap _graceful_shutdown SIGTERM SIGHUP SIGINT SIGABRT SIGQUIT
