@@ -44,12 +44,7 @@ COPY --from=builder /qemu-host.bin /run/host.bin
 RUN chmod +x /run/*.sh && chmod +x /run/*.bin
 
 VOLUME /storage
-
-EXPOSE 22
-EXPOSE 80
-EXPOSE 139
-EXPOSE 445
-EXPOSE 5000
+EXPOSE 22 80 139 445 5000
 
 ENV RAM_SIZE "1G"
 ENV DISK_SIZE "16G"
