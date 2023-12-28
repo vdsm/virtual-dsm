@@ -30,4 +30,4 @@ qemu-system-x86_64 -daemonize -pidfile "$QEMU_PID" ${ARGS:+ $ARGS}
 cat /dev/pts/1 2>/dev/null & wait $! || true
 
 sleep 1
-finish "0"
+finish 0
