@@ -96,7 +96,7 @@ _graceful_shutdown() {
   set +e
 
   if [ -f "$QEMU_COUNT" ]; then
-    echo && info "Ignored $1 signal, already shutting down..."
+    echo && info "Received $1 signal while already shutting down..."
     return
   fi
 
