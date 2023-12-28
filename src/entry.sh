@@ -27,7 +27,7 @@ fi
 msg=$(qemu-system-x86_64 -daemonize -pidfile "$QEMU_PID" ${ARGS:+ $ARGS})
 { set +x; } 2>/dev/null
 
-if [[ "$msg" != "char"* ||  "$msg" != *"serial)" ]]; then
+if [[ "$msg" != "char"* ||  "$msg" != *"serial0)" ]]; then
   echo "$msg"
   dev=$(echo 'info chardev' | nc -q 1 -w 1 localhost "$QEMU_PORT" | tr -d '\000')
   dev="${dev#*charserial0}"
