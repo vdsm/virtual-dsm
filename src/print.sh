@@ -8,10 +8,11 @@ info () { printf "%b%s%b" "\E[1;34m❯ \E[1;36m" "$1" "\E[0m\n" >&2; }
 error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: $1" "\E[0m\n" >&2; }
 
 file="/run/dsm.url"
-shutdown="/run/qemu.count"
+shutdown="/run/qemu.end"
 url="http://127.0.0.1:2210/read?command=10"
 
 resp_err="Guest returned an invalid response:"
+curl_err="Failed to connect to guest: curl error"
 jq_err="Failed to parse response from guest: jq error"
 
 while [ ! -f  "$file" ]
@@ -29,7 +30,7 @@ do
   { json=$(curl -m 20 -sk "$url"); rc=$?; } || :
 
   [ -f "$shutdown" ] && exit 1
-  (( rc != 0 )) && error "Failed to connect to guest: curl error $rc" && continue
+  (( rc != 0 )) && error "$curl_err $rc" && continue
 
   { result=$(echo "$json" | jq -r '.status'); rc=$?; } || :
   (( rc != 0 )) && error "$jq_err $rc ( $json )" && continue
