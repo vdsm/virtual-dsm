@@ -51,7 +51,7 @@ finish() {
   closeNetwork
 
   sleep 1
-  echo && info "Shutdown completed!"
+  echo && echo "❯ Shutdown completed!"
 
   exit "$reason"
 }
