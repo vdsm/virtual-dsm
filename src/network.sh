@@ -92,6 +92,18 @@ configureDNS() {
 
 configureNAT() {
 
+  # Create the necessary file structure for /dev/net/tun
+  if [ ! -c /dev/net/tun ]; then
+    [ ! -d /dev/net ] && mkdir -m 755 /dev/net
+    if mknod /dev/net/tun c 10 200; then
+      chmod 666 /dev/net/tun
+    fi
+  fi
+
+  if [ ! -c /dev/net/tun ]; then
+    error "TUN device missing. $ADD_ERR --cap-add NET_ADMIN" && exit 25
+  fi
+
   # Create a bridge with a static IP for the VM guest
 
   VM_NET_IP='20.20.20.21'
@@ -121,6 +133,9 @@ configureNAT() {
   ip link set dev "$VM_NET_TAP" master dockerbridge
 
   # Add internet connection to the VM
+  update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
+  update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
+
   iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -j MASQUERADE
   iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p tcp  -j DNAT --to "$VM_NET_IP"
   iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p udp  -j DNAT --to "$VM_NET_IP"
@@ -218,27 +233,11 @@ getInfo() {
 
 fKill "server.sh"
 
-# Create the necessary file structure for /dev/net/tun
-if [ ! -c /dev/net/tun ]; then
-  [ ! -d /dev/net ] && mkdir -m 755 /dev/net
-  if mknod /dev/net/tun c 10 200; then
-    chmod 666 /dev/net/tun
-  fi
-fi
-
-if [ ! -c /dev/net/tun ]; then
-  error "TUN device missing. $ADD_ERR --cap-add NET_ADMIN" && exit 25
-fi
-
-# Create the necessary file structure for /dev/vhost-net
 if [ ! -c /dev/vhost-net ]; then
   if mknod /dev/vhost-net c 10 238; then
     chmod 660 /dev/vhost-net
   fi
 fi
-
-update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
-update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 
 getInfo
 
