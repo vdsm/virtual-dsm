@@ -152,4 +152,6 @@ _graceful_shutdown() {
 
 _trap _graceful_shutdown SIGTERM SIGHUP SIGINT SIGABRT SIGQUIT
 
-MON_OPTS="-monitor telnet:localhost:$QEMU_PORT,server,nowait,nodelay"
+MON_OPTS="\
+        -pidfile $QEMU_PID \
+        -monitor telnet:localhost:$QEMU_PORT,server,nowait,nodelay"
