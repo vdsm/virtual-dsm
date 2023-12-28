@@ -40,7 +40,7 @@ finish() {
   closeNetwork
 
   sleep 0.5
-  echo && info "❯ Shutdown completed!"
+  echo && info "Shutdown completed!"
   return 0
 }
 
