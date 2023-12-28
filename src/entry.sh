@@ -27,12 +27,12 @@ fi
 dev=$(qemu-system-x86_64 -daemonize -pidfile "$QEMU_PID" ${ARGS:+ $ARGS})
 { set +x; } 2>/dev/null
 
-if [[ "$dev" != *"redirected to /dev/"* ]]; then
+if [[ "$dev" != "char"* || "$dev" != *"redirected to"* ||  "$dev" != *")" ]]; then
   error "$dev"
   finish 33
 fi
 
-dev="${dev#*redirected to /dev/}"
+dev="${dev#*/dev/}"
 dev="/dev/${dev%% *}"
 
 if [ ! -c "$dev" ]; then
@@ -40,7 +40,7 @@ if [ ! -c "$dev" ]; then
   finish 34
 fi
 
-cat "$dev" & wait $! || true
+cat "$dev" 2>/dev/null & wait $! || true
 
 sleep 1
 finish 0
