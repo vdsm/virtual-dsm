@@ -38,6 +38,7 @@ STORAGE="/storage"
 # Cleanup files
 
 rm -f /run/dsm.url
+rm -f /run/qemu.ip
 rm -f /run/qemu.log
 rm -f /run/qemu.pid
 rm -f /run/qemu.end
@@ -120,7 +121,7 @@ setCountry() {
   return 0
 }
 
-addPackage () {
+addPackage() {
   local pkg=$1
   local desc=$2
 
