@@ -101,8 +101,6 @@ _graceful_shutdown() {
   while [ "$(cat $QEMU_COUNT)" -lt "$QEMU_TIMEOUT" ]; do
 
     ! isAlive "$pid" && break
-    # Workaround for zombie pid
-    [ ! -f "$QEMU_PID" ] && break
 
     sleep 1
 
@@ -111,6 +109,9 @@ _graceful_shutdown() {
     echo $cnt > "$QEMU_COUNT"
 
     [[ "$DEBUG" == [Yy1]* ]] && info "Shutting down, waiting... ($cnt/$QEMU_TIMEOUT)"
+
+    # Workaround for zombie pid
+    [ ! -f "$QEMU_PID" ] && break
 
   done
 
