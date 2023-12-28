@@ -24,10 +24,8 @@ fi
 
 [[ "$DEBUG" == [Yy1]* ]] && info "$VERS" && set -x
 msg=$(qemu-system-x86_64 -daemonize ${ARGS:+ $ARGS})
-{ set +x; } 2>/dev/null
 
-[[ "${msg,,}" != "char"* ||  "$msg" != *"serial0)" ]] && echo "$msg"
-cat "$(terminal "$msg")" 2>/dev/null & wait $! || true
+{ set +x; } 2>/dev/null && terminal $msg
+cat "$QEMU_TERM" 2>/dev/null & wait $! || true
 
-sleep 1
-finish 0
+sleep 1 && finish 0
