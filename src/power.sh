@@ -51,7 +51,7 @@ finish() {
 
   sleep 1
   echo && info "Shutdown completed!"
-  
+
   exit $reason
 }
 
