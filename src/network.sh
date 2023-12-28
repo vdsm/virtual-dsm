@@ -174,6 +174,42 @@ closeNetwork() {
     ip link delete dockerbridge || true
 
   fi
+
+  return 0
+}
+
+getInfo() {
+
+  if [ -z "$VM_NET_DEV" ]; then
+    # Automaticly detect the default network interface
+    VM_NET_DEV=$(awk '$2 == 00000000 { print $1 }' /proc/net/route)
+    [ -z "$VM_NET_DEV" ] && VM_NET_DEV="eth0"
+  fi
+
+  if [ ! -d "/sys/class/net/$VM_NET_DEV" ]; then
+    error "Network interface '$VM_NET_DEV' does not exist inside the container!"
+    error "$ADD_ERR -e \"VM_NET_DEV=NAME\" to specify another interface name." && exit 27
+  fi
+
+  VM_NET_MAC="${VM_NET_MAC//-/:}"
+  if [[ ${#VM_NET_MAC} == 12 ]]; then
+    m="$VM_NET_MAC"
+    VM_NET_MAC="${m:0:2}:${m:2:2}:${m:4:2}:${m:6:2}:${m:8:2}:${m:10:2}"
+  fi
+
+  if [[ ${#VM_NET_MAC} != 17 ]]; then
+    error "Invalid mac address: '$VM_NET_MAC', should be 12 or 17 digits long!" && exit 28
+  fi
+
+  GATEWAY=$(ip r | grep default | awk '{print $3}')
+  IP=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
+  echo "$IP" > /run/qemu.ip
+
+  if [[ "$DEBUG" == [Yy1]* ]]; then
+    info "Container IP is $IP with gateway $GATEWAY on interface $VM_NET_DEV" && echo
+  fi
+
+  return 0
 }
 
 # ######################################
@@ -204,25 +240,7 @@ fi
 update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
 update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 
-if [ -z "$VM_NET_DEV" ]; then
-  # Automaticly detect the default network interface
-  VM_NET_DEV=$(awk '$2 == 00000000 { print $1 }' /proc/net/route)
-  [ -z "$VM_NET_DEV" ] && VM_NET_DEV="eth0"
-fi
-
-if [ ! -d "/sys/class/net/$VM_NET_DEV" ]; then
-  error "Network interface '$VM_NET_DEV' does not exist inside the container!"
-  error "$ADD_ERR -e \"VM_NET_DEV=NAME\" to specify another interface name." && exit 27
-fi
-
-VM_NET_MAC="${VM_NET_MAC//-/:}"
-GATEWAY=$(ip r | grep default | awk '{print $3}')
-IP=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
-echo "$IP" > /run/qemu.ip
-
-if [[ "$DEBUG" == [Yy1]* ]]; then
-  info "Container IP is $IP with gateway $GATEWAY" && echo
-fi
+getInfo
 
 if [[ "$DHCP" == [Yy1]* ]]; then
 
