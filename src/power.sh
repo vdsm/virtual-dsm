@@ -7,6 +7,7 @@ API_CMD=6
 API_TIMEOUT=50
 API_HOST="127.0.0.1:2210"
 
+QEMU_TERM=""
 QEMU_PORT=7100
 QEMU_TIMEOUT=50
 QEMU_PID="/run/qemu.pid"
@@ -54,6 +55,34 @@ finish() {
   echo && echo "❯ Shutdown completed!"
 
   exit "$reason"
+}
+
+terminal() {
+
+  local msg=$1
+
+  if [[ "${msg,,}" != "char"* ||  "$msg" != *"serial0)" ]]; then
+    echo "$msg"
+  fi
+
+  local dev="${msg#*/dev/p}"
+  dev="/dev/p${dev%% *}"
+
+  if [ ! -c "$dev" ]; then
+    dev=$(echo 'info chardev' | nc -q 1 -w 1 localhost "$QEMU_PORT" | tr -d '\000')
+    dev="${dev#*charserial0}"
+    dev="${dev#*pty:}"
+    dev="${dev%%$'\n'*}"
+    dev="${dev%%$'\r'*}"
+  fi
+
+  if [ ! -c "$dev" ]; then
+    error "Device '$dev' not found!"
+    finish 34 && return 34
+  fi
+
+  QEMU_TERM="$dev"
+  return 0
 }
 
 _graceful_shutdown() {
@@ -129,4 +158,6 @@ _graceful_shutdown() {
 
 _trap _graceful_shutdown SIGTERM SIGHUP SIGINT SIGABRT SIGQUIT
 
-MON_OPTS="-monitor telnet:localhost:$QEMU_PORT,server,nowait,nodelay"
+MON_OPTS="\
+        -pidfile $QEMU_PID \
+        -monitor telnet:localhost:$QEMU_PORT,server,nowait,nodelay"

@@ -19,35 +19,13 @@ cd /run
 trap - ERR
 
 if [[ "$CONSOLE" == [Yy]* ]]; then
-  exec qemu-system-x86_64 -pidfile "$QEMU_PID" ${ARGS:+ $ARGS}
-  exit $?
+  exec qemu-system-x86_64 ${ARGS:+ $ARGS} && exit $?
 fi
 
 [[ "$DEBUG" == [Yy1]* ]] && info "$VERS" && set -x
-msg=$(qemu-system-x86_64 -daemonize -pidfile "$QEMU_PID" ${ARGS:+ $ARGS})
-{ set +x; } 2>/dev/null
+msg=$(qemu-system-x86_64 -daemonize ${ARGS:+ $ARGS})
 
-if [[ "$msg" != "char"* ||  "$msg" != *"serial0)" ]]; then
-  echo "$msg"
-fi
+{ set +x; } 2>/dev/null && terminal "$msg"
+cat "$QEMU_TERM" 2>/dev/null & wait $! || true
 
-dev="${msg#*/dev/p}"
-dev="/dev/p${dev%% *}"
-
-if [ ! -c "$dev" ]; then
-  dev=$(echo 'info chardev' | nc -q 1 -w 1 localhost "$QEMU_PORT" | tr -d '\000')
-  dev="${dev#*charserial0}"
-  dev="${dev#*pty:}"
-  dev="${dev%%$'\n'*}"
-  dev="${dev%%$'\r'*}"
-fi
-
-if [ ! -c "$dev" ]; then
-  error "Device '$dev' not found!"
-  finish 34
-fi
-
-cat "$dev" 2>/dev/null & wait $! || true
-
-sleep 1
-finish 0
+sleep 1 && finish 0
