@@ -30,8 +30,15 @@ _trap() {
 finish() {
 
   if [ -f "$QEMU_PID" ]; then
+
+    local pid="$(cat "$QEMU_PID")"
     echo && error "Forcefully quitting QEMU process..."
-    pKill "$(cat "$QEMU_PID")"
+    { kill -15 "$pid" || true; } 2>/dev/null
+
+    while isAlive "$pid"; do
+      sleep 0.1
+      [ ! -f "$QEMU_PID" ] && break
+    done
   fi
 
   fKill "print.sh"
