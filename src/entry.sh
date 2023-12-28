@@ -24,10 +24,23 @@ if [[ "$CONSOLE" == [Yy]* ]]; then
 fi
 
 [[ "$DEBUG" == [Yy1]* ]] && info "$VERS" && set -x
-qemu-system-x86_64 -daemonize -pidfile "$QEMU_PID" ${ARGS:+ $ARGS}
-
+dev=$(qemu-system-x86_64 -daemonize -pidfile "$QEMU_PID" ${ARGS:+ $ARGS})
 { set +x; } 2>/dev/null
-cat /dev/pts/1 2>/dev/null & wait $! || true
+
+if [[ "$dev" != "char"* || "$dev" != *"redirected to"* ||  "$dev" != *")" ]]; then
+  error "$dev"
+  finish 33
+fi
+
+dev="${dev#*/dev/}"
+dev="/dev/${dev%% *}"
+
+if [ ! -c "$dev" ]; then
+  error "Device $dev not found!"
+  finish 34
+fi
+
+cat "$dev" 2>/dev/null & wait $! || true
 
 sleep 1
 finish 0
