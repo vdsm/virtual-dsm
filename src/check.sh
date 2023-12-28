@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-: ${VM_NET_DEV:='eth0'}
-
 [ -f "/run/qemu.end" ] && echo "QEMU is shutting down.." && exit 1
 [ ! -f "/run/qemu.pid" ] && echo "QEMU is not running yet.." && exit 0
 
@@ -19,7 +17,7 @@ if ! curl -m 20 -ILfSs "http://$location/" > /dev/null; then
     echo "Failed to reach DSM at port $port"
   else
     echo "Failed to reach DSM at http://$location"
-    ip=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
+    ip=$(cat /run/qemu.ip)
   fi
 
   echo "You might need to whitelist IP $ip in the DSM firewall." && exit 1
