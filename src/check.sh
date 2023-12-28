@@ -3,8 +3,8 @@ set -Eeuo pipefail
 
 : ${VM_NET_DEV:='eth0'}
 
-[ ! -f "/run/qemu.pid" ] && echo "QEMU not running yet.." && exit 0
 [ -f "/run/qemu.count" ] && echo "QEMU is shutting down.." && exit 1
+[ ! -f "/run/qemu.pid" ] && echo "QEMU not running yet.." && exit 0
 
 file="/run/dsm.url"
 [ ! -f  "$file" ] && echo "DSM has not enabled networking yet.." && exit 1

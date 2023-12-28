@@ -23,12 +23,11 @@ if [[ "$CONSOLE" == [Yy]* ]]; then
   exit $?
 fi
 
-set -m
-(
-  [[ "$DEBUG" == [Yy1]* ]] && info "$VERS" && set -x
-  qemu-system-x86_64 ${ARGS:+ $ARGS} & echo $! > "$QEMU_PID"
-  { set +x; } 2>/dev/null
-)
-set +m
+[[ "$DEBUG" == [Yy1]* ]] && info "$VERS" && set -x
+qemu-system-x86_64 -daemonize -pidfile "$QEMU_PID" ${ARGS:+ $ARGS}
 
-tail --pid "$(cat "$QEMU_PID")" --follow /dev/null & wait $!
+{ set +x; } 2>/dev/null
+cat /dev/pts/1 2>/dev/null & wait $! || true
+
+sleep 1
+finish 0
