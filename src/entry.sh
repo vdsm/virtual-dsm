@@ -25,7 +25,7 @@ fi
 [[ "$DEBUG" == [Yy1]* ]] && info "$VERS" && set -x
 msg=$(qemu-system-x86_64 ${ARGS:+ $ARGS})
 
-set +x; 2>/dev/null && terminal "$msg"
+set +x 2>/dev/null && terminal "$msg"
 tail -fn +0 "$QEMU_LOG" 2>/dev/null &
 cat "$QEMU_TERM" 2>/dev/null & wait $! || true
 
