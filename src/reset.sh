@@ -38,9 +38,9 @@ STORAGE="/storage"
 # Cleanup files
 
 rm -f /run/dsm.url
-rm -f /run/qemu.pid
 rm -f /run/qemu.log
-rm -f /run/qemu.count
+rm -f /run/qemu.pid
+rm -f /run/qemu.end
 
 # Cleanup dirs
 
