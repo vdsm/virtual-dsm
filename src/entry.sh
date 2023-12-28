@@ -43,7 +43,7 @@ if [ ! -c "$dev" ]; then
 fi
 
 if [ ! -c "$dev" ]; then
-  error "Device `$dev` not found!"
+  error "Device '$dev' not found!"
   finish 34
 fi
 
