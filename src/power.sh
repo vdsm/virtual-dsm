@@ -67,14 +67,14 @@ _graceful_shutdown() {
 
   if [ ! -f "$QEMU_PID" ]; then
     echo && error "QEMU PID file does not exist?"
-    finish "$code"
+    finish $code && return $code
   fi
 
   local pid="$(cat "$QEMU_PID")"
 
   if ! isAlive "$pid"; then
     echo && error "QEMU process does not exist?"
-    finish "$code"
+    finish "$code" && return $code
   fi
 
   # Don't send the powerdown signal because vDSM ignores ACPI signals
@@ -115,7 +115,7 @@ _graceful_shutdown() {
     echo && error "Shutdown timeout reached!"
   fi
 
-  finish "$code"
+  finish "$code" && return $code
 }
 
 _trap _graceful_shutdown SIGTERM SIGHUP SIGINT SIGABRT SIGQUIT
