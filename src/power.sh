@@ -57,7 +57,7 @@ finish() {
   exit "$reason"
 }
 
-terminal()
+terminal() {
 
   local msg=$1
   local dev="${msg#*/dev/p}"
