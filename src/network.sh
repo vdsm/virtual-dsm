@@ -104,6 +104,14 @@ configureNAT() {
     error "TUN device missing. $ADD_ERR --cap-add NET_ADMIN" && exit 25
   fi
 
+  # Check port forwarding flag
+  if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
+    { sysctl -w net.ipv4.ip_forward=1 ; rc=$?; } || :
+    if (( rc != 0 )); then
+      error "IP forwarding is disabled. $ADD_ERR --sysctl net.ipv4.ip_forward=1" && exit 24
+    fi
+  fi
+
   # Create a bridge with a static IP for the VM guest
 
   VM_NET_IP='20.20.20.21'
@@ -147,14 +155,6 @@ configureNAT() {
 
   { set +x; } 2>/dev/null
   [[ "$DEBUG" == [Yy1]* ]] && echo
-
-  # Check port forwarding flag
-  if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
-    { sysctl -w net.ipv4.ip_forward=1 ; rc=$?; } || :
-    if (( rc != 0 )); then
-      error "IP forwarding is disabled. $ADD_ERR --sysctl net.ipv4.ip_forward=1" && exit 24
-    fi
-  fi
 
   NET_OPTS="-netdev tap,ifname=$VM_NET_TAP,script=no,downscript=no,id=hostnet0"
 
