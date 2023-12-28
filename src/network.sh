@@ -6,8 +6,8 @@ set -Eeuo pipefail
 : ${DHCP:='N'}
 : ${MAC:='02:11:32:AA:BB:CC'}
 
+: ${VM_NET_DEV:=''}
 : ${VM_NET_TAP:='dsm'}
-: ${VM_NET_DEV:='eth0'}
 : ${VM_NET_MAC:="$MAC"}
 : ${VM_NET_HOST:='VirtualDSM'}
 
@@ -204,8 +204,14 @@ fi
 update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
 update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 
+if [ -z "$VM_NET_DEV" ]; then
+  # Automaticly detect the default network interface
+  VM_NET_DEV=$(awk '$2 == 00000000 { print $1 }' /proc/net/route)
+  [ -z "$VM_NET_DEV" ] && VM_NET_DEV="eth0"
+fi
+
 if [ ! -d "/sys/class/net/$VM_NET_DEV" ]; then
-  error "Network interface $VM_NET_DEV does not exist inside the container!"
+  error "Network interface '$VM_NET_DEV' does not exist inside the container!"
   error "$ADD_ERR -e \"VM_NET_DEV=NAME\" to specify another interface name." && exit 27
 fi
 
