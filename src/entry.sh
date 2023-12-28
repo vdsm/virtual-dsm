@@ -29,14 +29,17 @@ msg=$(qemu-system-x86_64 -daemonize -pidfile "$QEMU_PID" ${ARGS:+ $ARGS})
 
 if [[ "$msg" != "char"* ||  "$msg" != *"serial0)" ]]; then
   echo "$msg"
+fi
+
+dev="${msg#*/dev/p}"
+dev="/dev/p${dev%% *}"
+  
+if [ ! -c "$dev" ]; then
   dev=$(echo 'info chardev' | nc -q 1 -w 1 localhost "$QEMU_PORT" | tr -d '\000')
   dev="${dev#*charserial0}"
   dev="${dev#*pty:}"
   dev="${dev%%$'\n'*}"
   dev="${dev%%$'\r'*}"
-else
-  dev="${msg#*/dev/}"
-  dev="/dev/${dev%% *}"
 fi
 
 if [ ! -c "$dev" ]; then
