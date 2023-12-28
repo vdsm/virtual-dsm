@@ -29,5 +29,4 @@ qemu-system-x86_64 -daemonize -pidfile "$QEMU_PID" ${ARGS:+ $ARGS}
 { set +x; } 2>/dev/null
 cat /dev/pts/1 2>/dev/null & wait $! || true
 
-finish
-exit 0
+finish "0"
