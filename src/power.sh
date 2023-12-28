@@ -61,10 +61,14 @@ _graceful_shutdown() {
   local code=$?
   local pid cnt response
 
-  [ -f "$QEMU_COUNT" ] && return
-  echo 0 > "$QEMU_COUNT"
-
   set +e
+
+  if [ -f "$QEMU_COUNT" ]; then
+    echo && info "Ignored $1 signal, already shutting down..."
+    return
+  fi
+
+  echo 0 > "$QEMU_COUNT"
   echo && info "Received $1 signal, sending shutdown command..."
 
   if [ ! -f "$QEMU_PID" ]; then
