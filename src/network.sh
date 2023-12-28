@@ -218,6 +218,7 @@ fi
 VM_NET_MAC="${VM_NET_MAC//-/:}"
 GATEWAY=$(ip r | grep default | awk '{print $3}')
 IP=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
+echo "$IP" > /run/qemu.ip
 
 if [[ "$DEBUG" == [Yy1]* ]]; then
   info "Container IP is $IP with gateway $GATEWAY" && echo
