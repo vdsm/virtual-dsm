@@ -69,7 +69,7 @@ configureDHCP() {
   return 0
 }
 
-configureDNS () {
+configureDNS() {
 
   # dnsmasq configuration:
   DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-range=$VM_NET_IP,$VM_NET_IP --dhcp-host=$VM_NET_MAC,,$VM_NET_IP,$VM_NET_HOST,infinite --dhcp-option=option:netmask,255.255.255.0"
@@ -90,7 +90,7 @@ configureDNS () {
   return 0
 }
 
-configureNAT () {
+configureNAT() {
 
   # Create a bridge with a static IP for the VM guest
 
@@ -151,7 +151,7 @@ configureNAT () {
   return 0
 }
 
-closeNetwork () {
+closeNetwork() {
 
   exec 30<&- || true
   exec 40<&- || true
@@ -203,6 +203,11 @@ fi
 
 update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
 update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
+
+if [ ! -d "/sys/class/net/$VM_NET_DEV" ]; then
+  error "Network interface $VM_NET_DEV does not exist inside the container!"
+  error "$ADD_ERR -e \"VM_NET_DEV=NAME\" to specify another interface name." && exit 27
+fi
 
 VM_NET_MAC="${VM_NET_MAC//-/:}"
 GATEWAY=$(ip r | grep default | awk '{print $3}')
