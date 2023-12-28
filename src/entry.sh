@@ -19,12 +19,11 @@ cd /run
 trap - ERR
 
 if [[ "$CONSOLE" == [Yy]* ]]; then
-  exec qemu-system-x86_64 -pidfile "$QEMU_PID" ${ARGS:+ $ARGS}
-  exit $?
+  exec qemu-system-x86_64 ${ARGS:+ $ARGS} && exit $?
 fi
 
 [[ "$DEBUG" == [Yy1]* ]] && info "$VERS" && set -x
-msg=$(qemu-system-x86_64 -daemonize -pidfile "$QEMU_PID" ${ARGS:+ $ARGS})
+msg=$(qemu-system-x86_64 -daemonize ${ARGS:+ $ARGS})
 { set +x; } 2>/dev/null
 
 [[ "${msg,,}" != "char"* ||  "$msg" != *"serial0)" ]] && echo "$msg"
