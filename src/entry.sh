@@ -24,19 +24,23 @@ if [[ "$CONSOLE" == [Yy]* ]]; then
 fi
 
 [[ "$DEBUG" == [Yy1]* ]] && info "$VERS" && set -x
-dev=$(qemu-system-x86_64 -daemonize -pidfile "$QEMU_PID" ${ARGS:+ $ARGS})
+msg=$(qemu-system-x86_64 -daemonize -pidfile "$QEMU_PID" ${ARGS:+ $ARGS})
 { set +x; } 2>/dev/null
 
-if [[ "$dev" != "char"* || "$dev" != *"redirected to"* ||  "$dev" != *")" ]]; then
-  error "$dev"
-  finish 33
+if [[ "$msg" != "char"* ||  "$msg" != *"serial)" ]]; then
+  echo "$msg"
+  dev=$(echo 'info chardev' | nc -q 1 -w 1 localhost "$QEMU_PORT" | tr -d '\000')
+  dev="${dev#*charserial0}"
+  dev="${dev#*pty:}"
+  dev="${dev%%$'\n'*}"
+  dev="${dev%%$'\r'*}"
+else
+  dev="${msg#*/dev/}"
+  dev="/dev/${dev%% *}"
 fi
 
-dev="${dev#*/dev/}"
-dev="/dev/${dev%% *}"
-
 if [ ! -c "$dev" ]; then
-  error "Device $dev not found!"
+  error "Device `$dev` not found!"
   finish 34
 fi
 
