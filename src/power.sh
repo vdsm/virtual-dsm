@@ -34,7 +34,7 @@ finish() {
   if [ -f "$QEMU_PID" ]; then
 
     local pid="$(cat "$QEMU_PID")"
-    echo && error "Forcefully quitting QEMU process, reason $reason..."
+    echo && error "Forcefully quitting QEMU process, reason: $reason..."
     { kill -15 "$pid" || true; } 2>/dev/null
 
     while isAlive "$pid"; do
