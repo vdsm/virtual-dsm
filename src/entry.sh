@@ -33,7 +33,7 @@ fi
 
 dev="${msg#*/dev/p}"
 dev="/dev/p${dev%% *}"
-  
+
 if [ ! -c "$dev" ]; then
   dev=$(echo 'info chardev' | nc -q 1 -w 1 localhost "$QEMU_PORT" | tr -d '\000')
   dev="${dev#*charserial0}"
