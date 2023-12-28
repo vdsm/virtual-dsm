@@ -2,12 +2,12 @@
 set -Eeuo pipefail
 
 : ${DHCP:='N'}
-: ${VM_NET_DEV:='eth0'}
 
 info () { printf "%b%s%b" "\E[1;34m❯ \E[1;36m" "$1" "\E[0m\n" >&2; }
 error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: $1" "\E[0m\n" >&2; }
 
 file="/run/dsm.url"
+address="/run/qemu.ip"
 shutdown="/run/qemu.end"
 url="http://127.0.0.1:2210/read?command=10"
 
@@ -69,7 +69,7 @@ if [[ "$location" != "20.20"* ]]; then
 
 else
 
-  ip=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
+  ip="$(cat "$address")"
   port="${location##*:}"
 
   if [[ "$ip" == "172."* ]]; then
