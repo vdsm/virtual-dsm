@@ -72,7 +72,7 @@ pKill() {
   return 0
 }
 
-fKill () {
+fKill() {
   local name=$1
 
   { pkill -f "$name" || true; } 2>/dev/null
@@ -84,7 +84,7 @@ fKill () {
   return 0
 }
 
-getCountry () {
+getCountry() {
   local url=$1
   local query=$2
   local rc json result
@@ -103,7 +103,7 @@ getCountry () {
   return 0
 }
 
-setCountry () {
+setCountry() {
 
   [[ "${TZ,,}" == "asia/harbin" ]] && COUNTRY="CN"
   [[ "${TZ,,}" == "asia/beijing" ]] && COUNTRY="CN"
