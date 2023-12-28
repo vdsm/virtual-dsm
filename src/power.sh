@@ -12,7 +12,7 @@ QEMU_PORT=7100
 QEMU_TIMEOUT=50
 QEMU_PID="/run/qemu.pid"
 QEMU_LOG="/run/qemu.log"
-QEMU_COUNT="/run/qemu.count"
+QEMU_END="/run/qemu.end"
 
 if [[ "$KVM" == [Nn]* ]]; then
   API_TIMEOUT=$(( API_TIMEOUT*2 ))
@@ -21,7 +21,7 @@ fi
 
 rm -f "$QEMU_PID"
 rm -f "$QEMU_LOG"
-rm -f "$QEMU_COUNT"
+rm -f "$QEMU_END"
 touch "$QEMU_LOG"
 
 _trap() {
@@ -96,12 +96,12 @@ _graceful_shutdown() {
 
   set +e
 
-  if [ -f "$QEMU_COUNT" ]; then
+  if [ -f "$QEMU_END" ]; then
     echo && info "Received $1 signal while already shutting down..."
     return
   fi
 
-  touch "$QEMU_COUNT"
+  touch "$QEMU_END"
   echo && info "Received $1 signal, sending shutdown command..."
 
   if [ ! -f "$QEMU_PID" ]; then
