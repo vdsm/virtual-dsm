@@ -31,8 +31,6 @@ finish() {
 
   local reason=$1
 
-  [ -f "$QEMU_PID" ] && sleep 1
-
   if [ -f "$QEMU_PID" ]; then
 
     local pid="$(cat "$QEMU_PID")"
