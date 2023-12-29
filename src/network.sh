@@ -4,7 +4,7 @@ set -Eeuo pipefail
 # Docker environment variables
 
 : ${DHCP:='N'}
-: ${HOST_PORTS:='7100'}
+: ${HOST_PORTS:=''}
 : ${MAC:='02:11:32:AA:BB:CC'}
 
 : ${VM_NET_DEV:=''}
@@ -91,6 +91,40 @@ configureDNS() {
   return 0
 }
 
+getPorts() {
+
+  local list=$1
+  local args=""
+  local vnc="5900"
+
+  list="${list## }"
+  list="${list%% }"
+  
+  if [[ "${DISPLAY,,}" == "vnc" ]] && [[ "$list" != *"$vnc"* ]]; then
+    if [ -z "$list" ]; then
+      list="$vnc"
+    else
+      list="$list $vnc"
+    fi
+  fi
+
+  if [ -n "$list" ]; then
+    if [[ "$list" != *" "* ]]; then
+      args=" ! --dport $list"
+    else
+      args=" -m multiport ! --dports "
+      for port in $list; do
+        args="${args}${port},"
+      done
+      args="${args%?}"
+    fi
+  fi
+
+  echo "$args"
+
+  return 0
+}
+
 configureNAT() {
 
   # Create the necessary file structure for /dev/net/tun
@@ -145,18 +179,11 @@ configureNAT() {
   update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
   update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 
-  if [[ "${DISPLAY,,}" == "vnc" ]] && [[ "$HOST_PORTS" != *"5900"* ]]; then
-    HOST_PORTS="$HOST_PORTS 5900"
-  fi
-
-  local PORT_ARGS=""
-  for PORT in $HOST_PORTS; do
-    PORT_ARGS="$PORT_ARGS ! --dport $PORT"
-  done
+  exclude="$(getPorts "$HOST_PORTS")"
 
   iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -j MASQUERADE
   # shellcheck disable=SC2086
-  iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p tcp $PORT_ARGS -j DNAT --to "$VM_NET_IP"
+  iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p tcp${exclude} -j DNAT --to "$VM_NET_IP"
   iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p udp  -j DNAT --to "$VM_NET_IP"
 
   if (( KERNEL > 4 )); then
@@ -231,10 +258,6 @@ getInfo() {
   IP=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
   echo "$IP" > /run/qemu.ip
 
-  if [[ "$DEBUG" == [Yy1]* ]]; then
-    info "Container IP is $IP with gateway $GATEWAY on interface $VM_NET_DEV" && echo
-  fi
-
   return 0
 }
 
@@ -251,6 +274,10 @@ if [ ! -c /dev/vhost-net ]; then
 fi
 
 getInfo
+
+if [[ "$DEBUG" == [Yy1]* ]]; then
+  info "Container IP is $IP with gateway $GATEWAY on interface $VM_NET_DEV" && echo
+fi
 
 if [[ "$DHCP" == [Yy1]* ]]; then
 
