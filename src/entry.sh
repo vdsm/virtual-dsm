@@ -11,7 +11,7 @@ cd /run
 . disk.sh       # Initialize disks
 . display.sh    # Initialize graphics
 . network.sh    # Initialize network
-. proc.sh        # Initialize processor
+. proc.sh       # Initialize processor
 . serial.sh     # Initialize serialport
 . power.sh      # Configure shutdown
 . config.sh     # Configure arguments
