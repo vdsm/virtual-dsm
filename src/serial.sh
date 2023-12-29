@@ -47,9 +47,7 @@ done
 # Configure serial ports
 
 SERIAL_OPTS="\
-        -serial none \
-        -chardev pty,id=charserial0 \
-        -device isa-serial,chardev=charserial0,id=serial0 \
+        -serial pty \
         -device virtio-serial-pci,id=virtio-serial0,bus=pcie.0,addr=0x3 \
         -chardev socket,id=charchannel0,host=127.0.0.1,port=12345,reconnect=10 \
         -device virtserialport,bus=virtio-serial0.0,nr=1,chardev=charchannel0,id=channel0,name=vchannel"
