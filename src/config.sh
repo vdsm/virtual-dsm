@@ -12,8 +12,7 @@ EXTRA_OPTS="$EXTRA_OPTS -device virtio-rng-pci,rng=objrng0,id=rng0,bus=pcie.0,ad
 [[ "$CONSOLE" != [Yy]* ]] && EXTRA_OPTS="$EXTRA_OPTS -daemonize -D $QEMU_LOG"
 
 if [[ "$GPU" == [Yy1]* ]] && [[ "$ARCH" == "amd64" ]]; then
-  DEF_OPTS="-nodefaults -boot strict=on -display egl-headless,rendernode=/dev/dri/renderD128"
-  EXTRA_OPTS="$EXTRA_OPTS -device virtio-vga,id=video0,max_outputs=1,bus=pcie.0,addr=0x1"
+  DEF_OPTS="-nodefaults -boot strict=on -display egl-headless,rendernode=/dev/dri/renderD128 -vga virtio"
 fi
 
 ARGS="$DEF_OPTS $CPU_OPTS $RAM_OPTS $MAC_OPTS $MON_OPTS $SERIAL_OPTS $NET_OPTS $DISK_OPTS $EXTRA_OPTS $ARGUMENTS"
