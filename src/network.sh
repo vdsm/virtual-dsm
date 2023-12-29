@@ -4,7 +4,7 @@ set -Eeuo pipefail
 # Docker environment variables
 
 : ${DHCP:='N'}
-: ${HOST_PORTS:=''}
+: ${HOST_PORTS:='7100'}
 : ${MAC:='02:11:32:AA:BB:CC'}
 
 : ${VM_NET_DEV:=''}
@@ -145,8 +145,8 @@ configureNAT() {
   update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
   update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 
-  if  [[ -z "$HOST_PORTS" ]] && [[ "${DISPLAY,,}" == "vnc" ]]; then
-    HOST_PORTS="5900"
+  if [[ "${DISPLAY,,}" == "vnc" ]] && [[ "$HOST_PORTS" != *"5900"* ]]; then
+    HOST_PORTS="$HOST_PORTS 5900"
   fi
 
   local PORT_ARGS=""
