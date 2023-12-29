@@ -99,7 +99,7 @@ getPorts() {
 
   list="${list## }"
   list="${list%% }"
-  
+
   if [[ "${DISPLAY,,}" == "vnc" ]] && [[ "$list" != *"$vnc"* ]]; then
     if [ -z "$list" ]; then
       list="$vnc"
