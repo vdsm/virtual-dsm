@@ -73,7 +73,7 @@ terminal() {
 
   if [ ! -c "$dev" ]; then
     dev=$(echo 'info chardev' | nc -q 1 -w 1 localhost "$QEMU_PORT" | tr -d '\000')
-    dev="${dev#*charserial0}"
+    dev="${dev#*serial0}"
     dev="${dev#*pty:}"
     dev="${dev%%$'\n'*}"
     dev="${dev%%$'\r'*}"
