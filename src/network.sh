@@ -97,7 +97,7 @@ getPorts() {
   local args=""
   local vnc="5900"
 
-  list=${list//,/ }
+  list="${list//,/ }"
   list="${list## }"
   list="${list%% }"
 
@@ -122,7 +122,6 @@ getPorts() {
   fi
 
   echo "$args"
-
   return 0
 }
 
