@@ -1,9 +1,26 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Docker environment variables
+
+: ${GPU:='N'}           # GPU passthrough
+: ${DISPLAY:='none'}  # Display type
+
+case "${DISPLAY,,}" in
+  vnc)
+    DISPLAY_OPTS="-display vnc=:0 -vga virtio"
+    ;;
+  *)
+    DISPLAY_OPTS="-display $DISPLAY -vga none"
+    ;;
+esac
+
 if [[ "$GPU" != [Yy1]* ]] || [[ "$ARCH" != "amd64" ]]; then
   return 0
 fi
+
+DISPLAY_OPTS="-display egl-headless,rendernode=/dev/dri/renderD128 -vga virtio"
+[[ "${DISPLAY,,}" == "vnc" ]] && DISPLAY_OPTS="$DISPLAY_OPTS -vnc :0"
 
 [ ! -d /dev/dri ] && mkdir -m 755 /dev/dri
 

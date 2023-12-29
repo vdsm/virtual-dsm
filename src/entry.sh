@@ -9,8 +9,8 @@ cd /run
 . reset.sh      # Initialize system
 . install.sh    # Run installation
 . disk.sh       # Initialize disks
+. display.sh    # Initialize graphics
 . network.sh    # Initialize network
-. gpu.sh        # Initialize graphics
 . cpu.sh        # Initialize processor
 . serial.sh     # Initialize serialport
 . power.sh      # Configure shutdown

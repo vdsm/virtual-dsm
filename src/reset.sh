@@ -12,8 +12,6 @@ trap 'error "Status $? while: $BASH_COMMAND (line $LINENO/$BASH_LINENO)"' ERR
 # Docker environment variables
 
 : ${TZ:=''}             # System local timezone
-: ${GPU:='N'}           # Disable GPU passthrough
-: ${KVM:='Y'}           # Enable KVM acceleration
 : ${DEBUG:='N'}         # Disable debugging mode
 : ${COUNTRY:=''}        # Country code for mirror
 : ${CONSOLE:='N'}       # Disable console mode
