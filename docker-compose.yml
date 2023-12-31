@@ -9,8 +9,6 @@ services:
             CPU_CORES: "1"
         devices:
             - /dev/kvm
-            - /dev/net/tun
-            - /dev/vhost-net
         device_cgroup_rules:
             - 'c *:* rwm'
         cap_add:
