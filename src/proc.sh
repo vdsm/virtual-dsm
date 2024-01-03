@@ -14,12 +14,16 @@ if [[ "$KVM" != [Nn]* ]]; then
 
   KVM_ERR=""
 
-  if [ -e /dev/kvm ] && sh -c 'echo -n > /dev/kvm' &> /dev/null; then
-    if ! grep -q -e vmx -e svm /proc/cpuinfo; then
-      KVM_ERR="(vmx/svm disabled)"
-    fi
+  if [ ! -e /dev/kvm ]; then
+    KVM_ERR="(device file missing)"
   else
-    [ -e /dev/kvm ] && KVM_ERR="(no write access)" || KVM_ERR="(device file missing)"
+    if ! sh -c 'echo -n > /dev/kvm' &> /dev/null; then
+      KVM_ERR="(no write access)"
+    else
+      if ! grep -q -e vmx -e svm /proc/cpuinfo; then
+        KVM_ERR="(vmx/svm disabled)"
+      fi
+    fi
   fi
 
   if [ -n "$KVM_ERR" ]; then
