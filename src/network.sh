@@ -94,34 +94,20 @@ configureDNS() {
 getPorts() {
 
   local list=$1
-  local args=""
   local vnc="5900"
 
-  list="${list//,/ }"
-  list="${list## }"
-  list="${list%% }"
-
   if [[ "${DISPLAY,,}" == "vnc" ]] && [[ "$list" != *"$vnc"* ]]; then
-    if [ -z "$list" ]; then
-      list="$vnc"
-    else
-      list="$list $vnc"
-    fi
+    [ -z "$list" ] && list="$vnc" || list="$list,$vnc"
   fi
 
-  if [ -n "$list" ]; then
-    if [[ "$list" != *" "* ]]; then
-      args=" ! --dport $list"
-    else
-      args=" -m multiport ! --dports "
-      for port in $list; do
-        args="${args}${port},"
-      done
-      args="${args%?}"
-    fi
+  [ -z "$list" ] && return 0
+  
+  if [[ "$list" != *","* ]]; then
+    echo " ! --dport $list"
+  else
+    echo " -m multiport ! --dports $list"
   fi
 
-  echo "$args"
   return 0
 }
 
