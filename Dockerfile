@@ -2,7 +2,7 @@ FROM qemux/qemu-host as builder
 
 #  FROM golang as builder
 #  WORKDIR /
-#  RUN git clone https://github.com/qemu-tools/qemu-host.git
+#  RUN git clone https://github.com/qemus/qemu-host.git
 #  WORKDIR /qemu-host/src
 #  RUN go mod download
 #  RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /qemu-host.bin .
@@ -44,7 +44,7 @@ COPY --from=builder /qemu-host.bin /run/host.bin
 RUN chmod +x /run/*.sh && chmod +x /run/*.bin
 
 VOLUME /storage
-EXPOSE 22 80 139 445 5000
+EXPOSE 22 139 445 5000
 
 ENV RAM_SIZE "1G"
 ENV DISK_SIZE "16G"
