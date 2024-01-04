@@ -122,7 +122,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
     sudo kvm-ok
     ```
 
-    If you receive an error from `kvm-ok` indicating that KVM acceleration can't be used, check your BIOS settings.
+    If you receive an error from `kvm-ok` indicating that KVM acceleration can't be used, check the virtualization settings in the BIOS.
 
   * ### How do I assign an individual IP address to the container?
 
