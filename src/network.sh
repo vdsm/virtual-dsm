@@ -4,7 +4,6 @@ set -Eeuo pipefail
 # Docker environment variables
 
 : ${DHCP:='N'}
-: ${HOST_PORTS:=''}
 : ${MAC:='02:11:32:AA:BB:CC'}
 
 : ${VM_NET_DEV:=''}
@@ -91,26 +90,6 @@ configureDNS() {
   return 0
 }
 
-getPorts() {
-
-  local list=$1
-  local vnc="5900"
-
-  if [[ "${DISPLAY,,}" == "vnc" ]] && [[ "$list" != *"$vnc"* ]]; then
-    [ -z "$list" ] && list="$vnc" || list="$list,$vnc"
-  fi
-
-  [ -z "$list" ] && return 0
-  
-  if [[ "$list" != *","* ]]; then
-    echo " ! --dport $list"
-  else
-    echo " -m multiport ! --dports $list"
-  fi
-
-  return 0
-}
-
 configureNAT() {
 
   # Create the necessary file structure for /dev/net/tun
@@ -165,11 +144,8 @@ configureNAT() {
   update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
   update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 
-  exclude="$(getPorts "$HOST_PORTS")"
-
   iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -j MASQUERADE
-  # shellcheck disable=SC2086
-  iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p tcp${exclude} -j DNAT --to "$VM_NET_IP"
+  iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p tcp -j DNAT --to "$VM_NET_IP"
   iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p udp  -j DNAT --to "$VM_NET_IP"
 
   if (( KERNEL > 4 )); then
