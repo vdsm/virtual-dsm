@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 : ${URL:=''}    # URL of the PAT file to be downloaded.
 
-if [ -f "$STORAGE"/dsm.ver ]; then
+if [ -f "$STORAGE/dsm.ver" ]; then
   BASE=$(cat "$STORAGE/dsm.ver")
 else
   # Fallback for old installs
@@ -37,18 +37,16 @@ fi
 BASE=$(basename "$URL" .pat)
 
 if [[ "$URL" != "file://$STORAGE/$BASE.pat" ]]; then
-  rm -f "$STORAGE"/"$BASE".pat
+  rm -f "$STORAGE/$BASE.pat"
 fi
 
-rm -f "$STORAGE"/"$BASE".agent
-rm -f "$STORAGE"/"$BASE".boot.img
-rm -f "$STORAGE"/"$BASE".system.img
+rm -f "$STORAGE/$BASE.agent"
+rm -f "$STORAGE/$BASE.boot.img"
+rm -f "$STORAGE/$BASE.system.img"
 
 [[ "$DEBUG" == [Yy1]* ]] && set -x
 
 # Check filesystem
-MIN_ROOT=471859200
-MIN_SPACE=6442450944
 FS=$(stat -f -c %T "$STORAGE")
 
 if [[ "${FS,,}" == "overlay"* ]]; then
@@ -59,23 +57,26 @@ if [[ "${FS,,}" != "fat"* && "${FS,,}" != "vfat"* && "${FS,,}" != "exfat"* && "$
   TMP="$STORAGE/tmp"
 else
   TMP="/tmp/dsm"
+  TMP_SPACE=2147483648
   SPACE=$(df --output=avail -B 1 /tmp | tail -n 1)
   SPACE_MB=$(( (SPACE + 1048575)/1048576 ))
-  if (( MIN_SPACE > SPACE )); then
-    error "Not enough free space inside the container, have $SPACE_MB MB available but need at least 6 GB." && exit 93
+  if (( TMP_SPACE > SPACE )); then
+    error "Not enough free space inside the container, have $SPACE_MB MB available but need at least 2 GB." && exit 93
   fi
 fi
 
 rm -rf "$TMP" && mkdir -p "$TMP"
 
 # Check free diskspace
+ROOT_SPACE=536870912
 SPACE=$(df --output=avail -B 1 / | tail -n 1)
 SPACE_MB=$(( (SPACE + 1048575)/1048576 ))
-(( MIN_ROOT > SPACE )) && error "Not enough free space inside the container, have $SPACE_MB MB available but need at least 450 MB." && exit 96
+(( ROOT_SPACE > SPACE )) && error "Not enough free space inside the container, have $SPACE_MB MB available but need at least 500 MB." && exit 96
 
+MIN_SPACE=8589934592
 SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
 SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
-(( MIN_SPACE > SPACE )) && error "Not enough free space for installation in $STORAGE, have $SPACE_GB GB available but need at least 6 GB." && exit 94
+(( MIN_SPACE > SPACE )) && error "Not enough free space for installation in $STORAGE, have $SPACE_GB GB available but need at least 8 GB." && exit 94
 
 # Check if output is to interactive TTY
 if [ -t 1 ]; then
@@ -214,19 +215,22 @@ BOOT=$(find "$TMP" -name "*.bin.zip")
 BOOT=$(echo "$BOOT" | head -c -5)
 unzip -q -o "$BOOT".zip -d "$TMP"
 
-SYSTEM="$TMP/sys.img"
-SYSTEM_SIZE=4954537983
+SYSTEM="$STORAGE/$BASE.system.img"
 rm -f "$SYSTEM"
 
 # Check free diskspace
-SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
+SYSTEM_SIZE=4954537983
+SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
 SPACE_MB=$(( (SPACE + 1048575)/1048576 ))
-(( SYSTEM_SIZE > SPACE )) && error "Not enough free space to create a 4 GB system disk, have only $SPACE_MB MB available." && exit 97
+
+if (( SYSTEM_SIZE > SPACE )); then
+  error "Not enough free space in $STORAGE to create a 5 GB system disk, have only $SPACE_MB MB available." && exit 97
+fi
 
 if ! touch "$SYSTEM"; then
   error "Could not create file $SYSTEM for the system disk." && exit 98
 fi
-  
+
 if [[ "${FS,,}" == "xfs" || "${FS,,}" == "zfs" || "${FS,,}" == "btrfs" || "${FS,,}" == "bcachefs" ]]; then
   { chattr +C "$SYSTEM"; } || :
   FA=$(lsattr "$SYSTEM")
@@ -240,17 +244,6 @@ if ! fallocate -l "$SYSTEM_SIZE" "$SYSTEM"; then
     rm -f "$SYSTEM"
     error "Could not allocate file $SYSTEM for the system disk." && exit 98
   fi
-fi
-
-# Check if file exists
-[ ! -f "$SYSTEM" ] && error "System disk does not exist ($SYSTEM)" && exit 99
-
-# Check the filesize
-SIZE=$(stat -c%s "$SYSTEM")
-
-if [[ SIZE -ne SYSTEM_SIZE ]]; then
-  rm -f "$SYSTEM"
-  error "System disk has the wrong size: $SIZE vs $SYSTEM_SIZE" && exit 90
 fi
 
 PART="$TMP/partition.fdisk"
@@ -319,16 +312,15 @@ fi
 
 rm -rf "$MOUNT"
 
-echo "$BASE" > "$STORAGE"/dsm.ver
+echo "$BASE" > "$STORAGE/dsm.ver"
 
 if [[ "$URL" == "file://$STORAGE/$BASE.pat" ]]; then
   rm -f "$PAT"
 else
-  mv -f "$PAT" "$STORAGE"/"$BASE".pat
+  mv -f "$PAT" "$STORAGE/$BASE.pat"
 fi
 
-mv -f "$BOOT" "$STORAGE"/"$BASE".boot.img
-mv -f "$SYSTEM" "$STORAGE"/"$BASE".system.img
+mv -f "$BOOT" "$STORAGE/$BASE.boot.img"
 
 rm -rf "$TMP"
 
