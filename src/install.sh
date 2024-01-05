@@ -55,14 +55,14 @@ if [[ "${FS,,}" == "overlay"* ]]; then
   info "Warning: the filesystem of $STORAGE is OverlayFS, this usually means it was binded to an invalid path!"
 fi
 
-if [[ "${FS,,}" != "fat"* && "${FS,,}" != "vfat"* && "${FS,,}" != "exfat"* && \
-        "${FS,,}" != "ntfs"* && "${FS,,}" != "fuse"* && "${FS,,}" != "msdos"* ]]; then
+if [[ "${FS,,}" != "fat"* && "${FS,,}" != "vfat"* && "${FS,,}" != "exfat"* && "${FS,,}" != "ntfs"* && "${FS,,}" != "msdos"* ]]; then
   TMP="$STORAGE/tmp"
 else
   TMP="/tmp/dsm"
   SPACE=$(df --output=avail -B 1 /tmp | tail -n 1)
+  SPACE_MB=$(( (SPACE + 1048575)/1048576 ))
   if (( MIN_SPACE > SPACE )); then
-    error "The ${FS^^} filesystem of $STORAGE does not support UNIX permissions, and no space left in container!" && exit 93
+    error "Not enough free space inside the container, have $SPACE_MB MB available but need at least 6 GB." && exit 93
   fi
 fi
 
@@ -70,7 +70,8 @@ rm -rf "$TMP" && mkdir -p "$TMP"
 
 # Check free diskspace
 SPACE=$(df --output=avail -B 1 / | tail -n 1)
-(( MIN_ROOT > SPACE )) && error "Not enough free space in container root, need at least 450 MB available." && exit 96
+SPACE_MB=$(( (SPACE + 1048575)/1048576 ))
+(( MIN_ROOT > SPACE )) && error "Not enough free space inside the container, have $SPACE_MB MB available but need at least 450 MB." && exit 96
 
 SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
 SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
@@ -219,8 +220,8 @@ rm -f "$SYSTEM"
 
 # Check free diskspace
 SPACE=$(df --output=avail -B 1 "$TMP" | tail -n 1)
-SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
-(( SYSTEM_SIZE > SPACE )) && error "Not enough free space to create a 4 GB system disk, have only $SPACE_GB GB available." && exit 97
+SPACE_MB=$(( (SPACE + 1048575)/1048576 ))
+(( SYSTEM_SIZE > SPACE )) && error "Not enough free space to create a 4 GB system disk, have only $SPACE_MB MB available." && exit 97
 
 if ! touch "$SYSTEM"; then
   error "Could not create file $SYSTEM for the system disk." && exit 98
