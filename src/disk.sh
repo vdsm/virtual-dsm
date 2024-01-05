@@ -319,6 +319,10 @@ checkFS () {
     info "Warning: the filesystem of $DIR is OverlayFS, this usually means it was binded to an invalid path!"
   fi
 
+  if [[ "${FS,,}" == "fuse"* ]]; then
+    info "Warning: the filesystem of $DIR is FUSE, this extra layer will negatively affect performance!"
+  fi
+
   if isCow "$FS"; then
     if [ -f "$DISK_FILE" ]; then
       FA=$(lsattr "$DISK_FILE")
