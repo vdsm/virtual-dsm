@@ -53,6 +53,10 @@ if [[ "${FS,,}" == "overlay"* ]]; then
   info "Warning: the filesystem of $STORAGE is OverlayFS, this usually means it was binded to an invalid path!"
 fi
 
+if [[ "${FS,,}" == "fuse"* ]]; then
+  info "Warning: the filesystem of $STORAGE is FUSE, this extra layer will negatively affect performance!"
+fi
+
 if [[ "${FS,,}" != "fat"* && "${FS,,}" != "vfat"* && "${FS,,}" != "exfat"* && "${FS,,}" != "ntfs"* && "${FS,,}" != "msdos"* ]]; then
   TMP="$STORAGE/tmp"
 else
