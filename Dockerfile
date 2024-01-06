@@ -13,8 +13,8 @@ ARG TARGETPLATFORM
 ARG DEBCONF_NOWARNINGS="yes"
 ARG DEBIAN_FRONTEND noninteractive
 
-RUN apt-get update && apt-get -y upgrade \
-    && if [ "$TARGETPLATFORM" != "linux/amd64" ]; then extra="qemu-user"; fi \
+RUN if [ "$TARGETPLATFORM" != "linux/amd64" ]; then extra="qemu-user"; fi \
+    && apt-get update \
     && apt-get --no-install-recommends -y install \
         jq \
         tini \
