@@ -12,6 +12,7 @@ FROM debian:trixie-slim
 ARG TARGETPLATFORM
 ARG DEBCONF_NOWARNINGS="yes"
 ARG DEBIAN_FRONTEND noninteractive
+ARG DEBCONF_NONINTERACTIVE_SEEN true
 
 RUN if [ "$TARGETPLATFORM" != "linux/amd64" ]; then extra="qemu-user"; fi \
     && apt-get update \
