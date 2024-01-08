@@ -130,17 +130,14 @@ addPackage() {
 
   info "Installing $desc..."
 
-  export DEBCONF_NOWARNINGS="yes"
-  export DEBIAN_FRONTEND="noninteractive"
-
   [ -z "$COUNTRY" ] && setCountry
 
   if [[ "${COUNTRY^^}" == "CN" ]]; then
     sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debian.sources
   fi
 
-  apt-get -qq update
-  apt-get -qq --no-install-recommends -y install "$pkg" > /dev/null
+  DEBIAN_FRONTEND=noninteractive apt-get -qq update
+  DEBIAN_FRONTEND=noninteractive apt-get -qq --no-install-recommends -y install "$pkg" > /dev/null
 
   return 0
 }
