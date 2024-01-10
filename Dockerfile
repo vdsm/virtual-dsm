@@ -29,6 +29,7 @@ RUN if [ "$TARGETPLATFORM" != "linux/amd64" ]; then extra="qemu-user"; fi \
         xz-utils \
         iptables \
         iproute2 \
+        apt-utils \
         dnsmasq \
         fakeroot \
         net-tools \
