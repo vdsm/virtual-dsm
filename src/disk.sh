@@ -453,12 +453,28 @@ DISK6_FILE="/storage6/data6"
 : ${DISK5_SIZE:=''}
 : ${DISK6_SIZE:=''}
 
-addDisk "userdata" "$DISK1_FILE" "$DISK_EXT" "disk" "$DISK_SIZE" "3" "0xc" "$DISK_FMT" || exit $?
-addDisk "userdata2" "$DISK2_FILE" "$DISK_EXT" "disk2" "$DISK2_SIZE" "4" "0xd" "$DISK_FMT" || exit $?
-addDisk "userdata3" "$DISK3_FILE" "$DISK_EXT" "disk3" "$DISK3_SIZE" "5" "0xe" "$DISK_FMT" || exit $?
-addDisk "userdata4" "$DISK4_FILE" "$DISK_EXT" "disk4" "$DISK4_SIZE" "9" "0x7" "$DISK_FMT" || exit $?
-addDisk "userdata5" "$DISK5_FILE" "$DISK_EXT" "disk5" "$DISK5_SIZE" "10" "0x8" "$DISK_FMT" || exit $?
-addDisk "userdata6" "$DISK6_FILE" "$DISK_EXT" "disk6" "$DISK6_SIZE" "11" "0x9" "$DISK_FMT" || exit $?
+: ${DEVICE:=''}        # Docker variable to passthrough a block device, like /dev/vdc1.
+: ${DEVICE2:=''}
+: ${DEVICE3:=''}
+: ${DEVICE4:=''}
+: ${DEVICE5:=''}
+: ${DEVICE6:=''}
+
+if [ -z "$DEVICE" ]; then
+  addDisk "userdata" "$DISK1_FILE" "$DISK_EXT" "disk" "$DISK_SIZE" "3" "0xc" "$DISK_FMT" || exit $?
+fi
+
+if [ -z "$DEVICE2" ]; then
+  addDisk "userdata2" "$DISK2_FILE" "$DISK_EXT" "disk2" "$DISK2_SIZE" "4" "0xd" "$DISK_FMT" || exit $?
+fi
+
+if [ -z "$DEVICE3" ]; then
+  addDisk "userdata3" "$DISK3_FILE" "$DISK_EXT" "disk3" "$DISK3_SIZE" "5" "0xe" "$DISK_FMT" || exit $?
+fi
+
+if [ -z "$DEVICE4" ]; then
+  addDisk "userdata4" "$DISK4_FILE" "$DISK_EXT" "disk4" "$DISK4_SIZE" "6" "0xf" "$DISK_FMT" || exit $?
+fi
 
 addDevice () {
 
@@ -478,18 +494,9 @@ addDevice () {
   return 0
 }
 
-: ${DEVICE:=''}        # Docker variable to passthrough a block device, like /dev/vdc1.
-: ${DEVICE2:=''}
-: ${DEVICE3:=''}
-: ${DEVICE4:=''}
-: ${DEVICE5:=''}
-: ${DEVICE6:=''}
-
-addDevice "userdata7" "$DEVICE" "6" "0xf" || exit $?
-addDevice "userdata8" "$DEVICE2" "7" "0x5" || exit $?
-addDevice "userdata9" "$DEVICE3" "8" "0x6" || exit $?
-addDevice "userdata4" "$DEVICE4" "9" "0x7" || exit $?
-addDevice "userdata5" "$DEVICE5" "10" "0x8" || exit $?
-addDevice "userdata6" "$DEVICE6" "11" "0x9" || exit $?
+addDevice "userdata" "$DEVICE" "3" "0xc" || exit $?
+addDevice "userdata2" "$DEVICE2" "4" "0xd" || exit $?
+addDevice "userdata3" "$DEVICE3" "5" "0xe" || exit $?
+addDevice "userdata4" "$DEVICE4" "6" "0xf" || exit $?
 
 return 0
