@@ -444,21 +444,15 @@ if [ ! -f "$DISK3_FILE.img" ]; then
 fi
 
 DISK4_FILE="/storage4/data4"
-DISK5_FILE="/storage5/data5"
-DISK6_FILE="/storage6/data6"
 
 : ${DISK2_SIZE:=''}
 : ${DISK3_SIZE:=''}
 : ${DISK4_SIZE:=''}
-: ${DISK5_SIZE:=''}
-: ${DISK6_SIZE:=''}
 
 : ${DEVICE:=''}        # Docker variable to passthrough a block device, like /dev/vdc1.
 : ${DEVICE2:=''}
 : ${DEVICE3:=''}
 : ${DEVICE4:=''}
-: ${DEVICE5:=''}
-: ${DEVICE6:=''}
 
 if [ -z "$DEVICE" ]; then
   addDisk "userdata" "$DISK1_FILE" "$DISK_EXT" "disk" "$DISK_SIZE" "3" "0xc" "$DISK_FMT" || exit $?
