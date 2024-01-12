@@ -15,7 +15,7 @@ trap 'error "Status $? while: $BASH_COMMAND (line $LINENO/$BASH_LINENO)"' ERR
 : ${DEBUG:='N'}         # Disable debugging mode
 : ${COUNTRY:=''}        # Country code for mirror
 : ${CONSOLE:='N'}       # Disable console mode
-: ${ALLOCATE:='Y'}      # Preallocate diskspace
+: ${ALLOCATE:=''}       # Preallocate diskspace
 : ${ARGUMENTS:=''}      # Extra QEMU parameters
 : ${CPU_CORES:='1'}     # Amount of CPU cores
 : ${RAM_SIZE:='1G'}     # Maximum RAM amount
