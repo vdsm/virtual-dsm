@@ -188,6 +188,23 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     This can be used to enable the facial recognition function in Synology Photos for example.
 
+  * ### How do I passthrough a disk?
+
+    When running the container inside a virtualized environment, it is recommended to passthrough disk devices directly instead of binding folders containing images, as these devices are already based on an image.
+
+    This allows for easier management and higher performance. To do so, you can add those devices to your compose file:
+
+    ```yaml
+    environment:
+      DEVICE: "/dev/sda"
+      DEVICE2: "/dev/sdb"
+    devices:
+      - /dev/sda
+      - /dev/sdb
+    ```
+
+    Please beware that any existing data on the device will be wiped, as DSM will format its partition table during first use. Do NOT passthrough devices containing valueable data.
+
   * ### How do I install a specific version of vDSM?
 
     By default, version 7.2.1 will be installed, but if you prefer an older version, you can add its download URL to your compose file as follows:
