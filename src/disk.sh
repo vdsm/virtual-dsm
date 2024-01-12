@@ -422,6 +422,14 @@ addDevice () {
 
 DISK_EXT="$(fmt2ext "$DISK_FMT")" || exit $?
 
+if [ -z "$ALLOCATE" ]; then
+  if [[ "${DISK_FMT,,}" == "raw" ]]; then
+    ALLOCATE="Y"
+  else
+    ALLOCATE="N"
+  fi
+fi
+
 if [[ "$ALLOCATE" == [Nn]* ]]; then
   DISK_TYPE="growable"
   DISK_ALLOC="preallocation=off"
