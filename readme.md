@@ -207,7 +207,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I install a specific version of vDSM?
 
-    By default, version 7.2.1 will be installed, but if you prefer an older version, you can add its download URL to your compose file as follows:
+    By default, version 7.2 will be installed, but if you prefer an older version, you can add its download URL to your compose file as follows:
 
     ```yaml
     environment:
