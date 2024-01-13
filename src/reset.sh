@@ -35,13 +35,12 @@ STORAGE="/storage"
 
 # Cleanup files
 
-rm -f /run/dsm.url
-rm -f /run/qemu.*
+rm -f /run/shm/qemu.*
+rm -f /run/shm/dsm.url
 
 # Cleanup dirs
 
 rm -rf /tmp/dsm
-rm -f /tmp/server.*
 rm -rf "$STORAGE/tmp"
 
 # Helper functions
