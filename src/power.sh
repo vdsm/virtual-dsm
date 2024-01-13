@@ -12,6 +12,7 @@ QEMU_PORT=7100
 QEMU_TIMEOUT=50
 QEMU_PID="/run/qemu.pid"
 QEMU_LOG="/run/qemu.log"
+QEMU_OUT="/run/qemu.out"
 QEMU_END="/run/qemu.end"
 
 if [[ "$KVM" == [Nn]* ]]; then
@@ -21,6 +22,7 @@ fi
 
 rm -f "$QEMU_PID"
 rm -f "$QEMU_LOG"
+rm -f "$QEMU_OUT"
 rm -f "$QEMU_END"
 touch "$QEMU_LOG"
 
