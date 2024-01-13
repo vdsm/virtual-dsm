@@ -60,21 +60,24 @@ finish() {
 
 terminal() {
 
-  local msg
+  local dev=""
+  
+  if [ -f "$QEMU_OUT" ]; then
 
-  if [ ! -f "$QEMU_OUT" ]; then
-    error "File '$QEMU_OUT' not found!"
-    finish 33 && return 33
+    local msg
+    msg="$(cat "$QEMU_OUT")"
+
+    if [ -n "$msg" ]; then
+
+      if [[ "${msg,,}" != "char"* ||  "$msg" != *"serial0)" ]]; then
+        echo "$msg"
+      fi
+
+      dev="${msg#*/dev/p}"
+      dev="/dev/p${dev%% *}"
+
+    fi
   fi
-
-  msg="$(cat "$QEMU_OUT")"
-
-  if [[ "${msg,,}" != "char"* ||  "$msg" != *"serial0)" ]]; then
-    [ -n "$msg" ] && echo "$msg"
-  fi
-
-  local dev="${msg#*/dev/p}"
-  dev="/dev/p${dev%% *}"
 
   if [ ! -c "$dev" ]; then
     dev=$(echo 'info chardev' | nc -q 1 -w 1 localhost "$QEMU_PORT" | tr -d '\000')
