@@ -24,7 +24,7 @@ fi
 
 [[ "$DEBUG" == [Yy1]* ]] && info "$VERS" && echo "Arguments: $ARGS" && echo
 { qemu-system-x86_64 ${ARGS:+ $ARGS} >"$QEMU_OUT" 2>"$QEMU_LOG"; rc=$?; } || :
-(( rc != 0 )) && error "$(cat "$QEMU_LOG")" && exit 15
+(( rc != 0 )) && error "$(<"$QEMU_LOG")" && exit 15
 
 terminal
 tail -fn +0 "$QEMU_LOG" 2>/dev/null &
