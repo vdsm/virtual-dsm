@@ -31,10 +31,16 @@ VERS=$(qemu-system-x86_64 --version | head -n 1 | cut -d '(' -f 1)
 # Check folder
 
 STORAGE="/storage"
-[ ! -d "$STORAGE" ] && error "Storage folder ($STORAGE) not found!" && exit 13
+if [ ! -d "$STORAGE" ]; then
+  error "Storage folder ($STORAGE) not found!" && exit 13
+fi
 
 if [ ! -d "/run/shm" ]; then
-  ln -s /dev/shm /run/shm
+  if [ -d "/dev/shm" ]; then
+    ln -s /dev/shm /run/shm
+  else
+    error "Folder /dev/shm not found!" && exit 14
+  fi
 fi
 
 # Cleanup files
