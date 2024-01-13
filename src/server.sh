@@ -35,9 +35,9 @@ if [[ "$2" != "/"* ]]; then
 
   socat TCP4-LISTEN:80,reuseaddr,fork,crlf SYSTEM:"cat $TMP_FILE" 2> /dev/null &
   socat TCP4-LISTEN:"${1:-5000}",reuseaddr,fork,crlf SYSTEM:"cat $TMP_FILE" 2> /dev/null & wait $!
-  
+
   exit
-  
+
 fi
 
 if [[ "$2" != "/run/ip.sh" ]]; then
@@ -61,6 +61,6 @@ else
 fi
 
 chmod +x "$TMP_FILE"
-  
+
 socat TCP4-LISTEN:80,reuseaddr,fork,crlf SYSTEM:"$TMP_FILE" 2> /dev/null &
 socat TCP4-LISTEN:"${1:-5000}",reuseaddr,fork,crlf SYSTEM:"$TMP_FILE" 2> /dev/null & wait $!
