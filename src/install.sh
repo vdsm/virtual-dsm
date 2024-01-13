@@ -139,7 +139,7 @@ if [ -f "$RDC" ]; then
     (( rc != 0 )) && error "Failed to extract $RDC, reason $rc" && exit 92
   fi
 
-  mkdir -p /run/extract
+  rm -rf /run/extract && mkdir -p /run/extract
   for file in $TMP/usr/lib/libcurl.so.4 \
               $TMP/usr/lib/libmbedcrypto.so.5 \
               $TMP/usr/lib/libmbedtls.so.13 \
@@ -211,6 +211,7 @@ else
 
 fi
 
+rm -rf /run/extract
 info "Install: Preparing system partition..."
 
 BOOT=$(find "$TMP" -name "*.bin.zip")
@@ -275,14 +276,7 @@ PKG="$TMP/packages"
 HDP="$TMP/synohdpack_img"
 
 [ ! -f "$HDA.tgz" ] && error "The PAT file contains no OS image." && exit 64
-
 mv "$HDA.tgz" "$HDA.txz"
-
-if [[ "$ROOT" != [Nn]* ]]; then
-
-  tar xpfJ "$HDA.txz" --absolute-names -C "$MOUNT/"
-
-fi
 
 [ -d "$PKG" ] && mv "$PKG/" "$MOUNT/.SynoUpgradePackages/"
 rm -f "$MOUNT/.SynoUpgradePackages/ActiveInsight-"*
@@ -300,6 +294,8 @@ OFFSET="1048576" # 2048 * 512
 NUMBLOCKS="622560" # (4980480 * 512) / 4096
 
 if [[ "$ROOT" != [Nn]* ]]; then
+
+  tar xpfJ "$HDA.txz" --absolute-names --skip-old-files -C "$MOUNT/"
 
   info "Install: Installing system partition..."
 

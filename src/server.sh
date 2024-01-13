@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-TMP_FILE=$(mktemp -q /tmp/server.XXXXXX)
+TMP_FILE=$(mktemp -q /run/shm/server.XXXXXX)
 
 stop() {
   trap - SIGINT EXIT
@@ -53,7 +53,7 @@ else
   HTML=$(html "xxx")
 
   { echo "#!/bin/bash"
-    echo "[ -f \"/run/dsm.url\" ] && LOCATION=\$(cat \"/run/dsm.url\")"
+    echo "[ -f \"/run/shm/dsm.url\" ] && LOCATION=\$(cat \"/run/shm/dsm.url\")"
     echo "HTML=\"$HTML\"; [ -z \"\$LOCATION\" ] && BODY=\"$WAIT\" || BODY=\"$BODY\"; HTML=\${HTML/xxx/\$BODY}"
     echo "printf '%b' \"HTTP/1.1 200 OK\\nContent-Length: \${#HTML}\\nConnection: close\\n\\n\$HTML\""
   } > "$TMP_FILE"

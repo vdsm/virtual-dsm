@@ -218,7 +218,7 @@ getInfo() {
 
   GATEWAY=$(ip r | grep default | awk '{print $3}')
   IP=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
-  echo "$IP" > /run/qemu.ip
+  echo "$IP" > /run/shm/qemu.ip
 
   return 0
 }

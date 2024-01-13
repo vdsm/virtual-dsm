@@ -6,9 +6,9 @@ set -Eeuo pipefail
 info () { printf "%b%s%b" "\E[1;34m❯ \E[1;36m" "$1" "\E[0m\n" >&2; }
 error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: $1" "\E[0m\n" >&2; }
 
-file="/run/dsm.url"
-address="/run/qemu.ip"
-shutdown="/run/qemu.end"
+file="/run/shm/dsm.url"
+address="/run/shm/qemu.ip"
+shutdown="/run/shm/qemu.end"
 url="http://127.0.0.1:2210/read?command=10"
 
 resp_err="Guest returned an invalid response:"
