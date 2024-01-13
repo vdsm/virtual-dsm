@@ -9,7 +9,7 @@ address="/run/shm/qemu.ip"
 
 [ ! -f  "$file" ] && echo "DSM has not enabled networking yet.." && exit 1
 
-location=$(cat "$file")
+location=$(<"$file")
 
 if ! curl -m 20 -ILfSs "http://$location/" > /dev/null; then
 
@@ -19,7 +19,7 @@ if ! curl -m 20 -ILfSs "http://$location/" > /dev/null; then
     echo "Failed to reach DSM at port $port"
   else
     echo "Failed to reach DSM at http://$location"
-    ip="$(cat "$address")"
+    ip=$(<"$address")
   fi
 
   echo "You might need to whitelist IP $ip in the DSM firewall." && exit 1
