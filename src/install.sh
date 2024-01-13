@@ -4,7 +4,7 @@ set -Eeuo pipefail
 : ${URL:=''}    # URL of the PAT file to be downloaded.
 
 if [ -f "$STORAGE/dsm.ver" ]; then
-  BASE=$(cat "$STORAGE/dsm.ver")
+  BASE=$(<"$STORAGE/dsm.ver")
 else
   # Fallback for old installs
   BASE="DSM_VirtualDSM_42962"
