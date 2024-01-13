@@ -10,9 +10,9 @@ FROM qemux/qemu-host as builder
 FROM debian:trixie-slim
 
 ARG TARGETPLATFORM
-ARG DEBCONF_NOWARNINGS="yes"
-ARG DEBIAN_FRONTEND noninteractive
-ARG DEBCONF_NONINTERACTIVE_SEEN true
+ARG DEBCONF_NOWARNINGS "yes"
+ARG DEBIAN_FRONTEND "noninteractive"
+ARG DEBCONF_NONINTERACTIVE_SEEN "true"
 
 RUN if [ "$TARGETPLATFORM" != "linux/amd64" ]; then extra="qemu-user"; fi \
     && apt-get update \
@@ -52,7 +52,7 @@ ENV RAM_SIZE "1G"
 ENV DISK_SIZE "16G"
 ENV CPU_CORES "1"
 
-ARG VERSION_ARG="0.0"
+ARG VERSION_ARG "0.0"
 RUN echo "$VERSION_ARG" > /run/version
 
 HEALTHCHECK --interval=60s --start-period=45s --retries=2 CMD /run/check.sh
