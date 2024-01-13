@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-[ -f "/run/qemu.end" ] && echo "QEMU is shutting down.." && exit 1
-[ ! -f "/run/qemu.pid" ] && echo "QEMU is not running yet.." && exit 0
+[ -f "/run/shm/qemu.end" ] && echo "QEMU is shutting down.." && exit 1
+[ ! -f "/run/shm/qemu.pid" ] && echo "QEMU is not running yet.." && exit 0
 
-file="/run/dsm.url"
-address="/run/qemu.ip"
+file="/run/shm/dsm.url"
+address="/run/shm/qemu.ip"
 
 [ ! -f  "$file" ] && echo "DSM has not enabled networking yet.." && exit 1
 
