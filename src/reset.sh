@@ -33,13 +33,15 @@ VERS=$(qemu-system-x86_64 --version | head -n 1 | cut -d '(' -f 1)
 STORAGE="/storage"
 [ ! -d "$STORAGE" ] && error "Storage folder ($STORAGE) not found!" && exit 13
 
-# Cleanup files
+if [ ! -d "/run/shm" ]; then
+  ln -s /dev/shm /run/shm
+fi
 
+# Cleanup files
 rm -f /run/shm/qemu.*
 rm -f /run/shm/dsm.url
 
 # Cleanup dirs
-
 rm -rf /tmp/dsm
 rm -rf "$STORAGE/tmp"
 
