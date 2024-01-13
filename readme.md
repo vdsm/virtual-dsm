@@ -189,7 +189,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I passthrough a disk?
 
-    When running the container inside a virtualized environment, it is recommended to passthrough disk devices directly instead of binding folders containing images, as these devices are already based on an image.
+    When running the container inside a virtualized environment, it is possible to passthrough disk devices directly, instead of binding a folder containing an image. As these devices are already backed by an image on the host, this removes an extra layer.
 
     This allows for easier management and higher performance. To do so, you can add those devices to your compose file:
 
@@ -202,7 +202,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
       - /dev/sdb
     ```
 
-    Please beware that any existing data on the device will be wiped, as DSM will format its partition table during first use. Do NOT passthrough devices containing valueable data.
+    Please beware that any existing data on the device will be wiped, as DSM will format its partition table during first use. So do NOT passthrough devices containing valueable data.
 
   * ### How do I install a specific version of vDSM?
 
