@@ -12,6 +12,7 @@ QEMU_PORT=7100
 QEMU_TIMEOUT=50
 QEMU_PID="/run/qemu.pid"
 QEMU_LOG="/run/qemu.log"
+QEMU_OUT="/run/qemu.out"
 QEMU_END="/run/qemu.end"
 
 if [[ "$KVM" == [Nn]* ]]; then
@@ -19,9 +20,6 @@ if [[ "$KVM" == [Nn]* ]]; then
   QEMU_TIMEOUT=$(( QEMU_TIMEOUT*2 ))
 fi
 
-rm -f "$QEMU_PID"
-rm -f "$QEMU_LOG"
-rm -f "$QEMU_END"
 touch "$QEMU_LOG"
 
 _trap() {
@@ -62,14 +60,24 @@ finish() {
 
 terminal() {
 
-  local msg=$1
+  local dev=""
 
-  if [[ "${msg,,}" != "char"* ||  "$msg" != *"serial0)" ]]; then
-    echo "$msg"
+  if [ -f "$QEMU_OUT" ]; then
+
+    local msg
+    msg="$(cat "$QEMU_OUT")"
+
+    if [ -n "$msg" ]; then
+
+      if [[ "${msg,,}" != "char"* ||  "$msg" != *"serial0)" ]]; then
+        echo "$msg"
+      fi
+
+      dev="${msg#*/dev/p}"
+      dev="/dev/p${dev%% *}"
+
+    fi
   fi
-
-  local dev="${msg#*/dev/p}"
-  dev="/dev/p${dev%% *}"
 
   if [ ! -c "$dev" ]; then
     dev=$(echo 'info chardev' | nc -q 1 -w 1 localhost "$QEMU_PORT" | tr -d '\000')

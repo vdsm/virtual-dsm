@@ -22,11 +22,12 @@ if [[ "$CONSOLE" == [Yy]* ]]; then
   exec qemu-system-x86_64 ${ARGS:+ $ARGS}
 fi
 
-[[ "$DEBUG" == [Yy1]* ]] && info "$VERS" && set -x
-msg=$(qemu-system-x86_64 ${ARGS:+ $ARGS})
+[[ "$DEBUG" == [Yy1]* ]] && info "$VERS" && echo "Arguments: $ARGS" && echo
+{ qemu-system-x86_64 ${ARGS:+ $ARGS} >"$QEMU_OUT" 2>"$QEMU_LOG"; rc=$?; } || :
+(( rc != 0 )) && error "$(cat "$QEMU_LOG")" && exit 15
 
-{ set +x; } 2>/dev/null && terminal "$msg"
+terminal
 tail -fn +0 "$QEMU_LOG" 2>/dev/null &
-cat "$QEMU_TERM" 2>/dev/null & wait $! || true
+cat "$QEMU_TERM" 2>/dev/null & wait $! || :
 
 sleep 1 && finish 0
