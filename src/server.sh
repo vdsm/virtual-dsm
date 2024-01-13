@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-TMP_FILE=$(mktemp -q /run/shm/server.XXXXXX)
+TMP_FILE=$(mktemp -q /tmp/server.XXXXXX)
 
 stop() {
   trap - SIGINT EXIT
