@@ -64,7 +64,7 @@ terminal() {
   msg="$(cat "$QEMU_OUT")"
 
   if [[ "${msg,,}" != "char"* ||  "$msg" != *"serial0)" ]]; then
-    echo "$msg"
+    [ -n "$msg" ] && echo "$msg"
   fi
 
   local dev="${msg#*/dev/p}"
