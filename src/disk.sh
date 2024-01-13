@@ -83,7 +83,7 @@ isCow() {
   if [[ "${FS,,}" == "xfs" || "${FS,,}" == "zfs" || "${FS,,}" == "btrfs" || "${FS,,}" == "bcachefs" ]]; then
     return 0
   fi
-       
+
   return 1
 }
 
@@ -126,7 +126,7 @@ createDisk() {
       fi
 
       if [[ "$ALLOCATE" == [Nn]* ]]; then
-    
+
         # Create an empty file
         if ! truncate -s "$DATA_SIZE" "$DISK_FILE"; then
           rm -f "$DISK_FILE"
