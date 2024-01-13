@@ -61,7 +61,7 @@ done
 
 [ -f "$shutdown" ] && exit 1
 
-location=$(cat "$file")
+location=$(<"$file")
 
 if [[ "$location" != "20.20"* ]]; then
 
@@ -69,7 +69,7 @@ if [[ "$location" != "20.20"* ]]; then
 
 else
 
-  ip="$(cat "$address")"
+  ip=$(<"$address")
   port="${location##*:}"
 
   if [[ "$ip" == "172."* ]]; then
