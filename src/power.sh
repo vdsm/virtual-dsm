@@ -64,7 +64,8 @@ finish() {
 
 terminal() {
 
-  local msg=$1
+  local msg
+  msg="$(cat "$QEMU_OUT")"
 
   if [[ "${msg,,}" != "char"* ||  "$msg" != *"serial0)" ]]; then
     echo "$msg"
