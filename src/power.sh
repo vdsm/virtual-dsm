@@ -61,6 +61,12 @@ finish() {
 terminal() {
 
   local msg
+
+  if [ ! -f "$QEMU_OUT" ]; then
+    error "File '$QEMU_OUT' not found!"
+    finish 33 && return 33
+  fi
+
   msg="$(cat "$QEMU_OUT")"
 
   if [[ "${msg,,}" != "char"* ||  "$msg" != *"serial0)" ]]; then
