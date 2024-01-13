@@ -61,7 +61,7 @@ finish() {
 terminal() {
 
   local dev=""
-  
+
   if [ -f "$QEMU_OUT" ]; then
 
     local msg
