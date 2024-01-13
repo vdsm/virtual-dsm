@@ -44,6 +44,7 @@ if [ ! -d "/run/shm" ]; then
 fi
 
 # Cleanup files
+rm -f /tmp/server.*
 rm -f /run/shm/qemu.*
 rm -f /run/shm/dsm.url
 
