@@ -36,7 +36,7 @@ finish() {
 
   if [ -f "$QEMU_PID" ]; then
 
-    pid="$(cat "$QEMU_PID")"
+    pid=$(<"$QEMU_PID")
     echo && error "Forcefully terminating QEMU process, reason: $reason..."
     { kill -15 "$pid" || true; } 2>/dev/null
 
@@ -65,7 +65,7 @@ terminal() {
   if [ -f "$QEMU_OUT" ]; then
 
     local msg
-    msg="$(cat "$QEMU_OUT")"
+    msg=$(<"$QEMU_OUT")
 
     if [ -n "$msg" ]; then
 
@@ -117,7 +117,7 @@ _graceful_shutdown() {
     finish "$code" && return "$code"
   fi
 
-  pid="$(cat "$QEMU_PID")"
+  pid=$(<"$QEMU_PID")
 
   if ! isAlive "$pid"; then
     echo && error "QEMU process does not exist?"
