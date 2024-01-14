@@ -11,15 +11,15 @@ trap 'error "Status $? while: $BASH_COMMAND (line $LINENO/$BASH_LINENO)"' ERR
 
 # Docker environment variables
 
-: ${TZ:=''}             # System local timezone
-: ${DEBUG:='N'}         # Disable debugging mode
-: ${COUNTRY:=''}        # Country code for mirror
-: ${CONSOLE:='N'}       # Disable console mode
-: ${ALLOCATE:=''}       # Preallocate diskspace
-: ${ARGUMENTS:=''}      # Extra QEMU parameters
-: ${CPU_CORES:='1'}     # Amount of CPU cores
-: ${RAM_SIZE:='1G'}     # Maximum RAM amount
-: ${DISK_SIZE:='16G'}   # Initial data disk size
+: "${TZ:=''}"             # System local timezone
+: "${DEBUG:='N'}"         # Disable debugging mode
+: "${COUNTRY:=''}"        # Country code for mirror
+: "${CONSOLE:='N'}"       # Disable console mode
+: "${ALLOCATE:=''}"       # Preallocate diskspace
+: "${ARGUMENTS:=''}"      # Extra QEMU parameters
+: "${CPU_CORES:='1'}"     # Amount of CPU cores
+: "${RAM_SIZE:='1G'}"     # Maximum RAM amount
+: "${DISK_SIZE:='16G'}"   # Initial data disk size
 
 # Helper variables
 

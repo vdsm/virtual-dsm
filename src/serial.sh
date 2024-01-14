@@ -3,11 +3,11 @@ set -Eeuo pipefail
 
 # Docker environment variables
 
-: ${HOST_MAC:=''}
-: ${HOST_DEBUG:=''}
-: ${HOST_SERIAL:=''}
-: ${HOST_MODEL:=''}
-: ${GUEST_SERIAL:=''}
+: "${HOST_MAC:=''}"
+: "${HOST_DEBUG:=''}"
+: "${HOST_SERIAL:=''}"
+: "${HOST_MODEL:=''}"
+: "${GUEST_SERIAL:=''}"
 
 HOST_ARGS=()
 HOST_ARGS+=("-cpu=$CPU_CORES")

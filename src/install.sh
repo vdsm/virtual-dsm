@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-: ${URL:=''}    # URL of the PAT file to be downloaded.
+: "${URL:=''}"    # URL of the PAT file to be downloaded.
 
 if [ -f "$STORAGE/dsm.ver" ]; then
   BASE=$(<"$STORAGE/dsm.ver")
