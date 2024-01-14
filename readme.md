@@ -91,7 +91,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     By default, the entire capacity of the disk is reserved in advance.
 
-    To create a growable disk that only allocates space that is actually used, add the following environment variables:
+    To create a growable disk that only allocates space that is actually used, add the following environment variable:
 
     ```yaml
     environment:
