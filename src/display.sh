@@ -3,8 +3,8 @@ set -Eeuo pipefail
 
 # Docker environment variables
 
-: "${GPU:='N'}"           # GPU passthrough
-: "${DISPLAY:='none'}"  # Display type
+: "${GPU:="N"}"           # GPU passthrough
+: "${DISPLAY:="none"}"  # Display type
 
 if [[ "$GPU" != [Yy1]* ]] || [[ "$ARCH" != "amd64" ]]; then
 
