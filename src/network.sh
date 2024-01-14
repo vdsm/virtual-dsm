@@ -3,17 +3,17 @@ set -Eeuo pipefail
 
 # Docker environment variables
 
-: "${DHCP:='N'}"
-: "${MAC:='02:11:32:AA:BB:CC'}"
+: "${DHCP:="N"}"
+: "${MAC:="02:11:32:AA:BB:CC"}"
 
-: "${VM_NET_DEV:=''}"
-: "${VM_NET_TAP:='dsm'}"
+: "${VM_NET_DEV:=""}"
+: "${VM_NET_TAP:="dsm"}"
 : "${VM_NET_MAC:="$MAC"}"
-: "${VM_NET_HOST:='VirtualDSM'}"
+: "${VM_NET_HOST:="VirtualDSM"}"
 
-: "${DNSMASQ_OPTS:=''}"
-: "${DNSMASQ:='/usr/sbin/dnsmasq'}"
-: "${DNSMASQ_CONF_DIR:='/etc/dnsmasq.d'}"
+: "${DNSMASQ_OPTS:=""}"
+: "${DNSMASQ:="/usr/sbin/dnsmasq"}"
+: "${DNSMASQ_CONF_DIR:="/etc/dnsmasq.d"}"
 
 ADD_ERR="Please add the following setting to your container:"
 
