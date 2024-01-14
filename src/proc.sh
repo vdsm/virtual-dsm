@@ -3,10 +3,10 @@ set -Eeuo pipefail
 
 # Docker environment variables
 
-: ${KVM:='Y'}
-: ${HOST_CPU:=''}
-: ${CPU_MODEL:='host'}
-: ${CPU_FEATURES:='+ssse3,+sse4.1,+sse4.2'}
+: "${KVM:='Y'}"
+: "${HOST_CPU:=''}"
+: "${CPU_MODEL:='host'}"
+: "${CPU_FEATURES:='+ssse3,+sse4.1,+sse4.2'}"
 
 [ "$ARCH" != "amd64" ] && KVM="N"
 
