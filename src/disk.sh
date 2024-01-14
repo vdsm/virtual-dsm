@@ -3,12 +3,12 @@ set -Eeuo pipefail
 
 # Docker environment variables
 
-: "${DISK_IO:='native'}"          # I/O Mode, can be set to 'native', 'threads' or 'io_turing'
-: "${DISK_FMT:='raw'}"            # Disk file format, 'raw' by default for best performance
-: "${DISK_FLAGS:=''}"             # Specifies the options for use with the qcow2 disk format
-: "${DISK_CACHE:='none'}"         # Caching mode, can be set to 'writeback' for better performance
-: "${DISK_DISCARD:='on'}"         # Controls whether unmap (TRIM) commands are passed to the host.
-: "${DISK_ROTATION:='1'}"         # Rotation rate, set to 1 for SSD storage and increase for HDD
+: "${DISK_IO:="native"}"          # I/O Mode, can be set to 'native', 'threads' or 'io_turing'
+: "${DISK_FMT:="raw"}"            # Disk file format, 'raw' by default for best performance
+: "${DISK_FLAGS:=""}"             # Specifies the options for use with the qcow2 disk format
+: "${DISK_CACHE:="none"}"         # Caching mode, can be set to 'writeback' for better performance
+: "${DISK_DISCARD:="on"}"         # Controls whether unmap (TRIM) commands are passed to the host.
+: "${DISK_ROTATION:="1"}"         # Rotation rate, set to 1 for SSD storage and increase for HDD
 
 BOOT="$STORAGE/$BASE.boot.img"
 SYSTEM="$STORAGE/$BASE.system.img"
@@ -472,14 +472,14 @@ fi
 
 DISK4_FILE="/storage4/data4"
 
-: "${DISK2_SIZE:=''}"
-: "${DISK3_SIZE:=''}"
-: "${DISK4_SIZE:=''}"
+: "${DISK2_SIZE:=""}"
+: "${DISK3_SIZE:=""}"
+: "${DISK4_SIZE:=""}"
 
-: "${DEVICE:=''}"        # Docker variables to passthrough a block device, like /dev/vdc1.
-: "${DEVICE2:=''}"
-: "${DEVICE3:=''}"
-: "${DEVICE4:=''}"
+: "${DEVICE:=""}"        # Docker variables to passthrough a block device, like /dev/vdc1.
+: "${DEVICE2:=""}"
+: "${DEVICE3:=""}"
+: "${DEVICE4:=""}"
 
 if [ -n "$DEVICE" ]; then
   addDevice "userdata" "$DEVICE" "device" "3" "0xc" || exit $?
