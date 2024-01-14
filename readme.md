@@ -102,7 +102,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I increase the amount of CPU or RAM?
 
-    By default, a single core and 1 GB of RAM are allocated to the container.
+    By default, a single CPU core and 1 GB of RAM are allocated to the container.
 
     To increase this, add the following environment variables:
 
