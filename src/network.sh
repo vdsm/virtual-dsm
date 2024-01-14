@@ -8,7 +8,7 @@ set -Eeuo pipefail
 
 : "${VM_NET_DEV:=''}"
 : "${VM_NET_TAP:='dsm'}"
-: "${VM_NET_MAC:='$MAC'}"
+: "${VM_NET_MAC:="$MAC"}"
 : "${VM_NET_HOST:='VirtualDSM'}"
 
 : "${DNSMASQ_OPTS:=''}"
