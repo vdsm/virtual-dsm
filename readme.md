@@ -29,7 +29,7 @@ version: "3"
 services:
   dsm:
     container_name: dsm
-    image: vdsm/virtual-dsm:latest
+    image: vdsm/virtual-dsm
     environment:
       DISK_SIZE: "16G"
     devices:
@@ -47,7 +47,7 @@ services:
 Via `docker run`
 
 ```bash
-docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-timeout 60 vdsm/virtual-dsm:latest
+docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-timeout 60 vdsm/virtual-dsm
 ```
 
 ## FAQ
