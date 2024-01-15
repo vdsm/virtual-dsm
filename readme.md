@@ -159,7 +159,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     Please note that this IP address won't be accessible from the Docker host due to the design of macvlan, which doesn't permit communication between the two. If this is a concern, you need to create a [second macvlan](https://blog.oddbit.com/post/2018-03-12-using-docker-macvlan-networks/#host-access) as a workaround.
 
-  * ### How can the container acquire an IP address from my router?
+  * ### How can DSM acquire an IP address from my router?
 
     After configuring the container for macvlan (see above), it is possible for DSM to become part of your home network by requesting an IP from your router, just like your other devices.
 
@@ -172,7 +172,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
       - 'c *:* rwm'
     ```
 
-    Please note that even if you don't want DHCP, it's still recommended to enable this feature as it prevents NAT issues and increases performance by using a `macvtap` interface. In that case just set a static IP from the DSM control panel after you enabled this mode.
+    Please note that even if you don't want DHCP, it's still recommended to enable this feature as it prevents NAT issues and increases performance by using a `macvtap` interface. In that case, just set a static IP from the DSM control panel after you enabled this mode.
 
   * ### How do I passthrough the GPU?
 
