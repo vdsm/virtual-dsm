@@ -202,7 +202,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
       - /dev/sdb
     ```
 
-    Please beware that any existing data on the device will be wiped, as DSM will format its partition table during first use. So do NOT passthrough devices containing valueable data.
+    Please note that the device needs to be totally empty (without any partition tables) in order for DSM to format it to a volume. Do not supply disks containing existing data.
 
   * ### How do I install a specific version of vDSM?
 
