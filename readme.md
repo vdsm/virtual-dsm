@@ -17,7 +17,7 @@ Virtual DSM in a docker container.
 
  - Multiple disks
  - KVM acceleration
- - GPU passthrough
+ - GPU pass-through
  - Upgrades supported
  
 ## Usage
@@ -155,7 +155,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
         external: true
     ```
    
-    An added benefit of this approach is that you won't have to perform any port mapping anymore since all ports will be exposed by default.
+    An added benefit of this approach is that you won't have to perform any port mapping anymore, since all ports will be exposed by default.
 
     Please note that this IP address won't be accessible from the Docker host due to the design of macvlan, which doesn't permit communication between the two. If this is a concern, you need to create a [second macvlan](https://blog.oddbit.com/post/2018-03-12-using-docker-macvlan-networks/#host-access) as a workaround.
 
@@ -172,11 +172,11 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
       - 'c *:* rwm'
     ```
 
-    Please note that even if you don't want DHCP, it's still recommended to enable this feature as it prevents NAT issues and increases performance by using a `macvtap` interface. In that case, just set a static IP from the DSM control panel after you enabled this mode.
+    Please note that even if you don't want DHCP, it's still recommended to enable this feature, as it prevents NAT issues and increases performance by using a `macvtap` interface. In that case, just set a static IP from the DSM control panel after you enabled this mode.
 
-  * ### How do I passthrough the GPU?
+  * ### How do I pass-through the GPU?
 
-    To passthrough your Intel GPU, add the following lines to your compose file:
+    To pass-through your Intel GPU, add the following lines to your compose file:
 
     ```yaml
     environment:
@@ -187,9 +187,9 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     This can be used to enable the facial recognition function in Synology Photos for example.
 
-  * ### How do I passthrough a disk?
+  * ### How do I pass-through a disk?
 
-    When running the container inside a virtualized environment, it is possible to passthrough disk devices directly, instead of binding a folder containing an image. As these devices are already backed by an image on the host, this removes an extra layer.
+    When running the container inside a virtualized environment, it is possible to pass-through disk devices directly instead of binding a folder containing an image. As these devices are already backed by an image on the host, this removes an extra layer.
 
     This allows for easier management and higher performance. To do so, you can add those devices to your compose file:
 
@@ -202,7 +202,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
       - /dev/sdb
     ```
 
-    Please note that the device needs to be totally empty (without any partition tables) in order for DSM to format it to a volume. Do not supply disks containing existing data.
+    Please note that the device needs to be totally empty (without any partition tables) in order for DSM to format it into a volume. Do not supply disks containing existing data.
 
   * ### How do I install a specific version of vDSM?
 
