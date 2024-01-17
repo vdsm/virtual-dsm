@@ -3,17 +3,19 @@ set -Eeuo pipefail
 
 # Docker environment variables
 
-: "${GPU:="N"}"           # GPU passthrough
+: "${GPU:="N"}"         # GPU passthrough
+: "${VGA:="virtio"}"    # VGA adaptor
 : "${DISPLAY:="none"}"  # Display type
 
 if [[ "$GPU" != [Yy1]* ]] || [[ "$ARCH" != "amd64" ]]; then
 
-  DISPLAY_OPTS="-display $DISPLAY -vga none"
+  [[ "${DISPLAY,,}" == "none" ]] && VGA="none"
+  DISPLAY_OPTS="-display $DISPLAY -vga $VGA"
   return 0
 
 fi
 
-DISPLAY_OPTS="-display egl-headless,rendernode=/dev/dri/renderD128 -vga virtio"
+DISPLAY_OPTS="-display egl-headless,rendernode=/dev/dri/renderD128 -vga $VGA"
 
 [ ! -d /dev/dri ] && mkdir -m 755 /dev/dri
 
