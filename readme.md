@@ -86,19 +86,6 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     Replace the example path `/var/dsm` with the desired storage folder.
 
-  * ### How do I add multiple disks?
-
-    To create additional disks, modify your compose file like this:
-    
-    ```yaml
-    environment:
-      DISK2_SIZE: "32G"
-      DISK3_SIZE: "64G"
-    volumes:
-      - /home/example:/storage2
-      - /mnt/data/example:/storage3
-    ```
-
   * ### How do I create a growable disk?
 
     By default, the entire capacity of the disk is reserved in advance.
@@ -111,6 +98,36 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
     ```
 
     Please note that this may reduce the write performance of the disk.
+
+* ### How do I add multiple disks?
+
+    To create additional disks, modify your compose file like this:
+    
+    ```yaml
+    environment:
+      DISK2_SIZE: "32G"
+      DISK3_SIZE: "64G"
+    volumes:
+      - /home/example:/storage2
+      - /mnt/data/example:/storage3
+    ```
+
+  * ### How do I pass-through a disk?
+
+    It is possible to pass-through disk devices directly by adding them to your compose file in this way:
+
+    ```yaml
+    environment:
+      DEVICE2: "/dev/sda"
+      DEVICE3: "/dev/sdb"
+    devices:
+      - /dev/sda
+      - /dev/sdb
+    ```
+
+    Please note that the device needs to be totally empty (without any partition table) otherwise DSM does not always format it into a volume.
+
+    Do NOT use this feature with the goal of sharing files from the host, they will all be lost without warning when DSM creates the volume.
 
   * ### How do I increase the amount of CPU or RAM?
 
@@ -198,23 +215,6 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
     ```
 
     This can be used to enable the facial recognition function in Synology Photos for example.
-
-  * ### How do I pass-through a disk?
-
-    It is possible to pass-through disk devices directly by adding them to your compose file in this way:
-
-    ```yaml
-    environment:
-      DEVICE2: "/dev/sda"
-      DEVICE3: "/dev/sdb"
-    devices:
-      - /dev/sda
-      - /dev/sdb
-    ```
-
-    Please note that the device needs to be totally empty (without any partition table) otherwise DSM does not always format it into a volume.
-
-    Do NOT use this feature with the goal of sharing files from the host, they will all be lost without warning when DSM creates the volume.
 
   * ### How do I install a specific version of vDSM?
 
