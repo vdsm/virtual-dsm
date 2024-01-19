@@ -11,8 +11,12 @@ else
 fi
 
 if [ -n "$URL" ]; then
-  PURL="${URL%%\?*}"
-  BASE=$(basename "$PURL" .pat)
+  BASE=$(basename "$URL" .pat)
+  if [ ! -f "$STORAGE/$BASE.system.img" ]; then
+    BASE=$(basename "${URL%%\?*}" .pat)
+    : "${BASE//+/ }"; printf -v BASE '%b' "${_//%/\\x}"
+    BASE=$(echo "$BASE" | sed -e 's/[^A-Za-z0-9._-]/_/g')
+  fi
 fi
 
 if [[ -f "$STORAGE/$BASE.boot.img" ]] && [[ -f "$STORAGE/$BASE.system.img" ]]; then
@@ -37,8 +41,9 @@ fi
 
 [ -z "$URL" ] && URL="$DL/release/7.2.1/69057-1/DSM_VirtualDSM_69057.pat"
 
-PURL="${URL%%\?*}"
-BASE=$(basename "$PURL" .pat)
+BASE=$(basename "${URL%%\?*}" .pat)
+: "${BASE//+/ }"; printf -v BASE '%b' "${_//%/\\x}"
+BASE=$(echo "$BASE" | sed -e 's/[^A-Za-z0-9._-]/_/g')
 
 if [[ "$URL" != "file://$STORAGE/$BASE.pat" ]]; then
   rm -f "$STORAGE/$BASE.pat"
@@ -169,7 +174,7 @@ fi
 
 rm -rf "$TMP" && mkdir -p "$TMP"
 
-info "Install: Downloading $(basename "$PURL")..."
+info "Install: Downloading $BASE.pat..."
 
 PAT="/$BASE.pat"
 rm -f "$PAT"
@@ -315,7 +320,6 @@ else
 fi
 
 rm -rf "$MOUNT"
-
 echo "$BASE" > "$STORAGE/dsm.ver"
 
 if [[ "$URL" == "file://$STORAGE/$BASE.pat" ]]; then
@@ -325,7 +329,6 @@ else
 fi
 
 mv -f "$BOOT" "$STORAGE/$BASE.boot.img"
-
 rm -rf "$TMP"
 
 { set +x; } 2>/dev/null
