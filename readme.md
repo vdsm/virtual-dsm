@@ -201,20 +201,20 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I pass-through a disk?
 
-    When running the container inside a virtualized environment, it can be handy to pass-through disk devices directly instead of binding a folder containing an image. As these devices are already backed by an image on the host, this will remove an extra layer.
-
-    This allows for easier management and higher performance. To do so, you can add those devices to your compose file:
+    It is possible to pass-through disk devices directly by adding them to your compose file in this way:
 
     ```yaml
     environment:
-      DEVICE: "/dev/sda"
-      DEVICE2: "/dev/sdb"
+      DEVICE2: "/dev/sda"
+      DEVICE3: "/dev/sdb"
     devices:
       - /dev/sda
       - /dev/sdb
     ```
 
-    Please note that the device needs to be totally empty (without any partition tables) otherwise DSM may not format it into a volume. 
+    Please note that the device needs to be totally empty (without any partition table) otherwise DSM does not always format it into a volume.
+
+    Do NOT use this feature with the goal of sharing files from the host, they will all be lost without warning when DSM creates the volume.
 
   * ### How do I install a specific version of vDSM?
 
