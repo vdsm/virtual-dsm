@@ -10,7 +10,10 @@ else
   BASE="DSM_VirtualDSM_42962"
 fi
 
-[ -n "$URL" ] && BASE=$(basename "$URL" .pat)
+if [ -n "$URL" ]; then
+  PURL="${URL%%\?*}"
+  BASE=$(basename "$PURL" .pat)
+fi
 
 if [[ -f "$STORAGE/$BASE.boot.img" ]] && [[ -f "$STORAGE/$BASE.system.img" ]]; then
   return 0  # Previous installation found
@@ -34,7 +37,8 @@ fi
 
 [ -z "$URL" ] && URL="$DL/release/7.2.1/69057-1/DSM_VirtualDSM_69057.pat"
 
-BASE=$(basename "$URL" .pat)
+PURL="${URL%%\?*}"
+BASE=$(basename "$PURL" .pat)
 
 if [[ "$URL" != "file://$STORAGE/$BASE.pat" ]]; then
   rm -f "$STORAGE/$BASE.pat"
@@ -165,7 +169,7 @@ fi
 
 rm -rf "$TMP" && mkdir -p "$TMP"
 
-info "Install: Downloading $(basename "$URL")..."
+info "Install: Downloading $(basename "$PURL")..."
 
 PAT="/$BASE.pat"
 rm -f "$PAT"
