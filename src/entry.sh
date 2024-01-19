@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 echo "❯ Starting Virtual DSM for Docker v$(</run/version)..."
 echo "❯ For support visit https://github.com/vdsm/virtual-dsm"
+echo
 
 cd /run
 
