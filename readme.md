@@ -1,4 +1,4 @@
-<h1 align="center">Virtual DSM for Docker<br />
+<h1 align="center">Virtual DSM<br />
 <div align="center">
 <img src="https://github.com/vdsm/virtual-dsm/raw/master/.github/screen.jpg" title="Screenshot" style="max-width:100%;" width="432" />
 </div>
@@ -60,7 +60,9 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     - Connect to port 5000 of the container in your web browser.
 
-    - Wait until DSM is ready, choose an username and password, and you will be taken to the desktop. Enjoy your brand new machine, and don't forget to star this repo!
+    - Wait until DSM is ready, choose an username and password, and you will be taken to the desktop.
+
+    - Enjoy your brand new machine, and don't forget to star this repo!
 
   * ### How do I change the size of the disk?
 
