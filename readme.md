@@ -52,7 +52,17 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
 ## FAQ
 
-  * ### How do I change the size of the virtual disk?
+  * ### How do I use it?
+
+    Very simple! These are the steps:
+    
+    - Start the container and get some coffee.
+
+    - Connect to port 5000 of the container in your web browser.
+
+    - Wait until DSM is ready, choose an username and password, and you will be taken to the desktop. Enjoy your brand new machine, and don't forget to star this repo!
+
+  * ### How do I change the size of the disk?
 
     To expand the default size of 16 GB, locate the `DISK_SIZE` setting in your compose file and modify it to your preferred capacity:
 
@@ -63,9 +73,9 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
     
     This can also be used to resize the existing disk to a larger capacity without any data loss. 
 
-  * ### How do I change the location of the virtual disk?
+  * ### How do I change the storage location?
 
-    To change the location of the virtual disk, include the following bind mount in your compose file:
+    To change the storage location, include the following bind mount in your compose file:
 
     ```yaml
     volumes:
@@ -189,7 +199,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I pass-through a disk?
 
-    When running the container inside a virtualized environment, it is possible to pass-through disk devices directly instead of binding a folder containing an image. As these devices are already backed by an image on the host, this removes an extra layer.
+    When running the container inside a virtualized environment, it can be handy to pass-through disk devices directly instead of binding a folder containing an image. As these devices are already backed by an image on the host, this will remove an extra layer.
 
     This allows for easier management and higher performance. To do so, you can add those devices to your compose file:
 
@@ -202,7 +212,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
       - /dev/sdb
     ```
 
-    Please note that the device needs to be totally empty (without any partition tables) in order for DSM to format it into a volume. Do not supply disks containing existing data.
+    Please note that the device needs to be totally empty (without any partition tables) otherwise DSM may not format it into a volume. 
 
   * ### How do I install a specific version of vDSM?
 
