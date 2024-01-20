@@ -174,7 +174,7 @@ closeNetwork() {
   if [[ "$DHCP" == [Yy1]* ]]; then
 
     # Shutdown nginx
-    nginx -s stop -e stderr
+    nginx -s stop 2> /dev/null
     fWait "nginx"
 
     ip link set "$VM_NET_TAP" down || true
@@ -260,7 +260,7 @@ if [[ "$DHCP" == [Yy1]* ]]; then
 else
 
   # Shutdown nginx
-  nginx -s stop -e stderr
+  nginx -s stop 2> /dev/null
   fWait "nginx"
 
   # Configuration for static IP
