@@ -129,8 +129,7 @@ html()
       body="<p class=\"loading\">${body/.../}</p>"
     fi
 
-    local timeout="9999"
-    [[ "$DHCP" == [Yy1]* ]] && timeout="4999"
+    local timeout="4999"
     [ -n "${2:-}" ] && timeout="$2"
     local script="<script>setTimeout(() => { document.location.reload(); }, $timeout);</script>"
     [[ "$timeout" == "0" ]] && script=""
