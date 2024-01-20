@@ -10,6 +10,10 @@ trap 'error "Status $? while: $BASH_COMMAND (line $LINENO/$BASH_LINENO)"' ERR
 [ ! -f "/run/entry.sh" ] && error "Script must run inside Docker container!" && exit 11
 [ "$(id -u)" -ne "0" ] && error "Script must be executed with root privileges." && exit 12
 
+echo "❯ Starting $APP for Docker v$(</run/version)..."
+echo "❯ For support visit $SUPPORT"
+echo
+
 # Docker environment variables
 
 : "${TZ:=""}"             # System local timezone
@@ -24,6 +28,12 @@ trap 'error "Status $? while: $BASH_COMMAND (line $LINENO/$BASH_LINENO)"' ERR
 
 # Helper variables
 
+STORAGE="/storage"
+PAGE="/run/shm/index.html"
+TEMPLATE="/var/www/index.html"
+FOOTER1="$APP for Docker v$(</run/version)"
+FOOTER2="<a href='$SUPPORT'>$SUPPORT</a>"
+
 KERNEL=$(uname -r | cut -b 1)
 MINOR=$(uname -r | cut -d '.' -f2)
 ARCH=$(dpkg --print-architecture)
@@ -31,7 +41,6 @@ VERS=$(qemu-system-x86_64 --version | head -n 1 | cut -d '(' -f 1)
 
 # Check folder
 
-STORAGE="/storage"
 if [ ! -d "$STORAGE" ]; then
   error "Storage folder ($STORAGE) not found!" && exit 13
 fi
