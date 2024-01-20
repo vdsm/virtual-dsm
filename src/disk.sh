@@ -61,8 +61,8 @@ getSize() {
   local DISK_FILE=$1
   local DISK_EXT DISK_FMT
 
-  DISK_EXT="$(echo "${DISK_FILE//*./}" | sed 's/^.*\.//')"
-  DISK_FMT="$(ext2fmt "$DISK_EXT")"
+  DISK_EXT=$(echo "${DISK_FILE//*./}" | sed 's/^.*\.//')
+  DISK_FMT=$(ext2fmt "$DISK_EXT")
 
   case "${DISK_FMT,,}" in
     raw)
@@ -112,7 +112,9 @@ createDisk() {
     fi
   fi
 
-  info "Creating a $DISK_TYPE $DISK_DESC image in $DISK_FMT format with a size of $DISK_SPACE..."
+  MSG="Creating a $DISK_TYPE $DISK_DESC image in $DISK_FMT format with a size of $DISK_SPACE..."
+  info "$MSG" && html "$MSG"
+
   local FAIL="Could not create a $DISK_TYPE $DISK_FMT $DISK_DESC image of $DISK_SPACE ($DISK_FILE)"
 
   case "${DISK_FMT,,}" in
@@ -195,7 +197,9 @@ resizeDisk() {
   fi
 
   local GB=$(( (CUR_SIZE + 1073741823)/1073741824 ))
-  info "Resizing $DISK_DESC from ${GB}G to $DISK_SPACE..."
+  MSG="Resizing $DISK_DESC from ${GB}G to $DISK_SPACE..."
+  info "$MSG" && html "$MSG"
+
   local FAIL="Could not resize the $DISK_TYPE $DISK_FMT $DISK_DESC image from ${GB}G to $DISK_SPACE ($DISK_FILE)"
 
   case "${DISK_FMT,,}" in
@@ -262,7 +266,8 @@ convertDisk() {
     fi
   fi
 
-  info "Converting $DISK_DESC to $DST_FMT, please wait until completed..."
+  MSG="Converting $DISK_DESC to $DST_FMT, please wait until completed..."
+  info "$MSG" && html "$MSG"
 
   local CONV_FLAGS="-p"
   local DISK_PARAM="$DISK_ALLOC"
@@ -301,7 +306,8 @@ convertDisk() {
     fi
   fi
 
-  info "Conversion of $DISK_DESC to $DST_FMT completed succesfully!"
+  MSG="Conversion of $DISK_DESC to $DST_FMT completed succesfully!"
+  info "$MSG" && html "$MSG"
 
   return 0
 }
@@ -372,7 +378,7 @@ addDisk () {
     else
       PREV_FMT="qcow2"
     fi
-    PREV_EXT="$(fmt2ext "$PREV_FMT")"
+    PREV_EXT=$(fmt2ext "$PREV_FMT")
 
     if [ -f "$DISK_BASE.$PREV_EXT" ] ; then
       convertDisk "$DISK_BASE.$PREV_EXT" "$PREV_FMT" "$DISK_FILE" "$DISK_FMT" "$DISK_BASE" "$DISK_DESC" "$FS" || exit $?
@@ -420,7 +426,9 @@ addDevice () {
   return 0
 }
 
-DISK_EXT="$(fmt2ext "$DISK_FMT")" || exit $?
+html "Initializing disks..."
+
+DISK_EXT=$(fmt2ext "$DISK_FMT")
 
 if [ -z "$ALLOCATE" ]; then
   if [[ "${DISK_FMT,,}" == "raw" ]]; then
@@ -505,4 +513,5 @@ else
   addDisk "userdata4" "$DISK4_FILE" "$DISK_EXT" "disk4" "$DISK4_SIZE" "6" "0xf" "$DISK_FMT" || exit $?
 fi
 
+html "Initialized disks successfully..."
 return 0

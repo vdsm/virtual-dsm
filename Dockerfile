@@ -24,7 +24,7 @@ RUN if [ "$TARGETPLATFORM" != "linux/amd64" ]; then extra="qemu-user"; fi \
         wget \
         fdisk \
         unzip \
-        socat \
+        nginx \
         procps \
         xz-utils \
         iptables \
@@ -39,11 +39,16 @@ RUN if [ "$TARGETPLATFORM" != "linux/amd64" ]; then extra="qemu-user"; fi \
         qemu-system-x86 \
         "$extra" \
     && apt-get clean \
+    && unlink /etc/nginx/sites-enabled/default \
+    && sed -i 's/^worker_processes.*/worker_processes 1;/' /etc/nginx/nginx.conf \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY ./src /run/
+COPY ./web /var/www/
 COPY --from=builder /qemu-host.bin /run/host.bin
+
 RUN chmod +x /run/*.sh && chmod +x /run/*.bin
+RUN mv /var/www/nginx.conf /etc/nginx/sites-enabled/web.conf 
 
 VOLUME /storage
 EXPOSE 22 139 445 5000

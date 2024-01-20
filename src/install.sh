@@ -23,8 +23,7 @@ if [[ -f "$STORAGE/$BASE.boot.img" ]] && [[ -f "$STORAGE/$BASE.system.img" ]]; t
   return 0  # Previous installation found
 fi
 
-# Display wait message
-/run/server.sh 5000 install &
+html "Please wait while Virtual DSM is being installed..."
 
 DL=""
 DL_CHINA="https://cndl.synology.cn/download/DSM"
@@ -105,7 +104,8 @@ RDC="$STORAGE/dsm.rd"
 
 if [ ! -f "$RDC" ]; then
 
-  info "Install: Downloading installer..."
+  MSG="Downloading installer..."
+  info "Install: $MSG" && html "$MSG"
 
   RD="$TMP/rd.gz"
   POS="65627648-71021835"
@@ -174,7 +174,8 @@ fi
 
 rm -rf "$TMP" && mkdir -p "$TMP"
 
-info "Install: Downloading $BASE.pat..."
+MSG="Downloading $BASE.pat..."
+info "Install: $MSG" && html "$MSG"
 
 PAT="/$BASE.pat"
 rm -f "$PAT"
@@ -198,7 +199,8 @@ if ((SIZE<250000000)); then
   error "The specified PAT file is probably an update pack as it's too small." && exit 62
 fi
 
-info "Install: Extracting downloaded image..."
+MSG="Extracting downloaded image..."
+info "Install: $MSG" && html "$MSG"
 
 if { tar tf "$PAT"; } >/dev/null 2>&1; then
 
@@ -221,7 +223,9 @@ else
 fi
 
 rm -rf /run/extract
-info "Install: Preparing system partition..."
+
+MSG="Preparing system partition..."
+info "Install: $MSG" && html "$MSG"
 
 BOOT=$(find "$TMP" -name "*.bin.zip")
 [ ! -f "$BOOT" ] && error "The PAT file contains no boot image." && exit 67
@@ -277,7 +281,8 @@ sfdisk -q "$SYSTEM" < "$PART"
 MOUNT="$TMP/system"
 rm -rf "$MOUNT" && mkdir -p "$MOUNT"
 
-info "Install: Extracting system partition..."
+MSG="Extracting system partition..."
+info "Install: $MSG" && html "$MSG"
 
 HDA="$TMP/hda1"
 IDB="$TMP/indexdb"
@@ -301,12 +306,13 @@ fi
 LABEL="1.44.1-42218"
 OFFSET="1048576" # 2048 * 512
 NUMBLOCKS="622560" # (4980480 * 512) / 4096
+MSG="Installing system partition..."
 
 if [[ "$ROOT" != [Nn]* ]]; then
 
   tar xpfJ "$HDA.txz" --absolute-names --skip-old-files -C "$MOUNT/"
 
-  info "Install: Installing system partition..."
+  info "Install: $MSG" && html "$MSG"
 
   mke2fs -q -t ext4 -b 4096 -d "$MOUNT/" -L "$LABEL" -F -E "offset=$OFFSET" "$SYSTEM" "$NUMBLOCKS"
 
@@ -314,7 +320,7 @@ else
 
   fakeroot -- bash -c "set -Eeu;\
         tar xpfJ $HDA.txz --absolute-names --skip-old-files -C $MOUNT/;\
-        printf '%b%s%b' '\E[1;34m❯ \E[1;36m' 'Install: Installing system partition...' '\E[0m\n';\
+        printf '%b%s%b' '\E[1;34m❯ \E[1;36m' 'Install: $MSG' '\E[0m\n';\
         mke2fs -q -t ext4 -b 4096 -d $MOUNT/ -L $LABEL -F -E offset=$OFFSET $SYSTEM $NUMBLOCKS"
 
 fi
@@ -334,4 +340,5 @@ rm -rf "$TMP"
 { set +x; } 2>/dev/null
 [[ "$DEBUG" == [Yy1]* ]] && echo
 
+html "Installation finished successfully..."
 return 0
