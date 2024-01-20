@@ -176,7 +176,7 @@ closeNetwork() {
     # Shutdown nginx
     nginx -s stop -e stderr
     fWait "nginx"
-  
+
     ip link set "$VM_NET_TAP" down || true
     ip link delete "$VM_NET_TAP" || true
 
