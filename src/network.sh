@@ -173,14 +173,16 @@ closeNetwork() {
 
   if [[ "$DHCP" == [Yy1]* ]]; then
 
-    fKill "server.sh"
-
+    # Shutdown nginx
+    nginx -s stop -e stderr
+    fWait "nginx"
+  
     ip link set "$VM_NET_TAP" down || true
     ip link delete "$VM_NET_TAP" || true
 
   else
 
-    fKill "dnsmasq"
+    pKill "$(</var/run/dnsmasq.pid)"
 
     ip link set "$VM_NET_TAP" down promisc off || true
     ip link delete "$VM_NET_TAP" || true
@@ -227,8 +229,6 @@ getInfo() {
 #  Configure Network
 # ######################################
 
-fKill "server.sh"
-
 if [ ! -c /dev/vhost-net ]; then
   if mknod /dev/vhost-net c 10 238; then
     chmod 660 /dev/vhost-net
@@ -236,6 +236,7 @@ if [ ! -c /dev/vhost-net ]; then
 fi
 
 getInfo
+html "Initializing network..."
 
 if [[ "$DEBUG" == [Yy1]* ]]; then
   info "Container IP is $IP with gateway $GATEWAY on interface $VM_NET_DEV" && echo
@@ -252,10 +253,14 @@ if [[ "$DHCP" == [Yy1]* ]]; then
   # Configuration for DHCP IP
   configureDHCP
 
-  # Display IP on port 80 and 5000
-  /run/server.sh 5000 /run/ip.sh &
+  MSG="Please wait while discovering IP..."
+  html "$MSG" "4999"
 
 else
+
+  # Shutdown nginx
+  nginx -s stop -e stderr
+  fWait "nginx"
 
   # Configuration for static IP
   configureNAT
