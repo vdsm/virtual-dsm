@@ -182,7 +182,8 @@ closeNetwork() {
 
   else
 
-    pKill "$(</var/run/dnsmasq.pid)"
+    local pid="/var/run/dnsmasq.pid"
+    [ -f "$pid" ] && pKill "$(<"$pid")"
 
     ip link set "$VM_NET_TAP" down promisc off || true
     ip link delete "$VM_NET_TAP" || true
