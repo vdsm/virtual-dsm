@@ -61,8 +61,8 @@ getSize() {
   local DISK_FILE=$1
   local DISK_EXT DISK_FMT
 
-  DISK_EXT="$(echo "${DISK_FILE//*./}" | sed 's/^.*\.//')"
-  DISK_FMT="$(ext2fmt "$DISK_EXT")"
+  DISK_EXT=$(echo "${DISK_FILE//*./}" | sed 's/^.*\.//')
+  DISK_FMT=$(ext2fmt "$DISK_EXT")
 
   case "${DISK_FMT,,}" in
     raw)
@@ -372,7 +372,7 @@ addDisk () {
     else
       PREV_FMT="qcow2"
     fi
-    PREV_EXT="$(fmt2ext "$PREV_FMT")"
+    PREV_EXT=$(fmt2ext "$PREV_FMT")
 
     if [ -f "$DISK_BASE.$PREV_EXT" ] ; then
       convertDisk "$DISK_BASE.$PREV_EXT" "$PREV_FMT" "$DISK_FILE" "$DISK_FMT" "$DISK_BASE" "$DISK_DESC" "$FS" || exit $?
@@ -420,7 +420,7 @@ addDevice () {
   return 0
 }
 
-DISK_EXT="$(fmt2ext "$DISK_FMT")" || exit $?
+DISK_EXT=$(fmt2ext "$DISK_FMT")
 
 if [ -z "$ALLOCATE" ]; then
   if [[ "${DISK_FMT,,}" == "raw" ]]; then
