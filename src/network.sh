@@ -255,7 +255,7 @@ if [[ "$DHCP" == [Yy1]* ]]; then
   configureDHCP
 
   MSG="Please wait while discovering IP..."
-  html "$MSG" "4999"
+  html "$MSG" "2000"
 
 else
 
