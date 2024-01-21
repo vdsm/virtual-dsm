@@ -36,13 +36,19 @@ function processInfo() {
             return false;
         }
 
+        var notFound = (request.status == 404);
+
         if (request.status == 200) {
-            setInfo(escape(msg));
-            schedule();
-            return true;
+            if (msg.toLowerCase().indexOf("<html>") !== -1) {
+                notFound = true;
+            } else {
+                setInfo(msg);
+                schedule();
+                return true;
+            }
         }
 
-        if (request.status == 404) {
+        if (notFound) {
             setInfo("Connecting to web portal", true);
             reload();
             return true;
@@ -94,13 +100,6 @@ function setInfo(msg, loading, error) {
         console.log("Error: " + e.message);
         return false;
     }
-}
-
-function escape(s) {
-    return s.replace(
-        /[^0-9A-Za-z ]/g,
-        c => "&#" + c.charCodeAt(0) + ";"
-    );
 }
 
 function setError(text) {
