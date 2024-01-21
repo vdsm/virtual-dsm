@@ -254,8 +254,8 @@ if [[ "$DHCP" == [Yy1]* ]]; then
   # Configuration for DHCP IP
   configureDHCP
 
-  MSG="Please wait while discovering IP..."
-  html "$MSG" "2000"
+  MSG="Booting DSM instance..."
+  html "$MSG"
 
 else
 
