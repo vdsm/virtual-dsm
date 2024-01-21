@@ -120,6 +120,7 @@ html()
     local title
     local body
     local footer
+    local script
 
     title=$(escape "$APP")
     title="<title>$title</title>"
@@ -130,8 +131,7 @@ html()
       body="<p class=\"loading\">${body/.../}</p>"
     fi
 
-    local script=""
-    [ -n "${2:-}" ] && script="$2"
+    [ -n "${2:-}" ] && script="$2" || script=""
 
     local HTML
     HTML=$(<"$TEMPLATE")
@@ -142,7 +142,7 @@ html()
     HTML="${HTML/\[5\]/$FOOTER2}"
 
     echo "$HTML" > "$PAGE"
-    echo "$body$script" > "$INFO"
+    echo "$body" > "$INFO"
 
     return 0
 }
