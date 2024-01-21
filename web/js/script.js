@@ -12,11 +12,11 @@ function getInfo() {
         } else {
             throw "XMLHttpRequest not available!";
         }
-        
+
         request.onreadystatechange = processInfo;
         request.open("GET", url, true);
         request.send();
-        
+
     } catch (e) {
         var err = "Error: " + e.message;
         console.log(err);
@@ -48,7 +48,7 @@ function processInfo() {
                     div.innerHTML = msg;
                     var url = div.querySelector("a").href;
                     setTimeout(() => {
-                       window.location.assign(url);
+                        window.location.assign(url);
                     }, 3000);
                     setInfo(msg);
                     return true;
