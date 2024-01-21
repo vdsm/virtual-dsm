@@ -31,7 +31,7 @@ function processInfo() {
 
         var msg = request.responseText;
         if (msg == null || msg.length == 0) {
-            setError("Lost connection");
+            setInfo("The DSM instance is booting...");
             schedule();
             return false;
         }
