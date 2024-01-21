@@ -44,11 +44,13 @@ function processInfo() {
                 notFound = true;
             } else {
                 if (msg.toLowerCase().indexOf("href=") !== -1) {
-                    var url = msg.match(/href="([^"]*)/)[1];
+                    var div = document.createElement("div");
+                    div.innerHTML = msg;
+                    var url = div.querySelector("a").href;
                     setTimeout(() => {
                        window.location.assign(url);
                     }, 3000);
-                    setInfo("X" + location + "X");
+                    setInfo("X" + url + "X");
                     return true;
                 } else {
                     setInfo(msg);
