@@ -7,7 +7,7 @@ info () { printf "%b%s%b" "\E[1;34m❯ \E[1;36m" "$1" "\E[0m\n" >&2; }
 error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: $1" "\E[0m\n" >&2; }
 
 file="/run/shm/dsm.url"
-text="/run/shm/msg.html"
+info="/run/shm/msg.html"
 page="/run/shm/index.html"
 address="/run/shm/qemu.ip"
 shutdown="/run/shm/qemu.end"
@@ -81,7 +81,7 @@ if [[ "$location" != "20.20"* ]]; then
   HTML="${HTML/\[5\]/}"
 
   echo "$HTML" > "$page"
-  echo "$body" > "$text"
+  echo "$body$script" > "$info"
 
 else
 
