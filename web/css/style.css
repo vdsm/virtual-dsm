@@ -1,0 +1,154 @@
+body {
+	color: white;
+	background-color: #125bdb;
+	font-family: Verdana, Arial, sans-serif;
+}
+
+#content {
+	text-align: center;
+	padding: 20px;
+	margin-top: 50px;
+}
+
+footer {
+	width: 98%;
+	position: fixed;
+	bottom: 0px;
+	height: 40px;
+	text-align: center;
+	color: #0c8aeb;
+}
+
+#empty {
+	height: 40px;
+	/* Same height as footer */
+}
+
+a,
+a:hover,
+a:active,
+a:visited {
+	color: white;
+}
+
+footer a:link,
+footer a:visited,
+footer a:active { color: #0c8aeb; }
+footer a:hover { color: #73e6ff; }
+
+.loading:after {
+	content: " .";
+	animation: dots 1s steps(5, end) infinite;
+}
+
+@keyframes dots {
+
+	0%,
+	20% {
+		color: rgba(0, 0, 0, 0);
+		text-shadow: 0.25em 0 0 rgba(0, 0, 0, 0), 0.5em 0 0 rgba(0, 0, 0, 0);
+	}
+
+	40% {
+		color: white;
+		text-shadow: 0.25em 0 0 rgba(0, 0, 0, 0), 0.5em 0 0 rgba(0, 0, 0, 0);
+	}
+
+	60% {
+		text-shadow: 0.25em 0 0 white, 0.5em 0 0 rgba(0, 0, 0, 0);
+	}
+
+	80%,
+	100% {
+		text-shadow: 0.25em 0 0 white, 0.5em 0 0 white;
+	}
+}
+
+.spinner_LWk7 {
+	animation: spinner_GWy6 1.2s linear infinite, spinner_BNNO 1.2s linear infinite
+}
+
+.spinner_yOMU {
+	animation: spinner_GWy6 1.2s linear infinite, spinner_pVqn 1.2s linear infinite;
+	animation-delay: .15s
+}
+
+.spinner_KS4S {
+	animation: spinner_GWy6 1.2s linear infinite, spinner_6uKB 1.2s linear infinite;
+	animation-delay: .3s
+}
+
+.spinner_zVee {
+	animation: spinner_GWy6 1.2s linear infinite, spinner_Qw4x 1.2s linear infinite;
+	animation-delay: .45s
+}
+
+@keyframes spinner_GWy6 {
+
+	0%,
+	50% {
+		width: 9px;
+		height: 9px
+	}
+
+	10% {
+		width: 11px;
+		height: 11px
+	}
+}
+
+@keyframes spinner_BNNO {
+
+	0%,
+	50% {
+		x: 1.5px;
+		y: 1.5px
+	}
+
+	10% {
+		x: .5px;
+		y: .5px
+	}
+}
+
+@keyframes spinner_pVqn {
+
+	0%,
+	50% {
+		x: 13.5px;
+		y: 1.5px
+	}
+
+	10% {
+		x: 12.5px;
+		y: .5px
+	}
+}
+
+@keyframes spinner_6uKB {
+
+	0%,
+	50% {
+		x: 13.5px;
+		y: 13.5px
+	}
+
+	10% {
+		x: 12.5px;
+		y: 12.5px
+	}
+}
+
+@keyframes spinner_Qw4x {
+
+	0%,
+	50% {
+		x: 1.5px;
+		y: 13.5px
+	}
+
+	10% {
+		x: .5px;
+		y: 12.5px
+	}
+}

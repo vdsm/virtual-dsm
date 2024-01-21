@@ -58,7 +58,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
     
     - Start the container and get some coffee.
 
-    - Connect to port 5000 of the container in your web browser.
+    - Connect to [port 5000](http://localhost:5000) of the container in your web browser.
 
     - Wait until DSM is ready, choose an username and password, and you will be taken to the desktop.
 

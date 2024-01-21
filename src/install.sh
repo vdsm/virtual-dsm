@@ -174,8 +174,8 @@ fi
 
 rm -rf "$TMP" && mkdir -p "$TMP"
 
-MSG="Downloading $BASE.pat..."
-info "Install: $MSG" && html "$MSG"
+info "Install: Downloading $BASE.pat..."
+html "Install: Downloading DSM from Synology..."
 
 PAT="/$BASE.pat"
 rm -f "$PAT"

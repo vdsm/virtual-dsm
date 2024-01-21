@@ -29,6 +29,7 @@ echo
 # Helper variables
 
 STORAGE="/storage"
+INFO="/dev/shm/msg.html"
 PAGE="/run/shm/index.html"
 TEMPLATE="/var/www/index.html"
 FOOTER1="$APP for Docker v$(</run/version)"
@@ -118,6 +119,7 @@ html()
 {
     local title
     local body
+    local script
     local footer
 
     title=$(escape "$APP")
@@ -129,10 +131,7 @@ html()
       body="<p class=\"loading\">${body/.../}</p>"
     fi
 
-    local timeout="4999"
-    [ -n "${2:-}" ] && timeout="$2"
-    local script="<script>setTimeout(() => { document.location.reload(); }, $timeout);</script>"
-    [[ "$timeout" == "0" ]] && script=""
+    [ -n "${2:-}" ] && script="$2" || script=""
 
     local HTML
     HTML=$(<"$TEMPLATE")
@@ -143,6 +142,7 @@ html()
     HTML="${HTML/\[5\]/$FOOTER2}"
 
     echo "$HTML" > "$PAGE"
+    echo "$body" > "$INFO"
 
     return 0
 }
