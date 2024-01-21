@@ -5,8 +5,8 @@ set -Eeuo pipefail
 
 : "${KVM:="Y"}"
 : "${HOST_CPU:=""}"
+: "${CPU_FLAGS:=""}"
 : "${CPU_MODEL:="host"}"
-: "${CPU_FEATURES:="+ssse3,+sse4.1,+sse4.2"}"
 
 [ "$ARCH" != "amd64" ] && KVM="N"
 
@@ -37,6 +37,7 @@ fi
 
 if [[ "$KVM" != [Nn]* ]]; then
 
+  CPU_FEATURES="kvm=on"
   KVM_OPTS=",accel=kvm -enable-kvm"
 
   if ! grep -qE '^flags.* (sse4_2)' /proc/cpuinfo; then
@@ -48,15 +49,23 @@ if [[ "$KVM" != [Nn]* ]]; then
 else
 
   KVM_OPTS=""
+  CPU_FEATURES="+ssse3,+sse4.1,+sse4.2"
 
-  if [[ "$CPU_MODEL" == "host"* ]]; then
+  if [[ "${CPU_MODEL,,}" == "host"* ]]; then
+
     if [[ "$ARCH" == "amd64" ]]; then
-      CPU_MODEL="max,$CPU_FEATURES"
+      CPU_MODEL="max"
     else
-      CPU_MODEL="qemu64,$CPU_FEATURES"
+      CPU_MODEL="qemu64"
     fi
-  fi
 
+  fi
+fi
+
+if [ -z "$CPU_FLAGS" ]; then
+  CPU_FLAGS="$CPU_MODEL,$CPU_FEATURES"
+else
+  CPU_FLAGS="$CPU_MODEL,$CPU_FEATURES,$CPU_FLAGS"
 fi
 
 if [ -z "$HOST_CPU" ]; then
