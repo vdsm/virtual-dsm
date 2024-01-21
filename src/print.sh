@@ -71,10 +71,11 @@ if [[ "$location" != "20.20"* ]]; then
   msg="http://$location"
   title="<title>Virtual DSM</title>"
   body="The location of DSM is <a href='http://$location'>http://$location</a>"
-  
+  script="<script>setTimeout(function(){ window.location.assign('http://$location'); }, 3000);</script>"
+    
   HTML=$(<"$template")
   HTML="${HTML/\[1\]/$title}"
-  HTML="${HTML/\[2\]/}"
+  HTML="${HTML/\[2\]/$script}"
   HTML="${HTML/\[3\]/$body}"
   HTML="${HTML/\[4\]/}"
   HTML="${HTML/\[5\]/}"
