@@ -37,7 +37,7 @@ function processInfo() {
         }
 
         if (request.status == 200) {
-            setInfo(msg);
+            setInfo(escape(msg));
             schedule();
             return true;
         }
@@ -94,6 +94,13 @@ function setInfo(msg, loading, error) {
         console.log("Error: " + e.message);
         return false;
     }
+}
+
+function escape(s) {
+    return s.replace(
+        /[^0-9A-Za-z ]/g,
+        c => "&#" + c.charCodeAt(0) + ";"
+    );
 }
 
 function setError(text) {
