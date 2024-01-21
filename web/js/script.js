@@ -1,25 +1,27 @@
 var request;
+var location;
 var interval = 1000;
 
 function getInfo() {
 
     var url = "/msg.html";
 
-    if (window.XMLHttpRequest) {
-        request = new XMLHttpRequest();
-    } else if (window.ActiveXObject) {
-        request = new ActiveXObject("Microsoft.XMLHTTP");
-    }
-
     try {
+
+        if (window.XMLHttpRequest) {
+            request = new XMLHttpRequest();
+        } else {
+            throw "XMLHttpRequest not available!"
+        }
+        
         request.onreadystatechange = processInfo;
         request.open("GET", url, true);
         request.send();
+        
     } catch (e) {
         var err = "Error: " + e.message;
         console.log(err);
         setError(err);
-        reload();
     }
 }
 
@@ -42,9 +44,18 @@ function processInfo() {
             if (msg.toLowerCase().indexOf("<html>") !== -1) {
                 notFound = true;
             } else {
-                setInfo(msg);
-                schedule();
-                return true;
+                if (msg.toLowerCase().indexOf("href=") !== -1) {
+                    location = s.match(/href="([^"]*)/)[1];
+                    setTimeout(() => {
+                       window.location.assign(location);
+                    }, 3000);
+                    setInfo("X" + location + "X");
+                    return true;
+                } else {
+                    setInfo(msg);
+                    schedule();
+                    return true;
+                }
             }
         }
 
@@ -62,7 +73,6 @@ function processInfo() {
         var err = "Error: " + e.message;
         console.log(err);
         setError(err);
-        reload();
         return false;
     }
 }
