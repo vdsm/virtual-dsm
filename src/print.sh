@@ -74,7 +74,7 @@ if [[ "$location" != "20.20"* ]]; then
   
   HTML=$(<"$template")
   HTML="${HTML/\[1\]/$title}"
-  HTML="${HTML/\[2\]/$script}"
+  HTML="${HTML/\[2\]/}"
   HTML="${HTML/\[3\]/$body}"
   HTML="${HTML/\[4\]/}"
   HTML="${HTML/\[5\]/}"
