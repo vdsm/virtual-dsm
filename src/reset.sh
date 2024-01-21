@@ -119,8 +119,8 @@ html()
 {
     local title
     local body
-    local footer
     local script
+    local footer
 
     title=$(escape "$APP")
     title="<title>$title</title>"
