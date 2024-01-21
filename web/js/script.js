@@ -1,5 +1,4 @@
 var request;
-var location;
 var interval = 1000;
 
 function getInfo() {
@@ -11,7 +10,7 @@ function getInfo() {
         if (window.XMLHttpRequest) {
             request = new XMLHttpRequest();
         } else {
-            throw "XMLHttpRequest not available!"
+            throw "XMLHttpRequest not available!";
         }
         
         request.onreadystatechange = processInfo;
@@ -45,9 +44,9 @@ function processInfo() {
                 notFound = true;
             } else {
                 if (msg.toLowerCase().indexOf("href=") !== -1) {
-                    location = s.match(/href="([^"]*)/)[1];
+                    var url = msg.match(/href="([^"]*)/)[1];
                     setTimeout(() => {
-                       window.location.assign(location);
+                       window.location.assign(url);
                     }, 3000);
                     setInfo("X" + location + "X");
                     return true;
@@ -95,7 +94,7 @@ function setInfo(msg, loading, error) {
 
         loading = !!loading;
         if (loading) {
-            msg = "<p class=\"loading\">" + msg + "</p>"
+            msg = "<p class=\"loading\">" + msg + "</p>";
         }
 
         el = document.getElementById("info");
