@@ -31,7 +31,7 @@ function processInfo() {
 
         var msg = request.responseText;
         if (msg == null || msg.length == 0) {
-            setInfo("The DSM instance is booting...");
+            setInfo("Booting DSM instance", true);
             schedule();
             return false;
         }
@@ -39,6 +39,12 @@ function processInfo() {
         if (request.status == 200) {
             setInfo(msg);
             schedule();
+            return true;
+        }
+
+        if (request.status == 404) {
+            setInfo("Connecting to web portal", true);
+            reload();
             return true;
         }
 
