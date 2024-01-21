@@ -50,7 +50,7 @@ function processInfo() {
                     setTimeout(() => {
                        window.location.assign(url);
                     }, 3000);
-                    setInfo("X" + url + "X");
+                    setInfo(msg);
                     return true;
                 } else {
                     setInfo(msg);
@@ -66,7 +66,7 @@ function processInfo() {
             return true;
         }
 
-        setError("Error: Received status " + request.status);
+        setError("Error: Received statuscode " + request.status);
         schedule();
         return false;
 
