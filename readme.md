@@ -99,7 +99,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     Please note that this may reduce the write performance of the disk.
 
-* ### How do I add multiple disks?
+  * ### How do I add multiple disks?
 
     To create additional disks, modify your compose file like this:
     
@@ -114,7 +114,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   * ### How do I pass-through a disk?
 
-    It is possible to pass-through disk devices directly by adding them to your compose file in this way:
+     It is possible to pass-through disk devices directly by adding them to your compose file in this way:
 
     ```yaml
     environment:
