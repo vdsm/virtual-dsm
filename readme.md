@@ -47,7 +47,7 @@ services:
 Via `docker run`
 
 ```bash
-docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-timeout 60 vdsm/virtual-dsm
+docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-timeout 120 vdsm/virtual-dsm
 ```
 
 ## FAQ
