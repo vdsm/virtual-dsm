@@ -98,7 +98,6 @@ terminal() {
 
 _graceful_shutdown() {
 
-  local cnt=0
   local code=$?
   local pid url response
 
@@ -143,6 +142,8 @@ _graceful_shutdown() {
     { kill -15 "$pid" || true; } 2>/dev/null
 
   fi
+
+  local cnt=0
 
   while [ "$cnt" -lt "$QEMU_TIMEOUT" ]; do
 
