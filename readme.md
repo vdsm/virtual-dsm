@@ -17,7 +17,6 @@ Virtual DSM in a docker container.
 
  - Multiple disks
  - KVM acceleration
- - GPU pass-through
  - Upgrades supported
  
 ## Usage
