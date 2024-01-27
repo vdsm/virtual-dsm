@@ -55,11 +55,11 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
     Very simple! These are the steps:
     
-    - Start the container and connect to [port 5000](http://localhost:5000) in your web browser.
+    - Start the container and connect to [port 5000](http://localhost:5000) using your web browser.
 
     - Wait until DSM is ready, choose an username and password, and you will be taken to the desktop.
-
-    - Enjoy your brand new machine, and don't forget to star this repo!
+    
+    Enjoy your brand new machine, and don't forget to star this repo!
 
   * ### How do I change the size of the disk?
 
