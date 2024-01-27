@@ -124,7 +124,7 @@ if [ ! -f "$RDC" ]; then
     rm -f "$PAT"
 
     { wget "$LOC" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; rc=$?; } || :
-    (( rc != 0 )) && error "Failed to download $LOC, reason: $rc" && exit 60
+    (( rc != 0 )) && error "Failed to download $LOC , reason: $rc" && exit 60
 
     tar --extract --file="$PAT" --directory="$(dirname "$RD")"/. "$(basename "$RD")"
     rm "$PAT"
@@ -187,7 +187,7 @@ if [[ "$URL" == "file://"* ]]; then
 else
 
   { wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; rc=$?; } || :
-  (( rc != 0 )) && error "Failed to download $URL, reason: $rc" && exit 69
+  (( rc != 0 )) && error "Failed to download $URL , reason: $rc" && exit 69
 
 fi
 
