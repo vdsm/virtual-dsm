@@ -28,5 +28,5 @@ do
       echo "${body//(\[P\])/($size)}"> "$info"
     fi
   fi
-  sleep 1
+  sleep 1 & wait $!
 done
