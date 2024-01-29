@@ -1,7 +1,11 @@
 body {
 	color: white;
 	background-color: #125bdb;
-	font-family: Verdana, Arial, sans-serif;
+	font-smoothing: antialiased;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	font-family: Verdana, Geneva, sans-serif;
+	text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
 }
 
 #content {
