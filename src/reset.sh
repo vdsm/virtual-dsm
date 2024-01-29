@@ -35,6 +35,7 @@ TEMPLATE="/var/www/index.html"
 FOOTER1="$APP for Docker v$(</run/version)"
 FOOTER2="<a href='$SUPPORT'>$SUPPORT</a>"
 
+HOST=$(hostname -s)
 KERNEL=$(uname -r | cut -b 1)
 MINOR=$(uname -r | cut -d '.' -f2)
 ARCH=$(dpkg --print-architecture)
