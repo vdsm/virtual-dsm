@@ -5,7 +5,10 @@ body {
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	font-family: Verdana, Geneva, sans-serif;
-	text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
+}
+
+#info {
+	text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.25);
 }
 
 #content {
@@ -21,6 +24,7 @@ footer {
 	height: 40px;
 	text-align: center;
 	color: #0c8aeb;
+	text-shadow: 0 0 1px #0c8aeb;
 }
 
 #empty {
@@ -37,8 +41,13 @@ a:visited {
 
 footer a:link,
 footer a:visited,
-footer a:active { color: #0c8aeb; }
-footer a:hover { color: #73e6ff; }
+footer a:active {
+	color: #0c8aeb;
+}
+
+footer a:hover {
+	color: #73e6ff;
+}
 
 .loading:after {
 	content: " .";
