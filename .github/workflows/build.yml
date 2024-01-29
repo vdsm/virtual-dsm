@@ -8,6 +8,10 @@ on:
     paths-ignore:
       - '**/*.md'
       - '**/*.yml'
+      - '**/*.js'
+      - '**/*.css'
+      - '**/*.html'
+      - 'web/**'
       - '.gitignore'
       - '.dockerignore'
       - '.github/**'
