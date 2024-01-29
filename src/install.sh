@@ -105,6 +105,7 @@ RDC="$STORAGE/dsm.rd"
 if [ ! -f "$RDC" ]; then
 
   MSG="Downloading installer..."
+  PRG="Downloading installer ([P])..."
   info "Install: $MSG" && html "$MSG"
 
   RD="$TMP/rd.gz"
@@ -112,7 +113,11 @@ if [ ! -f "$RDC" ]; then
   VERIFY="b4215a4b213ff5154db0488f92c87864"
   LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
+  rm -f "$RD"
+  /run/progress.sh "$RD" "$PRG" &
   { curl -r "$POS" -sfk -S -o "$RD" "$LOC"; rc=$?; } || :
+
+  fKill "progress.sh"
   (( rc != 0 )) && error "Failed to download $LOC, reason: $rc" && exit 60
 
   SUM=$(md5sum "$RD" | cut -f 1 -d " ")
@@ -123,7 +128,11 @@ if [ ! -f "$RDC" ]; then
     rm "$RD"
     rm -f "$PAT"
 
+    html "$MSG"
+    /run/progress.sh "$PAT" "$PRG" &
     { wget "$LOC" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; rc=$?; } || :
+
+    fKill "progress.sh"
     (( rc != 0 )) && error "Failed to download $LOC , reason: $rc" && exit 60
 
     tar --extract --file="$PAT" --directory="$(dirname "$RD")"/. "$(basename "$RD")"
@@ -175,7 +184,10 @@ fi
 rm -rf "$TMP" && mkdir -p "$TMP"
 
 info "Install: Downloading $BASE.pat..."
-html "Install: Downloading DSM from Synology..."
+
+MSG="Downloading DSM..."
+PRG="Downloading DSM ([P])..."
+html "$MSG"
 
 PAT="/$BASE.pat"
 rm -f "$PAT"
@@ -186,7 +198,11 @@ if [[ "$URL" == "file://"* ]]; then
 
 else
 
+  /run/progress.sh "$PAT" "$PRG" &
+
   { wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; rc=$?; } || :
+
+  fKill "progress.sh"
   (( rc != 0 )) && error "Failed to download $URL , reason: $rc" && exit 69
 
 fi
