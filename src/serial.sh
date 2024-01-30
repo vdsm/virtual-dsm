@@ -9,6 +9,21 @@ set -Eeuo pipefail
 : "${HOST_MODEL:=""}"
 : "${GUEST_SERIAL:=""}"
 
+if [ -n "$HOST_MAC" ]; then
+
+  HOST_MAC="${HOST_MAC//-/:}"
+
+  if [[ ${#HOST_MAC} == 12 ]]; then
+    m="$HOST_MAC"
+    HOST_MAC="${m:0:2}:${m:2:2}:${m:4:2}:${m:6:2}:${m:8:2}:${m:10:2}"
+  fi
+
+  if [[ ${#HOST_MAC} != 17 ]]; then
+    error "Invalid HOST_MAC address: '$HOST_MAC', should be 12 or 17 digits long!" && exit 28
+  fi
+
+fi
+
 HOST_ARGS=()
 HOST_ARGS+=("-cpu=$CPU_CORES")
 HOST_ARGS+=("-cpu_arch=$HOST_CPU")

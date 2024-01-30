@@ -15,7 +15,9 @@ if [[ "$GPU" != [Yy1]* ]] || [[ "$ARCH" != "amd64" ]]; then
 
 fi
 
-DISPLAY_OPTS="-display egl-headless,rendernode=/dev/dri/renderD128 -vga $VGA"
+[[ "${VGA,,}" == "virtio" ]] && VGA="virtio-vga"
+DISPLAY_OPTS="-display egl-headless,rendernode=/dev/dri/renderD128"
+DISPLAY_OPTS="$DISPLAY_OPTS -vga none -device $VGA"
 
 [ ! -d /dev/dri ] && mkdir -m 755 /dev/dri
 
