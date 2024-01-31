@@ -265,7 +265,7 @@ if ! touch "$SYSTEM"; then
   error "Could not create file $SYSTEM for the system disk." && exit 98
 fi
 
-if [[ "${FS,,}" == "xfs" || "${FS,,}" == "zfs" || "${FS,,}" == "btrfs" || "${FS,,}" == "bcachefs" ]]; then
+if [[ "${FS,,}" == "xfs" || "${FS,,}" == "btrfs" || "${FS,,}" == "bcachefs" ]]; then
   { chattr +C "$SYSTEM"; } || :
   FA=$(lsattr "$SYSTEM")
   if [[ "$FA" != *"C"* ]]; then
