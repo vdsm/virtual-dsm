@@ -189,7 +189,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 
   After configuring the container for macvlan (see above), it is possible for DSM to become part of your home network by requesting an IP from your router, just like your other devices.
 
-  To enable this feature, add the following lines to your compose file:
+  To enable this mode, add the following lines to your compose file:
 
   ```yaml
   environment:
@@ -198,7 +198,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
     - 'c *:* rwm'
   ```
 
-  Please note that even if you don't want DHCP, it's still recommended to enable this feature, as it prevents NAT issues and increases performance by using a `macvtap` interface. In that case, just set a static IP from the DSM control panel after you enabled this mode.
+  Please note that even if you don't need DHCP, it's still recommended to enable this mode, as it prevents NAT issues and increases performance by using a `macvtap` interface. You can just set a static IP from the DSM control panel afterwards.
 
 * ### How do I pass-through the GPU?
 
