@@ -341,6 +341,21 @@ checkFS () {
   return 0
 }
 
+createDevice () {
+
+  local DISK_ID=$1
+  local DISK_FILE=$2
+  local DISK_INDEX=$3
+  local DISK_ADDRESS=$4
+  local DISK_FMT=$5
+
+  echo "-drive file=$DISK_FILE,if=none,id=drive-$DISK_ID,format=$DISK_FMT,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on \
+    -device virtio-scsi-pci,id=hw-$DISK_ID,iothread=io2,bus=pcie.0,addr=$DISK_ADDRESS \
+    -device scsi-hd,bus=hw-$DISK_ID.0,channel=0,scsi-id=0,lun=0,drive=drive-$DISK_ID,id=$DISK_ID,rotation_rate=$DISK_ROTATION,bootindex=$DISK_INDEX"
+
+  return 0
+}
+
 addDisk () {
   local DISK_ID=$1
   local DISK_BASE=$2
@@ -351,7 +366,7 @@ addDisk () {
   local DISK_ADDRESS=$7
   local DISK_FMT=$8
   local DISK_FILE="$DISK_BASE.$DISK_EXT"
-  local DIR DATA_SIZE FS PREV_FMT PREV_EXT CUR_SIZE
+  local DIR DATA_SIZE FS PREV_FMT PREV_EXT CUR_SIZE OPTS
 
   DIR=$(dirname "$DISK_FILE")
   [ ! -d "$DIR" ] && return 0
@@ -399,10 +414,8 @@ addDisk () {
 
   fi
 
-  DISK_OPTS="$DISK_OPTS \
-    -device virtio-scsi-pci,id=hw-$DISK_ID,iothread=io2,bus=pcie.0,addr=$DISK_ADDRESS \
-    -drive file=$DISK_FILE,if=none,id=drive-$DISK_ID,format=$DISK_FMT,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on \
-    -device scsi-hd,bus=hw-$DISK_ID.0,channel=0,scsi-id=0,lun=0,drive=drive-$DISK_ID,id=$DISK_ID,rotation_rate=$DISK_ROTATION,bootindex=$DISK_INDEX"
+  OPTS=$(createDevice "$DISK_ID" "$DISK_FILE" "$DISK_INDEX" "$DISK_ADDRESS" "$DISK_FMT")
+  DISK_OPTS="$DISK_OPTS $OPTS"
 
   return 0
 }
@@ -418,10 +431,9 @@ addDevice () {
   [ -z "$DISK_DEV" ] && return 0
   [ ! -b "$DISK_DEV" ] && error "Device $DISK_DEV cannot be found! Please add it to the 'devices' section of your compose file." && exit 55
 
-  DISK_OPTS="$DISK_OPTS \
-    -device virtio-scsi-pci,id=hw-$DISK_ID,iothread=io2,bus=pcie.0,addr=$DISK_ADDRESS \
-    -drive file=$DISK_DEV,if=none,id=drive-$DISK_ID,format=raw,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on \
-    -device scsi-hd,bus=hw-$DISK_ID.0,channel=0,scsi-id=0,lun=0,drive=drive-$DISK_ID,id=$DISK_ID,rotation_rate=$DISK_ROTATION,bootindex=$DISK_INDEX"
+  local OPTS
+  OPTS=$(createDevice "$DISK_ID" "$DISK_DEV" "$DISK_INDEX" "$DISK_ADDRESS" "raw")
+  DISK_OPTS="$DISK_OPTS $OPTS"
 
   return 0
 }
