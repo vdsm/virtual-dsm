@@ -63,9 +63,17 @@ else
 fi
 
 if [ -z "$CPU_FLAGS" ]; then
-  CPU_FLAGS="$CPU_MODEL,$CPU_FEATURES"
+  if [ -z "$CPU_FEATURES" ]; then
+    CPU_FLAGS="$CPU_MODEL"
+  else
+    CPU_FLAGS="$CPU_MODEL,$CPU_FEATURES"
+  fi
 else
-  CPU_FLAGS="$CPU_MODEL,$CPU_FEATURES,$CPU_FLAGS"
+  if [ -z "$CPU_FEATURES" ]; then
+    CPU_FLAGS="$CPU_MODEL,$CPU_FLAGS"
+  else
+    CPU_FLAGS="$CPU_MODEL,$CPU_FEATURES,$CPU_FLAGS"
+  fi
 fi
 
 if [ -z "$HOST_CPU" ]; then
