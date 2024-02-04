@@ -6,7 +6,7 @@ set -Eeuo pipefail
 : "${KVM:="Y"}"
 : "${HOST_CPU:=""}"
 : "${CPU_FLAGS:=""}"
-: "${CPU_MODEL:="host"}"
+: "${CPU_MODEL:="qemu64"}"
 
 [ "$ARCH" != "amd64" ] && KVM="N"
 
@@ -37,8 +37,9 @@ fi
 
 if [[ "$KVM" != [Nn]* ]]; then
 
-  CPU_FEATURES="kvm=on"
+  CPU_MODEL="host"
   KVM_OPTS=",accel=kvm -enable-kvm"
+  CPU_FEATURES="kvm=on,l3-cache=on,migratable=no"
 
   if ! grep -qE '^flags.* (sse4_2)' /proc/cpuinfo; then
     error "Your host CPU does not have the SSE4.2 instruction set that Virtual DSM requires to boot."
@@ -49,17 +50,16 @@ if [[ "$KVM" != [Nn]* ]]; then
 else
 
   KVM_OPTS=""
-  CPU_FEATURES="+ssse3,+sse4.1,+sse4.2"
+  CPU_FEATURES="l3-cache=on"
 
-  if [[ "${CPU_MODEL,,}" == "host"* ]]; then
-
-    if [[ "$ARCH" == "amd64" ]]; then
-      CPU_MODEL="max"
-    else
-      CPU_MODEL="qemu64"
-    fi
-
+  if [[ "$ARCH" == "amd64" ]]; then
+    CPU_MODEL="max"
+    KVM_OPTS=" -accel tcg,thread=multi"
+    CPU_FEATURES="$CPU_FEATURES,migratable=no"
   fi
+
+  CPU_FEATURES="$CPU_FEATURES,+ssse3,+sse4.1,+sse4.2"
+
 fi
 
 if [ -z "$CPU_FLAGS" ]; then
