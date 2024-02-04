@@ -53,8 +53,9 @@ else
   CPU_FEATURES="l3-cache=on"
 
   if [[ "$ARCH" == "amd64" ]]; then
-      CPU_MODEL="max"
-      CPU_FEATURES="$CPU_FEATURES,migratable=no"
+    CPU_MODEL="max"
+    KVM_OPTS=" -accel tcg,thread=multi"
+    CPU_FEATURES="$CPU_FEATURES,migratable=no"
   fi
 
   CPU_FEATURES="$CPU_FEATURES,+ssse3,+sse4.1,+sse4.2"
