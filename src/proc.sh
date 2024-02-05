@@ -6,7 +6,8 @@ set -Eeuo pipefail
 : "${KVM:="Y"}"
 : "${HOST_CPU:=""}"
 : "${CPU_FLAGS:=""}"
-: "${CPU_MODEL:="qemu64"}"
+: "${CPU_MODEL:=""}"
+: "${DEF_MODEL:="qemu64"}"
 
 [ "$ARCH" != "amd64" ] && KVM="N"
 
@@ -28,7 +29,7 @@ if [[ "$KVM" != [Nn]* ]]; then
 
   if [ -n "$KVM_ERR" ]; then
     KVM="N"
-    error "KVM acceleration not detected $KVM_ERR, this will cause a major loss of performance."
+    error "KVM acceleration not available $KVM_ERR, this will cause a major loss of performance."
     error "See the FAQ on how to enable it, or continue without KVM by setting KVM=N (not recommended)."
     [[ "$DEBUG" != [Yy1]* ]] && exit 88
   fi
@@ -37,14 +38,18 @@ fi
 
 if [[ "$KVM" != [Nn]* ]]; then
 
-  CPU_MODEL="host"
   KVM_OPTS=",accel=kvm -enable-kvm"
-  CPU_FEATURES="kvm=on,l3-cache=on,migratable=no"
+  CPU_FEATURES="kvm=on,l3-cache=on"
 
   if ! grep -qE '^flags.* (sse4_2)' /proc/cpuinfo; then
-    error "Your host CPU does not have the SSE4.2 instruction set that Virtual DSM requires to boot."
-    error "Disable KVM by setting KVM=N to emulate a compatible CPU, at the cost of performance."
-    [[ "$DEBUG" != [Yy1]* ]] && exit 89
+    info "Your CPU does not have the SSE4 instruction set that Virtual DSM requires, it will be emulated..."
+    [ -z "$CPU_MODEL" ] && CPU_MODEL="$DEF_MODEL"
+    CPU_FEATURES="$CPU_FEATURES,+ssse3,+sse4.1,+sse4.2"
+  fi
+
+  if [ -z "$CPU_MODEL" ]; then
+    CPU_MODEL="host"
+    CPU_FEATURES="$CPU_FEATURES,migratable=no"
   fi
 
 else
@@ -53,9 +58,16 @@ else
   CPU_FEATURES="l3-cache=on"
 
   if [[ "$ARCH" == "amd64" ]]; then
-    CPU_MODEL="max"
     KVM_OPTS=" -accel tcg,thread=multi"
-    CPU_FEATURES="$CPU_FEATURES,migratable=no"
+  fi
+
+  if [ -z "$CPU_MODEL" ]; then
+    if [[ "$ARCH" == "amd64" ]]; then
+      CPU_MODEL="max"
+      CPU_FEATURES="$CPU_FEATURES,migratable=no"
+    else
+      CPU_MODEL="$DEF_MODEL"
+    fi
   fi
 
   CPU_FEATURES="$CPU_FEATURES,+ssse3,+sse4.1,+sse4.2"
