@@ -38,8 +38,8 @@ fi
 
 if [[ "$KVM" != [Nn]* ]]; then
 
-  KVM_OPTS=",accel=kvm -enable-kvm"
   CPU_FEATURES="kvm=on,l3-cache=on"
+  KVM_OPTS=",accel=kvm -enable-kvm -global kvm-pit.lost_tick_policy=discard"
 
   if ! grep -qE '^flags.* (sse4_2)' /proc/cpuinfo; then
     info "Your CPU does not have the SSE4 instruction set that Virtual DSM requires, it will be emulated..."
