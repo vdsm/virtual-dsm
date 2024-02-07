@@ -80,9 +80,13 @@ configureDNS() {
 
   # Set DNS server and gateway
   DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:dns-server,${VM_NET_IP%.*}.1 --dhcp-option=option:router,${VM_NET_IP%.*}.1"
-  DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
 
+  # Add DNS entry for container
+  DNSMASQ_OPTS="$DNSMASQ_OPTS --address=/host.local/${VM_NET_IP%.*}.1"
+
+  DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
   [[ "$DEBUG" == [Yy1]* ]] && set -x
+
   if ! $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS}; then
     error "Failed to start dnsmasq, reason: $?" && exit 29
   fi
