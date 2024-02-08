@@ -82,7 +82,7 @@ configureDNS() {
   DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:dns-server,${VM_NET_IP%.*}.1 --dhcp-option=option:router,${VM_NET_IP%.*}.1"
 
   # Add DNS entry for container
-  DNSMASQ_OPTS="$DNSMASQ_OPTS --address=/host.local/${VM_NET_IP%.*}.1"
+  DNSMASQ_OPTS="$DNSMASQ_OPTS --address=/host.lan/${VM_NET_IP%.*}.1"
 
   DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
   [[ "$DEBUG" == [Yy1]* ]] && set -x
