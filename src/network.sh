@@ -216,7 +216,7 @@ getInfo() {
     VM_NET_MAC=$(echo "$HOST" | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:11:32:\3:\4:\5/')
   fi
 
-  VM_NET_MAC="${VM_NET_MAC,,}"
+  VM_NET_MAC="${VM_NET_MAC^^}"
   VM_NET_MAC="${VM_NET_MAC//-/:}"
 
   if [[ ${#VM_NET_MAC} == 12 ]]; then
