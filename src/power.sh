@@ -166,9 +166,12 @@ _graceful_shutdown() {
   finish "$code" && return "$code"
 }
 
+PROCESS="${APP,,}"
+PROCESS="${PROCESS// /-}"
+
 MON_OPTS="\
         -pidfile $QEMU_PID \
-        -name ${APP,,// /-},process=${APP,,// /-},debug-threads=on \
+        -name $PROCESS,process=$PROCESS,debug-threads=on \
         -monitor telnet:localhost:$QEMU_PORT,server,nowait,nodelay"
 
 if [[ "$CONSOLE" != [Yy]* ]]; then
