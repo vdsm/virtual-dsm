@@ -28,6 +28,9 @@ echo
 
 # Helper variables
 
+PROCESS="${APP,,}"
+PROCESS="${PROCESS// /-}"
+
 STORAGE="/storage"
 INFO="/run/shm/msg.html"
 PAGE="/run/shm/index.html"
