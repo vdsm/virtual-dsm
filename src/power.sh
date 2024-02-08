@@ -166,9 +166,6 @@ _graceful_shutdown() {
   finish "$code" && return "$code"
 }
 
-PROCESS="${APP,,}"
-PROCESS="${PROCESS// /-}"
-
 MON_OPTS="\
         -pidfile $QEMU_PID \
         -name $PROCESS,process=$PROCESS,debug-threads=on \
