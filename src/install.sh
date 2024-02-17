@@ -65,7 +65,11 @@ if [[ "${FS,,}" == "fuse"* ]]; then
   info "Warning: the filesystem of $STORAGE is FUSE, this extra layer will negatively affect performance!"
 fi
 
-if [[ "${FS,,}" != "fat"* && "${FS,,}" != "vfat"* && "${FS,,}" != "exfat"* && "${FS,,}" != "ntfs"* && "${FS,,}" != "msdos"* ]]; then
+if [[ "${FS,,}" == "fat"* || "${FS,,}" == "vfat"* || "${FS,,}" == "msdos"* ]]; then
+  error "Unable to install on $FS filesystems, please use a different filesystem for /storage." && exit 61
+fi
+
+if [[ "${FS,,}" != "exfat"* && "${FS,,}" != "ntfs"* && "${FS,,}" != "unknown"* ]]; then
   TMP="$STORAGE/tmp"
 else
   TMP="/tmp/dsm"
