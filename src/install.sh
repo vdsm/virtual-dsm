@@ -151,14 +151,14 @@ fi
 if [ -f "$RDC" ]; then
 
   { xz -dc <"$RDC" >"$TMP/rd" 2>/dev/null; rc=$?; } || :
-  (( rc != 1 )) && error "Failed to unxz $RDC, reason $rc" && exit 91
+  (( rc != 1 )) && error "Failed to unxz $RDC on $FS, reason $rc" && exit 91
 
   { (cd "$TMP" && cpio -idm <"$TMP/rd" 2>/dev/null); rc=$?; } || :
 
   if (( rc != 0 )); then
     ROOT="N"
     { (cd "$TMP" && fakeroot cpio -idmu <"$TMP/rd" 2>/dev/null); rc=$?; } || :
-    (( rc != 0 )) && error "Failed to extract $RDC, reason $rc" && exit 92
+    (( rc != 0 )) && error "Failed to extract $RDC on $FS, reason $rc" && exit 92
   fi
 
   rm -rf /run/extract && mkdir -p /run/extract
@@ -273,7 +273,7 @@ if [[ "${FS,,}" == "btrfs" ]]; then
   { chattr +C "$SYSTEM"; } || :
   FA=$(lsattr "$SYSTEM")
   if [[ "$FA" != *"C"* ]]; then
-    error "Failed to disable COW for system image $SYSTEM on ${FS^^} filesystem (returned $FA)"
+    error "Failed to disable COW for system image $SYSTEM on ${FS^^} filesystem."
   fi
 fi
 
