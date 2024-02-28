@@ -11,7 +11,7 @@
 
 </div></h1>
 
-Virtual DSM in a docker container.
+Virtual DSM in a Docker container.
 
 ## Features
 
