@@ -5,12 +5,8 @@ services:
         image: vdsm/virtual-dsm:latest
         environment:
             DISK_SIZE: "16G"
-            RAM_SIZE: "1G"
-            CPU_CORES: "1"
         devices:
             - /dev/kvm
-        device_cgroup_rules:
-            - 'c *:* rwm'
         cap_add:
             - NET_ADMIN
         ports:
