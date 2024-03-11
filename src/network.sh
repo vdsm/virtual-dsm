@@ -24,8 +24,14 @@ ADD_ERR="Please add the following setting to your container:"
 
 configureDHCP() {
 
-  # Create a macvtap network for the VM guest
+  # Create the necessary file structure for /dev/vhost-net
+  if [ ! -c /dev/vhost-net ]; then
+    if mknod /dev/vhost-net c 10 238; then
+      chmod 660 /dev/vhost-net
+    fi
+  fi
 
+  # Create a macvtap network for the VM guest
   { ip link add link "$VM_NET_DEV" name "$VM_NET_TAP" address "$VM_NET_MAC" type macvtap mode bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
@@ -161,8 +167,10 @@ configureNAT() {
 
   NET_OPTS="-netdev tap,ifname=$VM_NET_TAP,script=no,downscript=no,id=hostnet0"
 
-  { exec 40>>/dev/vhost-net; rc=$?; } 2>/dev/null || :
-  (( rc == 0 )) && NET_OPTS="$NET_OPTS,vhost=on,vhostfd=40"
+  if [ -c /dev/vhost-net ]; then
+    { exec 40>>/dev/vhost-net; rc=$?; } 2>/dev/null || :
+    (( rc == 0 )) && NET_OPTS="$NET_OPTS,vhost=on,vhostfd=40"
+  fi
 
   configureDNS
 
@@ -255,12 +263,6 @@ getInfo() {
 if [[ "$NETWORK" != [Yy1]* ]]; then
   NET_OPTS=""
   return 0
-fi
-
-if [ ! -c /dev/vhost-net ]; then
-  if mknod /dev/vhost-net c 10 238; then
-    chmod 660 /dev/vhost-net
-  fi
 fi
 
 getInfo
