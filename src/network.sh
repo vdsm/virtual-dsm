@@ -5,6 +5,7 @@ set -Eeuo pipefail
 
 : "${MAC:=""}"
 : "${DHCP:="N"}"
+: "${NETWORK:="Y"}"
 
 : "${VM_NET_DEV:=""}"
 : "${VM_NET_TAP:="dsm"}"
@@ -170,14 +171,20 @@ configureNAT() {
 
 closeNetwork() {
 
-  exec 30<&- || true
-  exec 40<&- || true
-
   if [[ "$DHCP" == [Yy1]* ]]; then
 
     # Shutdown nginx
     nginx -s stop 2> /dev/null
     fWait "nginx"
+
+  fi
+
+  [[ "$NETWORK" != [Yy1]* ]] && return 0
+
+  exec 30<&- || true
+  exec 40<&- || true
+
+  if [[ "$DHCP" == [Yy1]* ]]; then
 
     ip link set "$VM_NET_TAP" down || true
     ip link delete "$VM_NET_TAP" || true
@@ -244,6 +251,11 @@ getInfo() {
 # ######################################
 #  Configure Network
 # ######################################
+
+if [[ "$NETWORK" != [Yy1]* ]]; then
+  NET_OPTS=""
+  return 0
+fi
 
 if [ ! -c /dev/vhost-net ]; then
   if mknod /dev/vhost-net c 10 238; then
