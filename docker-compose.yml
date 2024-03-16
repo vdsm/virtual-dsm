@@ -4,13 +4,13 @@ services:
         container_name: dsm
         image: vdsm/virtual-dsm:latest
         environment:
-            DISK_SIZE: "16G"
+            DISK_SIZE: "50G"
         devices:
             - /dev/kvm
         cap_add:
             - NET_ADMIN
         ports:
-            - 5000:5000
+            - 6500:6500
         volumes:
             - /var/dsm:/storage
         restart: on-failure
