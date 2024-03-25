@@ -14,9 +14,9 @@ ARG DEBCONF_NOWARNINGS "yes"
 ARG DEBIAN_FRONTEND "noninteractive"
 ARG DEBCONF_NONINTERACTIVE_SEEN "true"
 
-RUN if [ "$TARGETPLATFORM" != "linux/amd64" ]; then extra="qemu-user"; fi \
-    && apt-get update \
-    && apt-get --no-install-recommends -y install \
+RUN if [ "$TARGETPLATFORM" != "linux/amd64" ]; then extra="qemu-user"; fi && \
+    apt-get update && \
+    apt-get --no-install-recommends -y install \
         jq \
         tini \
         curl \
@@ -37,11 +37,11 @@ RUN if [ "$TARGETPLATFORM" != "linux/amd64" ]; then extra="qemu-user"; fi \
         ca-certificates \
         netcat-openbsd \
         qemu-system-x86 \
-        "$extra" \
-    && apt-get clean \
-    && unlink /etc/nginx/sites-enabled/default \
-    && sed -i 's/^worker_processes.*/worker_processes 1;/' /etc/nginx/nginx.conf \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+        "$extra" && \
+    apt-get clean && \
+    unlink /etc/nginx/sites-enabled/default && \
+    sed -i 's/^worker_processes.*/worker_processes 1;/' /etc/nginx/nginx.conf && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY ./src /run/
 COPY ./web /var/www/
