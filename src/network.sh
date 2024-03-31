@@ -114,7 +114,7 @@ configureNAT() {
   fi
 
   if [ ! -c /dev/net/tun ]; then
-    error "TUN device missing. $ADD_ERR --cap-add NET_ADMIN" && exit 25
+    error "TUN device missing. $ADD_ERR --device /dev/net/tun --cap-add NET_ADMIN" && exit 25
   fi
 
   # Check port forwarding flag
