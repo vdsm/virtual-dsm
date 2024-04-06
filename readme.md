@@ -21,7 +21,7 @@ Virtual DSM in a Docker container.
  
 ## Usage
 
-Via `compose.yml`
+Via Docker Compose:
 
 ```yaml
 version: "3"
@@ -43,7 +43,7 @@ services:
     stop_grace_period: 2m
 ```
 
-Via `docker run`
+Via Docker CLI:
 
 ```bash
 docker run -it --rm --name dsm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-timeout 120 vdsm/virtual-dsm
