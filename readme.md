@@ -21,7 +21,7 @@ Virtual DSM in a Docker container.
  
 ## Usage
 
-Via `docker-compose.yml`
+Via `compose.yml`
 
 ```yaml
 version: "3"
