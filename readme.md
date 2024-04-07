@@ -202,6 +202,26 @@ docker run -it --rm --name dsm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMI
 
   Please note that even if you don't need DHCP, it's still recommended to enable this mode, as it prevents NAT issues and increases performance by using a `macvtap` interface. You can just set a static IP from the DSM control panel afterwards.
 
+* ### How can I get the DSM IP address if I don't set up macvlan?
+
+  E.g. to mount with NFS or log in with SSH, you can find the IP address of the DSM like this:
+
+  ```bash
+  docker exec -it dsm ip -br a
+  lo               UNKNOWN        127.0.0.1/8
+  dockerbridge     UP             20.20.20.1/24
+  dsm              UP
+  eth0@if331       UP             172.28.0.2/16
+  ```
+
+  You're looking for the IP address beginning with `eth0`:
+
+  ```bash
+  ssh user@172.28.0.2
+  ```
+
+  Prefer setting up an individual IP address to the container as described above if you want a constant address, because without it, the IP address can change when the container is restarted.
+
 * ### How do I pass-through the GPU?
 
   To pass-through your Intel GPU, add the following lines to your compose file:
