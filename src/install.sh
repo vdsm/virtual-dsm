@@ -133,7 +133,7 @@ if [ ! -f "$RDC" ]; then
   if [ "$SUM" != "$VERIFY" ]; then
 
     PAT="/install.pat"
-    rm "$RD"
+    rm -f "$RD"
     rm -f "$PAT"
 
     html "$MSG"
