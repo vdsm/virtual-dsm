@@ -122,9 +122,13 @@ if [ ! -f "$RDC" ]; then
   { curl -r "$POS" -sfk -S -o "$RD" "$LOC"; rc=$?; } || :
 
   fKill "progress.sh"
-  (( rc != 0 )) && error "Failed to download $LOC, reason: $rc" && exit 60
 
-  SUM=$(md5sum "$RD" | cut -f 1 -d " ")
+  if (( rc != 0 )); then
+    (( rc != 22 )) && error "Failed to download $LOC, reason: $rc" && exit 60
+    SUM="skip"
+  else
+    SUM=$(md5sum "$RD" | cut -f 1 -d " ")
+  fi
 
   if [ "$SUM" != "$VERIFY" ]; then
 
