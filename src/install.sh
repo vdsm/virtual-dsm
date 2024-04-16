@@ -5,6 +5,7 @@ set -Eeuo pipefail
 
 if [ -f "$STORAGE/dsm.ver" ]; then
   BASE=$(<"$STORAGE/dsm.ver")
+  [ -z "$BASE" ] && BASE="DSM_VirtualDSM_69057"
 else
   # Fallback for old installs
   BASE="DSM_VirtualDSM_42962"
@@ -12,14 +13,14 @@ fi
 
 if [ -n "$URL" ]; then
   BASE=$(basename "$URL" .pat)
-  if [ ! -f "$STORAGE/$BASE.system.img" ]; then
+  if [ ! -s "$STORAGE/$BASE.system.img" ]; then
     BASE=$(basename "${URL%%\?*}" .pat)
     : "${BASE//+/ }"; printf -v BASE '%b' "${_//%/\\x}"
     BASE=$(echo "$BASE" | sed -e 's/[^A-Za-z0-9._-]/_/g')
   fi
 fi
 
-if [[ -f "$STORAGE/$BASE.boot.img" ]] && [[ -f "$STORAGE/$BASE.system.img" ]]; then
+if [[ -s "$STORAGE/$BASE.boot.img" ]] && [[ -s "$STORAGE/$BASE.system.img" ]]; then
   return 0  # Previous installation found
 fi
 
@@ -106,7 +107,7 @@ fi
 ROOT="Y"
 RDC="$STORAGE/dsm.rd"
 
-if [ ! -f "$RDC" ]; then
+if [ ! -s "$RDC" ]; then
 
   MSG="Downloading installer..."
   PRG="Downloading installer ([P])..."
@@ -118,6 +119,7 @@ if [ ! -f "$RDC" ]; then
   LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
   rm -f "$RD"
+  rm -f "$RDC"
   /run/progress.sh "$RD" "$PRG" &
   { curl -r "$POS" -sfk -S -o "$RD" "$LOC"; rc=$?; } || :
 
@@ -215,7 +217,7 @@ else
 
 fi
 
-[ ! -f "$PAT" ] && error "Failed to download $URL" && exit 69
+[ ! -s "$PAT" ] && error "Failed to download $URL" && exit 69
 
 SIZE=$(stat -c%s "$PAT")
 
@@ -252,7 +254,7 @@ MSG="Preparing system partition..."
 info "Install: $MSG" && html "$MSG"
 
 BOOT=$(find "$TMP" -name "*.bin.zip")
-[ ! -f "$BOOT" ] && error "The PAT file contains no boot image." && exit 67
+[ ! -s "$BOOT" ] && error "The PAT file contains no boot image." && exit 67
 
 BOOT=$(echo "$BOOT" | head -c -5)
 unzip -q -o "$BOOT".zip -d "$TMP"
@@ -313,15 +315,15 @@ IDB="$TMP/indexdb"
 PKG="$TMP/packages"
 HDP="$TMP/synohdpack_img"
 
-[ ! -f "$HDA.tgz" ] && error "The PAT file contains no OS image." && exit 64
+[ ! -s "$HDA.tgz" ] && error "The PAT file contains no OS image." && exit 64
 mv "$HDA.tgz" "$HDA.txz"
 
 [ -d "$PKG" ] && mv "$PKG/" "$MOUNT/.SynoUpgradePackages/"
 rm -f "$MOUNT/.SynoUpgradePackages/ActiveInsight-"*
 
-[ -f "$HDP.txz" ] && tar xpfJ "$HDP.txz" --absolute-names -C "$MOUNT/"
+[ -s "$HDP.txz" ] && tar xpfJ "$HDP.txz" --absolute-names -C "$MOUNT/"
 
-if [ -f "$IDB.txz" ]; then
+if [ -s "$IDB.txz" ]; then
   INDEX_DB="$MOUNT/usr/syno/synoman/indexdb/"
   mkdir -p "$INDEX_DB"
   tar xpfJ "$IDB.txz" --absolute-names -C "$INDEX_DB"
