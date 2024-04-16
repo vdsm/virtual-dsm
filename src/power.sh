@@ -36,7 +36,7 @@ finish() {
 
   touch "$QEMU_END"
 
-  if [ -f "$QEMU_PID" ]; then
+  if [ -s "$QEMU_PID" ]; then
 
     pid=$(<"$QEMU_PID")
     echo && error "Forcefully terminating QEMU process, reason: $reason..."
@@ -45,7 +45,7 @@ finish() {
     while isAlive "$pid"; do
       sleep 1
       # Workaround for zombie pid
-      [ ! -f "$QEMU_PID" ] && break
+      [ ! -s "$QEMU_PID" ] && break
     done
   fi
 
@@ -64,7 +64,7 @@ terminal() {
 
   local dev=""
 
-  if [ -f "$QEMU_OUT" ]; then
+  if [ -s "$QEMU_OUT" ]; then
 
     local msg
     msg=$(<"$QEMU_OUT")
@@ -113,7 +113,7 @@ _graceful_shutdown() {
   touch "$QEMU_END"
   echo && info "Received $1 signal, sending shutdown command..."
 
-  if [ ! -f "$QEMU_PID" ]; then
+  if [ ! -s "$QEMU_PID" ]; then
     echo && error "QEMU PID file does not exist?"
     finish "$code" && return "$code"
   fi
@@ -157,7 +157,7 @@ _graceful_shutdown() {
     [[ "$DEBUG" == [Yy1]* ]] && info "Shutting down, waiting... ($cnt/$QEMU_TIMEOUT)"
 
     # Workaround for zombie pid
-    [ ! -f "$QEMU_PID" ] && break
+    [ ! -s "$QEMU_PID" ] && break
 
   done
 

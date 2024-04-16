@@ -21,7 +21,7 @@ resp_err="Guest returned an invalid response:"
 curl_err="Failed to connect to guest: curl error"
 jq_err="Failed to parse response from guest: jq error"
 
-while [ ! -f  "$file" ]
+while [ ! -s  "$file" ]
 do
 
   # Check if not shutting down
@@ -30,7 +30,7 @@ do
   sleep 3
 
   [ -f "$shutdown" ] && exit 1
-  [ -f "$file" ] && break
+  [ -s "$file" ] && break
 
   # Retrieve network info from guest VM
   { json=$(curl -m 20 -sk "$url"); rc=$?; } || :
