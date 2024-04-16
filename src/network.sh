@@ -200,7 +200,7 @@ closeNetwork() {
   else
 
     local pid="/var/run/dnsmasq.pid"
-    [ -f "$pid" ] && pKill "$(<"$pid")"
+    [ -s "$pid" ] && pKill "$(<"$pid")"
 
     ip link set "$VM_NET_TAP" down promisc off || true
     ip link delete "$VM_NET_TAP" || true
@@ -228,7 +228,7 @@ getInfo() {
 
   if [ -z "$VM_NET_MAC" ]; then
     local file="$STORAGE/dsm.mac"
-    [ -f "$file" ] && VM_NET_MAC=$(<"$file")
+    [ -s "$file" ] && VM_NET_MAC=$(<"$file")
     if [ -z "$VM_NET_MAC" ]; then
       # Generate MAC address based on Docker container ID in hostname
       VM_NET_MAC=$(echo "$HOST" | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:11:32:\3:\4:\5/')
