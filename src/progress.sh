@@ -21,7 +21,7 @@ fi
 
 while true
 do
-  if [ -f "$file" ]; then
+  if [ -s "$file" ]; then
     bytes=$(du -sb "$file" | cut -f1)
     if (( bytes > 1000 )); then
       size=$(echo "$bytes" | numfmt --to=iec --suffix=B  | sed -r 's/([A-Z])/ \1/')
