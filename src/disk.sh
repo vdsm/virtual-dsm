@@ -386,7 +386,7 @@ addDisk () {
   FS=$(stat -f -c %T "$DIR")
   checkFS "$FS" "$DISK_FILE" "$DISK_DESC" || exit $?
 
-  if ! [ -f "$DISK_FILE" ] ; then
+  if ! [ -s "$DISK_FILE" ] ; then
 
     if [[ "${DISK_FMT,,}" != "raw" ]]; then
       PREV_FMT="raw"
@@ -395,12 +395,12 @@ addDisk () {
     fi
     PREV_EXT=$(fmt2ext "$PREV_FMT")
 
-    if [ -f "$DISK_BASE.$PREV_EXT" ] ; then
+    if [ -s "$DISK_BASE.$PREV_EXT" ] ; then
       convertDisk "$DISK_BASE.$PREV_EXT" "$PREV_FMT" "$DISK_FILE" "$DISK_FMT" "$DISK_BASE" "$DISK_DESC" "$FS" || exit $?
     fi
   fi
 
-  if [ -f "$DISK_FILE" ]; then
+  if [ -s "$DISK_FILE" ]; then
 
     CUR_SIZE=$(getSize "$DISK_FILE")
 
