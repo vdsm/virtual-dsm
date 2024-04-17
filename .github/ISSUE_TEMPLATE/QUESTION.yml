@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Have a question about Windows for Docker?
+        Have a question about this container?
         Please make sure to check the [FAQ](https://github.com/vdsm/virtual-dsm/blob/master/readme.md) first!
   - type: textarea
     id: question
