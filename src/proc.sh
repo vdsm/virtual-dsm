@@ -21,7 +21,8 @@ if [[ "$KVM" != [Nn]* ]]; then
     if ! sh -c 'echo -n > /dev/kvm' &> /dev/null; then
       KVM_ERR="(no write access)"
     else
-      if ! grep -q -e vmx -e svm /proc/cpuinfo; then
+      flags=$(sed -ne '/^flags/s/^.*: //p' /proc/cpuinfo)
+      if ! grep -qw "vmx\|svm" <<< "$flags"; then
         KVM_ERR="(vmx/svm disabled)"
       fi
     fi
@@ -41,7 +42,7 @@ if [[ "$KVM" != [Nn]* ]]; then
   CPU_FEATURES="kvm=on,l3-cache=on"
   KVM_OPTS=",accel=kvm -enable-kvm -global kvm-pit.lost_tick_policy=discard"
 
-  if ! grep -qE '^flags.* (sse4_2)' /proc/cpuinfo; then
+  if ! grep -qw "sse4_2" <<< "$flags"; then
     info "Your CPU does not have the SSE4 instruction set that Virtual DSM requires, it will be emulated..."
     [ -z "$CPU_MODEL" ] && CPU_MODEL="$DEF_MODEL"
     CPU_FEATURES="$CPU_FEATURES,+ssse3,+sse4.1,+sse4.2"
