@@ -18,7 +18,7 @@ cd /run
 
 trap - ERR
 
-info "Booting $APP using $VERS..."
+info "Booting ${APP} on ${HOST_CPU} using QEMU v${VERS} with kernel $(uname -r)..."
 [[ "$DEBUG" == [Yy1]* ]] && echo "Arguments: $ARGS" && echo
 
 if [[ "$CONSOLE" == [Yy]* ]]; then
