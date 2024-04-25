@@ -12,7 +12,6 @@ trap 'error "Status $? while: $BASH_COMMAND (line $LINENO/$BASH_LINENO)"' ERR
 
 echo "❯ Starting $APP for Docker v$(</run/version)..."
 echo "❯ For support visit $SUPPORT"
-echo
 
 # Docker environment variables
 
@@ -42,7 +41,7 @@ HOST=$(hostname -s)
 KERNEL=$(uname -r | cut -b 1)
 MINOR=$(uname -r | cut -d '.' -f2)
 ARCH=$(dpkg --print-architecture)
-VERS=$(qemu-system-x86_64 --version | head -n 1 | cut -d '(' -f 1 | awk '{ print $NF }')
+RAM="$(free -g | grep Mem: | awk '{print $4}')/$(free -g | grep Mem: | awk '{print $2}') GB"
 CPU=$(lscpu | grep 'Model name' | cut -f 2 -d ":" | awk '{$1=$1}1' | sed 's# @.*##g' | sed s/"(R)"//g | sed 's/[^[:alnum:] ]\+/ /g' | sed 's/  */ /g')
 
 # Check system
@@ -58,6 +57,15 @@ fi
 if [ ! -d "$STORAGE" ]; then
   error "Storage folder ($STORAGE) not found!" && exit 13
 fi
+
+# Print system info
+FS=$(stat -f -c %T "$STORAGE")
+FS="${FS/ext2\/ext3/ext4}";
+SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
+SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
+
+echo "❯ CPU: ${CPU} | RAM: ${RAM} | DISK: $SPACE_GB GB (${FS}) | HOST: $(uname -r)..."
+echo
 
 # Cleanup files
 rm -f /run/shm/qemu.*
