@@ -66,6 +66,10 @@ if [[ "${FS,,}" == "fuse"* ]]; then
   info "Warning: the filesystem of $STORAGE is FUSE, this extra layer will negatively affect performance!"
 fi
 
+if [[ "${FS,,}" == "ecryptfs" ]] || [[ "${FS,,}" == "tmpfs" ]]; then
+  info "Warning: the filesystem of $STORAGE is $FS, which does not support O_DIRECT mode, adjusting settings..."
+fi
+
 if [[ "${FS,,}" == "fat"* || "${FS,,}" == "vfat"* || "${FS,,}" == "msdos"* ]]; then
   error "Unable to install on $FS filesystems, please use a different filesystem for /storage." && exit 61
 fi
