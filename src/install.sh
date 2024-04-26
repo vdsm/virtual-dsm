@@ -130,7 +130,7 @@ if [ ! -s "$RDC" ]; then
   fKill "progress.sh"
 
   if (( rc != 0 )); then
-    if (( rc != 22 )) && (( rc != 56 ));
+    if (( rc != 22 )) && (( rc != 56 )); then
       error "Failed to download $LOC, reason: $rc" && exit 60
     fi
     SUM="skip"
