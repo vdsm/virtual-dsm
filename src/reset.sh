@@ -37,11 +37,12 @@ TEMPLATE="/var/www/index.html"
 FOOTER1="$APP for Docker v$(</run/version)"
 FOOTER2="<a href='$SUPPORT'>$SUPPORT</a>"
 
+SYS=$(uname -r)
 HOST=$(hostname -s)
-KERNEL=$(uname -r | cut -b 1)
-MINOR=$(uname -r | cut -d '.' -f2)
+KERNEL=$(echo "$SYS" | cut -b 1)
+MINOR=$(echo "$SYS" | cut -d '.' -f2)
 ARCH=$(dpkg --print-architecture)
-RAM="$(free -g | grep Mem: | awk '{print $4}')/$(free -g | grep Mem: | awk '{print $2}') GB"
+RAM="$(free -g | grep Mem: | awk '{print $7}')/$(free -g | grep Mem: | awk '{print $2}') GB"
 CPU=$(lscpu | grep 'Model name' | cut -f 2 -d ":" | awk '{$1=$1}1' | sed 's# @.*##g' | sed s/"(R)"//g | sed 's/[^[:alnum:] ]\+/ /g' | sed 's/  */ /g')
 
 # Check system
@@ -67,11 +68,12 @@ if [[ "${FS,,}" == "ecryptfs" ]] || [[ "${FS,,}" == "tmpfs" ]]; then
 fi
 
 # Print system info
-FS="${FS/ext2\/ext3/ext4}";
+SYS="${SYS/-generic/}"
+FS="${FS/ext2\/ext3/ext4}"
 SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
 SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
 
-echo "❯ CPU: ${CPU} | RAM: ${RAM} | DISK: $SPACE_GB GB (${FS}) | HOST: $(uname -r)..."
+echo "❯ CPU: ${CPU} | RAM: ${RAM} | DISK: $SPACE_GB GB (${FS}) | HOST: ${SYS}..."
 echo
 
 # Cleanup files
