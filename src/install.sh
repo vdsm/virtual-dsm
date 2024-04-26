@@ -130,7 +130,9 @@ if [ ! -s "$RDC" ]; then
   fKill "progress.sh"
 
   if (( rc != 0 )); then
-    (( rc != 22 )) && error "Failed to download $LOC, reason: $rc" && exit 60
+    if (( rc != 22 )) && (( rc != 56 ));
+      error "Failed to download $LOC, reason: $rc" && exit 60
+    fi
     SUM="skip"
   else
     SUM=$(md5sum "$RD" | cut -f 1 -d " ")
