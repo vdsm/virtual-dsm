@@ -58,8 +58,15 @@ if [ ! -d "$STORAGE" ]; then
   error "Storage folder ($STORAGE) not found!" && exit 13
 fi
 
-# Print system info
+# Check filesystem
 FS=$(stat -f -c %T "$STORAGE")
+
+if [[ "${FS,,}" == "ecryptfs" ]] || [[ "${FS,,}" == "tmpfs" ]]; then
+  DISK_IO="threads"
+  DISK_CACHE="writeback"
+fi
+
+# Print system info
 FS="${FS/ext2\/ext3/ext4}";
 SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
 SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
