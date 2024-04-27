@@ -10,10 +10,11 @@ API_HOST="127.0.0.1:2210"
 QEMU_TERM=""
 QEMU_PORT=7100
 QEMU_TIMEOUT=50
-QEMU_PID="/run/shm/qemu.pid"
-QEMU_LOG="/run/shm/qemu.log"
-QEMU_OUT="/run/shm/qemu.out"
-QEMU_END="/run/shm/qemu.end"
+QEMU_DIR="/run/shm"
+QEMU_PID="$QEMU_DIR/qemu.pid"
+QEMU_LOG="$QEMU_DIR/qemu.log"
+QEMU_OUT="$QEMU_DIR/qemu.out"
+QEMU_END="$QEMU_DIR/qemu.end"
 
 if [[ "$KVM" == [Nn]* ]]; then
   API_TIMEOUT=$(( API_TIMEOUT*2 ))
