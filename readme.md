@@ -249,5 +249,5 @@ Only run this container on Synology hardware, any other use is not permitted by 
 
 [Build]: https://github.com/vdsm/virtual-dsm/actions/workflows/build.yml/badge.svg
 [Size]: https://img.shields.io/docker/image-size/vdsm/virtual-dsm/latest?color=066da5&label=size
-[Pulls]: https://img.shields.io/docker/pulls/kroese/virtual-dsm.svg?style=flat&label=pulls&logo=docker
+[Pulls]: https://img.shields.io/docker/pulls/vdsm/virtual-dsm.svg?style=flat&label=pulls&logo=docker
 [Version]: https://img.shields.io/docker/v/vdsm/virtual-dsm/latest?arch=amd64&sort=semver&color=066da5
