@@ -6,9 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Have a general question about this container?
-        Please do not use this form for technical issues.
-        And make sure to check the [FAQ](https://github.com/vdsm/virtual-dsm/blob/master/readme.md) first!
+        Please do not use this form for technical issues, and make sure to check the [FAQ](https://github.com/vdsm/virtual-dsm/blob/master/readme.md) first!
   - type: textarea
     id: question
     attributes:

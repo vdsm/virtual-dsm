@@ -6,6 +6,7 @@ set -Eeuo pipefail
 : "${MAC:=""}"
 : "${DHCP:="N"}"
 : "${NETWORK:="Y"}"
+: "${HOST_PORTS:=""}"
 
 : "${VM_NET_DEV:=""}"
 : "${VM_NET_TAP:="dsm"}"
@@ -35,8 +36,8 @@ configureDHCP() {
   { ip link add link "$VM_NET_DEV" name "$VM_NET_TAP" address "$VM_NET_MAC" type macvtap mode bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
-    error "Cannot create macvtap interface. Please make sure the network type is 'macvlan' and not 'ipvlan',"
-    error "and that the NET_ADMIN capability has been added to the container: --cap-add NET_ADMIN" && exit 16
+    error "Cannot create macvtap interface. Please make sure that the network type is 'macvlan' and not 'ipvlan',"
+    error "that your kernel is recent (>4) and supports it, and that the container has the NET_ADMIN capability set." && exit 16
   fi
 
   while ! ip link set "$VM_NET_TAP" up; do
@@ -103,6 +104,21 @@ configureDNS() {
   return 0
 }
 
+getPorts() {
+
+  local list=$1
+
+  [ -z "$list" ] && echo "" && return 0
+
+  if [[ "$list" != *","* ]]; then
+    echo " ! --dport $list"
+  else
+    echo " -m multiport ! --dports $list"
+  fi
+
+  return 0
+}
+
 configureNAT() {
 
   # Create the necessary file structure for /dev/net/tun
@@ -119,11 +135,14 @@ configureNAT() {
 
   # Check port forwarding flag
   if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
-    { sysctl -w net.ipv4.ip_forward=1 ; rc=$?; } || :
-    if (( rc != 0 )); then
+    { sysctl -w net.ipv4.ip_forward=1 > /dev/null; rc=$?; } || :
+    if (( rc != 0 )) || [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
       error "IP forwarding is disabled. $ADD_ERR --sysctl net.ipv4.ip_forward=1" && exit 24
     fi
   fi
+
+  local tables="The 'ip_tables' kernel module is not loaded. Try this command: sudo modprobe ip_tables iptable_nat"
+  local tuntap="The 'tun' kernel module is not available. Try this command: 'sudo modprobe tun' or run the container with 'privileged: true'."
 
   # Create a bridge with a static IP for the VM guest
 
@@ -143,7 +162,9 @@ configureNAT() {
   done
 
   # QEMU Works with taps, set tap to the bridge created
-  ip tuntap add dev "$VM_NET_TAP" mode tap
+  if ! ip tuntap add dev "$VM_NET_TAP" mode tap; then
+    error "$tuntap" && exit 31
+  fi
 
   while ! ip link set "$VM_NET_TAP" up promisc on; do
     info "Waiting for TAP to become available..."
@@ -156,13 +177,19 @@ configureNAT() {
   update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
   update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 
-  iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -j MASQUERADE
-  iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p tcp -j DNAT --to "$VM_NET_IP"
+  exclude=$(getPorts "$HOST_PORTS")
+
+  if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -j MASQUERADE; then
+    error "$tables" && exit 30
+  fi
+
+  # shellcheck disable=SC2086
+  iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p tcp${exclude} -j DNAT --to "$VM_NET_IP"
   iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p udp  -j DNAT --to "$VM_NET_IP"
 
   if (( KERNEL > 4 )); then
     # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
-    iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill || true
+    iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill > /dev/null 2>&1 || true
   fi
 
   NET_OPTS="-netdev tap,ifname=$VM_NET_TAP,script=no,downscript=no,id=hostnet0"
@@ -273,10 +300,14 @@ if [[ "$DEBUG" == [Yy1]* ]]; then
   echo
 fi
 
+if [[ "$IP" == "172.17."* ]]; then
+  warn "your container IP starts with 172.17.* which will cause conflicts when you install the Container Manager package inside DSM!"
+fi
+
 if [[ "$DHCP" == [Yy1]* ]]; then
 
-  if [[ "$GATEWAY" == "172."* ]] && [[ "$DEBUG" != [Yy1]* ]]; then
-    error "You can only enable DHCP while the container is on a macvlan network!" && exit 26
+  if [[ "$GATEWAY" == "172."* ]]; then
+    warn "your gateway IP starts with 172.* which is often a sign that you are not on a macvlan network (required for DHCP)!"
   fi
 
   # Configuration for DHCP IP
