@@ -307,7 +307,7 @@ fi
 if [[ "$DHCP" == [Yy1]* ]]; then
 
   if [[ "$GATEWAY" == "172."* ]]; then
-    warn "your gateway IP starts with 172.* which could be a sign that you are not on a macvlan network (required for DHCP)!"
+    warn "your gateway IP starts with 172.* which is often a sign that you are not on a macvlan network (required for DHCP)!"
   fi
 
   # Configuration for DHCP IP
