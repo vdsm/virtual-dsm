@@ -119,8 +119,8 @@ configureNAT() {
 
   # Check port forwarding flag
   if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
-    { sysctl -w net.ipv4.ip_forward=1 ; rc=$?; } || :
-    if (( rc != 0 )); then
+    { sysctl -w net.ipv4.ip_forward=1 > /dev/null; rc=$?; } || :
+    if (( rc != 0 )) || [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
       error "IP forwarding is disabled. $ADD_ERR --sysctl net.ipv4.ip_forward=1" && exit 24
     fi
   fi
