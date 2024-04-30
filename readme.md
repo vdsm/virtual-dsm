@@ -114,12 +114,9 @@ docker run -it --rm --name dsm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMI
    It is possible to pass-through disk devices directly by adding them to your compose file in this way:
 
   ```yaml
-  environment:
-    DEVICE2: "/dev/sda"
-    DEVICE3: "/dev/sdb"
   devices:
-    - /dev/sda
-    - /dev/sdb
+    - /dev/disk/by-uuid/12345-12345-12345-12345-12345:/dev/disk2
+    - /dev/disk/by-uuid/45678-45678-45678-45678-45678:/dev/disk3
   ```
 
   Please note that the device needs to be totally empty (without any partition table) otherwise DSM does not always format it into a volume.
