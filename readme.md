@@ -119,6 +119,8 @@ docker run -it --rm --name dsm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMI
     - /dev/disk/by-uuid/45678-45678-45678-45678-45678:/dev/disk3
   ```
 
+  Make sure to bind the disk via its UUID (obtainable via `lsblk -o name,uuid`) instead of its name (`/dev/sdc`), to make sure it can never accidently pass the wrong disk when their name assignments get shuffled. 
+
   Please note that the device needs to be totally empty (without any partition table) otherwise DSM does not always format it into a volume.
 
   Do NOT use this feature with the goal of sharing files from the host, they will all be lost without warning when DSM creates the volume.
