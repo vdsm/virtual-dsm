@@ -61,17 +61,6 @@ docker run -it --rm --name dsm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMI
   
   Enjoy your brand new machine, and don't forget to star this repo!
 
-* ### How do I change the size of the disk?
-
-  To expand the default size of 16 GB, locate the `DISK_SIZE` setting in your compose file and modify it to your preferred capacity:
-
-  ```yaml
-  environment:
-    DISK_SIZE: "128G"
-  ```
-  
-  This can also be used to resize the existing disk to a larger capacity without any data loss. 
-
 * ### How do I change the storage location?
 
   To change the storage location, include the following bind mount in your compose file:
@@ -82,6 +71,17 @@ docker run -it --rm --name dsm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMI
   ```
 
   Replace the example path `/var/dsm` with the desired storage folder.
+ 
+* ### How do I change the size of the disk?
+
+  To expand the default size of 16 GB, locate the `DISK_SIZE` setting in your compose file and modify it to your preferred capacity:
+
+  ```yaml
+  environment:
+    DISK_SIZE: "128G"
+  ```
+  
+  This can also be used to resize the existing disk to a larger capacity without any data loss.
 
 * ### How do I create a growable disk?
 
@@ -119,7 +119,7 @@ docker run -it --rm --name dsm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMI
     - /dev/disk/by-uuid/45678-45678-45678-45678-45678:/dev/disk3
   ```
 
-  Make sure to bind the disk via its UUID (obtainable via `lsblk -o name,uuid`) instead of its name (`/dev/sdc`), to make sure it can never accidently pass the wrong disk when their name assignments get shuffled. 
+  Make sure to bind the disk via its UUID (obtainable via `lsblk -o name,uuid`) instead of its name (`/dev/sdc`), to prevent ever binding the wrong disk when the drive letters happen to change. 
 
   Please note that the device needs to be totally empty (without any partition table) otherwise DSM does not always format it into a volume.
 
@@ -129,7 +129,7 @@ docker run -it --rm --name dsm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMI
 
   By default, a single CPU core and 1 GB of RAM are allocated to the container.
 
-  To increase this, add the following environment variables:
+  If there arises a need to increase this, add the following environment variables:
 
   ```yaml
   environment:
