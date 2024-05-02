@@ -9,7 +9,7 @@ set -Eeuo pipefail
 : "${CPU_MODEL:=""}"
 : "${DEF_MODEL:="qemu64"}"
 
-[ "$ARCH" != "amd64" ] && KVM="N"
+[[ "${ARCH,,}" != "amd64" ]] && KVM="N"
 
 if [[ "$KVM" != [Nn]* ]]; then
 

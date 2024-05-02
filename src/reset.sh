@@ -42,7 +42,6 @@ HOST=$(hostname -s)
 KERNEL=$(echo "$SYS" | cut -b 1)
 MINOR=$(echo "$SYS" | cut -d '.' -f2)
 ARCH=$(dpkg --print-architecture)
-RAM="$(free -g | grep Mem: | awk '{print $7}')/$(free -g | grep Mem: | awk '{print $2}') GB"
 CPU=$(lscpu | grep -m 1 'Model name' | cut -f 2 -d ":" | awk '{$1=$1}1' | sed 's# @.*##g' | sed s/"(R)"//g | sed 's/[^[:alnum:] ]\+/ /g' | sed 's/  */ /g')
 
 # Check system
@@ -67,14 +66,34 @@ if [[ "${FS,,}" == "ecryptfs" ]] || [[ "${FS,,}" == "tmpfs" ]]; then
   DISK_CACHE="writeback"
 fi
 
+# Read memory
+RAM_AVAIL=$(free -b | grep -m 1 Mem: | awk '{print $7}')
+RAM_TOTAL=$(free -b | grep -m 1 Mem: | awk '{print $2}')
+RAM_SIZE=$(echo "${RAM_SIZE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
+RAM_WANTED=$(numfmt --from=iec "$RAM_SIZE")
+AVAIL_GB=$(( (RAM_AVAIL + 1073741823)/1073741824 ))
+TOTAL_GB=$(( (RAM_TOTAL + 1073741823)/1073741824 ))
+WANTED_GB=$(( (RAM_WANTED + 1073741823)/1073741824 ))
+
 # Print system info
 SYS="${SYS/-generic/}"
 FS="${FS/ext2\/ext3/ext4}"
 SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
 SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
 
-echo "❯ CPU: ${CPU} | RAM: ${RAM} | DISK: $SPACE_GB GB (${FS}) | HOST: ${SYS}..."
+echo "❯ CPU: ${CPU} | RAM: $AVAIL_GB/$TOTAL_GB GB | DISK: $SPACE_GB GB (${FS}) | HOST: ${SYS}..."
 echo
+
+# Check memory
+
+if (( RAM_WANTED > RAM_AVAIL )); then
+  error "Your configured RAM_SIZE of $WANTED_GB GB is higher than the $AVAIL_GB GB of memory available."
+  exit 15
+fi
+
+if (( (RAM_WANTED + 1950000000) > RAM_AVAIL )); then
+  warn "your configured RAM_SIZE of $WANTED_GB GB is much too close to the $AVAIL_GB GB of memory available."
+fi
 
 # Cleanup files
 rm -f /run/shm/qemu.*
