@@ -88,7 +88,7 @@ echo
 
 if (( (RAM_WANTED + 500000000) > RAM_AVAIL )); then
   error "Your configured RAM_SIZE of $WANTED_GB GB is higher than the $AVAIL_GB GB of memory available, please set a lower value."
-  exit 15
+  exit 17
 fi
 
 # Cleanup files
