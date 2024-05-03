@@ -12,4 +12,20 @@ DEV_OPTS="$DEV_OPTS -device virtio-rng-pci,rng=objrng0,id=rng0,bus=pcie.0,addr=0
 ARGS="$DEF_OPTS $CPU_OPTS $RAM_OPTS $MAC_OPTS $DISPLAY_OPTS $MON_OPTS $SERIAL_OPTS $NET_OPTS $DISK_OPTS $DEV_OPTS $ARGUMENTS"
 ARGS=$(echo "$ARGS" | sed 's/\t/ /g' | tr -s ' ')
 
+# Check available memory as the very last step
+
+RAM_AVAIL=$(free -b | grep -m 1 Mem: | awk '{print $7}')
+RAM_TOTAL=$(free -b | grep -m 1 Mem: | awk '{print $2}')
+AVAIL_GB=$(( (RAM_AVAIL + 1073741823)/1073741824 ))
+TOTAL_GB=$(( (RAM_TOTAL + 1073741823)/1073741824 ))
+
+if (( (RAM_WANTED + 500000000) > RAM_AVAIL )); then
+  error "Your configured RAM_SIZE of $WANTED_GB GB is higher than the $AVAIL_GB GB of memory available, please set a lower value."
+  exit 15
+fi
+
+if (( (RAM_WANTED + 1950000000) > RAM_AVAIL )); then
+  warn "your configured RAM_SIZE of $WANTED_GB GB is much too close to the $AVAIL_GB GB of memory available, please set a lower value."
+fi
+
 return 0
