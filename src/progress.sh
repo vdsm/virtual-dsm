@@ -12,7 +12,8 @@ escape () {
 }
 
 file="$1"
-body=$(escape "$2")
+total="$2"
+body=$(escape "$3")
 info="/run/shm/msg.html"
 
 if [[ "$body" == *"..." ]]; then
@@ -24,7 +25,12 @@ do
   if [ -s "$file" ]; then
     bytes=$(du -sb "$file" | cut -f1)
     if (( bytes > 1000 )); then
-      size=$(echo "$bytes" | numfmt --to=iec --suffix=B  | sed -r 's/([A-Z])/ \1/')
+      if [ -z "$total" ] || [[ "$total" == "0" ]]; then
+        size=$(numfmt --to=iec --suffix=B  "$bytes" | sed -r 's/([A-Z])/ \1/')
+      else
+        size=$(printf '%.1f\n' "$((bytes*100*100/total))e-2")
+        size="$size%"
+      fi
       echo "${body//(\[P\])/($size)}"> "$info"
     fi
   fi
