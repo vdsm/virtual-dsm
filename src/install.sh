@@ -118,13 +118,14 @@ if [ ! -s "$RDC" ]; then
   info "Install: $MSG" && html "$MSG"
 
   RD="$TMP/rd.gz"
+  SIZE=5394188
   POS="65627648-71021835"
   VERIFY="b4215a4b213ff5154db0488f92c87864"
   LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
 
   rm -f "$RD"
   rm -f "$RDC"
-  /run/progress.sh "$RD" "$PRG" &
+  /run/progress.sh "$RD" "$SIZE" "$PRG" &
   { curl -r "$POS" -sfk -S -o "$RD" "$LOC"; rc=$?; } || :
 
   fKill "progress.sh"
@@ -141,11 +142,13 @@ if [ ! -s "$RDC" ]; then
   if [ "$SUM" != "$VERIFY" ]; then
 
     PAT="/install.pat"
+    SIZE=379637760
+
     rm -f "$RD"
     rm -f "$PAT"
 
     html "$MSG"
-    /run/progress.sh "$PAT" "$PRG" &
+    /run/progress.sh "$PAT" "$SIZE" "$PRG" &
     { wget "$LOC" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; rc=$?; } || :
 
     fKill "progress.sh"
@@ -208,13 +211,16 @@ html "$MSG"
 PAT="/$BASE.pat"
 rm -f "$PAT"
 
+SIZE=0
+[[ "$URL" == *"DSM_VirtualDSM_69057.pat" ]] && SIZE=363837333
+
 if [[ "$URL" == "file://"* ]]; then
 
   cp "${URL:7}" "$PAT"
 
 else
 
-  /run/progress.sh "$PAT" "$PRG" &
+  /run/progress.sh "$PAT" "$SIZE" "$PRG" &
 
   { wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; rc=$?; } || :
 
