@@ -126,7 +126,7 @@ if [ ! -s "$RDC" ]; then
   rm -f "$RD"
   rm -f "$RDC"
   /run/progress.sh "$RD" "$SIZE" "$PRG" &
-  { curl -r "$POS" -sfk -S -o "$RD" "$LOC"; rc=$?; } || :
+  { curl -r "$POS" -sfk --connect-timeout 10 -S -o "$RD" "$LOC"; rc=$?; } || :
 
   fKill "progress.sh"
 
@@ -149,7 +149,7 @@ if [ ! -s "$RDC" ]; then
 
     html "$MSG"
     /run/progress.sh "$PAT" "$SIZE" "$PRG" &
-    { wget "$LOC" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; rc=$?; } || :
+    { wget "$LOC" -O "$PAT" -q --no-check-certificate --timeout=10 --show-progress "$PROGRESS"; rc=$?; } || :
 
     fKill "progress.sh"
     (( rc != 0 )) && error "Failed to download $LOC , reason: $rc" && exit 60
@@ -222,7 +222,7 @@ else
 
   /run/progress.sh "$PAT" "$SIZE" "$PRG" &
 
-  { wget "$URL" -O "$PAT" -q --no-check-certificate --show-progress "$PROGRESS"; rc=$?; } || :
+  { wget "$URL" -O "$PAT" -q --no-check-certificate --timeout=10 --show-progress "$PROGRESS"; rc=$?; } || :
 
   fKill "progress.sh"
   (( rc != 0 )) && error "Failed to download $URL , reason: $rc" && exit 69
