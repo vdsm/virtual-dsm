@@ -527,6 +527,11 @@ DISK4_FILE="/storage4/data4"
 : "${DEVICE3:=""}"
 : "${DEVICE4:=""}"
 
+[ -z "$DEVICE" ] && [ -b "/disk1" ] && DEVICE="/disk1"
+[ -z "$DEVICE2" ] && [ -b "/disk2" ] && DEVICE2="/disk2"
+[ -z "$DEVICE3" ] && [ -b "/disk3" ] && DEVICE3="/disk3"
+[ -z "$DEVICE4" ] && [ -b "/disk4" ] && DEVICE4="/disk4"
+
 [ -z "$DEVICE" ] && [ -b "/dev/disk1" ] && DEVICE="/dev/disk1"
 [ -z "$DEVICE2" ] && [ -b "/dev/disk2" ] && DEVICE2="/dev/disk2"
 [ -z "$DEVICE3" ] && [ -b "/dev/disk3" ] && DEVICE3="/dev/disk3"
