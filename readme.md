@@ -115,8 +115,8 @@ docker run -it --rm --name dsm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMI
 
   ```yaml
   devices:
-    - /dev/disk/by-uuid/12345-12345-12345-12345-12345:/dev/disk2
-    - /dev/disk/by-uuid/45678-45678-45678-45678-45678:/dev/disk3
+    - /dev/disk/by-uuid/12345-12345-12345-12345-12345:/disk2
+    - /dev/disk/by-uuid/45678-45678-45678-45678-45678:/disk3
   ```
 
   Make sure to bind the disk via its UUID (obtainable via `lsblk -o name,uuid`) instead of its name (`/dev/sdc`), to prevent ever binding the wrong disk when the drive letters happen to change. 
