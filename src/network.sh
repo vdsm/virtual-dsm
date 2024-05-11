@@ -250,7 +250,7 @@ checkOS() {
   [[ "${name,,}" == *"microsoft"* ]] && os="Windows"
 
   if [ -n "$os" ]; then
-    error "You are using Docker Desktop for $os, which does not support macvlan!"
+    error "You are using Docker Desktop for $os which does not support macvlan, please revert to bridge networking!"
     return 1
   fi
 
