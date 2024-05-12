@@ -225,6 +225,15 @@ docker run -it --rm --name dsm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMI
 
   With this method, it is even possible to switch between different versions while keeping all your file data intact.
 
+  If you don't have internet access, it's also possible to skip the download by setting URL to:
+
+  ```yaml
+  environment:
+    URL: "DSM_VirtualDSM_42218.pat"
+  ```
+
+  after placing a file called `DSM_VirtualDSM_42218.pat` in your `/storage` folder.
+
 * ### What are the differences compared to the standard DSM?
 
   There are only two minor differences: the Virtual Machine Manager package is not available, and Surveillance Station will not include any free licenses.
