@@ -22,7 +22,7 @@ if [ -n "$URL" ]; then
     if [ -s "$STORAGE/$BASE.pat" ]; then
       URL="file://$STORAGE/$BASE.pat"
     else
-      error "File $STORAGE/$BASE.pat does not exist" && exit 65
+      error "File $STORAGE/$BASE.pat does not exist!" && exit 65
     fi
   fi
 fi
