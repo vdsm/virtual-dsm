@@ -122,6 +122,7 @@ if [ ! -s "$RDC" ]; then
   POS="65627648-71021835"
   VERIFY="b4215a4b213ff5154db0488f92c87864"
   LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
+  [[ "${URL,,}" == *"_42218.pat" ]] && LOC="$URL"
 
   rm -f "$RD"
   rm -f "$RDC"
@@ -212,7 +213,7 @@ PAT="/$BASE.pat"
 rm -f "$PAT"
 
 SIZE=0
-[[ "$URL" == *"DSM_VirtualDSM_69057.pat" ]] && SIZE=363837333
+[[ "$URL" == *"_69057.pat" ]] && SIZE=363837333
 
 if [[ "$URL" == "file://"* ]]; then
 
