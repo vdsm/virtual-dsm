@@ -18,6 +18,9 @@ if [ -n "$URL" ]; then
     : "${BASE//+/ }"; printf -v BASE '%b' "${_//%/\\x}"
     BASE=$(echo "$BASE" | sed -e 's/[^A-Za-z0-9._-]/_/g')
   fi
+  if [ -s "$STORAGE/$BASE.pat" ]; then
+    URL="file://$STORAGE/$BASE.pat"
+  fi
 fi
 
 if [[ -s "$STORAGE/$BASE.boot.img" ]] && [[ -s "$STORAGE/$BASE.system.img" ]]; then
@@ -109,23 +112,34 @@ fi
 # Download the required files from the Synology website
 
 ROOT="Y"
+RD="$TMP/rd.gz"
 RDC="$STORAGE/dsm.rd"
 
+if [ ! -s "$RDC" ] && [[ "$URL" == "file://"* ]] && [[ "${URL,,}" == *"_42218.pat" ]]; then
+
+  rm -f "$RD"
+  rm -f "$RDC"
+
+  tar --extract --file="${URL:7}" --directory="$(dirname "$RD")"/. "$(basename "$RD")"
+  cp "$RD" "$RDC"
+
+fi
+
 if [ ! -s "$RDC" ]; then
+
+  rm -f "$RD"
+  rm -f "$RDC"
 
   MSG="Downloading installer..."
   PRG="Downloading installer ([P])..."
   info "Install: $MSG" && html "$MSG"
 
-  RD="$TMP/rd.gz"
   SIZE=5394188
   POS="65627648-71021835"
   VERIFY="b4215a4b213ff5154db0488f92c87864"
   LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
   [[ "${URL,,}" == *"_42218.pat" ]] && LOC="$URL"
 
-  rm -f "$RD"
-  rm -f "$RDC"
   /run/progress.sh "$RD" "$SIZE" "$PRG" &
   { curl -r "$POS" -sfk --connect-timeout 10 -S -o "$RD" "$LOC"; rc=$?; } || :
 
@@ -212,15 +226,15 @@ html "$MSG"
 PAT="/$BASE.pat"
 rm -f "$PAT"
 
-SIZE=0
-[[ "${URL,,}" == *"_69057.pat" ]] && SIZE=363837333
-[[ "${URL,,}" == *"_42218.pat" ]] && SIZE=379637760
-
 if [[ "$URL" == "file://"* ]]; then
 
   cp "${URL:7}" "$PAT"
 
 else
+
+  SIZE=0
+  [[ "${URL,,}" == *"_69057.pat" ]] && SIZE=363837333
+  [[ "${URL,,}" == *"_42218.pat" ]] && SIZE=379637760
 
   /run/progress.sh "$PAT" "$SIZE" "$PRG" &
 
