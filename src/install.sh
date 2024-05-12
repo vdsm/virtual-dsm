@@ -18,8 +18,12 @@ if [ -n "$URL" ]; then
     : "${BASE//+/ }"; printf -v BASE '%b' "${_//%/\\x}"
     BASE=$(echo "$BASE" | sed -e 's/[^A-Za-z0-9._-]/_/g')
   fi
-  if [ -s "$STORAGE/$BASE.pat" ]; then
-    URL="file://$STORAGE/$BASE.pat"
+  if [[ "${URL,,}" != "http"* ]]; then
+    if [ -s "$STORAGE/$BASE.pat" ]; then
+      URL="file://$STORAGE/$BASE.pat"
+    else
+      error "File $STORAGE/$BASE.pat does not exist" && exit 65
+    fi
   fi
 fi
 
