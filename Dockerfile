@@ -15,9 +15,9 @@ ARG DEBCONF_NOWARNINGS="yes"
 ARG DEBIAN_FRONTEND="noninteractive"
 ARG DEBCONF_NONINTERACTIVE_SEEN="true"
 
-RUN set -eu && \
-    apt-get update && \
+RUN set -eu && extra="" && \
     if [ "$TARGETPLATFORM" != "linux/amd64" ]; then extra="qemu-user"; fi && \
+    apt-get update && \
     apt-get --no-install-recommends -y install \
         jq \
         tini \
