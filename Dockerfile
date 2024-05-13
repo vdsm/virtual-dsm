@@ -10,12 +10,14 @@ FROM qemux/qemu-host:2.04 as builder
 FROM debian:trixie-slim
 
 ARG TARGETPLATFORM
-ARG DEBCONF_NOWARNINGS "yes"
-ARG DEBIAN_FRONTEND "noninteractive"
-ARG DEBCONF_NONINTERACTIVE_SEEN "true"
+ARG VERSION_ARG="0.0"
+ARG DEBCONF_NOWARNINGS="yes"
+ARG DEBIAN_FRONTEND="noninteractive"
+ARG DEBCONF_NONINTERACTIVE_SEEN="true"
 
-RUN if [ "$TARGETPLATFORM" != "linux/amd64" ]; then extra="qemu-user"; fi && \
+RUN set -eu && \
     apt-get update && \
+    if [ "$TARGETPLATFORM" != "linux/amd64" ]; then extra="qemu-user"; fi && \
     apt-get --no-install-recommends -y install \
         jq \
         tini \
@@ -41,14 +43,13 @@ RUN if [ "$TARGETPLATFORM" != "linux/amd64" ]; then extra="qemu-user"; fi && \
     apt-get clean && \
     unlink /etc/nginx/sites-enabled/default && \
     sed -i 's/^worker_processes.*/worker_processes 1;/' /etc/nginx/nginx.conf && \
+    echo "$VERSION_ARG" > /run/version && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-COPY ./src /run/
-COPY ./web /var/www/
-COPY --from=builder /qemu-host.bin /run/host.bin
-
-RUN chmod +x /run/*.sh && chmod +x /run/*.bin
-RUN mv /var/www/nginx.conf /etc/nginx/sites-enabled/web.conf 
+COPY --chmod=755 ./src /run/
+COPY --chmod=644 ./web /var/www/
+COPY --chmod=755 --from=builder /qemu-host.bin /run/host.bin
+COPY --chmod=744 ./web/nginx.conf /etc/nginx/sites-enabled/web.conf
 
 VOLUME /storage
 EXPOSE 22 139 445 5000
@@ -56,9 +57,6 @@ EXPOSE 22 139 445 5000
 ENV RAM_SIZE "1G"
 ENV DISK_SIZE "16G"
 ENV CPU_CORES "1"
-
-ARG VERSION_ARG "0.0"
-RUN echo "$VERSION_ARG" > /run/version
 
 HEALTHCHECK --interval=60s --start-period=45s --retries=2 CMD /run/check.sh
 
