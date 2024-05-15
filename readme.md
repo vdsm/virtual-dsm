@@ -48,16 +48,10 @@ docker run -it --rm --name dsm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMI
 ```
 
 Via Kubernetes:
-- download `kube-dsm.yaml`
-- edit it, according to your need
-- deploy it:
-```shell
-kubectl apply -f kube-dsm.yaml
-```
 
-Notes:
-- depending on the kind of storage you're using, you may want to pre-create PVC first. If so - remove PVC section from the manifest
-- you can add Ingress to the manifest. I found, that if I use DNS name to access DSM UI - that can only be done via HTTPS. Accessing UI via DNS with HTTP results in error `You are not authorized to use this service` 
+```shell
+kubectl apply -f kubernetes.yml
+```
 
 ## FAQ
 
