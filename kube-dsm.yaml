@@ -7,7 +7,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 32Gi
+      storage: 16Gi
 ---
 apiVersion: v1
 kind: Pod
@@ -30,13 +30,11 @@ spec:
         privileged: true
       env:
         - name: RAM_SIZE
-          value: 4G
+          value: 1G
         - name: CPU_CORES
-          value: "2"
+          value: "1"
         - name: DISK_SIZE
-          value: "30G"  # Kubernetes uses Gi, but DSM uses GB
-        - name: DISK_FMT
-          value: "qcow2"
+          value: "16G"  # Kubernetes uses Gi, but DSM uses GB
       volumeMounts:
         - mountPath: /storage
           name: storage
