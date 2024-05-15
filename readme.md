@@ -24,7 +24,6 @@ Virtual DSM in a Docker container.
 Via Docker Compose:
 
 ```yaml
-version: "3"
 services:
   dsm:
     container_name: dsm
