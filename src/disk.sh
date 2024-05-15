@@ -527,6 +527,7 @@ DISK4_FILE="/storage4/data4"
 : "${DEVICE3:=""}"
 : "${DEVICE4:=""}"
 
+[ -z "$DEVICE" ] && [ -b "/disk" ] && DEVICE="/disk"
 [ -z "$DEVICE" ] && [ -b "/disk1" ] && DEVICE="/disk1"
 [ -z "$DEVICE2" ] && [ -b "/disk2" ] && DEVICE2="/disk2"
 [ -z "$DEVICE3" ] && [ -b "/disk3" ] && DEVICE3="/disk3"
