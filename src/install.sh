@@ -149,6 +149,8 @@ if [ ! -s "$RDC" ]; then
 
   fKill "progress.sh"
 
+  (( rc == 4 )) && error "Failed to download $LOC , network failure!" && exit 60
+
   if (( rc != 0 )); then
     if (( rc != 22 )) && (( rc != 56 )); then
       error "Failed to download $LOC, reason: $rc" && exit 60
@@ -171,6 +173,7 @@ if [ ! -s "$RDC" ]; then
     { wget "$LOC" -O "$PAT" -q --no-check-certificate --timeout=10 --show-progress "$PROGRESS"; rc=$?; } || :
 
     fKill "progress.sh"
+    (( rc == 4 )) && error "Failed to download $LOC , network failure!" && exit 60
     (( rc != 0 )) && error "Failed to download $LOC , reason: $rc" && exit 60
 
     tar --extract --file="$PAT" --directory="$(dirname "$RD")"/. "$(basename "$RD")"
@@ -245,6 +248,7 @@ else
   { wget "$URL" -O "$PAT" -q --no-check-certificate --timeout=10 --show-progress "$PROGRESS"; rc=$?; } || :
 
   fKill "progress.sh"
+  (( rc == 4 )) && error "Failed to download $URL , network failure!" && exit 69
   (( rc != 0 )) && error "Failed to download $URL , reason: $rc" && exit 69
 
 fi
