@@ -14,16 +14,20 @@ ARGS=$(echo "$ARGS" | sed 's/\t/ /g' | tr -s ' ')
 
 # Check available memory as the very last step
 
-RAM_AVAIL=$(free -b | grep -m 1 Mem: | awk '{print $7}')
-AVAIL_GB=$(( (RAM_AVAIL + 1073741823)/1073741824 ))
+if [[ "$RAM_CHECK" != [Nn]* ]]; then
 
-if (( (RAM_WANTED + 500000000) > RAM_AVAIL )); then
-  error "Your configured RAM_SIZE of $WANTED_GB GB is higher than the $AVAIL_GB GB of memory available, please set a lower value."
-  exit 17
-fi
+  RAM_AVAIL=$(free -b | grep -m 1 Mem: | awk '{print $7}')
+  AVAIL_GB=$(( RAM_AVAIL/1073741824 ))
 
-if (( (RAM_WANTED + 1450000000) > RAM_AVAIL )); then
-  warn "your configured RAM_SIZE of $WANTED_GB GB is much too close to the $AVAIL_GB GB of memory available, please set a lower value."
+  if (( (RAM_WANTED + RAM_SPARE) > RAM_AVAIL )); then
+    error "Your configured RAM_SIZE of $WANTED_GB GB is too high for the $AVAIL_GB GB of memory available, please set a lower value."
+    exit 17
+  fi
+
+  if (( (RAM_WANTED + (RAM_SPARE * 3)) > RAM_AVAIL )); then
+    warn "your configured RAM_SIZE of $WANTED_GB GB is very close to the $AVAIL_GB GB of memory available, please consider a lower value."
+  fi
+
 fi
 
 return 0
