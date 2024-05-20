@@ -337,7 +337,7 @@ if [[ "$DHCP" == [Yy1]* ]]; then
 
 else
 
-  if [[ "$GATEWAY" != "172."* ]]; then
+  if [[ "$GATEWAY" != "172."* ]] && [[ "$GATEWAY" != "10."* ]]; then
     ! checkOS && exit 19
   fi
 
