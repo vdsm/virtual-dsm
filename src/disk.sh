@@ -366,7 +366,7 @@ createDevice () {
       ;;
     "ide" )
       result="$result \
-      -device ide-hd,drive=$DISK_ID,bus=ide.2,rotation_rate=$DISK_ROTATION,bootindex=$DISK_INDEX"
+      -device ide-hd,drive=$DISK_ID,bus=ide.$DISK_INDEX,rotation_rate=$DISK_ROTATION,bootindex=$DISK_INDEX"
       echo "$result"
       ;;
     "blk" | "virtio-blk" )
