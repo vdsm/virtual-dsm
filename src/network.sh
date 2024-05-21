@@ -260,8 +260,13 @@ checkOS() {
 getInfo() {
 
   if [ -z "$VM_NET_DEV" ]; then
+    # Give Kubernetes priority over the default interface
+    [ -d "/sys/class/net/net3" ] && VM_NET_DEV="net3"
+    [ -d "/sys/class/net/net2" ] && VM_NET_DEV="net2"
+    [ -d "/sys/class/net/net1" ] && VM_NET_DEV="net1"
+    [ -d "/sys/class/net/net0" ] && VM_NET_DEV="net0"
     # Automaticly detect the default network interface
-    VM_NET_DEV=$(awk '$2 == 00000000 { print $1 }' /proc/net/route)
+    [ -z "$VM_NET_DEV" ] && VM_NET_DEV=$(awk '$2 == 00000000 { print $1 }' /proc/net/route)
     [ -z "$VM_NET_DEV" ] && VM_NET_DEV="eth0"
   fi
 
@@ -292,7 +297,7 @@ getInfo() {
     error "Invalid MAC address: '$VM_NET_MAC', should be 12 or 17 digits long!" && exit 28
   fi
 
-  GATEWAY=$(ip r | grep default | awk '{print $3}')
+  GATEWAY=$(ip route list dev "$VM_NET_DEV" | awk ' /^default/ {print $3}')
   IP=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
   echo "$IP" > /run/shm/qemu.ip
 
