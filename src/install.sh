@@ -60,8 +60,6 @@ rm -f "$STORAGE/$BASE.agent"
 rm -f "$STORAGE/$BASE.boot.img"
 rm -f "$STORAGE/$BASE.system.img"
 
-[[ "$DEBUG" == [Yy1]* ]] && set -x
-
 # Check filesystem
 FS=$(stat -f -c %T "$STORAGE")
 
@@ -398,9 +396,6 @@ fi
 
 mv -f "$BOOT" "$STORAGE/$BASE.boot.img"
 rm -rf "$TMP"
-
-{ set +x; } 2>/dev/null
-[[ "$DEBUG" == [Yy1]* ]] && echo
 
 html "Installation finished successfully..."
 return 0
