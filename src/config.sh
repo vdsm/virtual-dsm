@@ -30,4 +30,8 @@ if [[ "$RAM_CHECK" != [Nn]* ]]; then
 
 fi
 
+if [[ "$DEBUG" == [Yy1]* ]];
+  printf "Arguments:\n\n${ARGS// -/$'\n-'}" && echo
+fi
+
 return 0

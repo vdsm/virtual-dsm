@@ -19,7 +19,6 @@ cd /run
 trap - ERR
 
 info "Booting ${APP}..."
-[[ "$DEBUG" == [Yy1]* ]] && echo "Arguments: $ARGS" && echo
 
 if [[ "$CONSOLE" == [Yy]* ]]; then
   exec qemu-system-x86_64 ${ARGS:+ $ARGS}

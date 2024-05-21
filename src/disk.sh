@@ -5,6 +5,7 @@ set -Eeuo pipefail
 
 : "${DISK_IO:="native"}"          # I/O Mode, can be set to 'native', 'threads' or 'io_turing'
 : "${DISK_FMT:="raw"}"            # Disk file format, 'raw' by default for best performance
+: "${DISK_TYPE:=""}"              # Device type to be used, choose "ide", "usb", "blk" or "scsi"
 : "${DISK_FLAGS:=""}"             # Specifies the options for use with the qcow2 disk format
 : "${DISK_CACHE:="none"}"         # Caching mode, can be set to 'writeback' for better performance
 : "${DISK_DISCARD:="on"}"         # Controls whether unmap (TRIM) commands are passed to the host.
@@ -15,15 +16,6 @@ SYSTEM="$STORAGE/$BASE.system.img"
 
 [ ! -s "$BOOT" ] && error "Virtual DSM boot-image does not exist ($BOOT)" && exit 81
 [ ! -s "$SYSTEM" ] && error "Virtual DSM system-image does not exist ($SYSTEM)" && exit 82
-
-DISK_OPTS="\
-    -object iothread,id=io2 \
-    -device virtio-scsi-pci,id=hw-synoboot,iothread=io2,bus=pcie.0,addr=0xa \
-    -drive file=$BOOT,if=none,id=drive-synoboot,format=raw,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on \
-    -device scsi-hd,bus=hw-synoboot.0,channel=0,scsi-id=0,lun=0,drive=drive-synoboot,id=synoboot0,rotation_rate=$DISK_ROTATION,bootindex=1 \
-    -device virtio-scsi-pci,id=hw-synosys,iothread=io2,bus=pcie.0,addr=0xb \
-    -drive file=$SYSTEM,if=none,id=drive-synosys,format=raw,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on \
-    -device scsi-hd,bus=hw-synosys.0,channel=0,scsi-id=0,lun=0,drive=drive-synosys,id=synosys0,rotation_rate=$DISK_ROTATION,bootindex=2"
 
 fmt2ext() {
   local DISK_FMT=$1
@@ -123,9 +115,9 @@ createDisk() {
   fi
 
   html "Creating a $DISK_DESC image..."
-  info "Creating a $DISK_SPACE $DISK_TYPE $DISK_DESC image in $DISK_FMT format..."
+  info "Creating a $DISK_SPACE $DISK_STYLE $DISK_DESC image in $DISK_FMT format..."
 
-  local FAIL="Could not create a $DISK_TYPE $DISK_FMT $DISK_DESC image of $DISK_SPACE ($DISK_FILE)"
+  local FAIL="Could not create a $DISK_STYLE $DISK_FMT $DISK_DESC image of $DISK_SPACE ($DISK_FILE)"
 
   case "${DISK_FMT,,}" in
     raw)
@@ -210,7 +202,7 @@ resizeDisk() {
   MSG="Resizing $DISK_DESC from ${GB}G to $DISK_SPACE..."
   info "$MSG" && html "$MSG"
 
-  local FAIL="Could not resize the $DISK_TYPE $DISK_FMT $DISK_DESC image from ${GB}G to $DISK_SPACE ($DISK_FILE)"
+  local FAIL="Could not resize the $DISK_STYLE $DISK_FMT $DISK_DESC image from ${GB}G to $DISK_SPACE ($DISK_FILE)"
 
   case "${DISK_FMT,,}" in
     raw)
@@ -293,7 +285,7 @@ convertDisk() {
   # shellcheck disable=SC2086
   if ! qemu-img convert -f "$SOURCE_FMT" $CONV_FLAGS -o "$DISK_PARAM" -O "$DST_FMT" -- "$SOURCE_FILE" "$TMP_FILE"; then
     rm -f "$TMP_FILE"
-    error "Failed to convert $DISK_TYPE $DISK_DESC image to $DST_FMT format in $DIR, is there enough space available?" && exit 79
+    error "Failed to convert $DISK_STYLE $DISK_DESC image to $DST_FMT format in $DIR, is there enough space available?" && exit 79
   fi
 
   if [[ "$DST_FMT" == "raw" ]]; then
@@ -356,28 +348,48 @@ checkFS () {
 }
 
 createDevice () {
-
-  local DISK_ID=$1
-  local DISK_FILE=$2
+  local DISK_FILE=$1
+  local DISK_TYPE=$2
   local DISK_INDEX=$3
   local DISK_ADDRESS=$4
   local DISK_FMT=$5
   local DISK_IO=$6
   local DISK_CACHE=$7
+  local DISK_ID="data$DISK_INDEX"
 
-  local result="-drive file=$DISK_FILE,if=none,id=drive-$DISK_ID,format=$DISK_FMT,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on"
+  local index=""
+  [ -n "$DISK_INDEX" ] && index=",bootindex=$DISK_INDEX"
+  local result="-drive file=$DISK_FILE,id=$DISK_ID,if=none,format=$DISK_FMT,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on"
 
-  result="$result \
-    -device virtio-scsi-pci,id=hw-$DISK_ID,iothread=io2,bus=pcie.0,addr=$DISK_ADDRESS \
-    -device scsi-hd,bus=hw-$DISK_ID.0,channel=0,scsi-id=0,lun=0,drive=drive-$DISK_ID,id=$DISK_ID,rotation_rate=$DISK_ROTATION,bootindex=$DISK_INDEX"
+  case "${DISK_TYPE,,}" in
+    "usb" )
+      result="$result \
+      -device usb-storage,drive=${DISK_ID}${index}"
+      ;;
+    "ide" )
+      result="$result \
+      -device ide-hd,drive=${DISK_ID},bus=ide.$DISK_INDEX,rotation_rate=$DISK_ROTATION${index}"
+      echo "$result"
+      ;;
+    "blk" | "virtio-blk" )
+      result="$result \
+      -device virtio-blk-pci,drive=${DISK_ID},scsi=off,bus=pcie.0,addr=$DISK_ADDRESS,iothread=io2${index}"
+      echo "$result"
+      ;;
+    "scsi" | "virtio-scsi" )
+      result="$result \
+      -device virtio-scsi-pci,id=${DISK_ID}b,bus=pcie.0,addr=$DISK_ADDRESS,iothread=io2 \
+      -device scsi-hd,drive=${DISK_ID},bus=${DISK_ID}b.0,channel=0,scsi-id=0,lun=0,rotation_rate=$DISK_ROTATION${index}"
+      echo "$result"
+      ;;
+  esac
 
-  echo "$result"
   return 0
 }
 
 addDisk () {
   local DISK_BASE=$1
-  local DISK_EXT=$2
+  local DISK_TYPE=$2
   local DISK_DESC=$3
   local DISK_SPACE=$4
   local DISK_INDEX=$5
@@ -385,9 +397,10 @@ addDisk () {
   local DISK_FMT=$7
   local DISK_IO=$8
   local DISK_CACHE=$9
-  local DISK_ID="userdata$DISK_INDEX"
+  local DISK_EXT DIR DATA_SIZE FS PREV_FMT PREV_EXT CUR_SIZE OPTS
+
+  DISK_EXT=$(fmt2ext "$DISK_FMT")
   local DISK_FILE="$DISK_BASE.$DISK_EXT"
-  local DIR DATA_SIZE FS PREV_FMT PREV_EXT CUR_SIZE OPTS
 
   DIR=$(dirname "$DISK_FILE")
   [ ! -d "$DIR" ] && return 0
@@ -440,25 +453,23 @@ addDisk () {
 
   fi
 
-  OPTS=$(createDevice "$DISK_ID" "$DISK_FILE" "$DISK_INDEX" "$DISK_ADDRESS" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE")
+  OPTS=$(createDevice "$DISK_FILE" "$DISK_TYPE" "$DISK_INDEX" "$DISK_ADDRESS" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE")
   DISK_OPTS="$DISK_OPTS $OPTS"
 
   return 0
 }
 
 addDevice () {
-
   local DISK_DEV=$1
-  local DISK_DESC=$2
+  local DISK_TYPE=$2
   local DISK_INDEX=$3
   local DISK_ADDRESS=$4
-  local DISK_ID="userdata$DISK_INDEX"
 
   [ -z "$DISK_DEV" ] && return 0
   [ ! -b "$DISK_DEV" ] && error "Device $DISK_DEV cannot be found! Please add it to the 'devices' section of your compose file." && exit 55
 
   local OPTS
-  OPTS=$(createDevice "$DISK_ID" "$DISK_DEV" "$DISK_INDEX" "$DISK_ADDRESS" "raw" "$DISK_IO" "$DISK_CACHE")
+  OPTS=$(createDevice "$DISK_DEV" "$DISK_TYPE" "$DISK_INDEX" "$DISK_ADDRESS" "raw" "$DISK_IO" "$DISK_CACHE")
   DISK_OPTS="$DISK_OPTS $OPTS"
 
   return 0
@@ -466,7 +477,12 @@ addDevice () {
 
 html "Initializing disks..."
 
-DISK_EXT=$(fmt2ext "$DISK_FMT")
+case "${DISK_TYPE,,}" in
+  "" )
+    DISK_TYPE="scsi"
+  "ide" | "usb" | "blk" | "scsi" ) ;;
+  * ) error "Invalid DISK_TYPE, value \"$DISK_TYPE\" is unrecognized!" && exit 80 ;;
+esac
 
 if [ -z "$ALLOCATE" ]; then
   if [[ "${DISK_FMT,,}" == "raw" ]]; then
@@ -477,12 +493,16 @@ if [ -z "$ALLOCATE" ]; then
 fi
 
 if [[ "$ALLOCATE" == [Nn]* ]]; then
-  DISK_TYPE="growable"
+  DISK_STYLE="growable"
   DISK_ALLOC="preallocation=off"
 else
-  DISK_TYPE="preallocated"
+  DISK_STYLE="preallocated"
   DISK_ALLOC="preallocation=falloc"
 fi
+
+DISK_OPTS=$(createDevice "$BOOT" "$DISK_TYPE" "1" "0xa" "raw" "$DISK_IO" "$DISK_CACHE")
+OPTS=$(createDevice "$SYSTEM" "$DISK_TYPE" "2" "0xb" "raw" "$DISK_IO" "$DISK_CACHE")
+DISK_OPTS="$DISK_OPTS $OPTS"
 
 DISK1_FILE="$STORAGE/data"
 if [[ ! -f "$DISK1_FILE.img" ]] && [[ -f "$STORAGE/data${DISK_SIZE}.img" ]]; then
@@ -539,28 +559,30 @@ DISK4_FILE="/storage4/data4"
 [ -z "$DEVICE4" ] && [ -b "/dev/disk4" ] && DEVICE4="/dev/disk4"
 
 if [ -n "$DEVICE" ]; then
-  addDevice "$DEVICE" "device" "3" "0xc" || exit $?
+  addDevice "$DEVICE" "$DISK_TYPE" "3" "0xc" || exit $?
 else
-  addDisk "$DISK1_FILE" "$DISK_EXT" "disk" "$DISK_SIZE" "3" "0xc" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE" || exit $?
+  addDisk "$DISK1_FILE" "$DISK_TYPE" "disk" "$DISK_SIZE" "3" "0xc" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE" || exit $?
 fi
 
 if [ -n "$DEVICE2" ]; then
-  addDevice "$DEVICE2" "device2" "4" "0xd" || exit $?
+  addDevice "$DEVICE2" "$DISK_TYPE" "4" "0xd" || exit $?
 else
-  addDisk "$DISK2_FILE" "$DISK_EXT" "disk2" "$DISK2_SIZE" "4" "0xd" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE" || exit $?
+  addDisk "$DISK2_FILE" "$DISK_TYPE" "disk2" "$DISK2_SIZE" "4" "0xd" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE" || exit $?
 fi
 
 if [ -n "$DEVICE3" ]; then
-  addDevice "$DEVICE3" "device3" "5" "0xe" || exit $?
+  addDevice "$DEVICE3" "$DISK_TYPE" "5" "0xe" || exit $?
 else
-  addDisk "$DISK3_FILE" "$DISK_EXT" "disk3" "$DISK3_SIZE" "5" "0xe" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE" || exit $?
+  addDisk "$DISK3_FILE" "$DISK_TYPE" "disk3" "$DISK3_SIZE" "5" "0xe" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE" || exit $?
 fi
 
 if [ -n "$DEVICE4" ]; then
-  addDevice "$DEVICE4" "device4" "6" "0xf" || exit $?
+  addDevice "$DEVICE4" "$DISK_TYPE" "6" "0xf" || exit $?
 else
-  addDisk "$DISK4_FILE" "$DISK_EXT" "disk4" "$DISK4_SIZE" "6" "0xf" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE" || exit $?
+  addDisk "$DISK4_FILE" "$DISK_TYPE" "disk4" "$DISK4_SIZE" "6" "0xf" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE" || exit $?
 fi
+
+DISK_OPTS="$DISK_OPTS -object iothread,id=io2"
 
 html "Initialized disks successfully..."
 return 0
