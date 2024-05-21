@@ -11,6 +11,7 @@ set -Eeuo pipefail
 : "${VM_NET_DEV:=""}"
 : "${VM_NET_TAP:="dsm"}"
 : "${VM_NET_MAC:="$MAC"}"
+: "${VM_NET_IP:="20.20.20.21"}"
 : "${VM_NET_HOST:="VirtualDSM"}"
 
 : "${DNSMASQ_OPTS:=""}"
@@ -146,8 +147,6 @@ configureNAT() {
 
   # Create a bridge with a static IP for the VM guest
 
-  VM_NET_IP='20.20.20.21'
-
   { ip link add dev dockerbridge type bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
@@ -261,10 +260,10 @@ getInfo() {
 
   if [ -z "$VM_NET_DEV" ]; then
     # Give Kubernetes priority over the default interface
-    [ -d "/sys/class/net/net3" ] && VM_NET_DEV="net3"
-    [ -d "/sys/class/net/net2" ] && VM_NET_DEV="net2"
-    [ -d "/sys/class/net/net1" ] && VM_NET_DEV="net1"
     [ -d "/sys/class/net/net0" ] && VM_NET_DEV="net0"
+    [ -d "/sys/class/net/net1" ] && VM_NET_DEV="net1"
+    [ -d "/sys/class/net/net2" ] && VM_NET_DEV="net2"
+    [ -d "/sys/class/net/net3" ] && VM_NET_DEV="net3"
     # Automaticly detect the default network interface
     [ -z "$VM_NET_DEV" ] && VM_NET_DEV=$(awk '$2 == 00000000 { print $1 }' /proc/net/route)
     [ -z "$VM_NET_DEV" ] && VM_NET_DEV="eth0"
