@@ -478,8 +478,7 @@ addDevice () {
 html "Initializing disks..."
 
 case "${DISK_TYPE,,}" in
-  "" )
-    DISK_TYPE="scsi"
+  "" ) DISK_TYPE="scsi" ;;
   "ide" | "usb" | "blk" | "scsi" ) ;;
   * ) error "Invalid DISK_TYPE, value \"$DISK_TYPE\" is unrecognized!" && exit 80 ;;
 esac
