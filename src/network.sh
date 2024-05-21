@@ -153,7 +153,7 @@ configureNAT() {
     error "Failed to create bridge. $ADD_ERR --cap-add NET_ADMIN" && exit 23
   fi
 
-  ip address add ${VM_NET_IP%.*}.1/24 broadcast ${VM_NET_IP%.*}.255 dev dockerbridge
+  ip address add "${VM_NET_IP%.*}.1/24" broadcast "${VM_NET_IP%.*}.255" dev dockerbridge
 
   while ! ip link set dockerbridge up; do
     info "Waiting for IP address to become available..."
