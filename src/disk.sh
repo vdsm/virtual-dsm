@@ -357,27 +357,29 @@ createDevice () {
   local DISK_CACHE=$7
   local DISK_ID="data$DISK_INDEX"
 
+  local index=""
+  [ -n "$DISK_INDEX" ] && index=",bootindex=$DISK_INDEX"
   local result="-drive file=$DISK_FILE,id=$DISK_ID,if=none,format=$DISK_FMT,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on"
 
   case "${DISK_TYPE,,}" in
     "usb" )
       result="$result \
-      -device usb-storage,drive=$DISK_ID,bootindex=$DISK_INDEX"
+      -device usb-storage,drive=${DISK_ID}${index}"
       ;;
     "ide" )
       result="$result \
-      -device ide-hd,drive=$DISK_ID,bus=ide.$DISK_INDEX,rotation_rate=$DISK_ROTATION,bootindex=$DISK_INDEX"
+      -device ide-hd,drive=${DISK_ID},bus=ide.$DISK_INDEX,rotation_rate=$DISK_ROTATION${index}"
       echo "$result"
       ;;
     "blk" | "virtio-blk" )
       result="$result \
-      -device virtio-blk-pci,drive=$DISK_ID,scsi=off,bus=pcie.0,addr=$DISK_ADDRESS,iothread=io2,bootindex=$DISK_INDEX"
+      -device virtio-blk-pci,drive=${DISK_ID},scsi=off,bus=pcie.0,addr=$DISK_ADDRESS,iothread=io2${index}"
       echo "$result"
       ;;
     "scsi" | "virtio-scsi" )
       result="$result \
       -device virtio-scsi-pci,id=${DISK_ID}b,bus=pcie.0,addr=$DISK_ADDRESS,iothread=io2 \
-      -device scsi-hd,drive=$DISK_ID,bus=${DISK_ID}b.0,channel=0,scsi-id=0,lun=0,rotation_rate=$DISK_ROTATION,bootindex=$DISK_INDEX"
+      -device scsi-hd,drive=${DISK_ID},bus=${DISK_ID}b.0,channel=0,scsi-id=0,lun=0,rotation_rate=$DISK_ROTATION${index}"
       echo "$result"
       ;;
   esac
