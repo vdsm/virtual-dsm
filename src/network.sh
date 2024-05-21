@@ -327,7 +327,7 @@ fi
 
 if [[ "$DHCP" == [Yy1]* ]]; then
 
-  ! checkOS && exit 19
+  ! checkOS && [[ "$DEBUG" != [Yy1]* ]] && exit 19
 
   if [[ "$GATEWAY" == "172."* ]]; then
     warn "your gateway IP starts with 172.* which is often a sign that you are not on a macvlan network (required for DHCP)!"
@@ -341,8 +341,8 @@ if [[ "$DHCP" == [Yy1]* ]]; then
 
 else
 
-  if [[ "$GATEWAY" != "172."* ]] && [[ "$GATEWAY" != "10."* ]]; then
-    ! checkOS && exit 19
+  if [[ "$GATEWAY" != "172."* ]] && [[ "$GATEWAY" != "10.8"* ]] && [[ "$GATEWAY" != "10.9"* ]]; then
+    ! checkOS && [[ "$DEBUG" != [Yy1]* ]] && exit 19
   fi
 
   # Shutdown nginx

@@ -365,6 +365,7 @@ createDevice () {
     "usb" )
       result="$result \
       -device usb-storage,drive=${DISK_ID}${index}"
+      echo "$result"
       ;;
     "ide" )
       result="$result \
