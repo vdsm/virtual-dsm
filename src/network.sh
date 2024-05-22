@@ -329,8 +329,8 @@ if [[ "$DHCP" == [Yy1]* ]]; then
 
   ! checkOS && [[ "$DEBUG" != [Yy1]* ]] && exit 19
 
-  if [[ "$GATEWAY" == "172."* ]]; then
-    warn "your gateway IP starts with 172.* which is often a sign that you are not on a macvlan network (required for DHCP)!"
+  if [[ "$IP" == "172."* ]]; then
+    warn "your IP starts with 172.* which is often a sign that you are not on a macvlan network (required for DHCP)!"
   fi
 
   # Configuration for DHCP IP
@@ -341,7 +341,7 @@ if [[ "$DHCP" == [Yy1]* ]]; then
 
 else
 
-  if [[ "$GATEWAY" != "172."* ]] && [[ "$GATEWAY" != "10.8"* ]] && [[ "$GATEWAY" != "10.9"* ]]; then
+  if [[ "$IP" != "172."* ]] && [[ "$IP" != "10.8"* ]] && [[ "$IP" != "10.9"* ]]; then
     ! checkOS && [[ "$DEBUG" != [Yy1]* ]] && exit 19
   fi
 
