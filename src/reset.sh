@@ -43,7 +43,8 @@ HOST=$(hostname -s)
 KERNEL=$(echo "$SYS" | cut -b 1)
 MINOR=$(echo "$SYS" | cut -d '.' -f2)
 ARCH=$(dpkg --print-architecture)
-CPU=$(lscpu | grep -m 1 'Model name' | cut -f 2 -d ":" | awk '{$1=$1}1' | sed 's# @.*##g' | sed s/"(R)"//g | sed 's/[^[:alnum:] ]\+/ /g' | sed 's/  */ /g')
+SOCKETS=$(lscpu | grep -m 1 -i 'socket(s)' | awk '{print $(2)}')
+CPU=$(lscpu | grep -m 1 -i 'model name' | cut -f 2 -d ":" | awk '{$1=$1}1' | sed 's# @.*##g' | sed s/"(R)"//g | sed 's/[^[:alnum:] ]\+/ /g' | sed 's/  */ /g')
 
 # Check system
 
