@@ -359,26 +359,29 @@ createDevice () {
 
   local index=""
   [ -n "$DISK_INDEX" ] && index=",bootindex=$DISK_INDEX"
-  local result="-drive file=$DISK_FILE,id=$DISK_ID,if=none,format=$DISK_FMT,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on"
+  local result="-drive file=$DISK_FILE,id=$DISK_ID,format=$DISK_FMT,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on"
 
   case "${DISK_TYPE,,}" in
+    "auto" )
+      echo "$result"
+      ;;
     "usb" )
-      result="$result \
+      result="$result,if=none \
       -device usb-storage,drive=${DISK_ID}${index}"
       echo "$result"
       ;;
     "ide" )
-      result="$result \
+      result="$result,if=none \
       -device ide-hd,drive=${DISK_ID},bus=ide.$DISK_INDEX,rotation_rate=$DISK_ROTATION${index}"
       echo "$result"
       ;;
     "blk" | "virtio-blk" )
-      result="$result \
+      result="$result,if=none \
       -device virtio-blk-pci,drive=${DISK_ID},scsi=off,bus=pcie.0,addr=$DISK_ADDRESS,iothread=io2${index}"
       echo "$result"
       ;;
     "scsi" | "virtio-scsi" )
-      result="$result \
+      result="$result,if=none \
       -device virtio-scsi-pci,id=${DISK_ID}b,bus=pcie.0,addr=$DISK_ADDRESS,iothread=io2 \
       -device scsi-hd,drive=${DISK_ID},bus=${DISK_ID}b.0,channel=0,scsi-id=0,lun=0,rotation_rate=$DISK_ROTATION${index}"
       echo "$result"
@@ -480,7 +483,7 @@ html "Initializing disks..."
 
 case "${DISK_TYPE,,}" in
   "" ) DISK_TYPE="scsi" ;;
-  "ide" | "usb" | "blk" | "scsi" ) ;;
+  "auto" | "ide" | "usb" | "blk" | "scsi" ) ;;
   * ) error "Invalid DISK_TYPE, value \"$DISK_TYPE\" is unrecognized!" && exit 80 ;;
 esac
 
