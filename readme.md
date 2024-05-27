@@ -115,12 +115,11 @@ kubectl apply -f kubernetes.yml
 
 * ### How do I pass-through a disk?
 
-   It is possible to pass-through disk devices directly by adding them to your compose file in this way:
+   It is possible to pass-through a disk device directly, by adding it to your compose file in this way:
 
   ```yaml
   devices:
     - /dev/disk/by-uuid/12345-12345-12345-12345-12345:/disk2
-    - /dev/disk/by-uuid/45678-45678-45678-45678-45678:/disk3
   ```
 
   Make sure to bind the disk via its UUID (obtainable via `lsblk -o name,uuid`) instead of its name (`/dev/sdc`), to prevent ever binding the wrong disk when the drive letters happen to change. 
@@ -129,11 +128,11 @@ kubectl apply -f kubernetes.yml
 
   Do NOT use this feature with the goal of sharing files from the host, they will all be lost without warning when DSM creates the volume.
 
-* ### How do I increase the amount of CPU or RAM?
+* ### How do I change the amount of CPU or RAM?
 
-  By default, a single CPU core and 1 GB of RAM are allocated to the container.
+  By default, the container will be allowed to use a maximum of 1 CPU core and 1 GB of RAM.
 
-  If there arises a need to increase this, add the following environment variables:
+  If you want to adjust this, you can specify the desired amount using the following environment variables:
 
   ```yaml
   environment:
