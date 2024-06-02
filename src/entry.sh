@@ -19,7 +19,7 @@ cd /run
 trap - ERR
 
 version=$(qemu-system-aarch64 --version | head -n 1 | cut -d '(' -f 1 | awk '{ print $NF }')
-info "Booting ${APP} using QEMU v$version..."
+info "Booting $APP using QEMU v$version..."
 
 if [[ "$CONSOLE" == [Yy]* ]]; then
   exec qemu-system-x86_64 ${ARGS:+ $ARGS}
