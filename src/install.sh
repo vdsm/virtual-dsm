@@ -148,6 +148,7 @@ if [ ! -s "$RDC" ]; then
   fKill "progress.sh"
 
   (( rc == 4 )) && error "Failed to download $LOC , network failure!" && exit 60
+  (( rc == 8 )) && error "Failed to download $LOC , server issued an error response!" && exit 60
 
   if (( rc != 0 )); then
     if (( rc != 22 )) && (( rc != 56 )); then
@@ -172,6 +173,7 @@ if [ ! -s "$RDC" ]; then
 
     fKill "progress.sh"
     (( rc == 4 )) && error "Failed to download $LOC , network failure!" && exit 60
+    (( rc == 8 )) && error "Failed to download $LOC , server issued an error response!" && exit 60
     (( rc != 0 )) && error "Failed to download $LOC , reason: $rc" && exit 60
 
     tar --extract --file="$PAT" --directory="$(dirname "$RD")"/. "$(basename "$RD")"
@@ -247,6 +249,7 @@ else
 
   fKill "progress.sh"
   (( rc == 4 )) && error "Failed to download $URL , network failure!" && exit 69
+  (( rc == 8 )) && error "Failed to download $URL , server issued an error response!" && exit 69
   (( rc != 0 )) && error "Failed to download $URL , reason: $rc" && exit 69
 
 fi
