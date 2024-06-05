@@ -176,7 +176,7 @@ MON_OPTS="\
 
 if [[ "$CONSOLE" != [Yy]* ]]; then
 
-  MON_OPTS="$MON_OPTS -daemonize -D $QEMU_LOG"
+  MON_OPTS+=" -daemonize -D $QEMU_LOG"
 
   _trap _graceful_shutdown SIGTERM SIGHUP SIGINT SIGABRT SIGQUIT
 
