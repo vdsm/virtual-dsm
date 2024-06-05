@@ -56,12 +56,12 @@ if [[ "$KVM" != [Nn]* ]]; then
   if ! grep -qw "sse4_2" <<< "$flags"; then
     info "Your CPU does not have the SSE4 instruction set that Virtual DSM requires, it will be emulated..."
     [ -z "$CPU_MODEL" ] && CPU_MODEL="$DEF_MODEL"
-    CPU_FEATURES="$CPU_FEATURES,+ssse3,+sse4.1,+sse4.2"
+    CPU_FEATURES+=",+ssse3,+sse4.1,+sse4.2"
   fi
 
   if [ -z "$CPU_MODEL" ]; then
     CPU_MODEL="host"
-    CPU_FEATURES="$CPU_FEATURES,migratable=no"
+    CPU_FEATURES+=",migratable=no"
   fi
 
   if grep -qw "svm" <<< "$flags"; then
@@ -69,7 +69,7 @@ if [[ "$KVM" != [Nn]* ]]; then
     # AMD processor
 
     if grep -qw "tsc_scale" <<< "$flags"; then
-      CPU_FEATURES="$CPU_FEATURES,+invtsc"
+      CPU_FEATURES+=",+invtsc"
     fi
 
   else
@@ -79,7 +79,7 @@ if [[ "$KVM" != [Nn]* ]]; then
     vmx=$(sed -ne '/^vmx flags/s/^.*: //p' /proc/cpuinfo)
 
     if grep -qw "tsc_scaling" <<< "$vmx"; then
-      CPU_FEATURES="$CPU_FEATURES,+invtsc"
+      CPU_FEATURES+=",+invtsc"
     fi
 
   fi
@@ -96,13 +96,13 @@ else
   if [ -z "$CPU_MODEL" ]; then
     if [[ "$ARCH" == "amd64" ]]; then
       CPU_MODEL="max"
-      CPU_FEATURES="$CPU_FEATURES,migratable=no"
+      CPU_FEATURES+=",migratable=no"
     else
       CPU_MODEL="$DEF_MODEL"
     fi
   fi
 
-  CPU_FEATURES="$CPU_FEATURES,+ssse3,+sse4.1,+sse4.2"
+  CPU_FEATURES+=",+ssse3,+sse4.1,+sse4.2"
 
 fi
 
@@ -129,9 +129,9 @@ if [ -n "$HOST_CPU" ]; then
 else
   HOST_CPU="QEMU, Virtual CPU,"
   if [ "$ARCH" == "amd64" ]; then
-    HOST_CPU="$HOST_CPU X86_64"
+    HOST_CPU+=" X86_64"
   else
-    HOST_CPU="$HOST_CPU $ARCH"
+    HOST_CPU+=" $ARCH"
   fi
 fi
 
