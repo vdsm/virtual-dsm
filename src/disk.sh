@@ -90,6 +90,7 @@ supportsDirect() {
 }
 
 createDisk() {
+
   local DISK_FILE=$1
   local DISK_SPACE=$2
   local DISK_DESC=$3
@@ -152,8 +153,8 @@ createDisk() {
     qcow2)
 
       local DISK_PARAM="$DISK_ALLOC"
-      isCow "$FS" && DISK_PARAM="$DISK_PARAM,nocow=on"
-      [ -n "$DISK_FLAGS" ] && DISK_PARAM="$DISK_PARAM,$DISK_FLAGS"
+      isCow "$FS" && DISK_PARAM+=",nocow=on"
+      [ -n "$DISK_FLAGS" ] && DISK_PARAM+=",$DISK_FLAGS"
 
       if ! qemu-img create -f "$DISK_FMT" -o "$DISK_PARAM" -- "$DISK_FILE" "$DATA_SIZE" ; then
         rm -f "$DISK_FILE"
@@ -173,6 +174,7 @@ createDisk() {
 }
 
 resizeDisk() {
+
   local DISK_FILE=$1
   local DISK_SPACE=$2
   local DISK_DESC=$3
@@ -238,6 +240,7 @@ resizeDisk() {
 }
 
 convertDisk() {
+
   local SOURCE_FILE=$1
   local SOURCE_FMT=$2
   local DST_FILE=$3
@@ -268,18 +271,19 @@ convertDisk() {
     fi
   fi
 
-  html "Converting $DISK_DESC to $DST_FMT..."
-  info "Converting $DISK_DESC to $DST_FMT, please wait until completed..."
+  local msg="Converting $DISK_DESC to $DST_FMT"
+  html "$msg..."
+  info "$msg, please wait until completed..."
 
   local CONV_FLAGS="-p"
   local DISK_PARAM="$DISK_ALLOC"
-  isCow "$FS" && DISK_PARAM="$DISK_PARAM,nocow=on"
+  isCow "$FS" && DISK_PARAM+=",nocow=on"
 
   if [[ "$DST_FMT" != "raw" ]]; then
       if [[ "$ALLOCATE" == [Nn]* ]]; then
-        CONV_FLAGS="$CONV_FLAGS -c"
+        CONV_FLAGS+=" -c"
       fi
-      [ -n "$DISK_FLAGS" ] && DISK_PARAM="$DISK_PARAM,$DISK_FLAGS"
+      [ -n "$DISK_FLAGS" ] && DISK_PARAM+=",$DISK_FLAGS"
   fi
 
   # shellcheck disable=SC2086
@@ -308,13 +312,15 @@ convertDisk() {
     fi
   fi
 
-  html "Conversion of $DISK_DESC completed..."
-  info "Conversion of $DISK_DESC to $DST_FMT completed succesfully!"
+  msg="Conversion of $DISK_DESC"
+  html "$msg completed..."
+  info "$msg to $DST_FMT completed succesfully!"
 
   return 0
 }
 
 checkFS () {
+
   local FS=$1
   local DISK_FILE=$2
   local DISK_DESC=$3
@@ -348,6 +354,7 @@ checkFS () {
 }
 
 createDevice () {
+
   local DISK_FILE=$1
   local DISK_TYPE=$2
   local DISK_INDEX=$3
@@ -366,22 +373,22 @@ createDevice () {
       echo "$result"
       ;;
     "usb" )
-      result="$result,if=none \
+      result+=",if=none \
       -device usb-storage,drive=${DISK_ID}${index}"
       echo "$result"
       ;;
     "ide" )
-      result="$result,if=none \
+      result+=",if=none \
       -device ide-hd,drive=${DISK_ID},bus=ide.$DISK_INDEX,rotation_rate=$DISK_ROTATION${index}"
       echo "$result"
       ;;
     "blk" | "virtio-blk" )
-      result="$result,if=none \
+      result+=",if=none \
       -device virtio-blk-pci,drive=${DISK_ID},scsi=off,bus=pcie.0,addr=$DISK_ADDRESS,iothread=io2${index}"
       echo "$result"
       ;;
     "scsi" | "virtio-scsi" )
-      result="$result,if=none \
+      result+=",if=none \
       -device virtio-scsi-pci,id=${DISK_ID}b,bus=pcie.0,addr=$DISK_ADDRESS,iothread=io2 \
       -device scsi-hd,drive=${DISK_ID},bus=${DISK_ID}b.0,channel=0,scsi-id=0,lun=0,rotation_rate=$DISK_ROTATION${index}"
       echo "$result"
@@ -392,6 +399,7 @@ createDevice () {
 }
 
 addDisk () {
+
   local DISK_BASE=$1
   local DISK_TYPE=$2
   local DISK_DESC=$3
@@ -436,6 +444,7 @@ addDisk () {
     else
       PREV_FMT="qcow2"
     fi
+
     PREV_EXT=$(fmt2ext "$PREV_FMT")
 
     if [ -s "$DISK_BASE.$PREV_EXT" ] ; then
@@ -458,12 +467,13 @@ addDisk () {
   fi
 
   OPTS=$(createDevice "$DISK_FILE" "$DISK_TYPE" "$DISK_INDEX" "$DISK_ADDRESS" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE")
-  DISK_OPTS="$DISK_OPTS $OPTS"
+  DISK_OPTS+=" $OPTS"
 
   return 0
 }
 
 addDevice () {
+
   local DISK_DEV=$1
   local DISK_TYPE=$2
   local DISK_INDEX=$3
@@ -474,7 +484,7 @@ addDevice () {
 
   local OPTS
   OPTS=$(createDevice "$DISK_DEV" "$DISK_TYPE" "$DISK_INDEX" "$DISK_ADDRESS" "raw" "$DISK_IO" "$DISK_CACHE")
-  DISK_OPTS="$DISK_OPTS $OPTS"
+  DISK_OPTS+=" $OPTS"
 
   return 0
 }
@@ -585,7 +595,8 @@ else
   addDisk "$DISK4_FILE" "$DISK_TYPE" "disk4" "$DISK4_SIZE" "6" "0xf" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE" || exit $?
 fi
 
-DISK_OPTS="$DISK_OPTS -object iothread,id=io2"
+DISK_OPTS+=" -object iothread,id=io2"
 
 html "Initialized disks successfully..."
+
 return 0
