@@ -50,7 +50,7 @@ fi
 
 if [[ "$KVM" != [Nn]* ]]; then
 
-  CPU_FEATURES="kvm=on,l3-cache=on"
+  CPU_FEATURES="kvm=on,l3-cache=on,+hypervisor"
   KVM_OPTS=",accel=kvm -enable-kvm -global kvm-pit.lost_tick_policy=discard"
 
   if ! grep -qw "sse4_2" <<< "$flags"; then
@@ -64,10 +64,30 @@ if [[ "$KVM" != [Nn]* ]]; then
     CPU_FEATURES="$CPU_FEATURES,migratable=no"
   fi
 
+  if grep -qw "svm" <<< "$flags"; then
+
+    # AMD processor
+
+    if grep -qw "tsc_scale" <<< "$flags"; then
+      CPU_FEATURES="$CPU_FEATURES,+invtsc"
+    fi
+
+  else
+
+    # Intel processor
+
+    vmx=$(sed -ne '/^vmx flags/s/^.*: //p' /proc/cpuinfo)
+
+    if grep -qw "tsc_scaling" <<< "$vmx"; then
+      CPU_FEATURES="$CPU_FEATURES,+invtsc"
+    fi
+
+  fi
+
 else
 
   KVM_OPTS=""
-  CPU_FEATURES="l3-cache=on"
+  CPU_FEATURES="l3-cache=on,+hypervisor"
 
   if [[ "$ARCH" == "amd64" ]]; then
     KVM_OPTS=" -accel tcg,thread=multi"
