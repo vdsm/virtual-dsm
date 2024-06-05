@@ -146,12 +146,13 @@ if [ ! -s "$RDC" ]; then
 
   fKill "progress.sh"
 
-  (( rc == 4 )) && error "Failed to download $LOC , network failure!" && exit 60
-  (( rc == 8 )) && error "Failed to download $LOC , server issued an error response!" && exit 60
+  ERR="Failed to download $LOC"
+  (( rc == 4 )) && error "$ERR , network failure!" && exit 60
+  (( rc == 8 )) && error "$ERR , server issued an error response!" && exit 60
 
   if (( rc != 0 )); then
     if (( rc != 22 )) && (( rc != 56 )); then
-      error "Failed to download $LOC, reason: $rc" && exit 60
+      error "$ERR , reason: $rc" && exit 60
     fi
     SUM="skip"
   else
@@ -171,9 +172,11 @@ if [ ! -s "$RDC" ]; then
     { wget "$LOC" -O "$PAT" -q --no-check-certificate --timeout=10 --show-progress "$PROGRESS"; rc=$?; } || :
 
     fKill "progress.sh"
-    (( rc == 4 )) && error "Failed to download $LOC , network failure!" && exit 60
-    (( rc == 8 )) && error "Failed to download $LOC , server issued an error response!" && exit 60
-    (( rc != 0 )) && error "Failed to download $LOC , reason: $rc" && exit 60
+
+    ERR="Failed to download $LOC"
+    (( rc == 4 )) && error "$ERR , network failure!" && exit 60
+    (( rc == 8 )) && error "$ERR , server issued an error response!" && exit 60
+    (( rc != 0 )) && error "$ERR , reason: $rc" && exit 60
 
     tar --extract --file="$PAT" --directory="$(dirname "$RD")"/. "$(basename "$RD")"
     rm "$PAT"
@@ -226,6 +229,8 @@ rm -rf "$TMP" && mkdir -p "$TMP"
 info "Install: Downloading $BASE.pat..."
 
 MSG="Downloading DSM"
+ERR="Failed to download $URL"
+
 html "$MSG..."
 
 PAT="/$BASE.pat"
@@ -246,13 +251,14 @@ else
   { wget "$URL" -O "$PAT" -q --no-check-certificate --timeout=10 --show-progress "$PROGRESS"; rc=$?; } || :
 
   fKill "progress.sh"
-  (( rc == 4 )) && error "Failed to download $URL , network failure!" && exit 69
-  (( rc == 8 )) && error "Failed to download $URL , server issued an error response!" && exit 69
-  (( rc != 0 )) && error "Failed to download $URL , reason: $rc" && exit 69
+
+  (( rc == 4 )) && error "$ERR , network failure!" && exit 69
+  (( rc == 8 )) && error "$ERR , server issued an error response!" && exit 69
+  (( rc != 0 )) && error "$ERR , reason: $rc" && exit 69
 
 fi
 
-[ ! -s "$PAT" ] && error "Failed to download $URL" && exit 69
+[ ! -s "$PAT" ] && error "$ERR" && exit 69
 
 SIZE=$(stat -c%s "$PAT")
 

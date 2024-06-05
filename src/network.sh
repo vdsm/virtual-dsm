@@ -81,26 +81,23 @@ configureDHCP() {
 configureDNS() {
 
   # dnsmasq configuration:
-  DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-range=$VM_NET_IP,$VM_NET_IP --dhcp-host=$VM_NET_MAC,,$VM_NET_IP,$VM_NET_HOST,infinite --dhcp-option=option:netmask,255.255.255.0"
+  DNSMASQ_OPTS+=" --dhcp-range=$VM_NET_IP,$VM_NET_IP --dhcp-host=$VM_NET_MAC,,$VM_NET_IP,$VM_NET_HOST,infinite --dhcp-option=option:netmask,255.255.255.0"
 
   # Create lease file for faster resolve
   echo "0 $VM_NET_MAC $VM_NET_IP $VM_NET_HOST 01:$VM_NET_MAC" > /var/lib/misc/dnsmasq.leases
   chmod 644 /var/lib/misc/dnsmasq.leases
 
   # Set DNS server and gateway
-  DNSMASQ_OPTS="$DNSMASQ_OPTS --dhcp-option=option:dns-server,${VM_NET_IP%.*}.1 --dhcp-option=option:router,${VM_NET_IP%.*}.1"
+  DNSMASQ_OPTS+=" --dhcp-option=option:dns-server,${VM_NET_IP%.*}.1 --dhcp-option=option:router,${VM_NET_IP%.*}.1"
 
   # Add DNS entry for container
-  DNSMASQ_OPTS="$DNSMASQ_OPTS --address=/host.lan/${VM_NET_IP%.*}.1"
+  DNSMASQ_OPTS+=" --address=/host.lan/${VM_NET_IP%.*}.1"
 
   DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
-  [[ "$DEBUG" == [Yy1]* ]] && set -x
 
   if ! $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS}; then
     error "Failed to start dnsmasq, reason: $?" && exit 29
   fi
-  { set +x; } 2>/dev/null
-  [[ "$DEBUG" == [Yy1]* ]] && echo
 
   return 0
 }
@@ -195,7 +192,7 @@ configureNAT() {
 
   if [ -c /dev/vhost-net ]; then
     { exec 40>>/dev/vhost-net; rc=$?; } 2>/dev/null || :
-    (( rc == 0 )) && NET_OPTS="$NET_OPTS,vhost=on,vhostfd=40"
+    (( rc == 0 )) && NET_OPTS+=",vhost=on,vhostfd=40"
   fi
 
   configureDNS
@@ -354,6 +351,6 @@ else
 
 fi
 
-NET_OPTS="$NET_OPTS -device virtio-net-pci,romfile=,netdev=hostnet0,mac=$VM_NET_MAC,id=net0"
+NET_OPTS+=" -device virtio-net-pci,romfile=,netdev=hostnet0,mac=$VM_NET_MAC,id=net0"
 
 return 0
