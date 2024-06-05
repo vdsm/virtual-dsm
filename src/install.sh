@@ -132,9 +132,8 @@ if [ ! -s "$RDC" ]; then
   rm -f "$RD"
   rm -f "$RDC"
 
-  MSG="Downloading installer..."
-  PRG="Downloading installer ([P])..."
-  info "Install: $MSG" && html "$MSG"
+  MSG="Downloading installer"
+  info "Install: $MSG..." && html "$MSG..."
 
   SIZE=5394188
   POS="65627648-71021835"
@@ -142,7 +141,7 @@ if [ ! -s "$RDC" ]; then
   LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
   [[ "${URL,,}" == *"_42218.pat" ]] && LOC="$URL"
 
-  /run/progress.sh "$RD" "$SIZE" "$PRG" &
+  /run/progress.sh "$RD" "$SIZE" "$MSG ([P])..." &
   { curl -r "$POS" -sfk --connect-timeout 10 -S -o "$RD" "$LOC"; rc=$?; } || :
 
   fKill "progress.sh"
@@ -167,8 +166,8 @@ if [ ! -s "$RDC" ]; then
     rm -f "$RD"
     rm -f "$PAT"
 
-    html "$MSG"
-    /run/progress.sh "$PAT" "$SIZE" "$PRG" &
+    html "$MSG..."
+    /run/progress.sh "$PAT" "$SIZE" "$MSG ([P])..." &
     { wget "$LOC" -O "$PAT" -q --no-check-certificate --timeout=10 --show-progress "$PROGRESS"; rc=$?; } || :
 
     fKill "progress.sh"
@@ -226,9 +225,8 @@ rm -rf "$TMP" && mkdir -p "$TMP"
 
 info "Install: Downloading $BASE.pat..."
 
-MSG="Downloading DSM..."
-PRG="Downloading DSM ([P])..."
-html "$MSG"
+MSG="Downloading DSM"
+html "$MSG..."
 
 PAT="/$BASE.pat"
 rm -f "$PAT"
@@ -243,7 +241,7 @@ else
   [[ "${URL,,}" == *"_69057.pat" ]] && SIZE=363837333
   [[ "${URL,,}" == *"_42218.pat" ]] && SIZE=379637760
 
-  /run/progress.sh "$PAT" "$SIZE" "$PRG" &
+  /run/progress.sh "$PAT" "$SIZE" "$MSG ([P])..." &
 
   { wget "$URL" -O "$PAT" -q --no-check-certificate --timeout=10 --show-progress "$PROGRESS"; rc=$?; } || :
 
