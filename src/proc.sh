@@ -64,6 +64,26 @@ if [[ "$KVM" != [Nn]* ]]; then
     CPU_FEATURES="$CPU_FEATURES,migratable=no"
   fi
 
+  if grep -qw "svm" <<< "$flags"; then
+
+    # AMD processor
+
+    if grep -qw "tsc_scale" <<< "$flags"; then
+      CPU_FEATURES="$CPU_FEATURES,+invtsc"
+    fi
+
+  else
+
+    # Intel processor
+
+    vmx=$(sed -ne '/^vmx flags/s/^.*: //p' /proc/cpuinfo)
+
+    if grep -qw "tsc_scaling" <<< "$vmx"; then
+      CPU_FEATURES="$CPU_FEATURES,+invtsc"
+    fi
+
+  fi
+
 else
 
   KVM_OPTS=""
