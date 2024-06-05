@@ -1,4 +1,4 @@
-FROM qemux/qemu-host:2.04 as builder
+FROM qemux/qemu-host:2.05 as builder
 
 #  FROM golang as builder
 #  WORKDIR /
