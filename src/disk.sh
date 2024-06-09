@@ -379,7 +379,8 @@ createDevice () {
       ;;
     "ide" )
       result+=",if=none \
-      -device ide-hd,drive=${DISK_ID},bus=ide.$DISK_INDEX,rotation_rate=$DISK_ROTATION${index}"
+      -device ich9-ahci,id=ahci${DISK_INDEX},addr=$DISK_ADDRESS,iothread=io2 \
+      -device ide-hd,drive=${DISK_ID},bus=ahci$DISK_INDEX.0,rotation_rate=$DISK_ROTATION${index}"
       echo "$result"
       ;;
     "blk" | "virtio-blk" )
@@ -466,8 +467,7 @@ addDisk () {
 
   fi
 
-  OPTS=$(createDevice "$DISK_FILE" "$DISK_TYPE" "$DISK_INDEX" "$DISK_ADDRESS" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE")
-  DISK_OPTS+=" $OPTS"
+  DISK_OPTS+=$(createDevice "$DISK_FILE" "$DISK_TYPE" "$DISK_INDEX" "$DISK_ADDRESS" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE")
 
   return 0
 }
@@ -482,19 +482,19 @@ addDevice () {
   [ -z "$DISK_DEV" ] && return 0
   [ ! -b "$DISK_DEV" ] && error "Device $DISK_DEV cannot be found! Please add it to the 'devices' section of your compose file." && exit 55
 
-  local OPTS
-  OPTS=$(createDevice "$DISK_DEV" "$DISK_TYPE" "$DISK_INDEX" "$DISK_ADDRESS" "raw" "$DISK_IO" "$DISK_CACHE")
-  DISK_OPTS+=" $OPTS"
+  DISK_OPTS+=$(createDevice "$DISK_DEV" "$DISK_TYPE" "$DISK_INDEX" "$DISK_ADDRESS" "raw" "$DISK_IO" "$DISK_CACHE")
 
   return 0
 }
 
 html "Initializing disks..."
 
+[ -z "${DISK_OPTS:-}" ] && DISK_OPTS=""
+[ -z "${DISK_TYPE:-}" ] && DISK_TYPE="scsi"
+
 case "${DISK_TYPE,,}" in
-  "" ) DISK_TYPE="scsi" ;;
-  "auto" | "ide" | "usb" | "blk" | "scsi" ) ;;
-  * ) error "Invalid DISK_TYPE, value \"$DISK_TYPE\" is unrecognized!" && exit 80 ;;
+  "ide" | "usb" | "scsi" | "blk" | "auto" ) ;;
+  * ) error "Invalid DISK_TYPE specified, value \"$DISK_TYPE\" is unrecognized!" && exit 80 ;;
 esac
 
 if [ -z "$ALLOCATE" ]; then
@@ -513,9 +513,8 @@ else
   DISK_ALLOC="preallocation=falloc"
 fi
 
-DISK_OPTS=$(createDevice "$BOOT" "$DISK_TYPE" "1" "0xa" "raw" "$DISK_IO" "$DISK_CACHE")
-OPTS=$(createDevice "$SYSTEM" "$DISK_TYPE" "2" "0xb" "raw" "$DISK_IO" "$DISK_CACHE")
-DISK_OPTS="$DISK_OPTS $OPTS"
+DISK_OPTS+=$(createDevice "$BOOT" "$DISK_TYPE" "1" "0xa" "raw" "$DISK_IO" "$DISK_CACHE")
+DISK_OPTS+=$(createDevice "$SYSTEM" "$DISK_TYPE" "2" "0xb" "raw" "$DISK_IO" "$DISK_CACHE")
 
 DISK1_FILE="$STORAGE/data"
 if [[ ! -f "$DISK1_FILE.img" ]] && [[ -f "$STORAGE/data${DISK_SIZE}.img" ]]; then
