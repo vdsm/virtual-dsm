@@ -40,7 +40,7 @@ if [[ "$KVM" != [Nn]* ]]; then
         warn "you are using Windows 10 which has no KVM support, this will cause a major loss of performance."
       else
         error "KVM acceleration not available $KVM_ERR, this will cause a major loss of performance."
-        error "See the FAQ on how to enable it, or continue without KVM by setting KVM=N (not recommended)."
+        error "See the FAQ on how to diagnose the cause, or continue without KVM by setting KVM=N (not recommended)."
         [[ "$DEBUG" != [Yy1]* ]] && exit 88
       fi
     fi
@@ -51,6 +51,7 @@ fi
 if [[ "$KVM" != [Nn]* ]]; then
 
   CPU_FEATURES="kvm=on,l3-cache=on,+hypervisor"
+  CLOCK="/sys/devices/system/clocksource/clocksource0/current_clocksource"
   KVM_OPTS=",accel=kvm -enable-kvm -global kvm-pit.lost_tick_policy=discard"
 
   if ! grep -qw "sse4_2" <<< "$flags"; then
@@ -62,6 +63,15 @@ if [[ "$KVM" != [Nn]* ]]; then
   if [ -z "$CPU_MODEL" ]; then
     CPU_MODEL="host"
     CPU_FEATURES+=",migratable=no"
+  fi
+
+  if [ -f "$CLOCK" ]; then
+    CLOCK=$(<"$CLOCK")
+    if [[ "${CLOCK,,}" != "tsc" ]]; then
+      warn "unexpected clocksource: $CLOCK"
+    fi
+  else
+    warn "file \"$CLOCK\" cannot not found?"
   fi
 
   if grep -qw "svm" <<< "$flags"; then
