@@ -7,6 +7,7 @@ set -Eeuo pipefail
 : "${DHCP:="N"}"
 : "${NETWORK:="Y"}"
 : "${HOST_PORTS:=""}"
+: "${USER_PORTS:=""}"
 
 : "${VM_NET_DEV:=""}"
 : "${VM_NET_TAP:="dsm"}"
@@ -38,7 +39,7 @@ configureDHCP() {
 
   if (( rc != 0 )); then
     error "Cannot create macvtap interface. Please make sure that the network type is 'macvlan' and not 'ipvlan',"
-    error "that your kernel is recent (>4) and supports it, and that the container has the NET_ADMIN capability set." && exit 16
+    error "that your kernel is recent (>4) and supports it, and that the container has the NET_ADMIN capability set." && return 1
   fi
 
   while ! ip link set "$VM_NET_TAP" up; do
@@ -52,28 +53,28 @@ configureDHCP() {
 
   # Create dev file (there is no udev in container: need to be done manually)
   IFS=: read -r MAJOR MINOR < <(cat /sys/devices/virtual/net/"$VM_NET_TAP"/tap*/dev)
-  (( MAJOR < 1)) && error "Cannot find: sys/devices/virtual/net/$VM_NET_TAP" && exit 18
+  (( MAJOR < 1)) && error "Cannot find: sys/devices/virtual/net/$VM_NET_TAP" && return 1
 
   [[ ! -e "$TAP_PATH" ]] && [[ -e "/dev0/${TAP_PATH##*/}" ]] && ln -s "/dev0/${TAP_PATH##*/}" "$TAP_PATH"
 
   if [[ ! -e "$TAP_PATH" ]]; then
     { mknod "$TAP_PATH" c "$MAJOR" "$MINOR" ; rc=$?; } || :
-    (( rc != 0 )) && error "Cannot mknod: $TAP_PATH ($rc)" && exit 20
+    (( rc != 0 )) && error "Cannot mknod: $TAP_PATH ($rc)" && return 1
   fi
 
   { exec 30>>"$TAP_PATH"; rc=$?; } 2>/dev/null || :
 
   if (( rc != 0 )); then
-    error "Cannot create TAP interface ($rc). $ADD_ERR --device-cgroup-rule='c *:* rwm'" && exit 21
+    error "Cannot create TAP interface ($rc). $ADD_ERR --device-cgroup-rule='c *:* rwm'" && return 1
   fi
 
   { exec 40>>/dev/vhost-net; rc=$?; } 2>/dev/null || :
 
   if (( rc != 0 )); then
-    error "VHOST can not be found ($rc). $ADD_ERR --device=/dev/vhost-net" && exit 22
+    error "VHOST can not be found ($rc). $ADD_ERR --device=/dev/vhost-net" && return 1
   fi
 
-  NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30"
+  NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30,script=no,downscript=no"
 
   return 0
 }
@@ -96,13 +97,34 @@ configureDNS() {
   DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
 
   if ! $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS}; then
-    error "Failed to start dnsmasq, reason: $?" && exit 29
+    error "Failed to start dnsmasq, reason: $?" && return 1
   fi
 
   return 0
 }
 
-getPorts() {
+getUserPorts() {
+
+  local args=""
+  local list=$1
+  local ssh="22"
+  local dsm="5000"
+
+  [ -z "$list" ] && list="$ssh,$dsm" || list+=",$ssh,$dsm"
+
+  list="${list/,/ }"
+  list="${list## }"
+  list="${list%% }"
+
+  for port in $list; do
+    args+="hostfwd=tcp::$port-$VM_NET_IP:$port,"
+  done
+
+  echo "${args%?}"
+  return 0
+}
+
+getHostPorts() {
 
   local list=$1
 
@@ -113,6 +135,17 @@ getPorts() {
   else
     echo " -m multiport ! --dports $list"
   fi
+
+  return 0
+}
+
+configureUser() {
+
+  NET_OPTS="-netdev user,id=hostnet0,host=${VM_NET_IP%.*}.1,net=${VM_NET_IP%.*}.0/24,dhcpstart=$VM_NET_IP,hostname=$VM_NET_HOST"
+
+  local forward
+  forward=$(getUserPorts "$USER_PORTS")
+  [ -n "$forward" ] && NET_OPTS+=",$forward"
 
   return 0
 }
@@ -128,14 +161,14 @@ configureNAT() {
   fi
 
   if [ ! -c /dev/net/tun ]; then
-    error "TUN device missing. $ADD_ERR --device /dev/net/tun --cap-add NET_ADMIN" && exit 25
+    error "TUN device missing. $ADD_ERR --device /dev/net/tun --cap-add NET_ADMIN" && return 1
   fi
 
   # Check port forwarding flag
   if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
     { sysctl -w net.ipv4.ip_forward=1 > /dev/null; rc=$?; } || :
     if (( rc != 0 )) || [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
-      error "IP forwarding is disabled. $ADD_ERR --sysctl net.ipv4.ip_forward=1" && exit 24
+      error "IP forwarding is disabled. $ADD_ERR --sysctl net.ipv4.ip_forward=1" && return 1
     fi
   fi
 
@@ -147,10 +180,12 @@ configureNAT() {
   { ip link add dev dockerbridge type bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
-    error "Failed to create bridge. $ADD_ERR --cap-add NET_ADMIN" && exit 23
+    error "Failed to create bridge. $ADD_ERR --cap-add NET_ADMIN" && return 1
   fi
 
-  ip address add "${VM_NET_IP%.*}.1/24" broadcast "${VM_NET_IP%.*}.255" dev dockerbridge
+  if ! ip address add "${VM_NET_IP%.*}.1/24" broadcast "${VM_NET_IP%.*}.255" dev dockerbridge; then
+    error "Failed to add IP address!" && return 1
+  fi
 
   while ! ip link set dockerbridge up; do
     info "Waiting for IP address to become available..."
@@ -159,7 +194,7 @@ configureNAT() {
 
   # QEMU Works with taps, set tap to the bridge created
   if ! ip tuntap add dev "$VM_NET_TAP" mode tap; then
-    error "$tuntap" && exit 31
+    error "$tuntap" && return 1
   fi
 
   while ! ip link set "$VM_NET_TAP" up promisc on; do
@@ -167,35 +202,44 @@ configureNAT() {
     sleep 2
   done
 
-  ip link set dev "$VM_NET_TAP" master dockerbridge
+  if ! ip link set dev "$VM_NET_TAP" master dockerbridge; then
+    error "Failed to set IP link!" && return 1
+  fi
 
   # Add internet connection to the VM
   update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
   update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
 
-  exclude=$(getPorts "$HOST_PORTS")
+  exclude=$(getHostPorts "$HOST_PORTS")
 
   if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -j MASQUERADE; then
-    error "$tables" && exit 30
+    error "$tables" && return 1
   fi
 
   # shellcheck disable=SC2086
-  iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p tcp${exclude} -j DNAT --to "$VM_NET_IP"
-  iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p udp  -j DNAT --to "$VM_NET_IP"
+  if ! iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p tcp${exclude} -j DNAT --to "$VM_NET_IP"; then
+    error "Failed to configure IP tables!" && return 1
+  fi
+
+  if ! iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p udp  -j DNAT --to "$VM_NET_IP"; then
+    error "Failed to configure IP tables!" && return 1
+  fi
 
   if (( KERNEL > 4 )); then
     # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
     iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill > /dev/null 2>&1 || true
   fi
 
-  NET_OPTS="-netdev tap,ifname=$VM_NET_TAP,script=no,downscript=no,id=hostnet0"
+  NET_OPTS="-netdev tap,id=hostnet0,ifname=$VM_NET_TAP"
 
   if [ -c /dev/vhost-net ]; then
     { exec 40>>/dev/vhost-net; rc=$?; } 2>/dev/null || :
     (( rc == 0 )) && NET_OPTS+=",vhost=on,vhostfd=40"
   fi
 
-  configureDNS
+  NET_OPTS+=",script=no,downscript=no"
+
+  ! configureDNS && return 1
 
   return 0
 }
@@ -225,6 +269,8 @@ closeNetwork() {
     local pid="/var/run/dnsmasq.pid"
     [ -s "$pid" ] && pKill "$(<"$pid")"
 
+    [[ "${NETWORK,,}" == "user"* ]] && return 0
+
     ip link set "$VM_NET_TAP" down promisc off || true
     ip link delete "$VM_NET_TAP" || true
 
@@ -246,8 +292,7 @@ checkOS() {
   [[ "${name,,}" == *"microsoft"* ]] && os="Windows"
 
   if [ -n "$os" ]; then
-    error "You are using Docker Desktop for $os which does not support macvlan, please revert to bridge networking!"
-    return 1
+    warn "you are using Docker Desktop for $os which does not support macvlan, please revert to bridge networking!"
   fi
 
   return 0
@@ -324,14 +369,14 @@ fi
 
 if [[ "$DHCP" == [Yy1]* ]]; then
 
-  ! checkOS && [[ "$DEBUG" != [Yy1]* ]] && exit 19
+  checkOS
 
   if [[ "$IP" == "172."* ]]; then
     warn "container IP starts with 172.* which is often a sign that you are not on a macvlan network (required for DHCP)!"
   fi
 
-  # Configuration for DHCP IP
-  configureDHCP
+  # Configure for macvtap interface
+  ! configureDHCP && exit 20
 
   MSG="Booting DSM instance..."
   html "$MSG"
@@ -339,15 +384,37 @@ if [[ "$DHCP" == [Yy1]* ]]; then
 else
 
   if [[ "$IP" != "172."* ]] && [[ "$IP" != "10.8"* ]] && [[ "$IP" != "10.9"* ]]; then
-    ! checkOS && [[ "$DEBUG" != [Yy1]* ]] && exit 19
+    checkOS
   fi
 
   # Shutdown nginx
   nginx -s stop 2> /dev/null
   fWait "nginx"
 
-  # Configuration for static IP
-  configureNAT
+  if [[ "${NETWORK,,}" != "user"* ]]; then
+
+    # Configure for tap interface
+    if ! configureNAT; then
+
+      NETWORK="user"
+      warn "falling back to usermode networking (slow)!"
+
+      ip link set "$VM_NET_TAP" down promisc off &> null || true
+      ip link delete "$VM_NET_TAP" &> null || true
+
+      ip link set dockerbridge down &> null || true
+      ip link delete dockerbridge &> null || true
+
+    fi
+
+  fi
+
+  if [[ "${NETWORK,,}" == "user"* ]]; then
+
+    # Configure for usermode networking (slirp)
+    ! configureUser && exit 24
+
+  fi
 
 fi
 
