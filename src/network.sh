@@ -210,7 +210,7 @@ closeNetwork() {
 
   fi
 
-  [[ "$NETWORK" != [Yy1]* ]] && return 0
+  [[ "$NETWORK" == [Nn]* ]] && return 0
 
   exec 30<&- || true
   exec 40<&- || true
@@ -304,7 +304,7 @@ getInfo() {
 #  Configure Network
 # ######################################
 
-if [[ "$NETWORK" != [Yy1]* ]]; then
+if [[ "$NETWORK" == [Nn]* ]]; then
   NET_OPTS=""
   return 0
 fi
