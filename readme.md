@@ -262,7 +262,7 @@ kubectl apply -f kubernetes.yml
 
 ## Disclaimer ⚖️
 
-Only run this container on Synology hardware, any other use is not permitted by their EULA. The product names, logos, brands, and other trademarks referred to within this project are the property of their respective trademark holders. This project is not affiliated, sponsored, or endorsed by Synology, Inc.
+*Only run this container on Synology hardware, any other use is not permitted by their EULA. The product names, logos, brands, and other trademarks referred to within this project are the property of their respective trademark holders. This project is not affiliated, sponsored, or endorsed by Synology, Inc.*
 
 [build_url]: https://github.com/vdsm/virtual-dsm/
 [hub_url]: https://hub.docker.com/r/vdsm/virtual-dsm
