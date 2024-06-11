@@ -147,6 +147,7 @@ if [ ! -s "$RDC" ]; then
   fKill "progress.sh"
 
   ERR="Failed to download $LOC"
+  (( rc == 3 )) && error "$ERR , cannot write file (disk full?)" && exit 60
   (( rc == 4 )) && error "$ERR , network failure!" && exit 60
   (( rc == 8 )) && error "$ERR , server issued an error response!" && exit 60
 
@@ -174,6 +175,7 @@ if [ ! -s "$RDC" ]; then
     fKill "progress.sh"
 
     ERR="Failed to download $LOC"
+    (( rc == 3 )) && error "$ERR , cannot write file (disk full?)" && exit 60
     (( rc == 4 )) && error "$ERR , network failure!" && exit 60
     (( rc == 8 )) && error "$ERR , server issued an error response!" && exit 60
     (( rc != 0 )) && error "$ERR , reason: $rc" && exit 60
@@ -252,6 +254,7 @@ else
 
   fKill "progress.sh"
 
+  (( rc == 3 )) && error "$ERR , cannot write file (disk full?)" && exit 69
   (( rc == 4 )) && error "$ERR , network failure!" && exit 69
   (( rc == 8 )) && error "$ERR , server issued an error response!" && exit 69
   (( rc != 0 )) && error "$ERR , reason: $rc" && exit 69
