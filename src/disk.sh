@@ -280,10 +280,10 @@ convertDisk() {
   isCow "$FS" && DISK_PARAM+=",nocow=on"
 
   if [[ "$DST_FMT" != "raw" ]]; then
-      if [[ "$ALLOCATE" == [Nn]* ]]; then
-        CONV_FLAGS+=" -c"
-      fi
-      [ -n "$DISK_FLAGS" ] && DISK_PARAM+=",$DISK_FLAGS"
+    if [[ "$ALLOCATE" == [Nn]* ]]; then
+      CONV_FLAGS+=" -c"
+    fi
+    [ -n "$DISK_FLAGS" ] && DISK_PARAM+=",$DISK_FLAGS"
   fi
 
   # shellcheck disable=SC2086
@@ -293,13 +293,13 @@ convertDisk() {
   fi
 
   if [[ "$DST_FMT" == "raw" ]]; then
-      if [[ "$ALLOCATE" != [Nn]* ]]; then
-        # Work around qemu-img bug
-        CUR_SIZE=$(stat -c%s "$TMP_FILE")
-        if ! fallocate -l "$CUR_SIZE" "$TMP_FILE"; then
-            error "Failed to allocate $CUR_SIZE bytes for $DISK_DESC image $TMP_FILE"
-        fi
+    if [[ "$ALLOCATE" != [Nn]* ]]; then
+      # Work around qemu-img bug
+      CUR_SIZE=$(stat -c%s "$TMP_FILE")
+      if ! fallocate -l "$CUR_SIZE" "$TMP_FILE"; then
+          error "Failed to allocate $CUR_SIZE bytes for $DISK_DESC image $TMP_FILE"
       fi
+    fi
   fi
 
   rm -f "$SOURCE_FILE"
@@ -420,14 +420,15 @@ addDisk () {
 
   [ -z "$DISK_SPACE" ] && DISK_SPACE="16G"
   DISK_SPACE=$(echo "${DISK_SPACE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
+  [[ -z "${DISK_SPACE//[0-9]}" ]] && DISK_SPACE="${DISK_SPACE}G"
   DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
 
-  if (( DATA_SIZE < 6442450944 )); then
-    if (( DATA_SIZE < 1 )); then
+  if (( DATA_SIZE < 1 )); then
       error "Invalid value for ${DISK_DESC^^}_SIZE: $DISK_SPACE" && exit 73
-    else
+  fi
+
+  if (( DATA_SIZE < 6442450944 )); then
       error "Please increase ${DISK_DESC^^}_SIZE to at least 6 GB." && exit 73
-    fi
   fi
 
   FS=$(stat -f -c %T "$DIR")
