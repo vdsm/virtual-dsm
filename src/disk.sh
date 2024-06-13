@@ -422,12 +422,17 @@ addDisk () {
   DISK_SPACE=$(echo "${DISK_SPACE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
   DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
 
-  if (( DATA_SIZE < 6442450944 )); then
-    if (( DATA_SIZE < 1 )); then
+  if (( DATA_SIZE < 1 )); then
       error "Invalid value for ${DISK_DESC^^}_SIZE: $DISK_SPACE" && exit 73
-    else
+  fi
+
+  if (( DATA_SIZE < 1000 )); then
+    DISK_SPACE="${DISK_SPACE}G"
+    DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
+  fi
+
+  if (( DATA_SIZE < 6442450944 )); then
       error "Please increase ${DISK_DESC^^}_SIZE to at least 6 GB." && exit 73
-    fi
   fi
 
   FS=$(stat -f -c %T "$DIR")
