@@ -420,15 +420,11 @@ addDisk () {
 
   [ -z "$DISK_SPACE" ] && DISK_SPACE="16G"
   DISK_SPACE=$(echo "${DISK_SPACE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
+  [[ -z "${DISK_SPACE//[0-9]}" ]] && DISK_SPACE="${DISK_SPACE}G"
   DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
 
   if (( DATA_SIZE < 1 )); then
       error "Invalid value for ${DISK_DESC^^}_SIZE: $DISK_SPACE" && exit 73
-  fi
-
-  if (( DATA_SIZE < 1000 )); then
-    DISK_SPACE="${DISK_SPACE}G"
-    DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
   fi
 
   if (( DATA_SIZE < 6442450944 )); then
