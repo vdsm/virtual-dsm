@@ -23,9 +23,6 @@ spec:
       ports:
         - containerPort: 5000
           protocol: TCP
-      resources:
-        limits:
-          devices.kubevirt.io/kvm: 1
       securityContext:
         privileged: true
       env:
@@ -38,10 +35,15 @@ spec:
       volumeMounts:
         - mountPath: /storage
           name: storage
+        - mountPath: /dev/kvm
+          name: dev-kvm
   volumes:
     - name: storage
       persistentVolumeClaim:
         claimName: dsm-pvc
+    - name: dev-kvm
+      hostPath:
+        path: /dev/kvm
 ---
 apiVersion: v1
 kind: Service
@@ -55,4 +57,3 @@ spec:
     - name: tcp-5000
       port: 5000
       targetPort: 5000
-      nodePort: 31150
