@@ -56,7 +56,7 @@ kubectl apply -f kubernetes.yml
 
 ## FAQ 💬
 
-* ### How do I use it?
+### How do I use it?
 
   Very simple! These are the steps:
   
@@ -66,7 +66,7 @@ kubectl apply -f kubernetes.yml
   
   Enjoy your brand new machine, and don't forget to star this repo!
 
-* ### How do I change the storage location?
+### How do I change the storage location?
 
   To change the storage location, include the following bind mount in your compose file:
 
@@ -77,7 +77,7 @@ kubectl apply -f kubernetes.yml
 
   Replace the example path `/var/dsm` with the desired storage folder.
  
-* ### How do I change the size of the disk?
+### How do I change the size of the disk?
 
   To expand the default size of 16 GB, locate the `DISK_SIZE` setting in your compose file and modify it to your preferred capacity:
 
@@ -86,9 +86,10 @@ kubectl apply -f kubernetes.yml
     DISK_SIZE: "128G"
   ```
   
-  This can also be used to resize the existing disk to a larger capacity without any data loss.
+> [!TIP]
+> This can also be used to resize the existing disk to a larger capacity without any data loss.
 
-* ### How do I create a growable disk?
+### How do I create a growable disk?
 
   By default, the entire capacity of the disk is reserved in advance.
 
@@ -99,9 +100,10 @@ kubectl apply -f kubernetes.yml
     DISK_FMT: "qcow2"
   ```
 
-  Please note that this may reduce the write performance of the disk.
+> [!NOTE]
+> This may reduce the write performance of the disk.
 
-* ### How do I add multiple disks?
+### How do I add multiple disks?
 
   To create additional disks, modify your compose file like this:
   
@@ -114,7 +116,7 @@ kubectl apply -f kubernetes.yml
     - /mnt/data/example:/storage3
   ```
 
-* ### How do I pass-through a disk?
+### How do I pass-through a disk?
 
    It is possible to pass-through a disk device directly, by adding it to your compose file in this way:
 
@@ -125,11 +127,13 @@ kubectl apply -f kubernetes.yml
 
   Make sure to bind the disk via its UUID (obtainable via `lsblk -o name,uuid`) instead of its name (`/dev/sdc`), to prevent ever binding the wrong disk when the drive letters happen to change. 
 
-  Please note that the device needs to be totally empty (without any partition table) otherwise DSM does not always format it into a volume.
+> [!IMPORTANT]
+> The device needs to be totally empty (without any partition table) otherwise DSM does not always format it into a volume.
 
-  Do NOT use this feature with the goal of sharing files from the host, they will all be lost without warning when DSM creates the volume.
+> [!CAUTION]
+> Do NOT use this feature with the goal of sharing files from the host, they will all be lost without warning when DSM creates the volume.
 
-* ### How do I change the amount of CPU or RAM?
+### How do I change the amount of CPU or RAM?
 
   By default, the container will be allowed to use a maximum of 1 CPU core and 1 GB of RAM.
 
@@ -141,7 +145,7 @@ kubectl apply -f kubernetes.yml
     CPU_CORES: "4"
   ```
 
-* ### How do I verify if my system supports KVM?
+### How do I verify if my system supports KVM?
 
   To verify that your system supports KVM, run the following commands:
 
@@ -162,7 +166,7 @@ kubectl apply -f kubernetes.yml
 
   If you didn't receive any error from `kvm-ok` at all, but the container still complains that `/dev/kvm` is missing, it might help to add `privileged: true` to your compose file (or `--privileged` to your `run` command), to rule out any permission issue.
 
-* ### How do I assign an individual IP address to the container?
+### How do I assign an individual IP address to the container?
 
   By default, the container uses bridge networking, which shares the IP address with the host. 
 
@@ -196,9 +200,10 @@ kubectl apply -f kubernetes.yml
  
   An added benefit of this approach is that you won't have to perform any port mapping anymore, since all ports will be exposed by default.
 
-  Please note that this IP address won't be accessible from the Docker host due to the design of macvlan, which doesn't permit communication between the two. If this is a concern, you need to create a [second macvlan](https://blog.oddbit.com/post/2018-03-12-using-docker-macvlan-networks/#host-access) as a workaround.
+> [!IMPORTANT]
+> This IP address won't be accessible from the Docker host due to the design of macvlan, which doesn't permit communication between the two. If this is a concern, you need to create a [second macvlan](https://blog.oddbit.com/post/2018-03-12-using-docker-macvlan-networks/#host-access) as a workaround.
 
-* ### How can DSM acquire an IP address from my router?
+### How can DSM acquire an IP address from my router?
 
   After configuring the container for macvlan (see above), it is possible for DSM to become part of your home network by requesting an IP from your router, just like your other devices.
 
@@ -213,9 +218,10 @@ kubectl apply -f kubernetes.yml
     - 'c *:* rwm'
   ```
 
-  Please note that even if you don't need DHCP, it's still recommended to enable this mode, as it prevents NAT issues and increases performance by using a `macvtap` interface. You can just set a static IP from the DSM control panel afterwards.
+> [!NOTE]
+> Even if you don't need DHCP, it's still recommended to enable this mode, as it prevents NAT issues and increases performance by using a `macvtap` interface. You can just set a static IP from the DSM control panel afterwards.
 
-* ### How do I pass-through the GPU?
+### How do I pass-through the GPU?
 
   To pass-through your Intel GPU, add the following lines to your compose file:
 
@@ -226,9 +232,10 @@ kubectl apply -f kubernetes.yml
     - /dev/dri
   ```
 
-  This can be used to enable the facial recognition function in Synology Photos for example.
+> [!TIP]
+> This can be used to enable the facial recognition function in Synology Photos for example.
 
-* ### How do I install a specific version of vDSM?
+### How do I install a specific version of vDSM?
 
   By default, version 7.2 will be installed, but if you prefer an older version, you can add its download URL to your compose file as follows:
 
@@ -248,11 +255,11 @@ kubectl apply -f kubernetes.yml
 
   after placing a file called `DSM_VirtualDSM_42218.pat` in your `/storage` folder.
 
-* ### What are the differences compared to the standard DSM?
+### What are the differences compared to the standard DSM?
 
   There are only two minor differences: the Virtual Machine Manager package is not available, and Surveillance Station will not include any free licenses.
   
-* ### Is this project legal?
+### Is this project legal?
 
   Yes, this project contains only open-source code and does not distribute any copyrighted material. Neither does it try to circumvent any copyright protection measures. So under all applicable laws, this project will be considered legal. 
   
