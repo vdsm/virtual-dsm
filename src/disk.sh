@@ -492,10 +492,11 @@ html "Initializing disks..."
 
 [ -z "${DISK_OPTS:-}" ] && DISK_OPTS=""
 [ -z "${DISK_TYPE:-}" ] && DISK_TYPE="scsi"
+[ -z "${DISK_NAME:-}" ] && DISK_NAME="data"
 
 case "${DISK_TYPE,,}" in
   "ide" | "usb" | "scsi" | "blk" | "auto" ) ;;
-  * ) error "Invalid DISK_TYPE specified, value \"$DISK_TYPE\" is unrecognized!" && exit 80 ;;
+  * ) error "Invalid DISK_TYPE specified, value \"$DISK_TYPE\" is not recognized!" && exit 80 ;;
 esac
 
 if [ -z "$ALLOCATE" ]; then
@@ -517,13 +518,13 @@ fi
 DISK_OPTS+=$(createDevice "$BOOT" "$DISK_TYPE" "1" "0xa" "raw" "$DISK_IO" "$DISK_CACHE")
 DISK_OPTS+=$(createDevice "$SYSTEM" "$DISK_TYPE" "2" "0xb" "raw" "$DISK_IO" "$DISK_CACHE")
 
-DISK1_FILE="$STORAGE/data"
+DISK1_FILE="$STORAGE/${DISK_NAME}"
 if [[ ! -f "$DISK1_FILE.img" ]] && [[ -f "$STORAGE/data${DISK_SIZE}.img" ]]; then
   # Fallback for legacy installs
   mv "$STORAGE/data${DISK_SIZE}.img" "$DISK1_FILE.img"
 fi
 
-DISK2_FILE="/storage2/data2"
+DISK2_FILE="/storage2/${DISK_NAME}2"
 if [ ! -f "$DISK2_FILE.img" ]; then
   # Fallback for legacy installs
   FALLBACK="/storage2/data.img"
@@ -536,7 +537,7 @@ if [ ! -f "$DISK2_FILE.img" ]; then
   fi
 fi
 
-DISK3_FILE="/storage3/data3"
+DISK3_FILE="/storage3/${DISK_NAME}3"
 if [ ! -f "$DISK3_FILE.img" ]; then
   # Fallback for legacy installs
   FALLBACK="/storage3/data.img"
@@ -549,7 +550,7 @@ if [ ! -f "$DISK3_FILE.img" ]; then
   fi
 fi
 
-DISK4_FILE="/storage4/data4"
+DISK4_FILE="/storage4/${DISK_NAME}4"
 
 : "${DISK2_SIZE:=""}"
 : "${DISK3_SIZE:=""}"
@@ -598,5 +599,4 @@ fi
 DISK_OPTS+=" -object iothread,id=io2"
 
 html "Initialized disks successfully..."
-
 return 0
