@@ -205,7 +205,7 @@ kubectl apply -f kubernetes.yml
 
 ### How can DSM acquire an IP address from my router?
 
-  After configuring the container for macvlan (see above), it is possible for DSM to become part of your home network by requesting an IP from your router, just like your other devices.
+  After configuring the container for [macvlan](#how-do-i-assign-an-individual-ip-address-to-the-container), it is possible for DSM to become part of your home network by requesting an IP from your router, just like your other devices.
 
   To enable this mode, add the following lines to your compose file:
 
@@ -219,7 +219,7 @@ kubectl apply -f kubernetes.yml
   ```
 
 > [!NOTE]
-> Even if you don't need DHCP, it's still recommended to enable this mode, as it prevents NAT issues and increases performance by using a `macvtap` interface. You can just set a static IP from the DSM control panel afterwards.
+> In this mode, the container and DSM will each have their own separate IPs.
 
 ### How do I pass-through the GPU?
 
