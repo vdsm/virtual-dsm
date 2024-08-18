@@ -38,14 +38,25 @@ TEMPLATE="/var/www/index.html"
 FOOTER1="$APP for Docker v$(</run/version)"
 FOOTER2="<a href='$SUPPORT'>$SUPPORT</a>"
 
+CPI=$(lscpu)
 SYS=$(uname -r)
 HOST=$(hostname -s)
 KERNEL=$(echo "$SYS" | cut -b 1)
 MINOR=$(echo "$SYS" | cut -d '.' -f2)
 ARCH=$(dpkg --print-architecture)
 CORES=$(grep -c '^processor' /proc/cpuinfo)
-SOCKETS=$(lscpu | grep -m 1 -i 'socket(s)' | awk '{print $(2)}')
-CPU=$(lscpu | grep -m 1 -i 'model name' | cut -f 2 -d ":" | awk '{$1=$1}1' | sed 's# @.*##g' | sed s/"(R)"//g | sed 's/[^[:alnum:] ]\+/ /g' | sed 's/  */ /g')
+
+if ! grep -qi "socket(s)" <<< "$CPI"; then
+  SOCKETS=1
+else
+  SOCKETS=$(echo "$CPI" | grep -m 1 -i 'socket(s)' | awk '{print $(2)}')
+fi
+
+if ! grep -qi "model name" <<< "$CPI"; then
+  CPU="Unknown"
+else
+  CPU=$(echo "$CPI" | grep -m 1 -i 'model name' | cut -f 2 -d ":" | awk '{$1=$1}1' | sed 's# @.*##g' | sed s/"(R)"//g | sed 's/[^[:alnum:] ]\+/ /g' | sed 's/  */ /g')
+fi
 
 # Check system
 
