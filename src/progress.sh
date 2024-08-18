@@ -28,7 +28,7 @@ do
       if [ -z "$total" ] || [[ "$total" == "0" ]]; then
         size=$(numfmt --to=iec --suffix=B  "$bytes" | sed -r 's/([A-Z])/ \1/')
       else
-        size=$(printf '%.1f\n' "$((bytes*100*100/total))e-2")
+        size="$(echo "$bytes" "$total" | awk '{printf "%.1f", $1 * 100 / $2}')"
         size="$size%"
       fi
       echo "${body//(\[P\])/($size)}"> "$info"
