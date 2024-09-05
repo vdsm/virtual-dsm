@@ -397,7 +397,7 @@ else
     if ! configureNAT; then
 
       NETWORK="user"
-      warn "falling back to usermode networking (slow)!"
+      warn "falling back to usermode networking! Performance will be bad and port forwarding will not work."
 
       ip link set "$VM_NET_TAP" down promisc off &> null || true
       ip link delete "$VM_NET_TAP" &> null || true

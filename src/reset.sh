@@ -56,6 +56,7 @@ if ! grep -qi "model name" <<< "$CPI"; then
   CPU="Unknown"
 else
   CPU=$(echo "$CPI" | grep -m 1 -i 'model name' | cut -f 2 -d ":" | awk '{$1=$1}1' | sed 's# @.*##g' | sed s/"(R)"//g | sed 's/[^[:alnum:] ]\+/ /g' | sed 's/  */ /g')
+  CPU="${CPU// with Radeon Graphics/}"
 fi
 
 # Check system
