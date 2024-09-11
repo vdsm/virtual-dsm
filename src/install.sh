@@ -409,4 +409,6 @@ mv -f "$BOOT" "$STORAGE/$BASE.boot.img"
 rm -rf "$TMP"
 
 html "Installation finished successfully..."
+sleep 1.2
+
 return 0
