@@ -46,7 +46,7 @@ if [ -z "$DL" ]; then
   [[ "${COUNTRY^^}" == "CN" ]] && DL="$DL_CHINA" || DL="$DL_GLOBAL"
 fi
 
-[ -z "$URL" ] && URL="$DL/release/7.2.1/69057-1/DSM_VirtualDSM_69057.pat"
+[ -z "$URL" ] && URL="$DL/release/7.2.2/72806/DSM_VirtualDSM_72806.pat"
 
 BASE=$(basename "${URL%%\?*}" .pat)
 : "${BASE//+/ }"; printf -v BASE '%b' "${_//%/\\x}"
@@ -99,10 +99,10 @@ SPACE=$(df --output=avail -B 1 / | tail -n 1)
 SPACE_MB=$(( (SPACE + 1048575)/1048576 ))
 (( ROOT_SPACE > SPACE )) && error "Not enough free space inside the container, have $SPACE_MB MB available but need at least 500 MB." && exit 96
 
-MIN_SPACE=8589934592
+MIN_SPACE=15032385536
 SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
 SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
-(( MIN_SPACE > SPACE )) && error "Not enough free space for installation in $STORAGE, have $SPACE_GB GB available but need at least 8 GB." && exit 94
+(( MIN_SPACE > SPACE )) && error "Not enough free space for installation in $STORAGE, have $SPACE_GB GB available but need at least 14 GB." && exit 94
 
 # Check if output is to interactive TTY
 if [ -t 1 ]; then
@@ -245,6 +245,7 @@ if [[ "$URL" == "file://"* ]]; then
 else
 
   SIZE=0
+  [[ "${URL,,}" == *"_72806.pat" ]] && SIZE=361010261
   [[ "${URL,,}" == *"_69057.pat" ]] && SIZE=363837333
   [[ "${URL,,}" == *"_42218.pat" ]] && SIZE=379637760
 
@@ -307,12 +308,12 @@ SYSTEM="$STORAGE/$BASE.system.img"
 rm -f "$SYSTEM"
 
 # Check free diskspace
-SYSTEM_SIZE=4954537983
+SYSTEM_SIZE=10738466816
 SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
 SPACE_MB=$(( (SPACE + 1048575)/1048576 ))
 
 if (( SYSTEM_SIZE > SPACE )); then
-  error "Not enough free space in $STORAGE to create a 5 GB system disk, have only $SPACE_MB MB available." && exit 97
+  error "Not enough free space in $STORAGE to create a 10 GB system disk, have only $SPACE_MB MB available." && exit 97
 fi
 
 if ! touch "$SYSTEM"; then
@@ -342,8 +343,8 @@ PART="$TMP/partition.fdisk"
         echo "unit: sectors"
         echo "sector-size: 512"
         echo ""
-        echo "${SYSTEM}1 : start=        2048, size=     4980480, type=83"
-        echo "${SYSTEM}2 : start=     4982528, size=     4194304, type=82"
+        echo "${SYSTEM}1 : start=        2048, size=    16777216, type=83"
+        echo "${SYSTEM}2 : start=    16779264, size=     4194304, type=82"
 } > "$PART"
 
 sfdisk -q "$SYSTEM" < "$PART"
@@ -374,8 +375,8 @@ if [ -s "$IDB.txz" ]; then
 fi
 
 LABEL="1.44.1-42218"
-OFFSET="1048576" # 2048 * 512
-NUMBLOCKS="622560" # (4980480 * 512) / 4096
+OFFSET="1048576"    # 2048 * 512
+NUMBLOCKS="2097152" # (16777216 * 512) / 4096
 MSG="Installing system partition..."
 
 if [[ "$ROOT" != [Nn]* ]]; then
@@ -407,5 +408,7 @@ fi
 mv -f "$BOOT" "$STORAGE/$BASE.boot.img"
 rm -rf "$TMP"
 
-html "Installation finished successfully..."
+html "Booting DSM instance..."
+sleep 1.2
+
 return 0
