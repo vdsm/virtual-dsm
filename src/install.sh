@@ -408,7 +408,7 @@ fi
 mv -f "$BOOT" "$STORAGE/$BASE.boot.img"
 rm -rf "$TMP"
 
-html "Installation finished successfully..."
+html "Booting DSM instance..."
 sleep 1.2
 
 return 0
