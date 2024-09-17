@@ -6,6 +6,7 @@ set -Eeuo pipefail
 : "${GPU:="N"}"         # GPU passthrough
 : "${VGA:="virtio"}"    # VGA adaptor
 : "${DISPLAY:="none"}"  # Display type
+: "${RENDERNODE:="/dev/dri/renderD128"}"  # Render node
 
 if [[ "$GPU" != [Yy1]* ]] || [[ "$ARCH" != "amd64" ]]; then
 
@@ -15,20 +16,24 @@ if [[ "$GPU" != [Yy1]* ]] || [[ "$ARCH" != "amd64" ]]; then
 
 fi
 
-DISPLAY_OPTS="-display egl-headless,rendernode=/dev/dri/renderD128"
+DISPLAY_OPTS="-display egl-headless,rendernode=$RENDERNODE"
 DISPLAY_OPTS+=" -vga $VGA"
 
 [ ! -d /dev/dri ] && mkdir -m 755 /dev/dri
 
-if [ ! -c /dev/dri/card0 ]; then
-  if mknod /dev/dri/card0 c 226 0; then
-    chmod 666 /dev/dri/card0
+# Extract the card number from the render node
+CARD_NUMBER=$(echo "$RENDERNODE" | grep -oP '(?<=renderD)\d+')
+CARD_DEVICE="/dev/dri/card$((CARD_NUMBER - 128))"
+
+if [ ! -c "$CARD_DEVICE" ]; then
+  if mknod "$CARD_DEVICE" c 226 $((CARD_NUMBER - 128)); then
+    chmod 666 "$CARD_DEVICE"
   fi
 fi
 
-if [ ! -c /dev/dri/renderD128 ]; then
-  if mknod /dev/dri/renderD128 c 226 128; then
-    chmod 666 /dev/dri/renderD128
+if [ ! -c "$RENDERNODE" ]; then
+  if mknod "$RENDERNODE" c 226 "$CARD_NUMBER"; then
+    chmod 666 "$RENDERNODE"
   fi
 fi
 
