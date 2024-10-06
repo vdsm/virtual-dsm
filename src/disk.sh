@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 # Docker environment variables
 
-: "${DISK_IO:="native"}"          # I/O Mode, can be set to 'native', 'threads' or 'io_turing'
+: "${DISK_IO:="native"}"          # I/O Mode, can be set to 'native', 'threads' or 'io_uring'
 : "${DISK_FMT:="raw"}"            # Disk file format, 'raw' by default for best performance
 : "${DISK_TYPE:=""}"              # Device type to be used, choose "ide", "usb", "blk" or "scsi"
 : "${DISK_FLAGS:=""}"             # Specifies the options for use with the qcow2 disk format
