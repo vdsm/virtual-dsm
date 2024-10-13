@@ -5,7 +5,7 @@ set -Eeuo pipefail
 
 : "${DISK_IO:="native"}"          # I/O Mode, can be set to 'native', 'threads' or 'io_uring'
 : "${DISK_FMT:="raw"}"            # Disk file format, 'raw' by default for best performance
-: "${DISK_TYPE:=""}"              # Device type to be used, choose "ide", "usb", "blk" or "scsi"
+: "${DISK_TYPE:=""}"              # Device type to be used, "sata", "nvme", "blk" or "scsi"
 : "${DISK_FLAGS:=""}"             # Specifies the options for use with the qcow2 disk format
 : "${DISK_CACHE:="none"}"         # Caching mode, can be set to 'writeback' for better performance
 : "${DISK_DISCARD:="on"}"         # Controls whether unmap (TRIM) commands are passed to the host.
@@ -369,6 +369,7 @@ createDevice () {
   local result=" -drive file=$DISK_FILE,id=$DISK_ID,format=$DISK_FMT,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on"
 
   case "${DISK_TYPE,,}" in
+    "none" ) ;;  
     "auto" )
       echo "$result"
       ;;
@@ -377,7 +378,12 @@ createDevice () {
       -device usb-storage,drive=${DISK_ID}${index}"
       echo "$result"
       ;;
-    "ide" )
+    "nvme" )
+      result+=",if=none \
+      -device nvme,drive=${DISK_ID}${index},serial=deadbeaf${DISK_INDEX}"
+      echo "$result"
+      ;;      
+    "ide" | "sata" )
       result+=",if=none \
       -device ich9-ahci,id=ahci${DISK_INDEX},addr=$DISK_ADDRESS \
       -device ide-hd,drive=${DISK_ID},bus=ahci$DISK_INDEX.0,rotation_rate=$DISK_ROTATION${index}"
@@ -410,7 +416,7 @@ addDisk () {
   local DISK_FMT=$7
   local DISK_IO=$8
   local DISK_CACHE=$9
-  local DISK_EXT DIR DATA_SIZE FS PREV_FMT PREV_EXT CUR_SIZE OPTS
+  local DISK_EXT DIR DATA_SIZE FS PREV_FMT PREV_EXT CUR_SIZE
 
   DISK_EXT=$(fmt2ext "$DISK_FMT")
   local DISK_FILE="$DISK_BASE.$DISK_EXT"
@@ -424,11 +430,11 @@ addDisk () {
   DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
 
   if (( DATA_SIZE < 1 )); then
-      error "Invalid value for ${DISK_DESC^^}_SIZE: $DISK_SPACE" && exit 73
+    error "Invalid value for ${DISK_DESC^^}_SIZE: $DISK_SPACE" && exit 73
   fi
 
   if (( DATA_SIZE < 6442450944 )); then
-      error "Please increase ${DISK_DESC^^}_SIZE to at least 6 GB." && exit 73
+    error "Please increase ${DISK_DESC^^}_SIZE to at least 6 GB." && exit 73
   fi
 
   FS=$(stat -f -c %T "$DIR")
@@ -495,7 +501,7 @@ html "Initializing disks..."
 [ -z "${DISK_NAME:-}" ] && DISK_NAME="data"
 
 case "${DISK_TYPE,,}" in
-  "ide" | "usb" | "scsi" | "blk" | "auto" ) ;;
+  "ide" | "sata" | "nvme" | "usb" | "scsi" | "blk" | "auto" | "none" ) ;;
   * ) error "Invalid DISK_TYPE specified, value \"$DISK_TYPE\" is not recognized!" && exit 80 ;;
 esac
 
