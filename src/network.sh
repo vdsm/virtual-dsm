@@ -239,7 +239,7 @@ configureNAT() {
 
   NET_OPTS+=",script=no,downscript=no"
 
-  ! configureDNS && return 1
+  configureDNS || return 1
 
   return 0
 }
@@ -376,7 +376,7 @@ if [[ "$DHCP" == [Yy1]* ]]; then
   fi
 
   # Configure for macvtap interface
-  ! configureDHCP && exit 20
+  configureDHCP || exit 20
 
   MSG="Booting DSM instance..."
   html "$MSG"
@@ -412,7 +412,7 @@ else
   if [[ "${NETWORK,,}" == "user"* ]]; then
 
     # Configure for usermode networking (slirp)
-    ! configureUser && exit 24
+    configureUser || exit 24
 
   fi
 

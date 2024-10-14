@@ -62,8 +62,9 @@ if [ -z "${CPU// /}" ] && grep -qi "model:" <<< "$CPI"; then
   CPU=$(echo "$CPI" | grep -m 1 -i 'model:' | cut -f 2 -d ":" | awk '{$1=$1}1' | sed 's# @.*##g' | sed s/"(R)"//g | sed 's/[^[:alnum:] ]\+/ /g' | sed 's/  */ /g')
 fi
 
-[ -z "${CPU// /}" ] && CPU="Unknown"
+CPU="${CPU// Quad core CPU/}"
 CPU="${CPU// with Radeon Graphics/}"
+[ -z "${CPU// /}" ] && CPU="Unknown"
 
 # Check system
 
