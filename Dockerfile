@@ -7,7 +7,7 @@ FROM qemux/qemu-host:2.05 AS builder
 #  RUN go mod download
 #  RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /qemu-host.bin .
 
-FROM debian:trixie-20240926-slim
+FROM debian:trixie-slim
 
 ARG TARGETPLATFORM
 ARG VERSION_ARG="0.0"
