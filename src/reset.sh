@@ -103,7 +103,9 @@ WANTED_GB=$(( (RAM_WANTED + 1073741823)/1073741824 ))
 
 # Print system info
 SYS="${SYS/-generic/}"
+FS="${FS/UNKNOWN //}"
 FS="${FS/ext2\/ext3/ext4}"
+FS=$(echo "$FS" | sed 's/[)(]//g')
 SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
 SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
 
