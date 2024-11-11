@@ -109,7 +109,7 @@ FS=$(echo "$FS" | sed 's/[)(]//g')
 SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
 SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
 
-echo "❯ CPU: ${CPU} | RAM: $AVAIL_GB/$TOTAL_GB GB | DISK: $SPACE_GB GB (${FS}) | HOST: ${SYS}..."
+echo "❯ CPU: ${CPU} | RAM: $AVAIL_GB/$TOTAL_GB GB | DISK: $SPACE_GB GB (${FS}) | KERNEL: ${SYS}..."
 echo
 
 # Check memory
