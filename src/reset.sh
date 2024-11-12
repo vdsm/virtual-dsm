@@ -15,23 +15,24 @@ echo "❯ For support visit $SUPPORT"
 
 # Docker environment variables
 
-: "${TZ:=""}"             # System local timezone
-: "${DEBUG:="N"}"         # Disable debugging mode
-: "${COUNTRY:=""}"        # Country code for mirror
-: "${CONSOLE:="N"}"       # Disable console mode
-: "${ALLOCATE:=""}"       # Preallocate diskspace
-: "${ARGUMENTS:=""}"      # Extra QEMU parameters
-: "${CPU_CORES:="1"}"     # Amount of CPU cores
-: "${RAM_SIZE:="1G"}"     # Maximum RAM amount
-: "${RAM_CHECK:="Y"}"     # Check available RAM
-: "${DISK_SIZE:="16G"}"   # Initial data disk size
+: "${TZ:=""}"              # System local timezone
+: "${DEBUG:="N"}"          # Disable debugging mode
+: "${COMMIT:="N"}"         # Commit to local image
+: "${COUNTRY:=""}"         # Country code for mirror
+: "${CONSOLE:="N"}"        # Disable console mode
+: "${ALLOCATE:=""}"        # Preallocate diskspace
+: "${ARGUMENTS:=""}"       # Extra QEMU parameters
+: "${CPU_CORES:="1"}"      # Amount of CPU cores
+: "${RAM_SIZE:="1G"}"      # Maximum RAM amount
+: "${RAM_CHECK:="Y"}"      # Check available RAM
+: "${DISK_SIZE:="16G"}"    # Initial data disk size
+: "${STORAGE:="/storage"}" # Storage folder location
 
 # Helper variables
 
 PROCESS="${APP,,}"
 PROCESS="${PROCESS// /-}"
 
-STORAGE="/storage"
 INFO="/run/shm/msg.html"
 PAGE="/run/shm/index.html"
 TEMPLATE="/var/www/index.html"
@@ -79,8 +80,13 @@ fi
 
 # Check folder
 
-if [ ! -d "$STORAGE" ]; then
-  error "Storage folder ($STORAGE) not found!" && exit 13
+if [[ "$COMMIT" != [Nn]* ]]; then
+  STORAGE="/local"
+  mkdir -p "$STORAGE"
+else
+  if [ ! -d "$STORAGE" ]; then
+    error "Storage folder ($STORAGE) not found!" && exit 13
+  fi
 fi
 
 # Check filesystem
