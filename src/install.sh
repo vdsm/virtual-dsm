@@ -170,7 +170,7 @@ if [ ! -s "$RDC" ]; then
 
     html "$MSG..."
     /run/progress.sh "$PAT" "$SIZE" "$MSG ([P])..." &
-    { wget "$LOC" -O "$PAT" -q --no-check-certificate --timeout=10 --show-progress "$PROGRESS"; rc=$?; } || :
+    { wget "$LOC" -O "$PAT" -q --no-check-certificate --timeout=10 --no-http-keep-alive --show-progress "$PROGRESS"; rc=$?; } || :
 
     fKill "progress.sh"
 
@@ -251,7 +251,7 @@ else
 
   /run/progress.sh "$PAT" "$SIZE" "$MSG ([P])..." &
 
-  { wget "$URL" -O "$PAT" -q --no-check-certificate --timeout=10 --show-progress "$PROGRESS"; rc=$?; } || :
+  { wget "$URL" -O "$PAT" -q --no-check-certificate --timeout=10 --no-http-keep-alive --show-progress "$PROGRESS"; rc=$?; } || :
 
   fKill "progress.sh"
 
