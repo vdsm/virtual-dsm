@@ -51,7 +51,7 @@ docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-ti
 Via Kubernetes:
 
 ```shell
-kubectl apply -f kubernetes.yml
+kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/master/kubernetes.yml
 ```
 
 ## Compatibility ⚙️
