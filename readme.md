@@ -74,7 +74,7 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
   - Wait until DSM is ready, choose an username and password, and you will be taken to the desktop.
   
-  Enjoy your brand new machine, and don't forget to star this repo!
+  Enjoy your brand new NAS, and don't forget to star this repo!
 
 ### How do I change the storage location?
 
