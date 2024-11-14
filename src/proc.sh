@@ -34,15 +34,11 @@ if [[ "$KVM" != [Nn]* ]]; then
   if [ -n "$KVM_ERR" ]; then
     KVM="N"
     if [[ "$OSTYPE" =~ ^darwin ]]; then
-      warn "you are using MacOS which has no KVM support, this will cause a major loss of performance."
+      warn "you are using macOS which has no KVM support, this will cause a major loss of performance."
     else
-      if grep -qi Microsoft /proc/version; then
-        warn "you are using Windows 10 which has no KVM support, this will cause a major loss of performance."
-      else
-        error "KVM acceleration not available $KVM_ERR, this will cause a major loss of performance."
-        error "See the FAQ on how to diagnose the cause, or continue without KVM by setting KVM=N (not recommended)."
-        [[ "$DEBUG" != [Yy1]* ]] && exit 88
-      fi
+      error "KVM acceleration not available $KVM_ERR, this will cause a major loss of performance."
+      error "See the FAQ on how to diagnose the cause, or continue without KVM by setting KVM=N (not recommended)."
+      [[ "$DEBUG" != [Yy1]* ]] && exit 88
     fi
   fi
 
