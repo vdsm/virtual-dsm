@@ -3,7 +3,7 @@ var interval = 1000;
 
 function getInfo() {
 
-    var url = "/msg.html";
+    var url = "msg.html";
 
     try {
 
