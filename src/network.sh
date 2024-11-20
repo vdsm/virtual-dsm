@@ -35,12 +35,27 @@ configureDHCP() {
   fi
 
   # Create a macvtap network for the VM guest
-  { ip link add link "$VM_NET_DEV" name "$VM_NET_TAP" address "$VM_NET_MAC" type macvtap mode bridge ; rc=$?; } || :
+  { msg=$(ip link add link "$VM_NET_DEV" name "$VM_NET_TAP" address "$VM_NET_MAC" type macvtap mode bridge 2>&1); rc=$?; } || :
 
-  if (( rc != 0 )); then
-    error "Cannot create macvtap interface. Please make sure that the network type is 'macvlan' and not 'ipvlan',"
-    error "that your kernel is recent (>4) and supports it, and that the container has the NET_ADMIN capability set." && return 1
-  fi
+  case "$msg" in
+    "RTNETLINK answers: File exists"* )
+      while ! ip link add link "$VM_NET_DEV" name "$VM_NET_TAP" address "$VM_NET_MAC" type macvtap mode bridge; do
+        info "Waiting for macvtap interface to become available.."
+        sleep 5
+      done  ;;
+    "RTNETLINK answers: Invalid argument"* )
+      error "Cannot create macvtap interface. Please make sure that the network type of the container is 'macvlan' and not 'ipvlan'."
+      return 1 ;;
+    "RTNETLINK answers: Operation not permitted"* )
+      error "No permission to create macvtap interface. Please make sure that your host kernel supports it and that the NET_ADMIN capability is set." 
+      return 1 ;;
+    *)
+      [ -n "$msg" ] && echo "$msg" >&2
+      if (( rc != 0 )); then
+        error "Cannot create macvtap interface."
+        return 1
+      fi ;;
+  esac
 
   while ! ip link set "$VM_NET_TAP" up; do
     info "Waiting for MAC address $VM_NET_MAC to become available..."
@@ -286,13 +301,19 @@ checkOS() {
 
   local name
   local os=""
+  local if="macvlan"
   name=$(uname -a)
 
-  [[ "${name,,}" == *"darwin"* ]] && os="MacOS"
-  [[ "${name,,}" == *"microsoft"* ]] && os="Windows"
+  [[ "${name,,}" == *"darwin"* ]] && os="Docker Desktop for macOS"
+  [[ "${name,,}" == *"microsoft"* ]] && os="Docker Desktop for Windows"
+
+  if [[ "$DHCP" == [Yy1]* ]]; then
+    if="macvtap"
+    [[ "${name,,}" == *"synology"* ]] && os="Synology Container Manager"
+  fi
 
   if [ -n "$os" ]; then
-    warn "you are using Docker Desktop for $os which does not support macvlan, please revert to bridge networking!"
+    warn "you are using $os which does not support $if, please revert to bridge networking!"
   fi
 
   return 0
@@ -397,7 +418,7 @@ else
     if ! configureNAT; then
 
       NETWORK="user"
-      warn "falling back to usermode networking! Performance will be bad and port forwarding will not work."
+      warn "falling back to usermode networking! Performance will be bad and port mapping will not work."
 
       ip link set "$VM_NET_TAP" down promisc off &> null || true
       ip link delete "$VM_NET_TAP" &> null || true
