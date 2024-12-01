@@ -1,10 +1,11 @@
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: dsm-pvc
 spec:
   accessModes:
-    - ReadWriteOnce
+  - ReadWriteOnce
   resources:
     requests:
       storage: 16Gi
@@ -16,44 +17,51 @@ metadata:
   labels:
     name: dsm
 spec:
-  terminationGracePeriodSeconds: 120 # the Kubernetes default is 30 seconds and it may be not enough
   containers:
-    - name: dsm
-      image: vdsm/virtual-dsm
-      ports:
-        - containerPort: 5000
-          protocol: TCP
-      securityContext:
-        privileged: true
-      env:
-        - name: RAM_SIZE
-          value: 1G
-        - name: CPU_CORES
-          value: "1"
-        - name: DISK_SIZE
-          value: "16G"  # Kubernetes uses Gi, but DSM uses GB
-      volumeMounts:
-        - mountPath: /storage
-          name: storage
-        - mountPath: /dev/kvm
-          name: dev-kvm
+  - name: dsm
+    image: vdsm/virtual-dsm
+    env:
+    - name: RAM_SIZE
+      value: "1G"
+    - name: CPU_CORES
+      value: "1"
+    - name: DISK_SIZE
+      value: "16G"
+    ports:
+    - containerPort: 5000
+    securityContext:
+      capabilities:
+        add:
+        - NET_ADMIN
+      privileged: true
+    volumeMounts:
+    - mountPath: /storage
+      name: storage
+    - mountPath: /dev/kvm
+      name: dev-kvm
+    - mountPath: /dev/net/tun
+      name: dev-tun
+  terminationGracePeriodSeconds: 120
   volumes:
-    - name: storage
-      persistentVolumeClaim:
-        claimName: dsm-pvc
-    - name: dev-kvm
-      hostPath:
-        path: /dev/kvm
+  - name: storage
+    persistentVolumeClaim:
+      claimName: dsm-pvc
+  - hostPath:
+      path: /dev/kvm
+    name: dev-kvm
+  - hostPath:
+      path: /dev/net/tun
+      type: CharDevice
+    name: dev-tun
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: dsm
 spec:
-  type: NodePort
+  ports:
+  - name: tcp-5000
+    port: 5000
   selector:
     name: dsm
-  ports:
-    - name: tcp-5000
-      port: 5000
-      targetPort: 5000
+  type: NodePort
