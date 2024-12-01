@@ -33,6 +33,7 @@ services:
       DISK_SIZE: "16G"
     devices:
       - /dev/kvm
+      - /dev/net/tun
     cap_add:
       - NET_ADMIN
     ports:
@@ -45,7 +46,7 @@ services:
 Via Docker CLI:
 
 ```bash
-docker run -it --rm -p 5000:5000 --device=/dev/kvm --cap-add NET_ADMIN --stop-timeout 120 vdsm/virtual-dsm
+docker run -it --rm -p 5000:5000 --device=/dev/kvm --device=/dev/net/tun --cap-add NET_ADMIN --stop-timeout 120 vdsm/virtual-dsm
 ```
 
 Via Kubernetes:
