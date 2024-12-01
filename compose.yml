@@ -6,6 +6,7 @@ services:
             DISK_SIZE: "16G"
         devices:
             - /dev/kvm
+            - /dev/net/tun
         cap_add:
             - NET_ADMIN
         ports:
