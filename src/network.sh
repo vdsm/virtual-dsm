@@ -169,6 +169,7 @@ configureUser() {
 configureNAT() {
 
   local tuntap="TUN device is missing. $ADD_ERR --device /dev/net/tun"
+  local tables="The 'ip_tables' kernel module is not loaded. Try this command: sudo modprobe ip_tables iptable_nat"
 
   # Create the necessary file structure for /dev/net/tun
   if [ ! -c /dev/net/tun ]; then
@@ -189,8 +190,6 @@ configureNAT() {
       error "IP forwarding is disabled. $ADD_ERR --sysctl net.ipv4.ip_forward=1" && return 1
     fi
   fi
-
-  local tables="The 'ip_tables' kernel module is not loaded. Try this command: sudo modprobe ip_tables iptable_nat"
 
   # Create a bridge with a static IP for the VM guest
 
