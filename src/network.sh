@@ -168,6 +168,8 @@ configureUser() {
 
 configureNAT() {
 
+  local tuntap="TUN device is missing. $ADD_ERR --device /dev/net/tun"
+
   # Create the necessary file structure for /dev/net/tun
   if [ ! -c /dev/net/tun ]; then
     [ ! -d /dev/net ] && mkdir -m 755 /dev/net
@@ -177,7 +179,7 @@ configureNAT() {
   fi
 
   if [ ! -c /dev/net/tun ]; then
-    error "TUN device missing. $ADD_ERR --device /dev/net/tun --cap-add NET_ADMIN" && return 1
+    error "$tuntap" && return 1
   fi
 
   # Check port forwarding flag
@@ -189,7 +191,6 @@ configureNAT() {
   fi
 
   local tables="The 'ip_tables' kernel module is not loaded. Try this command: sudo modprobe ip_tables iptable_nat"
-  local tuntap="The 'tun' kernel module is not available. Try this command: 'sudo modprobe tun' or run the container with 'privileged: true'."
 
   # Create a bridge with a static IP for the VM guest
 
