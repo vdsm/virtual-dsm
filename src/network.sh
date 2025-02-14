@@ -389,6 +389,11 @@ if [[ "$IP" == "172.17."* ]]; then
   warn "your container IP starts with 172.17.* which will cause conflicts when you install the Container Manager package inside DSM!"
 fi
 
+if [[ -d "/sys/class/net/$VM_NET_TAP" ]]; then                                               
+    info "Lingering interface will be removed..."                        
+    ip link delete "$VM_NET_TAP" || true
+fi
+
 if [[ "$DHCP" == [Yy1]* ]]; then
 
   checkOS
