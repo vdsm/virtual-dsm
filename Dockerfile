@@ -49,7 +49,7 @@ RUN set -eu && extra="" && \
 COPY --chmod=755 ./src /run/
 COPY --chmod=755 ./web /var/www/
 COPY --chmod=755 --from=builder /qemu-host.bin /run/host.bin
-COPY --chmod=744 ./web/nginx.conf /etc/nginx/sites-enabled/web.conf
+COPY --chmod=744 ./web/conf/nginx.conf /etc/nginx/sites-enabled/web.conf
 
 VOLUME /storage
 EXPOSE 22 139 445 5000
