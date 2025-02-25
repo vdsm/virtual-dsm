@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-APP="Virtual DSM"
-SUPPORT="https://github.com/vdsm/virtual-dsm"
+: "${APP:="Virtual DSM"}"
+: "${SUPPORT:="https://github.com/vdsm/virtual-dsm"}"
 
 cd /run
 
