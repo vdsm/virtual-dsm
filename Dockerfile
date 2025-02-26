@@ -35,6 +35,7 @@ RUN set -eu && extra="" && \
         dnsmasq \
         fakeroot \
         net-tools \
+        e2fsprogs \
         qemu-utils \
         ca-certificates \
         netcat-openbsd \
