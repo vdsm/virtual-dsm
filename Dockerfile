@@ -42,6 +42,8 @@ RUN set -eu && extra="" && \
         qemu-system-x86 \
         "$extra" && \
     apt-get clean && \
+    mkdir -p /etc/qemu && \
+    echo "allow br0" > /etc/qemu/bridge.conf && \
     unlink /etc/nginx/sites-enabled/default && \
     sed -i 's/^worker_processes.*/worker_processes 1;/' /etc/nginx/nginx.conf && \
     echo "$VERSION_ARG" > /run/version && \
