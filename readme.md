@@ -223,7 +223,7 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
   After configuring the container for [macvlan](#how-do-i-assign-an-individual-ip-address-to-the-container), it is possible for DSM to become part of your home network by requesting an IP from your router, just like your other devices.
 
-  To enable this mode, add the following lines to your compose file:
+  To enable this mode, in which the container and DSM will have separate IP addresses, add the following lines to your compose file:
 
   ```yaml
   environment:
@@ -233,9 +233,6 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
   device_cgroup_rules:
     - 'c *:* rwm'
   ```
-
-> [!NOTE]
-> In this mode, the container and DSM will each have their own separate IPs.
 
 ### How do I pass-through the GPU?
 
