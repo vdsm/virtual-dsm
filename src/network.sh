@@ -59,6 +59,10 @@ configureDHCP() {
       fi ;;
   esac
 
+  if ! ip link set dev "$VM_NET_TAP" mtu "$MTU"; then
+    warn "Failed to set MTU size.."
+  fi
+
   while ! ip link set "$VM_NET_TAP" up; do
     info "Waiting for MAC address $VM_NET_MAC to become available..."
     sleep 2
@@ -212,6 +216,10 @@ configureNAT() {
   # QEMU Works with taps, set tap to the bridge created
   if ! ip tuntap add dev "$VM_NET_TAP" mode tap; then
     error "$tuntap" && return 1
+  fi
+
+  if ! ip link set dev "$VM_NET_TAP" mtu "$MTU"; then
+    warn "Failed to set MTU size.."
   fi
 
   GATEWAY_MAC=$(echo "$VM_NET_MAC" | rev)
