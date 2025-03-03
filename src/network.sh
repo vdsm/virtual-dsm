@@ -222,8 +222,7 @@ configureNAT() {
     warn "Failed to set MTU size.."
   fi
 
-  GATEWAY_MAC=$(echo "$VM_NET_MAC" | rev)
-  GATEWAY_MAC="02:${GATEWAY_MAC:0:14}"
+  GATEWAY_MAC=$(echo "$VM_NET_MAC" | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:\1:\2:\3:\4:\5/')
 
   if ! ip link set dev "$VM_NET_TAP" address "$GATEWAY_MAC"; then
     warn "Failed to set gateway MAC address.."
