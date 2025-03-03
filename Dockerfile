@@ -37,6 +37,7 @@ RUN set -eu && extra="" && \
         net-tools \
         e2fsprogs \
         qemu-utils \
+        iputils-ping \
         ca-certificates \
         netcat-openbsd \
         qemu-system-x86 \

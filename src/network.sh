@@ -4,6 +4,7 @@ set -Eeuo pipefail
 # Docker environment variables
 
 : "${MAC:=""}"
+: "${MTU:=""}"
 : "${DHCP:="N"}"
 : "${NETWORK:="Y"}"
 : "${USER_PORTS:=""}"
@@ -345,6 +346,10 @@ getInfo() {
     error "$ADD_ERR -e \"VM_NET_DEV=NAME\" to specify another interface name." && exit 27
   fi
 
+  if [ -z "$MTU" ]; then
+    MTU=$(cat "/sys/class/net/$VM_NET_DEV/mtu")
+  fi
+
   if [ -z "$VM_NET_MAC" ]; then
     local file="$STORAGE/dsm.mac"
     [ -s "$file" ] && VM_NET_MAC=$(<"$file")
@@ -387,7 +392,7 @@ getInfo
 html "Initializing network..."
 
 if [[ "$DEBUG" == [Yy1]* ]]; then
-  info "Host: $HOST  IP: $IP  Gateway: $GATEWAY  Interface: $VM_NET_DEV  MAC: $VM_NET_MAC"
+  info "Host: $HOST  IP: $IP  Gateway: $GATEWAY  Interface: $VM_NET_DEV  MAC: $VM_NET_MAC  MTU: $MTU"
   [ -f /etc/resolv.conf ] && grep '^nameserver*' /etc/resolv.conf
   echo
 fi
@@ -452,6 +457,6 @@ else
 
 fi
 
-NET_OPTS+=" -device $ADAPTER,romfile=,netdev=hostnet0,mac=$VM_NET_MAC,id=net0"
+NET_OPTS+=" -device $ADAPTER,romfile=,netdev=hostnet0,mac=$VM_NET_MAC,host_mtu=$MTU,id=net0"
 
 return 0
