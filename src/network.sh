@@ -59,8 +59,10 @@ configureDHCP() {
       fi ;;
   esac
 
-  if ! ip link set dev "$VM_NET_TAP" mtu "$MTU"; then
-    warn "Failed to set MTU size.."
+  if [[ "$MTU" != "0" ]] && [[ "$MTU" != "1500" ]]; then
+    if ! ip link set dev "$VM_NET_TAP" mtu "$MTU"; then
+      warn "Failed to set MTU size.."
+    fi
   fi
 
   while ! ip link set "$VM_NET_TAP" up; do
@@ -218,8 +220,10 @@ configureNAT() {
     error "$tuntap" && return 1
   fi
 
-  if ! ip link set dev "$VM_NET_TAP" mtu "$MTU"; then
-    warn "Failed to set MTU size.."
+  if [[ "$MTU" != "0" ]] && [[ "$MTU" != "1500" ]]; then
+    if ! ip link set dev "$VM_NET_TAP" mtu "$MTU"; then
+      warn "Failed to set MTU size.."
+    fi
   fi
 
   GATEWAY_MAC=$(echo "$VM_NET_MAC" | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:\1:\2:\3:\4:\5/')
@@ -357,6 +361,16 @@ getInfo() {
     MTU=$(cat "/sys/class/net/$VM_NET_DEV/mtu")
   fi
 
+  if [ "$MTU" -gt "1500" ]; then
+    info "MTU size is too large: $MTU, ignoring..." && MTU="0"
+  fi
+
+  if [[ "${ADAPTER,,}" != "virtio-net-pci" ]]; then
+    if [[ "$MTU" != "0" ]] && [[ "$MTU" != "1500" ]]; then
+      warn "MTU size is $MTU, but cannot be set for $ADAPTER adapters!" && MTU="0"
+    fi
+  fi
+
   if [ -z "$VM_NET_MAC" ]; then
     local file="$STORAGE/dsm.mac"
     [ -s "$file" ] && VM_NET_MAC=$(<"$file")
@@ -399,7 +413,10 @@ getInfo
 html "Initializing network..."
 
 if [[ "$DEBUG" == [Yy1]* ]]; then
-  info "Host: $HOST  IP: $IP  Gateway: $GATEWAY  Interface: $VM_NET_DEV  MAC: $VM_NET_MAC  MTU: $MTU"
+  mtu=$(cat "/sys/class/net/$VM_NET_DEV/mtu")
+  line="Host: $HOST  IP: $IP  Gateway: $GATEWAY  Interface: $VM_NET_DEV  MAC: $VM_NET_MAC  MTU: $mtu"
+  [[ "$MTU" != "0" ]] && [[ "$MTU" != "$mtu" ]] && line+=" ($MTU)"
+  info "$line"
   [ -f /etc/resolv.conf ] && grep '^nameserver*' /etc/resolv.conf
   echo
 fi
@@ -464,6 +481,7 @@ else
 
 fi
 
-NET_OPTS+=" -device $ADAPTER,romfile=,netdev=hostnet0,mac=$VM_NET_MAC,host_mtu=$MTU,id=net0"
+NET_OPTS+=" -device $ADAPTER,id=net0,netdev=hostnet0,romfile=,mac=$VM_NET_MAC"
+[[ "$MTU" != "0" ]] && [[ "$MTU" != "1500" ]] && NET_OPTS+=",host_mtu=$MTU"
 
 return 0
