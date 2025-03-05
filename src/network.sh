@@ -199,7 +199,6 @@ configureNAT() {
   fi
 
   # Create a bridge with a static IP for the VM guest
-
   { ip link add dev dockerbridge type bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
@@ -279,6 +278,22 @@ configureNAT() {
   return 0
 }
 
+closeBridge() {
+
+  local pid="/var/run/dnsmasq.pid"
+  [ -s "$pid" ] && pKill "$(<"$pid")"
+
+  [[ "${NETWORK,,}" == "user"* ]] && return 0
+
+  ip link set "$VM_NET_TAP" down promisc off &> null || true
+  ip link delete "$VM_NET_TAP" &> null || true
+
+  ip link set dockerbridge down &> null || true
+  ip link delete dockerbridge &> null || true
+
+  return 0
+}
+
 closeNetwork() {
 
   if [[ "$DHCP" == [Yy1]* ]]; then
@@ -294,25 +309,15 @@ closeNetwork() {
   exec 30<&- || true
   exec 40<&- || true
 
-  if [[ "$DHCP" == [Yy1]* ]]; then
+  if [[ "$DHCP" != [Yy1]* ]]; then
 
-    ip link set "$VM_NET_TAP" down || true
-    ip link delete "$VM_NET_TAP" || true
-
-  else
-
-    local pid="/var/run/dnsmasq.pid"
-    [ -s "$pid" ] && pKill "$(<"$pid")"
-
-    [[ "${NETWORK,,}" == "user"* ]] && return 0
-
-    ip link set "$VM_NET_TAP" down promisc off || true
-    ip link delete "$VM_NET_TAP" || true
-
-    ip link set dockerbridge down || true
-    ip link delete dockerbridge || true
+    closeBridge
+    return 0
 
   fi
+
+  ip link set "$VM_NET_TAP" down || true
+  ip link delete "$VM_NET_TAP" || true
 
   return 0
 }
@@ -459,14 +464,9 @@ else
     # Configure for tap interface
     if ! configureNAT; then
 
+      closeBridge
       NETWORK="user"
       warn "falling back to usermode networking! Performance will be bad and port mapping will not work."
-
-      ip link set "$VM_NET_TAP" down promisc off &> null || true
-      ip link delete "$VM_NET_TAP" &> null || true
-
-      ip link set dockerbridge down &> null || true
-      ip link delete dockerbridge &> null || true
 
     fi
 
