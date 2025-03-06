@@ -250,14 +250,14 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
 ### How do I install a specific version of vDSM?
 
-  By default, version 7.2 will be installed, but if you prefer an older version, you can add its download URL to your compose file as follows:
+  By default, version 7.2 will be installed, but if you prefer an older version, you can add the download URL of the `.pat` file to your compose file as follows:
 
   ```yaml
   environment:
     URL: "https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
   ```
 
-  With this method, it is even possible to switch between different versions while keeping all your file data intact.
+  With this method, it is even possible to switch back and forth between versions while keeping your file data intact.
 
   If you don't have internet access, it's also possible to skip the download by setting URL to:
 
@@ -266,7 +266,7 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
     URL: "DSM_VirtualDSM_42218.pat"
   ```
 
-  after placing a file called `DSM_VirtualDSM_42218.pat` in your `/storage` folder.
+  after placing a copy of [DSM_VirtualDSM_42218.pat](https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat) in the root of your `/storage` folder.
 
 ### What are the differences compared to the standard DSM?
 
