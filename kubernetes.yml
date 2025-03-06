@@ -10,58 +10,72 @@ spec:
     requests:
       storage: 16Gi
 ---
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: dsm
   labels:
     name: dsm
 spec:
-  containers:
-  - name: dsm
-    image: vdsm/virtual-dsm
-    env:
-    - name: RAM_SIZE
-      value: "1G"
-    - name: CPU_CORES
-      value: "1"
-    - name: DISK_SIZE
-      value: "16G"
-    ports:
-    - containerPort: 5000
-    securityContext:
-      capabilities:
-        add:
-        - NET_ADMIN
-      privileged: true
-    volumeMounts:
-    - mountPath: /storage
-      name: storage
-    - mountPath: /dev/kvm
-      name: dev-kvm
-    - mountPath: /dev/net/tun
-      name: dev-tun
-  terminationGracePeriodSeconds: 120
-  volumes:
-  - name: storage
-    persistentVolumeClaim:
-      claimName: dsm-pvc
-  - hostPath:
-      path: /dev/kvm
-    name: dev-kvm
-  - hostPath:
-      path: /dev/net/tun
-      type: CharDevice
-    name: dev-tun
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dsm
+  template:
+    metadata:
+      labels:
+        app: dsm
+    spec:
+      containers:
+      - name: dsm
+        image: vdsm/virtual-dsm
+        env:
+        - name: RAM_SIZE
+          value: "1G"
+        - name: CPU_CORES
+          value: "1"
+        - name: DISK_SIZE
+          value: "16G"
+        ports:
+          - containerPort: 5000
+            name: http
+            protocol: TCP
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+          privileged: true
+        volumeMounts:
+        - mountPath: /storage
+          name: storage
+        - mountPath: /dev/kvm
+          name: dev-kvm
+        - mountPath: /dev/net/tun
+          name: dev-tun
+      terminationGracePeriodSeconds: 120
+      volumes:
+      - name: storage
+        persistentVolumeClaim:
+          claimName: dsm-pvc
+      - hostPath:
+          path: /dev/kvm
+        name: dev-kvm
+      - hostPath:
+          path: /dev/net/tun
+          type: CharDevice
+        name: dev-tun
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: dsm
 spec:
+  internalTrafficPolicy: Cluster
   ports:
-  - name: tcp-5000
-    port: 5000
+    - name: http
+      port: 5000
+      protocol: TCP
+      targetPort: 5000
   selector:
-    name: dsm
-  type: NodePort
+    app: dsm
+  type: ClusterIP
