@@ -1,16 +1,17 @@
 services:
-    dsm:
-        container_name: dsm
-        image: vdsm/virtual-dsm:latest
-        environment:
-            DISK_SIZE: "16G"
-        devices:
-            - /dev/kvm
-            - /dev/net/tun
-        cap_add:
-            - NET_ADMIN
-        ports:
-            - 5000:5000
-        volumes:
-            - /var/dsm:/storage
-        stop_grace_period: 2m
+  dsm:
+    container_name: dsm
+    image: vdsm/virtual-dsm
+    environment:
+      DISK_SIZE: "16G"
+    devices:
+      - /dev/kvm
+      - /dev/net/tun
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - 5000:5000
+    volumes:
+      - ./dsm:/storage
+    restart: always
+    stop_grace_period: 2m
