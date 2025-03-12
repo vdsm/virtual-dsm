@@ -39,7 +39,7 @@ services:
     ports:
       - 5000:5000
     volumes:
-      - /var/dsm:/storage
+      - ./dsm:/storage
     restart: always
     stop_grace_period: 2m
 ```
@@ -47,7 +47,7 @@ services:
 Via Docker CLI:
 
 ```bash
-docker run -it --rm -p 5000:5000 --device=/dev/kvm --device=/dev/net/tun --cap-add NET_ADMIN --stop-timeout 120 vdsm/virtual-dsm
+docker run -it --rm --name dsm -p 5000:5000 --device=/dev/kvm --device=/dev/net/tun --cap-add NET_ADMIN -v ${PWD:-.}/dsm:/storage --stop-timeout 120 vdsm/virtual-dsm
 ```
 
 Via Kubernetes:
@@ -84,10 +84,10 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
   ```yaml
   volumes:
-    - /var/dsm:/storage
+    - ./dsm:/storage
   ```
 
-  Replace the example path `/var/dsm` with the desired storage folder.
+  Replace the example path `./dsm` with the desired storage folder or named volume.
  
 ### How do I change the size of the disk?
 
@@ -112,9 +112,6 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
     DISK_FMT: "qcow2"
   ```
 
-> [!NOTE]
-> This may reduce the write performance of the disk.
-
 ### How do I add multiple disks?
 
   To create additional disks, modify your compose file like this:
@@ -124,8 +121,8 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
     DISK2_SIZE: "32G"
     DISK3_SIZE: "64G"
   volumes:
-    - /home/example:/storage2
-    - /mnt/data/example:/storage3
+    - ./example2:/storage2
+    - ./example3:/storage3
   ```
 
 ### How do I pass-through a disk?
@@ -245,8 +242,8 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
     - /dev/dri
   ```
 
-> [!TIP]
-> This can be used to enable the facial recognition function in Synology Photos for example.
+> [!NOTE]
+> This can be used to enable the facial recognition function in Synology Photos, but does not provide hardware transcoding for video.
 
 ### How do I install a specific version of vDSM?
 
