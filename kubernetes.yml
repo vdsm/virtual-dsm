@@ -30,10 +30,6 @@ spec:
       - name: dsm
         image: vdsm/virtual-dsm
         env:
-        - name: RAM_SIZE
-          value: "1G"
-        - name: CPU_CORES
-          value: "1"
         - name: DISK_SIZE
           value: "16G"
         ports:
