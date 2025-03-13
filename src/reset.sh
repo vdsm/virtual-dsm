@@ -17,7 +17,6 @@ echo "❯ For support visit $SUPPORT"
 
 : "${TZ:=""}"              # System local timezone
 : "${DEBUG:="N"}"          # Disable debugging mode
-: "${COMMIT:="N"}"         # Commit to local image
 : "${COUNTRY:=""}"         # Country code for mirror
 : "${CONSOLE:="N"}"        # Disable console mode
 : "${ALLOCATE:=""}"        # Preallocate diskspace
@@ -75,6 +74,7 @@ CPU="${CPU// with Radeon Graphics/}"
 CPU="${CPU// with Radeon Vega Graphics/}"
 
 [ -z "${CPU// /}" ] && CPU="Unknown"
+[[ -n ${CPU_CORES//[0-9]} ]] && error "Invalid amount of CPU_CORES: $CPU_CORES" && exit 15
 
 # Check system
 
@@ -86,13 +86,13 @@ fi
 
 # Check folder
 
-if [[ "$COMMIT" != [Nn]* ]]; then
+if [[ "${COMMIT:-}" == [Yy1]* ]]; then
   STORAGE="/local"
   mkdir -p "$STORAGE"
-else
-  if [ ! -d "$STORAGE" ]; then
-    error "Storage folder ($STORAGE) not found!" && exit 13
-  fi
+fi
+
+if [ ! -d "$STORAGE" ]; then
+  error "Storage folder ($STORAGE) not found!" && exit 13
 fi
 
 # Check filesystem
@@ -109,7 +109,7 @@ RAM_AVAIL=$(free -b | grep -m 1 Mem: | awk '{print $7}')
 RAM_TOTAL=$(free -b | grep -m 1 Mem: | awk '{print $2}')
 RAM_SIZE=$(echo "${RAM_SIZE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
 [[ -z ${RAM_SIZE//[0-9]} ]] && [ "$RAM_SIZE" -lt "130" ] && RAM_SIZE="${RAM_SIZE}G"
-! numfmt --from=iec "$RAM_SIZE" &>/dev/null && error "Invalid RAM size: $RAM_SIZE" && exit 15
+! numfmt --from=iec "$RAM_SIZE" &>/dev/null && error "Invalid RAM size: $RAM_SIZE" && exit 16
 RAM_WANTED=$(numfmt --from=iec "$RAM_SIZE")
 [ "$RAM_WANTED" -lt "136314880 " ] && error "Invalid RAM size: $RAM_SIZE" && exit 16
 
