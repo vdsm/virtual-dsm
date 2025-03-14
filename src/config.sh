@@ -17,15 +17,15 @@ ARGS=$(echo "$ARGS" | sed 's/\t/ /g' | tr -s ' ')
 if [[ "$RAM_CHECK" != [Nn]* ]]; then
 
   RAM_AVAIL=$(free -b | grep -m 1 Mem: | awk '{print $7}')
-  AVAIL_GB=$(( RAM_AVAIL/1073741824 ))
+  AVAIL_MEM=$(formatBytes "$RAM_AVAIL")
 
   if (( (RAM_WANTED + RAM_SPARE) > RAM_AVAIL )); then
-    msg="Your configured RAM_SIZE of $WANTED_GB GB is too high for the $AVAIL_GB GB of memory available, please set a lower value."
+    msg="Your configured RAM_SIZE of ${RAM_SIZE/G/ GB} is too high for the $AVAIL_MEM of memory available, please set a lower value."
     [[ "${FS,,}" != "zfs" ]] && error "$msg" && exit 17
     info "$msg"
   else
     if (( (RAM_WANTED + (RAM_SPARE * 3)) > RAM_AVAIL )); then
-      msg="your configured RAM_SIZE of $WANTED_GB GB is very close to the $AVAIL_GB GB of memory available, please consider a lower value."
+      msg="your configured RAM_SIZE of ${RAM_SIZE/G/ GB} is very close to the $AVAIL_MEM of memory available, please consider a lower value."
       if [[ "${FS,,}" != "zfs" ]]; then
         warn "$msg"
       else

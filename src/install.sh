@@ -85,9 +85,9 @@ else
   TMP="/tmp/dsm"
   TMP_SPACE=2147483648
   SPACE=$(df --output=avail -B 1 /tmp | tail -n 1)
-  SPACE_MB=$(( (SPACE + 1048575)/1048576 ))
+  SPACE_MB=$(formatBytes "$SPACE")
   if (( TMP_SPACE > SPACE )); then
-    error "Not enough free space inside the container, have $SPACE_MB MB available but need at least 2 GB." && exit 93
+    error "Not enough free space inside the container, have $SPACE_MB available but need at least 2 GB." && exit 93
   fi
 fi
 
@@ -96,13 +96,13 @@ rm -rf "$TMP" && mkdir -p "$TMP"
 # Check free diskspace
 ROOT_SPACE=536870912
 SPACE=$(df --output=avail -B 1 / | tail -n 1)
-SPACE_MB=$(( (SPACE + 1048575)/1048576 ))
-(( ROOT_SPACE > SPACE )) && error "Not enough free space inside the container, have $SPACE_MB MB available but need at least 500 MB." && exit 96
+SPACE_MB=$(formatBytes "$SPACE" "down")
+(( ROOT_SPACE > SPACE )) && error "Not enough free space inside the container, have $SPACE_MB available but need at least 500 MB." && exit 96
 
 MIN_SPACE=15032385536
 SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
-SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
-(( MIN_SPACE > SPACE )) && error "Not enough free space for installation in $STORAGE, have $SPACE_GB GB available but need at least 14 GB." && exit 94
+SPACE_GB=$(formatBytes "$SPACE")
+(( MIN_SPACE > SPACE )) && error "Not enough free space for installation in $STORAGE, have $SPACE_GB available but need at least 14 GB." && exit 94
 
 # Check if output is to interactive TTY
 if [ -t 1 ]; then
@@ -310,10 +310,10 @@ rm -f "$SYSTEM"
 # Check free diskspace
 SYSTEM_SIZE=10738466816
 SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
-SPACE_MB=$(( (SPACE + 1048575)/1048576 ))
+SPACE_MB=$(formatBytes "$SPACE")
 
 if (( SYSTEM_SIZE > SPACE )); then
-  error "Not enough free space in $STORAGE to create a 10 GB system disk, have only $SPACE_MB MB available." && exit 97
+  error "Not enough free space in $STORAGE to create a 10 GB system disk, have only $SPACE_MB available." && exit 97
 fi
 
 if ! touch "$SYSTEM"; then

@@ -96,7 +96,7 @@ createDisk() {
   local DISK_DESC=$3
   local DISK_FMT=$4
   local FS=$5
-  local DATA_SIZE DIR SPACE FA
+  local DATA_SIZE DIR SPACE GB FA
 
   DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
 
@@ -109,16 +109,16 @@ createDisk() {
     SPACE=$(df --output=avail -B 1 "$DIR" | tail -n 1)
 
     if (( DATA_SIZE > SPACE )); then
-      local SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
-      error "Not enough free space to create a $DISK_DESC of $DISK_SPACE in $DIR, it has only $SPACE_GB GB available..."
+      GB=$(formatBytes "$SPACE")
+      error "Not enough free space to create a $DISK_DESC of ${DISK_SPACE/G/ GB} in $DIR, it has only $GB available..."
       error "Please specify a smaller ${DISK_DESC^^}_SIZE or disable preallocation by setting ALLOCATE=N." && exit 76
     fi
   fi
 
   html "Creating a $DISK_DESC image..."
-  info "Creating a $DISK_SPACE $DISK_STYLE $DISK_DESC image in $DISK_FMT format..."
+  info "Creating a ${DISK_SPACE/G/ GB} $DISK_STYLE $DISK_DESC image in $DISK_FMT format..."
 
-  local FAIL="Could not create a $DISK_STYLE $DISK_FMT $DISK_DESC image of $DISK_SPACE ($DISK_FILE)"
+  local FAIL="Could not create a $DISK_STYLE $DISK_FMT $DISK_DESC image of ${DISK_SPACE/G/ GB} ($DISK_FILE)"
 
   case "${DISK_FMT,,}" in
     raw)
@@ -180,7 +180,7 @@ resizeDisk() {
   local DISK_DESC=$3
   local DISK_FMT=$4
   local FS=$5
-  local CUR_SIZE DATA_SIZE DIR SPACE
+  local CUR_SIZE DATA_SIZE DIR SPACE GB
 
   CUR_SIZE=$(getSize "$DISK_FILE")
   DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
@@ -194,17 +194,17 @@ resizeDisk() {
     SPACE=$(df --output=avail -B 1 "$DIR" | tail -n 1)
 
     if (( REQ > SPACE )); then
-      local SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
-      error "Not enough free space to resize $DISK_DESC to $DISK_SPACE in $DIR, it has only $SPACE_GB GB available.."
+      GB=$(formatBytes "$SPACE")
+      error "Not enough free space to resize $DISK_DESC to ${DISK_SPACE/G/ GB} in $DIR, it has only $GB available.."
       error "Please specify a smaller ${DISK_DESC^^}_SIZE or disable preallocation by setting ALLOCATE=N." && exit 74
     fi
   fi
 
-  local GB=$(( (CUR_SIZE + 1073741823)/1073741824 ))
-  MSG="Resizing $DISK_DESC from ${GB}G to $DISK_SPACE..."
+  GB=$(formatBytes "$CUR_SIZE")
+  MSG="Resizing $DISK_DESC from $GB to ${DISK_SPACE/G/ GB}..."
   info "$MSG" && html "$MSG"
 
-  local FAIL="Could not resize the $DISK_STYLE $DISK_FMT $DISK_DESC image from ${GB}G to $DISK_SPACE ($DISK_FILE)"
+  local FAIL="Could not resize the $DISK_STYLE $DISK_FMT $DISK_DESC image from ${GB} to ${DISK_SPACE/G/ GB} ($DISK_FILE)"
 
   case "${DISK_FMT,,}" in
     raw)
@@ -257,7 +257,7 @@ convertDisk() {
 
   if [[ "$ALLOCATE" != [Nn]* ]]; then
 
-    local DIR CUR_SIZE SPACE
+    local DIR CUR_SIZE SPACE GB
 
     # Check free diskspace
     DIR=$(dirname "$TMP_FILE")
@@ -265,8 +265,8 @@ convertDisk() {
     SPACE=$(df --output=avail -B 1 "$DIR" | tail -n 1)
 
     if (( CUR_SIZE > SPACE )); then
-      local SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
-      error "Not enough free space to convert $DISK_DESC to $DST_FMT in $DIR, it has only $SPACE_GB GB available..."
+      GB=$(formatBytes "$SPACE")
+      error "Not enough free space to convert $DISK_DESC to $DST_FMT in $DIR, it has only $GB available..."
       error "Please free up some disk space or disable preallocation by setting ALLOCATE=N." && exit 76
     fi
   fi
@@ -382,7 +382,7 @@ createDevice () {
       result+=",if=none \
       -device nvme,drive=${DISK_ID}${index},serial=deadbeaf${DISK_INDEX}"
       echo "$result"
-      ;;      
+      ;;
     "ide" | "sata" )
       result+=",if=none \
       -device ich9-ahci,id=ahci${DISK_INDEX},addr=$DISK_ADDRESS \
@@ -416,7 +416,7 @@ addDisk () {
   local DISK_FMT=$7
   local DISK_IO=$8
   local DISK_CACHE=$9
-  local DISK_EXT DIR DATA_SIZE FS PREV_FMT PREV_EXT CUR_SIZE
+  local DISK_EXT DIR SPACE DATA_SIZE FS PREV_FMT PREV_EXT CUR_SIZE
 
   DISK_EXT=$(fmt2ext "$DISK_FMT")
   local DISK_FILE="$DISK_BASE.$DISK_EXT"
@@ -424,15 +424,16 @@ addDisk () {
   DIR=$(dirname "$DISK_FILE")
   [ ! -d "$DIR" ] && return 0
 
-  [ -z "$DISK_SPACE" ] && DISK_SPACE="16G"
-  DISK_SPACE=$(echo "${DISK_SPACE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
-  [[ -z "${DISK_SPACE//[0-9]}" ]] && DISK_SPACE="${DISK_SPACE}G"
+  SPACE="${DISK_SPACE// /}"
+  [ -z "$SPACE" ] && SPACE="16G"
+  [ -z "${SPACE//[0-9. ]}" ] && SPACE="${SPACE}G"
+  SPACE=$(echo "${SPACE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
 
-  if ! numfmt --from=iec "$DISK_SPACE" &>/dev/null; then
+  if ! numfmt --from=iec "$SPACE" &>/dev/null; then
     error "Invalid value for ${DISK_DESC^^}_SIZE: $DISK_SPACE" && exit 73
   fi
 
-  DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
+  DATA_SIZE=$(numfmt --from=iec "$SPACE")
 
   if (( DATA_SIZE < 6442450944 )); then
     error "Please increase ${DISK_DESC^^}_SIZE to at least 6 GB." && exit 73
@@ -466,12 +467,12 @@ addDisk () {
     CUR_SIZE=$(getSize "$DISK_FILE")
 
     if (( DATA_SIZE > CUR_SIZE )); then
-      resizeDisk "$DISK_FILE" "$DISK_SPACE" "$DISK_DESC" "$DISK_FMT" "$FS" || exit $?
+      resizeDisk "$DISK_FILE" "$SPACE" "$DISK_DESC" "$DISK_FMT" "$FS" || exit $?
     fi
 
   else
 
-    createDisk "$DISK_FILE" "$DISK_SPACE" "$DISK_DESC" "$DISK_FMT" "$FS" || exit $?
+    createDisk "$DISK_FILE" "$SPACE" "$DISK_DESC" "$DISK_FMT" "$FS" || exit $?
 
   fi
 
