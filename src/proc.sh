@@ -47,7 +47,6 @@ fi
 if [[ "$KVM" != [Nn]* ]]; then
 
   CPU_FEATURES="kvm=on,l3-cache=on,+hypervisor"
-  CLOCK="/sys/devices/system/clocksource/clocksource0/current_clocksource"
   KVM_OPTS=",accel=kvm -enable-kvm -global kvm-pit.lost_tick_policy=discard"
 
   if ! grep -qw "sse4_2" <<< "$flags"; then
@@ -61,10 +60,11 @@ if [[ "$KVM" != [Nn]* ]]; then
     CPU_FEATURES+=",migratable=no"
   fi
 
+  CLOCK="/sys/devices/system/clocksource/clocksource0/current_clocksource"
   if [ -f "$CLOCK" ]; then
-    CLOCK=$(<"$CLOCK")
-    if [[ "${CLOCK,,}" != "tsc" ]]; then
-      warn "unexpected clocksource: $CLOCK"
+    result=$(<"$CLOCK")
+    if [[ "${result,,}" != "tsc" ]]; then
+      warn "unexpected clocksource: $result"
     fi
   else
     warn "file \"$CLOCK\" cannot not found?"
@@ -127,7 +127,7 @@ else
 fi
 
 if [ -z "$HOST_CPU" ]; then
-  HOST_CPU=$(lscpu | grep -m 1 'Model name' | cut -f 2 -d ":" | awk '{$1=$1}1' | sed 's# @.*##g' | sed s/"(R)"//g | sed 's/[^[:alnum:] ]\+/ /g' | sed 's/  */ /g')
+  [[ "${CPU,,}" != "unknown" ]] && HOST_CPU="$CPU"
 fi
 
 if [ -n "$HOST_CPU" ]; then
