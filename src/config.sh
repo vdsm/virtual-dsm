@@ -20,12 +20,18 @@ if [[ "$RAM_CHECK" != [Nn]* ]]; then
   AVAIL_GB=$(( RAM_AVAIL/1073741824 ))
 
   if (( (RAM_WANTED + RAM_SPARE) > RAM_AVAIL )); then
-    error "Your configured RAM_SIZE of $WANTED_GB GB is too high for the $AVAIL_GB GB of memory available, please set a lower value."
-    exit 17
-  fi
-
-  if (( (RAM_WANTED + (RAM_SPARE * 3)) > RAM_AVAIL )); then
-    warn "your configured RAM_SIZE of $WANTED_GB GB is very close to the $AVAIL_GB GB of memory available, please consider a lower value."
+    msg="Your configured RAM_SIZE of $WANTED_GB GB is too high for the $AVAIL_GB GB of memory available, please set a lower value."
+    [[ "${FS,,}" != "zfs" ]] && error "$msg" && exit 17
+    info "$msg"
+  else
+    if (( (RAM_WANTED + (RAM_SPARE * 3)) > RAM_AVAIL )); then
+      msg="your configured RAM_SIZE of $WANTED_GB GB is very close to the $AVAIL_GB GB of memory available, please consider a lower value."
+      if [[ "${FS,,}" != "zfs" ]]; then
+        warn "$msg"
+      else
+        info "$msg"
+      fi
+    fi
   fi
 
 fi
