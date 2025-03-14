@@ -132,15 +132,12 @@ SPACE_GB=$(( (SPACE + 1073741823)/1073741824 ))
 echo "❯ CPU: ${CPU} | RAM: $AVAIL_GB/$TOTAL_GB GB | DISK: $SPACE_GB GB (${FS}) | KERNEL: ${SYS}..."
 echo
 
-# Check memory
+# Check available memory
 
-[[ "${FS,,}" == "zfs" ]] && RAM_CHECK="N"
-
-if [[ "$RAM_CHECK" != [Nn]* ]]; then
-  if (( (RAM_WANTED + RAM_SPARE) > RAM_AVAIL )); then
-    error "Your configured RAM_SIZE of $WANTED_GB GB is too high for the $AVAIL_GB GB of memory available, please set a lower value."
-    exit 17
-  fi
+if [[ "$RAM_CHECK" != [Nn]* ]] && (( (RAM_WANTED + RAM_SPARE) > RAM_AVAIL )); then
+  msg="Your configured RAM_SIZE of $WANTED_GB GB is too high for the $AVAIL_GB GB of memory available, please set a lower value."
+  [[ "${FS,,}" != "zfs" ]] && error "$msg" && exit 17
+  info "$msg"
 fi
 
 # Cleanup files
