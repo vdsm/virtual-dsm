@@ -154,7 +154,7 @@ SPACE_GB=$(formatBytes "$SPACE" "down")
 AVAIL_MEM=$(formatBytes "$RAM_AVAIL" "down")
 TOTAL_MEM=$(formatBytes "$RAM_TOTAL" "up")
 
-echo "❯ CPU: ${CPU} | RAM: ${AVAIL_MEM%% *}/$TOTAL_MEM | DISK: $SPACE_GB (${FS}) | KERNEL: ${SYS}..."
+echo "❯ CPU: ${CPU} | RAM: ${AVAIL_MEM/ GB/}/$TOTAL_MEM | DISK: $SPACE_GB (${FS}) | KERNEL: ${SYS}..."
 echo
 
 # Check available memory
