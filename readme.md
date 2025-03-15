@@ -268,7 +268,15 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 ### What are the differences compared to the standard DSM?
 
   There are only two minor differences: the Virtual Machine Manager package is not available, and Surveillance Station will not include any free licenses.
-  
+
+### How do I run Windows in a container?
+
+  You can use [dockur/windows](https://github.com/dockur/windows) for that. It shares many of the same features, and even has completely automatic installation.
+
+### How do I run a Linux desktop in a container?
+
+  You can use [qemus/qemu](https://github.com/qemus/qemu) in that case.
+
 ### Is this project legal?
 
   Yes, this project contains only open-source code and does not distribute any copyrighted material. Neither does it try to circumvent any copyright protection measures. So under all applicable laws, this project will be considered legal. 
