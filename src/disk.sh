@@ -369,7 +369,7 @@ createDevice () {
   local result=" -drive file=$DISK_FILE,id=$DISK_ID,format=$DISK_FMT,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on"
 
   case "${DISK_TYPE,,}" in
-    "none" ) ;;  
+    "none" ) ;;
     "auto" )
       echo "$result"
       ;;
