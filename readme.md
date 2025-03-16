@@ -129,7 +129,9 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
 ### How do I pass-through a disk?
 
-   It is possible to pass-through a disk device directly, by adding it to your compose file in this way:
+   It is possible to pass-through a disk device directly, which can be useful when your host is a virtual machine, as it removes an extra layer and allows for easier management. For use with physical disks this method provides little advantage and is not recommended.
+   
+   You can add the virtual device to your compose file like this:
 
   ```yaml
   devices:
