@@ -74,7 +74,9 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
   
   - Start the container and connect to [port 5000](http://localhost:5000) using your web browser.
 
-  - Wait until DSM is ready, choose an username and password, and you will be taken to the desktop.
+  - Wait until DSM finishes its installation
+ 
+  - Choose an username and password, and you will be taken to the desktop.
   
   Enjoy your brand new NAS, and don't forget to star this repo!
 
@@ -103,7 +105,7 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
 ### How do I create a growable disk?
 
-  By default, the entire capacity of the disk is reserved in advance.
+  By default, the entire capacity of the disk will be reserved in advance.
 
   To create a growable disk that only allocates space that is actually used, add the following environment variable:
 
@@ -134,10 +136,12 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
     - /dev/disk/by-uuid/12345-12345-12345-12345-12345:/disk2
   ```
 
-  The device needs to be totally empty (without any partition table) otherwise DSM does not always format it into a volume. Make sure to bind the disk via its UUID (obtainable via `lsblk -o name,uuid`) instead of its name (`/dev/sdc`), to prevent ever binding the wrong disk when the drive letters happen to change. 
+  The device needs to be totally empty (without any partition table) otherwise DSM does not always format it into a volume.
+  
+  Make sure to bind the disk via its UUID (obtainable via `lsblk -o name,uuid`) instead of its name (`/dev/sdc`), to prevent ever binding the wrong disk when the drive letters happen to change. 
  
 > [!CAUTION]
-> Do NOT use this feature with the goal of sharing files from the host, they will all be lost without warning when DSM creates the volume.
+> Do NOT use this feature with the goal of sharing files from the host, they might all get lost without warning when DSM creates the volume.
 
 ### How do I change the amount of CPU or RAM?
 
@@ -253,7 +257,7 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
   With this method, it is even possible to switch back and forth between versions while keeping your file data intact.
 
-  If you don't have internet access, it's also possible to skip the download by setting URL to:
+  If you don't have internet access, it's also possible to skip the download by setting `URL` to:
 
   ```yaml
   environment:
