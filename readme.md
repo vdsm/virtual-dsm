@@ -134,11 +134,8 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
     - /dev/disk/by-uuid/12345-12345-12345-12345-12345:/disk2
   ```
 
-  Make sure to bind the disk via its UUID (obtainable via `lsblk -o name,uuid`) instead of its name (`/dev/sdc`), to prevent ever binding the wrong disk when the drive letters happen to change. 
-
-> [!IMPORTANT]
-> The device needs to be totally empty (without any partition table) otherwise DSM does not always format it into a volume.
-
+  The device needs to be totally empty (without any partition table) otherwise DSM does not always format it into a volume. Make sure to bind the disk via its UUID (obtainable via `lsblk -o name,uuid`) instead of its name (`/dev/sdc`), to prevent ever binding the wrong disk when the drive letters happen to change. 
+ 
 > [!CAUTION]
 > Do NOT use this feature with the goal of sharing files from the host, they will all be lost without warning when DSM creates the volume.
 
