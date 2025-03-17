@@ -72,7 +72,7 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
   Very simple! These are the steps:
   
-  - Start the container and connect to [port 5000](http://localhost:5000) using your web browser.
+  - Start the container and connect to [port 5000](http://127.0.0.1:5000/) using your web browser.
 
   - Wait until DSM finishes its installation
  
