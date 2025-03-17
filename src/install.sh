@@ -328,10 +328,12 @@ if [[ "${FS,,}" == "btrfs" ]]; then
   fi
 fi
 
-if ! fallocate -l "$SYSTEM_SIZE" "$SYSTEM"; then
-  if ! truncate -s "$SYSTEM_SIZE" "$SYSTEM"; then
-    rm -f "$SYSTEM"
-    error "Could not allocate file $SYSTEM for the system disk." && exit 98
+if ! fallocate -l "$SYSTEM_SIZE" "$SYSTEM" &>/dev/null; then
+  if ! fallocate -l -x "$SYSTEM_SIZE" "$SYSTEM"; then
+    if ! truncate -s "$SYSTEM_SIZE" "$SYSTEM"; then
+      rm -f "$SYSTEM"
+      error "Could not allocate file $SYSTEM for the system disk." && exit 98
+    fi
   fi
 fi
 
