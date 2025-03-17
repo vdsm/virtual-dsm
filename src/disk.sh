@@ -141,10 +141,12 @@ createDisk() {
       else
 
         # Create an empty file
-        if ! fallocate -l "$DATA_SIZE" "$DISK_FILE"; then
-          if ! truncate -s "$DATA_SIZE" "$DISK_FILE"; then
-            rm -f "$DISK_FILE"
-            error "$FAIL" && exit 77
+        if ! fallocate -l "$DATA_SIZE" "$DISK_FILE" &>/dev/null; then
+          if ! fallocate -l -x "$DATA_SIZE" "$DISK_FILE"; then
+            if ! truncate -s "$DATA_SIZE" "$DISK_FILE"; then
+              rm -f "$DISK_FILE"
+              error "$FAIL" && exit 77
+            fi
           fi
         fi
 
@@ -219,9 +221,11 @@ resizeDisk() {
       else
 
         # Resize file by allocating more space
-        if ! fallocate -l "$DATA_SIZE" "$DISK_FILE"; then
-          if ! truncate -s "$DATA_SIZE" "$DISK_FILE"; then
-            error "$FAIL" && exit 75
+        if ! fallocate -l "$DATA_SIZE" "$DISK_FILE" &>/dev/null; then
+          if ! fallocate -l -x "$DATA_SIZE" "$DISK_FILE"; then
+            if ! truncate -s "$DATA_SIZE" "$DISK_FILE"; then
+              error "$FAIL" && exit 75
+            fi
           fi
         fi
 
@@ -296,8 +300,10 @@ convertDisk() {
     if [[ "$ALLOCATE" != [Nn]* ]]; then
       # Work around qemu-img bug
       CUR_SIZE=$(stat -c%s "$TMP_FILE")
-      if ! fallocate -l "$CUR_SIZE" "$TMP_FILE"; then
+      if ! fallocate -l "$CUR_SIZE" "$TMP_FILE" &>/dev/null; then
+        if ! fallocate -l -x "$CUR_SIZE" "$TMP_FILE"; then
           error "Failed to allocate $CUR_SIZE bytes for $DISK_DESC image $TMP_FILE"
+        fi
       fi
     fi
   fi

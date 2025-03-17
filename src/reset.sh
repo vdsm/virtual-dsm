@@ -63,6 +63,7 @@ if [ -z "${CPU// /}" ] && grep -qi "model:" <<< "$CPI"; then
 fi
 
 CPU="${CPU// CPU/}"
+CPU="${CPU// 6 Core/}"
 CPU="${CPU// 8 Core/}"
 CPU="${CPU// 16 Core/}"
 CPU="${CPU// 32 Core/}"
