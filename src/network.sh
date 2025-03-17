@@ -119,6 +119,12 @@ configureDNS() {
 
   DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
 
+  if [[ "${DEBUG_DNS:-}" == [Yy1]* ]]; then
+   DNSMASQ_OPTS+=" -d"
+   $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS} &
+   return 0
+  fi
+
   if ! $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS}; then
     error "Failed to start dnsmasq, reason: $?" && return 1
   fi
@@ -206,7 +212,7 @@ configureNAT() {
   fi
 
   if ! ip address add "${VM_NET_IP%.*}.1/24" broadcast "${VM_NET_IP%.*}.255" dev dockerbridge; then
-    error "Failed to add IP address!" && return 1
+    error "Failed to add IP address pool!" && return 1
   fi
 
   while ! ip link set dockerbridge up; do
