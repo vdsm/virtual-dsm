@@ -255,7 +255,7 @@ configureNAT() {
     error "Failed to configure IP tables!" && return 1
   fi
 
-  if ! iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p udp  -j DNAT --to "$VM_NET_IP"; then
+  if ! iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p udp -j DNAT --to "$VM_NET_IP"; then
     error "Failed to configure IP tables!" && return 1
   fi
 
@@ -398,8 +398,16 @@ getInfo() {
     error "Invalid MAC address: '$VM_NET_MAC', should be 12 or 17 digits long!" && exit 28
   fi
 
-  GATEWAY=$(ip route list dev "$VM_NET_DEV" | awk ' /^default/ {print $3}')
-  IP=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
+  GATEWAY=$(ip route list dev "$VM_NET_DEV" | awk ' /^default/ {print $3}' | head -n 1)
+  IP=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/ | head -n 1)
+
+  IP6=""
+  # shellcheck disable=SC2143
+  if [ -f /proc/net/if_inet6 ] && [ -n "$(ifconfig -a | grep inet6)" ]; then
+    IP6=$(ip -6 addr show dev "$VM_NET_DEV" scope global up)
+    [ -n "$IP6" ] && IP6=$(echo "$IP6" | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d' | head -n 1)
+  fi
+
   echo "$IP" > /run/shm/qemu.ip
 
   return 0
@@ -431,8 +439,8 @@ if [[ "$IP" == "172.17."* ]]; then
 fi
 
 if [[ -d "/sys/class/net/$VM_NET_TAP" ]]; then
-    info "Lingering interface will be removed..."
-    ip link delete "$VM_NET_TAP" || true
+  info "Lingering interface will be removed..."
+  ip link delete "$VM_NET_TAP" || true
 fi
 
 if [[ "$DHCP" == [Yy1]* ]]; then
@@ -466,7 +474,7 @@ else
 
       closeBridge
       NETWORK="user"
-      warn "falling back to usermode networking! Performance will be bad and port mapping will not work."
+      warn "falling back to user-mode networking! Performance will be bad and port mapping will not work."
 
     fi
 
@@ -474,7 +482,7 @@ else
 
   if [[ "${NETWORK,,}" == "user"* ]]; then
 
-    # Configure for usermode networking (slirp)
+    # Configure for user-mode networking (slirp)
     configureUser || exit 24
 
   fi
