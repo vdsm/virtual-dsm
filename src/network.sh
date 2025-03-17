@@ -49,7 +49,7 @@ configureDHCP() {
       error "Cannot create macvtap interface. Please make sure that the network type of the container is 'macvlan' and not 'ipvlan'."
       return 1 ;;
     "RTNETLINK answers: Operation not permitted"* )
-      error "No permission to create macvtap interface. Please make sure that your host kernel supports it and that the NET_ADMIN capability is set." 
+      error "No permission to create macvtap interface. Please make sure that your host kernel supports it and that the NET_ADMIN capability is set."
       return 1 ;;
     *)
       [ -n "$msg" ] && echo "$msg" >&2
