@@ -170,7 +170,7 @@ getHostPorts() {
 
 configureUser() {
 
-  NET_OPTS="-netdev user,id=hostnet0,host=${VM_NET_IP%.*}.1,net=${VM_NET_IP%.*}.0/24,dhcpstart=$VM_NET_IP,hostname=$VM_NET_HOST"
+  NET_OPTS="-netdev user,id=hostnet0,host=${VM_NET_IP%.*}.2,net=${VM_NET_IP%.*}.0/24,dhcpstart=$VM_NET_IP,hostname=$VM_NET_HOST"
 
   local forward
   forward=$(getUserPorts "$USER_PORTS")
@@ -365,9 +365,15 @@ getInfo() {
 
   if [ ! -d "/sys/class/net/$VM_NET_DEV" ]; then
     error "Network interface '$VM_NET_DEV' does not exist inside the container!"
-    error "$ADD_ERR -e \"VM_NET_DEV=NAME\" to specify another interface name." && exit 27
+    error "$ADD_ERR -e \"VM_NET_DEV=NAME\" to specify another interface name." && exit 26
   fi
 
+  BASE_IP="${VM_NET_IP%.*}."
+
+  if [ "${VM_NET_IP/$BASE_IP/}" -lt "3" ]; then
+    error "Invalid VM_NET_IP, must end in a higher number than .3" && exit 27
+  fi
+  
   if [ -z "$MTU" ]; then
     MTU=$(cat "/sys/class/net/$VM_NET_DEV/mtu")
   fi
