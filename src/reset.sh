@@ -329,12 +329,10 @@ addPackage() {
 # shellcheck disable=SC2143
 if [ -f /proc/net/if_inet6 ] && [ -n "$(ifconfig -a | grep inet6)" ]; then
 
-  sed -i "s/listen 80;/listen [::]:80 ipv6only=off;/g" /etc/nginx/sites-enabled/web.conf
   sed -i "s/listen 5000 default_server;/listen [::]:5000 default_server ipv6only=off;/g" /etc/nginx/sites-enabled/web.conf
 
 else
 
-  sed -i "s/listen [::]:80 ipv6only=off;/listen 80;/g" /etc/nginx/sites-enabled/web.conf
   sed -i "s/listen [::]:5000 default_server ipv6only=off;/listen 5000 default_server;/g" /etc/nginx/sites-enabled/web.conf
 
 fi
