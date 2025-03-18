@@ -6,6 +6,7 @@ set -Eeuo pipefail
 
 cd /run
 
+. utils.sh      # Load functions
 . reset.sh      # Initialize system
 . install.sh    # Run installation
 . disk.sh       # Initialize disks
