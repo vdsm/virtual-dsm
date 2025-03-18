@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-info () { printf "%b%s%b" "\E[1;34m❯ \E[1;36m" "${1:-}" "\E[0m\n"; }
-error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: ${1:-}" "\E[0m\n" >&2; }
-warn () { printf "%b%s%b" "\E[1;31m❯ " "Warning: ${1:-}" "\E[0m\n" >&2; }
-
 trap 'error "Status $? while: $BASH_COMMAND (line $LINENO/$BASH_LINENO)"' ERR
 
 [ ! -f "/run/entry.sh" ] && error "Script must run inside Docker container!" && exit 11
@@ -38,7 +34,7 @@ TEMPLATE="/var/www/index.html"
 FOOTER1="$APP for Docker v$(</run/version)"
 FOOTER2="<a href='$SUPPORT'>$SUPPORT</a>"
 
-CPI=$(lscpu)
+CPU=$(cpu)
 SYS=$(uname -r)
 HOST=$(hostname -s)
 KERNEL=$(echo "$SYS" | cut -b 1)
@@ -46,41 +42,12 @@ MINOR=$(echo "$SYS" | cut -d '.' -f2)
 ARCH=$(dpkg --print-architecture)
 CORES=$(grep -c '^processor' /proc/cpuinfo)
 
-if ! grep -qi "socket(s)" <<< "$CPI"; then
+if ! grep -qi "socket(s)" <<< "$(lscpu)"; then
   SOCKETS=1
 else
-  SOCKETS=$(echo "$CPI" | grep -m 1 -i 'socket(s)' | awk '{print $(2)}')
+  SOCKETS=$(lscpu | grep -m 1 -i 'socket(s)' | awk '{print $(2)}')
 fi
 
-if ! grep -qi "model name" <<< "$CPI"; then
-  CPU=""
-else
-  CPU=$(echo "$CPI" | grep -m 1 -i 'model name' | cut -f 2 -d ":" | awk '{$1=$1}1' | sed 's# @.*##g' | sed s/"(R)"//g | sed 's/[^[:alnum:] ]\+/ /g' | sed 's/  */ /g')
-fi
-
-if [ -z "${CPU// /}" ] && grep -qi "model:" <<< "$CPI"; then
-  CPU=$(echo "$CPI" | grep -m 1 -i 'model:' | cut -f 2 -d ":" | awk '{$1=$1}1' | sed 's# @.*##g' | sed s/"(R)"//g | sed 's/[^[:alnum:] ]\+/ /g' | sed 's/  */ /g')
-fi
-
-CPU="${CPU// CPU/}"
-CPU="${CPU// 6 Core/}"
-CPU="${CPU// 8 Core/}"
-CPU="${CPU// 16 Core/}"
-CPU="${CPU// 32 Core/}"
-CPU="${CPU// 64 Core/}"
-CPU="${CPU//10th Gen /}"
-CPU="${CPU//11th Gen /}"
-CPU="${CPU//12th Gen /}"
-CPU="${CPU//13th Gen /}"
-CPU="${CPU//14th Gen /}"
-CPU="${CPU//15th Gen /}"
-CPU="${CPU// Processor/}"
-CPU="${CPU// Quad core/}"
-CPU="${CPU// Core TM/ Core}"
-CPU="${CPU// with Radeon Graphics/}"
-CPU="${CPU// with Radeon Vega Graphics/}"
-
-[ -z "${CPU// /}" ] && CPU="Unknown"
 [ -n "${CPU_CORES//[0-9 ]}" ] && error "Invalid amount of CPU_CORES: $CPU_CORES" && exit 15
 
 # Check system
@@ -109,25 +76,6 @@ if [[ "${FS,,}" == "ecryptfs" ]] || [[ "${FS,,}" == "tmpfs" ]]; then
   DISK_IO="threads"
   DISK_CACHE="writeback"
 fi
-
-formatBytes() {
-  local result
-  result=$(numfmt --to=iec --suffix=B "$1" | sed -r 's/([A-Z])/ \1/' | sed 's/ B/ bytes/g;')
-  local unit="${result//[0-9. ]}"
-  result="${result//[a-zA-Z ]/}"
-  if [[ "${2:-}" == "up" ]]; then
-    if [[ "$result" == *"."* ]]; then
-      result="${result%%.*}"
-      result=$((result+1))
-    fi
-  else
-    if [[ "${2:-}" == "down" ]]; then
-      result="${result%%.*}"
-    fi
-  fi
-  echo "$result $unit"
-  return 0
-}
 
 # Read memory
 RAM_SPARE=500000000
@@ -175,91 +123,6 @@ rm -f /run/shm/dsm.url
 # Cleanup dirs
 rm -rf /tmp/dsm
 rm -rf "$STORAGE/tmp"
-
-# Helper functions
-
-isAlive() {
-  local pid="$1"
-
-  if kill -0 "$pid" 2>/dev/null; then
-    return 0
-  fi
-
-  return 1
-}
-
-pKill() {
-  local pid="$1"
-
-  { kill -15 "$pid" || true; } 2>/dev/null
-
-  while isAlive "$pid"; do
-    sleep 0.2
-  done
-
-  return 0
-}
-
-fWait() {
-  local name="$1"
-
-  while pgrep -f -l "$name" >/dev/null; do
-    sleep 0.2
-  done
-
-  return 0
-}
-
-fKill() {
-  local name="$1"
-
-  { pkill -f "$name" || true; } 2>/dev/null
-  fWait "$name"
-
-  return 0
-}
-
-escape () {
-    local s
-    s=${1//&/\&amp;}
-    s=${s//</\&lt;}
-    s=${s//>/\&gt;}
-    s=${s//'"'/\&quot;}
-    printf -- %s "$s"
-    return 0
-}
-
-html()
-{
-    local title
-    local body
-    local script
-    local footer
-
-    title=$(escape "$APP")
-    title="<title>$title</title>"
-    footer=$(escape "$FOOTER1")
-
-    body=$(escape "$1")
-    if [[ "$body" == *"..." ]]; then
-      body="<p class=\"loading\">${body/.../}</p>"
-    fi
-
-    [ -n "${2:-}" ] && script="$2" || script=""
-
-    local HTML
-    HTML=$(<"$TEMPLATE")
-    HTML="${HTML/\[1\]/$title}"
-    HTML="${HTML/\[2\]/$script}"
-    HTML="${HTML/\[3\]/$body}"
-    HTML="${HTML/\[4\]/$footer}"
-    HTML="${HTML/\[5\]/$FOOTER2}"
-
-    echo "$HTML" > "$PAGE"
-    echo "$body" > "$INFO"
-
-    return 0
-}
 
 getCountry() {
   local url=$1
