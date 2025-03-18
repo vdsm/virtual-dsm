@@ -112,13 +112,8 @@ fi
 
 formatBytes() {
   local result
-  result=$(numfmt --to=iec "$1")
+  result=$(numfmt --to=iec --suffix=B "$1" | sed -r 's/([A-Z])/ \1/' | sed 's/ B/ bytes/g;')
   local unit="${result//[0-9. ]}"
-  if [ -z "$unit" ]; then
-    unit="bytes"
-  else
-    unit=$(echo "${unit^^}" | sed 's/K/KB/g;s/M/MB/g;s/G/GB/g;s/T/TB/g')
-  fi
   result="${result//[a-zA-Z ]/}"
   if [[ "${2:-}" == "up" ]]; then
     if [[ "$result" == *"."* ]]; then
