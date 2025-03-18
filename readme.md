@@ -56,6 +56,8 @@ Via Kubernetes:
 kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/master/kubernetes.yml
 ```
 
+Via Github Codespaces:
+
 [`Click here to launch this container in the cloud!`](https://github.com/codespaces/new?skip_quickstart=true&machine=basicLinux32gb&repo=619260050&ref=master&devcontainer_path=.devcontainer.json)
 
 ## Compatibility ⚙️
