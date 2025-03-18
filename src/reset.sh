@@ -68,6 +68,12 @@ CPU="${CPU// 8 Core/}"
 CPU="${CPU// 16 Core/}"
 CPU="${CPU// 32 Core/}"
 CPU="${CPU// 64 Core/}"
+CPU="${CPU//10th Gen /}"
+CPU="${CPU//11th Gen /}"
+CPU="${CPU//12th Gen /}"
+CPU="${CPU//13th Gen /}"
+CPU="${CPU//14th Gen /}"
+CPU="${CPU//15th Gen /}"
 CPU="${CPU// Processor/}"
 CPU="${CPU// Quad core/}"
 CPU="${CPU// Core TM/ Core}"
@@ -319,6 +325,19 @@ addPackage() {
 
   return 0
 }
+
+# shellcheck disable=SC2143
+if [ -f /proc/net/if_inet6 ] && [ -n "$(ifconfig -a | grep inet6)" ]; then
+
+  sed -i "s/listen 80;/listen [::]:80 ipv6only=off;/g" /etc/nginx/sites-enabled/web.conf
+  sed -i "s/listen 5000 default_server;/listen [::]:5000 default_server ipv6only=off;/g" /etc/nginx/sites-enabled/web.conf
+
+else
+
+  sed -i "s/listen [::]:80 ipv6only=off;/listen 80;/g" /etc/nginx/sites-enabled/web.conf
+  sed -i "s/listen [::]:5000 default_server ipv6only=off;/listen 5000 default_server;/g" /etc/nginx/sites-enabled/web.conf
+
+fi
 
 # Start webserver
 cp -r /var/www/* /run/shm

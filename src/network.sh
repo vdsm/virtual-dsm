@@ -49,7 +49,7 @@ configureDHCP() {
       error "Cannot create macvtap interface. Please make sure that the network type of the container is 'macvlan' and not 'ipvlan'."
       return 1 ;;
     "RTNETLINK answers: Operation not permitted"* )
-      error "No permission to create macvtap interface. Please make sure that your host kernel supports it and that the NET_ADMIN capability is set." 
+      error "No permission to create macvtap interface. Please make sure that your host kernel supports it and that the NET_ADMIN capability is set."
       return 1 ;;
     *)
       [ -n "$msg" ] && echo "$msg" >&2
@@ -118,6 +118,12 @@ configureDNS() {
   DNSMASQ_OPTS+=" --address=/host.lan/${VM_NET_IP%.*}.1"
 
   DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
+
+  if [[ "${DEBUG_DNS:-}" == [Yy1]* ]]; then
+   DNSMASQ_OPTS+=" -d"
+   $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS} &
+   return 0
+  fi
 
   if ! $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS}; then
     error "Failed to start dnsmasq, reason: $?" && return 1
@@ -206,7 +212,7 @@ configureNAT() {
   fi
 
   if ! ip address add "${VM_NET_IP%.*}.1/24" broadcast "${VM_NET_IP%.*}.255" dev dockerbridge; then
-    error "Failed to add IP address!" && return 1
+    error "Failed to add IP address pool!" && return 1
   fi
 
   while ! ip link set dockerbridge up; do
@@ -255,7 +261,7 @@ configureNAT() {
     error "Failed to configure IP tables!" && return 1
   fi
 
-  if ! iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p udp  -j DNAT --to "$VM_NET_IP"; then
+  if ! iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p udp -j DNAT --to "$VM_NET_IP"; then
     error "Failed to configure IP tables!" && return 1
   fi
 
@@ -398,8 +404,16 @@ getInfo() {
     error "Invalid MAC address: '$VM_NET_MAC', should be 12 or 17 digits long!" && exit 28
   fi
 
-  GATEWAY=$(ip route list dev "$VM_NET_DEV" | awk ' /^default/ {print $3}')
-  IP=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/)
+  GATEWAY=$(ip route list dev "$VM_NET_DEV" | awk ' /^default/ {print $3}' | head -n 1)
+  IP=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/ | head -n 1)
+
+  IP6=""
+  # shellcheck disable=SC2143
+  if [ -f /proc/net/if_inet6 ] && [ -n "$(ifconfig -a | grep inet6)" ]; then
+    IP6=$(ip -6 addr show dev "$VM_NET_DEV" scope global up)
+    [ -n "$IP6" ] && IP6=$(echo "$IP6" | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d' | head -n 1)
+  fi
+
   echo "$IP" > /run/shm/qemu.ip
 
   return 0
@@ -431,8 +445,8 @@ if [[ "$IP" == "172.17."* ]]; then
 fi
 
 if [[ -d "/sys/class/net/$VM_NET_TAP" ]]; then
-    info "Lingering interface will be removed..."
-    ip link delete "$VM_NET_TAP" || true
+  info "Lingering interface will be removed..."
+  ip link delete "$VM_NET_TAP" || true
 fi
 
 if [[ "$DHCP" == [Yy1]* ]]; then
@@ -466,7 +480,7 @@ else
 
       closeBridge
       NETWORK="user"
-      warn "falling back to usermode networking! Performance will be bad and port mapping will not work."
+      warn "falling back to user-mode networking! Performance will be bad and port mapping will not work."
 
     fi
 
@@ -474,7 +488,7 @@ else
 
   if [[ "${NETWORK,,}" == "user"* ]]; then
 
-    # Configure for usermode networking (slirp)
+    # Configure for user-mode networking (slirp)
     configureUser || exit 24
 
   fi
