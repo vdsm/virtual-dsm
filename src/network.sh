@@ -170,7 +170,7 @@ getHostPorts() {
 
 configureUser() {
 
-  NET_OPTS="-netdev user,id=hostnet0,host=${VM_NET_IP%.*}.2,net=${VM_NET_IP%.*}.0/24,dhcpstart=$VM_NET_IP,hostname=$VM_NET_HOST"
+  NET_OPTS="-netdev user,id=hostnet0,host=${VM_NET_IP%.*}.1,net=${VM_NET_IP%.*}.0/24,dhcpstart=$VM_NET_IP,hostname=$VM_NET_HOST"
 
   local forward
   forward=$(getUserPorts "$USER_PORTS")
