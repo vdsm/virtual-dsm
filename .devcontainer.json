@@ -1,6 +1,6 @@
 {
   "name": "dsm",
   "service": "dsm",
-  "forwardPorts": ["5000"],
+  "forwardPorts": [5000],
   "dockerComposeFile": "compose.yml"
 }
