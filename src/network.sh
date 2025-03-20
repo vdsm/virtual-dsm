@@ -104,15 +104,21 @@ configureDHCP() {
 
 configureDNS() {
 
-  # dnsmasq configuration:
-  DNSMASQ_OPTS+=" --dhcp-range=$VM_NET_IP,$VM_NET_IP --dhcp-host=$VM_NET_MAC,,$VM_NET_IP,$VM_NET_HOST,infinite --dhcp-option=option:netmask,255.255.255.0"
-
   # Create lease file for faster resolve
   echo "0 $VM_NET_MAC $VM_NET_IP $VM_NET_HOST 01:$VM_NET_MAC" > /var/lib/misc/dnsmasq.leases
   chmod 644 /var/lib/misc/dnsmasq.leases
 
+  # dnsmasq configuration:
+  DNSMASQ_OPTS+=" --dhcp-authoritative"
+
+  # Set DHCP range and host
+  DNSMASQ_OPTS+=" --dhcp-range=$VM_NET_IP,$VM_NET_IP"
+  DNSMASQ_OPTS+=" --dhcp-host=$VM_NET_MAC,,$VM_NET_IP,$VM_NET_HOST,infinite"
+
   # Set DNS server and gateway
-  DNSMASQ_OPTS+=" --dhcp-option=option:dns-server,${VM_NET_IP%.*}.1 --dhcp-option=option:router,${VM_NET_IP%.*}.1"
+  DNSMASQ_OPTS+=" --dhcp-option=option:netmask,255.255.255.0"
+  DNSMASQ_OPTS+=" --dhcp-option=option:router,${VM_NET_IP%.*}.1"
+  DNSMASQ_OPTS+=" --dhcp-option=option:dns-server,${VM_NET_IP%.*}.1"
 
   # Add DNS entry for container
   DNSMASQ_OPTS+=" --address=/host.lan/${VM_NET_IP%.*}.1"
@@ -489,7 +495,14 @@ else
 
       closeBridge
       NETWORK="user"
-      warn "falling back to user-mode networking! Performance will be bad and port mapping will not work."
+      msg="falling back to user-mode networking!"
+      if [ ! - f "/run/.containerenv" ]; then
+        msg="an error occured, $msg"
+      else
+        msg="podman rootless mode detected, $msg"
+      fi
+      warn "$msg"
+      [ -z "$USER_PORTS" ] && info "Notice: port mapping will not work without \"USER_PORTS\" now."
 
     fi
 
