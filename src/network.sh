@@ -495,7 +495,14 @@ else
 
       closeBridge
       NETWORK="user"
-      warn "falling back to user-mode networking! Performance will be bad and port mapping will not work."
+      msg="falling back to user-mode networking!"
+      if [ ! - f "/run/.containerenv" ]; then
+        msg="an error occured, $msg"
+      else
+        msg="podman rootless mode detected, $msg"
+      fi
+      warn "$msg"
+      [ -z "$USER_PORTS" ] && info "Notice: port mapping will not work without \"USER_PORTS\" now."
 
     fi
 
