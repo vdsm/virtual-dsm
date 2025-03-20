@@ -69,6 +69,8 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 | Docker Desktop    | macOS      | ❌ |
 | Docker Desktop    | Windows 11 | ✅ |
 | Docker Desktop    | Windows 10 | ❌ |
+| Podman            | Linux      | ✅ |
+| Podman Desktop    | Linux      | ✅ |
 | Github Codespaces | Cloud      | ✅ |
 
 ## FAQ 💬
