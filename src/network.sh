@@ -496,7 +496,7 @@ else
       closeBridge
       NETWORK="user"
       msg="falling back to user-mode networking!"
-      if [ ! - f "/run/.containerenv" ]; then
+      if [ ! -f "/run/.containerenv" ]; then
         msg="an error occured, $msg"
       else
         msg="podman rootless mode detected, $msg"
