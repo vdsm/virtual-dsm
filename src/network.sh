@@ -199,14 +199,16 @@ configureNAT() {
   fi
 
   if [ ! -c /dev/net/tun ]; then
-    error "$tuntap" && return 1
+    [[ "$PODMAN" != [Yy1]* ]] && error "$tuntap"  
+    return 1
   fi
 
   # Check port forwarding flag
   if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
     { sysctl -w net.ipv4.ip_forward=1 > /dev/null; rc=$?; } || :
     if (( rc != 0 )) || [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
-      error "IP forwarding is disabled. $ADD_ERR --sysctl net.ipv4.ip_forward=1" && return 1
+      [[ "$PODMAN" != [Yy1]* ]] && error "IP forwarding is disabled. $ADD_ERR --sysctl net.ipv4.ip_forward=1"
+      return 1
     fi
   fi
 
@@ -426,6 +428,7 @@ getInfo() {
     [ -n "$IP6" ] && IP6=$(echo "$IP6" | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d' | head -n 1)
   fi
 
+  [ -f "/run/.containerenv" ] && PODMAN="Y" || PODMAN="N"
   echo "$IP" > /run/shm/qemu.ip
 
   return 0
@@ -496,10 +499,10 @@ else
       closeBridge
       NETWORK="user"
       msg="falling back to user-mode networking!"
-      if [ ! -f "/run/.containerenv" ]; then
+      if [[ "$PODMAN" != [Yy1]* ]]; then
         msg="an error occured, $msg"
       else
-        msg="podman rootless mode detected, $msg"
+        msg="podman detected, $msg"
       fi
       warn "$msg"
       [ -z "$USER_PORTS" ] && info "Notice: port mapping will not work without \"USER_PORTS\" now."
