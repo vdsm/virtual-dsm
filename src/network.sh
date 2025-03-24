@@ -399,6 +399,7 @@ getInfo() {
   if [ -z "$VM_NET_MAC" ]; then
     local file="$STORAGE/dsm.mac"
     [ -s "$file" ] && VM_NET_MAC=$(<"$file")
+    VM_NET_MAC="${VM_NET_MAC//[![:print:]]/}"
     if [ -z "$VM_NET_MAC" ]; then
       # Generate MAC address based on Docker container ID in hostname
       VM_NET_MAC=$(echo "$HOST" | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:11:32:\3:\4:\5/')
