@@ -20,6 +20,7 @@ if [ -n "$URL" ]; then
     BASE=$(echo "$BASE" | sed -e 's/[^A-Za-z0-9._-]/_/g')
   fi
   if [[ "${URL,,}" != "http"* ]]; then
+    BASE="DSM_VirtualDSM_42218"
     if [ -s "$STORAGE/$BASE.pat" ]; then
       URL="file://$STORAGE/$BASE.pat"
     else
@@ -47,7 +48,14 @@ if [ -z "$DL" ]; then
   [[ "${COUNTRY^^}" == "CN" ]] && DL="$DL_CHINA" || DL="$DL_GLOBAL"
 fi
 
-[ -z "$URL" ] && URL="$DL/release/7.2.2/72806/DSM_VirtualDSM_72806.pat"
+if [ -z "$URL" ]; then
+  URL="$DL/release/7.2.2/72806/DSM_VirtualDSM_72806.pat"
+fi
+
+if [ "$ARCH" != "amd64" ]; then
+  # Temporary workaround to prevent shared library error
+  URL="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
+fi
 
 BASE=$(basename "${URL%%\?*}" .pat)
 : "${BASE//+/ }"; printf -v BASE '%b' "${_//%/\\x}"
