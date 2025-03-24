@@ -5,6 +5,7 @@ set -Eeuo pipefail
 
 if [ -f "$STORAGE/dsm.ver" ]; then
   BASE=$(<"$STORAGE/dsm.ver")
+  BASE="${BASE//[![:print:]]/}"
   [ -z "$BASE" ] && BASE="DSM_VirtualDSM_69057"
 else
   # Fallback for old installs
