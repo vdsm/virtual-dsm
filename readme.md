@@ -132,7 +132,7 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
     - /dev/sdc:/disk1
   ```
 
-  It needs to be totally empty (without any partition table) otherwise DSM does not always format it into a volume.
+  Replace `/dev/sdc` with the name of the disk. It needs to be totally empty (without any partition table) otherwise DSM does not always format it into a volume.
  
 > [!CAUTION]
 > Do NOT use this feature with the goal of sharing files from the host, they might all get lost without warning when DSM creates the volume.
