@@ -123,18 +123,16 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
 ### How do I pass-through a disk?
 
-   It is possible to pass-through a disk device directly, which can be useful when your host is a virtual machine, as it removes an extra layer and allows for easier management. For use with physical disks this method provides little advantage and is not recommended.
+   It is possible to pass-through a disk device directly, which can be useful when your host is a virtual machine, as it removes an extra layer and allows for easier image management on the host. For use with physical disks this method provides little advantage over using an image and is not recommended.
    
-   You can add the virtual device to your compose file like this:
+   You can add the device to your compose file like this:
 
   ```yaml
   devices:
-    - /dev/disk/by-uuid/12345-12345-12345-12345-12345:/disk2
+    - /dev/sdc:/disk1
   ```
 
-  The device needs to be totally empty (without any partition table) otherwise DSM does not always format it into a volume.
-  
-  Make sure to bind the disk via its UUID (obtainable via `lsblk -o name,uuid`) instead of its name (`/dev/sdc`), to prevent ever binding the wrong disk when the drive letters happen to change. 
+  Replace `/dev/sdc` with the name of the disk. It needs to be totally empty (without any partition table) otherwise DSM does not always format it into a volume.
  
 > [!CAUTION]
 > Do NOT use this feature with the goal of sharing files from the host, they might all get lost without warning when DSM creates the volume.
