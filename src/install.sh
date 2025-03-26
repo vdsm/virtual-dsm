@@ -12,18 +12,31 @@ else
   BASE="DSM_VirtualDSM_42962"
 fi
 
+FN="boot.pat"
+if [ -d "/$FN" ]; then
+  error "The file /$FN has an invalid path!" && exit 65
+fi
+
+FILE=$(find / -maxdepth 1 -type f -iname "$FN" | head -n 1)
+[ ! -s "$FILE" ] && FILE=$(find "$STORAGE" -maxdepth 1 -type f -iname "$FN" | head -n 1)
+[ -s "$FILE" ] && BASE="DSM_VirtualDSM" && URL="file://$FILE" 
+
 if [ -n "$URL" ]; then
-  BASE=$(basename "$URL" .pat)
-  if [ ! -s "$STORAGE/$BASE.system.img" ]; then
-    BASE=$(basename "${URL%%\?*}" .pat)
-    : "${BASE//+/ }"; printf -v BASE '%b' "${_//%/\\x}"
-    BASE=$(echo "$BASE" | sed -e 's/[^A-Za-z0-9._-]/_/g')
+  if [ ! -s "$FILE" ]; then
+    BASE=$(basename "$URL" .pat)
+    if [ ! -s "$STORAGE/$BASE.system.img" ]; then
+      BASE=$(basename "${URL%%\?*}" .pat)
+      : "${BASE//+/ }"; printf -v BASE '%b' "${_//%/\\x}"
+      BASE=$(echo "$BASE" | sed -e 's/[^A-Za-z0-9._-]/_/g')
+    fi
   fi
-  if [[ "${URL,,}" != "http"* ]]; then
-    if [ -s "$STORAGE/$BASE.pat" ]; then
-      URL="file://$STORAGE/$BASE.pat"
-    else
-      error "File $STORAGE/$BASE.pat does not exist!" && exit 65
+  if [[ "${URL,,}" != "http"* ]] && [[ "${URL,,}" != "file:"* ]] ; then
+    URL="file://$STORAGE/$BASE.pat"
+    if [ ! -s "$STORAGE/$BASE.pat" ]; then
+      URL="file:///$BASE.pat"
+      if [ ! -s "/$BASE.pat" ]; then
+        error "File '$BASE.pat' does not exist!" && exit 65
+      fi
     fi
   fi
 fi
@@ -51,9 +64,11 @@ if [ -z "$URL" ]; then
   URL="$DL/release/7.2.2/72806/DSM_VirtualDSM_72806.pat"
 fi
 
-BASE=$(basename "${URL%%\?*}" .pat)
-: "${BASE//+/ }"; printf -v BASE '%b' "${_//%/\\x}"
-BASE=$(echo "$BASE" | sed -e 's/[^A-Za-z0-9._-]/_/g')
+if [ ! -s "$FILE" ]; then
+  BASE=$(basename "${URL%%\?*}" .pat)
+  : "${BASE//+/ }"; printf -v BASE '%b' "${_//%/\\x}"
+  BASE=$(echo "$BASE" | sed -e 's/[^A-Za-z0-9._-]/_/g')
+fi
 
 if [[ "$URL" != "file://$STORAGE/$BASE.pat" ]]; then
   rm -f "$STORAGE/$BASE.pat"
@@ -114,10 +129,15 @@ else
   PROGRESS="--progress=dot:giga"
 fi
 
-info "Install: Downloading $BASE.pat..."
-
-MSG="Downloading DSM"
-ERR="Failed to download $URL"
+if [[ "$URL" == "file://"* ]]; then
+  MSG="Copying DSM"
+  ERR="Failed to copy ${URL:7}"
+  info "Install: Copying installation image..."
+else
+  MSG="Downloading DSM"
+  ERR="Failed to download $URL"
+  info "Install: Downloading $BASE.pat..."
+fi
 
 html "$MSG..."
 
@@ -125,6 +145,10 @@ PAT="/$BASE.pat"
 rm -f "$PAT"
 
 if [[ "$URL" == "file://"* ]]; then
+
+  if [ ! -f "${URL:7}" ]; then
+    error "File '${URL:7}' does not exist!" && exit 65
+  fi
 
   cp "${URL:7}" "$PAT"
 
@@ -156,7 +180,7 @@ if ((SIZE<250000000)); then
   error "The specified PAT file is probably an update pack as it's too small." && exit 62
 fi
 
-MSG="Extracting downloaded image..."
+MSG="Extracting installation image..."
 info "Install: $MSG" && html "$MSG"
 
 if { tar tf "$PAT"; } >/dev/null 2>&1; then
