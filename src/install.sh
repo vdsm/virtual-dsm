@@ -177,8 +177,6 @@ fi
 MSG="Preparing system partition..."
 info "Install: $MSG" && html "$MSG"
 
-ls -lh $TMP
-
 BOOT=$(find "$TMP" -name "*.bin.zip")
 [ ! -s "$BOOT" ] && error "The PAT file contains no boot image." && exit 67
 
