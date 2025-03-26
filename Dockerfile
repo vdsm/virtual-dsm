@@ -21,7 +21,6 @@ RUN set -eu && extra="" && \
         jq \
         tini \
         curl \
-        cpio \
         wget \
         fdisk \
         unzip \
