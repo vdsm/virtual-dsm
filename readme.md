@@ -123,9 +123,9 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
 ### How do I pass-through a disk?
 
-   It is possible to pass-through a disk device directly, which can be useful when your host is a virtual machine, as it removes an extra layer and allows for easier image management on the host. For use with physical disks this method provides little advantage over using an image and is not recommended.
+   It is possible to pass-through a disk device directly, which can be useful when your host is a virtual machine, as it removes an extra layer and allows for easier image management on the host.
    
-   You can add the device to your compose file like this:
+   For use with physical disks this method provides little advantage over using an image and is not recommended. You can add the device to your compose file like this:
 
   ```yaml
   devices:
@@ -133,9 +133,6 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
   ```
 
   Replace `/dev/sdc` with the name of the disk. It needs to be totally empty (without any partition table) otherwise DSM does not always format it into a volume.
- 
-> [!CAUTION]
-> Do NOT use this feature with the goal of sharing files from the host, they might all get lost without warning when DSM creates the volume.
 
 ### How do I change the amount of CPU or RAM?
 
@@ -254,14 +251,14 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
   With this method, it is even possible to switch back and forth between versions while keeping your file data intact.
 
-  If you don't have internet access, it's also possible to skip the download by setting `URL` to:
-
+  Alternatively, you can also skip the download and use a local file instead, by binding it in your compose file in this way:
+  
   ```yaml
-  environment:
-    URL: "DSM_VirtualDSM_42218.pat"
+  volumes:
+    - ./DSM_VirtualDSM_42218.pat:/boot.pat
   ```
 
-  after placing a copy of [DSM_VirtualDSM_42218.pat](https://global.synologydownload.com/download/DSM/release/7.0.1/42218/DSM_VirtualDSM_42218.pat) in the root of your `/storage` folder.
+  Replace the example path `./DSM_VirtualDSM_42218.pat` with the filename of your desired `.pat` file. The value of `URL` will be ignored in this case.
 
 ### What are the differences compared to the standard DSM?
 
