@@ -12,18 +12,28 @@ else
   BASE="DSM_VirtualDSM_42962"
 fi
 
+FN="boot.pat"
+if [ -d "/$FN" ]; then
+  error "The file /$FN does not exist, please check that you mapped it to a valid path!" && exit 65
+fi
+
+FILE=$(find / -maxdepth 1 -type f -iname "$FN" | head -n 1)
+[ ! -s "$FILE" ] && FILE=$(find "$STORAGE" -maxdepth 1 -type f -iname "$FN" | head -n 1)
+[ -s "$FILE" ] && BASE="DSM_VirtualDSM" && URL="file://$FILE" 
+
 if [ -n "$URL" ]; then
-  BASE=$(basename "$URL" .pat)
-  if [ ! -s "$STORAGE/$BASE.system.img" ]; then
-    BASE=$(basename "${URL%%\?*}" .pat)
-    : "${BASE//+/ }"; printf -v BASE '%b' "${_//%/\\x}"
-    BASE=$(echo "$BASE" | sed -e 's/[^A-Za-z0-9._-]/_/g')
+  if [ ! -s "$FILE" ]; then
+    BASE=$(basename "$URL" .pat)
+    if [ ! -s "$STORAGE/$BASE.system.img" ]; then
+      BASE=$(basename "${URL%%\?*}" .pat)
+      : "${BASE//+/ }"; printf -v BASE '%b' "${_//%/\\x}"
+      BASE=$(echo "$BASE" | sed -e 's/[^A-Za-z0-9._-]/_/g')
+    fi
   fi
-  if [[ "${URL,,}" != "http"* ]]; then
-    if [ -s "$STORAGE/$BASE.pat" ]; then
-      URL="file://$STORAGE/$BASE.pat"
-    else
-      error "File $STORAGE/$BASE.pat does not exist!" && exit 65
+  if [[ "${URL,,}" != "http"* ]] && [[ "${URL,,}" != "file:"* ]] ; then
+    URL="file:///$BASE.pat"
+    if [ ! -s "/$BASE.pat" ]; then
+      error "File '$BASE.pat' does not exist!" && exit 65
     fi
   fi
 fi
@@ -47,11 +57,15 @@ if [ -z "$DL" ]; then
   [[ "${COUNTRY^^}" == "CN" ]] && DL="$DL_CHINA" || DL="$DL_GLOBAL"
 fi
 
-[ -z "$URL" ] && URL="$DL/release/7.2.2/72806/DSM_VirtualDSM_72806.pat"
+if [ -z "$URL" ]; then
+  URL="$DL/release/7.2.2/72806/DSM_VirtualDSM_72806.pat"
+fi
 
-BASE=$(basename "${URL%%\?*}" .pat)
-: "${BASE//+/ }"; printf -v BASE '%b' "${_//%/\\x}"
-BASE=$(echo "$BASE" | sed -e 's/[^A-Za-z0-9._-]/_/g')
+if [ ! -s "$FILE" ]; then
+  BASE=$(basename "${URL%%\?*}" .pat)
+  : "${BASE//+/ }"; printf -v BASE '%b' "${_//%/\\x}"
+  BASE=$(echo "$BASE" | sed -e 's/[^A-Za-z0-9._-]/_/g')
+fi
 
 if [[ "$URL" != "file://$STORAGE/$BASE.pat" ]]; then
   rm -f "$STORAGE/$BASE.pat"
@@ -112,127 +126,15 @@ else
   PROGRESS="--progress=dot:giga"
 fi
 
-# Download the required files from the Synology website
-
-ROOT="Y"
-RD="$TMP/rd.gz"
-RDC="$STORAGE/dsm.rd"
-
-if [ ! -s "$RDC" ] && [[ "$URL" == "file://"* ]] && [[ "${URL,,}" == *"_42218.pat" ]]; then
-
-  rm -f "$RD"
-  rm -f "$RDC"
-
-  tar --extract --file="${URL:7}" --directory="$(dirname "$RD")"/. "$(basename "$RD")"
-  cp "$RD" "$RDC"
-
+if [[ "$URL" == "file://"* ]]; then
+  MSG="Copying DSM"
+  ERR="Failed to copy ${URL:7}"
+  info "Install: Copying installation image..."
+else
+  MSG="Downloading DSM"
+  ERR="Failed to download $URL"
+  info "Install: Downloading $BASE.pat..."
 fi
-
-if [ ! -s "$RDC" ]; then
-
-  rm -f "$RD"
-  rm -f "$RDC"
-
-  MSG="Downloading installer"
-  info "Install: $MSG..." && html "$MSG..."
-
-  SIZE=5394188
-  POS="65627648-71021835"
-  VERIFY="b4215a4b213ff5154db0488f92c87864"
-  LOC="$DL/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
-  [[ "${URL,,}" == *"_42218.pat" ]] && LOC="$URL"
-
-  /run/progress.sh "$RD" "$SIZE" "$MSG ([P])..." &
-  { curl -r "$POS" -sfk --connect-timeout 10 -S -o "$RD" "$LOC"; rc=$?; } || :
-
-  fKill "progress.sh"
-
-  ERR="Failed to download $LOC"
-  (( rc == 3 )) && error "$ERR , cannot write file (disk full?)" && exit 60
-  (( rc == 4 )) && error "$ERR , network failure!" && exit 60
-  (( rc == 8 )) && error "$ERR , server issued an error response!" && exit 60
-
-  if (( rc != 0 )); then
-    if (( rc != 22 )) && (( rc != 56 )); then
-      error "$ERR , reason: $rc" && exit 60
-    fi
-    SUM="skip"
-  else
-    SUM=$(md5sum "$RD" | cut -f 1 -d " ")
-  fi
-
-  if [ "$SUM" != "$VERIFY" ]; then
-
-    PAT="/install.pat"
-    SIZE=379637760
-
-    rm -f "$RD"
-    rm -f "$PAT"
-
-    html "$MSG..."
-    /run/progress.sh "$PAT" "$SIZE" "$MSG ([P])..." &
-    { wget "$LOC" -O "$PAT" -q --no-check-certificate --timeout=10 --no-http-keep-alive --show-progress "$PROGRESS"; rc=$?; } || :
-
-    fKill "progress.sh"
-
-    ERR="Failed to download $LOC"
-    (( rc == 3 )) && error "$ERR , cannot write file (disk full?)" && exit 60
-    (( rc == 4 )) && error "$ERR , network failure!" && exit 60
-    (( rc == 8 )) && error "$ERR , server issued an error response!" && exit 60
-    (( rc != 0 )) && error "$ERR , reason: $rc" && exit 60
-
-    tar --extract --file="$PAT" --directory="$(dirname "$RD")"/. "$(basename "$RD")"
-    rm "$PAT"
-
-  fi
-
-  cp "$RD" "$RDC"
-
-fi
-
-if [ -f "$RDC" ]; then
-
-  { xz -dc <"$RDC" >"$TMP/rd" 2>/dev/null; rc=$?; } || :
-  (( rc != 1 )) && error "Failed to unxz $RDC on $FS, reason $rc" && exit 91
-
-  { (cd "$TMP" && cpio -idm <"$TMP/rd" 2>/dev/null); rc=$?; } || :
-
-  if (( rc != 0 )); then
-    ROOT="N"
-    { (cd "$TMP" && fakeroot cpio -idmu <"$TMP/rd" 2>/dev/null); rc=$?; } || :
-    (( rc != 0 )) && error "Failed to extract $RDC on $FS, reason $rc" && exit 92
-  fi
-
-  rm -rf /run/extract && mkdir -p /run/extract
-  for file in $TMP/usr/lib/libcurl.so.4 \
-              $TMP/usr/lib/libmbedcrypto.so.5 \
-              $TMP/usr/lib/libmbedtls.so.13 \
-              $TMP/usr/lib/libmbedx509.so.1 \
-              $TMP/usr/lib/libmsgpackc.so.2 \
-              $TMP/usr/lib/libsodium.so \
-              $TMP/usr/lib/libsynocodesign-ng-virtual-junior-wins.so.7 \
-              $TMP/usr/syno/bin/scemd; do
-    cp "$file" /run/extract/
-  done
-
-  if [ "$ARCH" != "amd64" ]; then
-    mkdir -p /lib64/
-    cp "$TMP/usr/lib/libc.so.6" /lib64/
-    cp "$TMP/usr/lib/libpthread.so.0" /lib64/
-    cp "$TMP/usr/lib/ld-linux-x86-64.so.2" /lib64/
-  fi
-
-  mv /run/extract/scemd /run/extract/syno_extract_system_patch
-  chmod +x /run/extract/syno_extract_system_patch
-
-fi
-
-rm -rf "$TMP" && mkdir -p "$TMP"
-
-info "Install: Downloading $BASE.pat..."
-
-MSG="Downloading DSM"
-ERR="Failed to download $URL"
 
 html "$MSG..."
 
@@ -240,6 +142,10 @@ PAT="/$BASE.pat"
 rm -f "$PAT"
 
 if [[ "$URL" == "file://"* ]]; then
+
+  if [ ! -f "${URL:7}" ]; then
+    error "File '${URL:7}' does not exist!" && exit 65
+  fi
 
   cp "${URL:7}" "$PAT"
 
@@ -271,7 +177,7 @@ if ((SIZE<250000000)); then
   error "The specified PAT file is probably an update pack as it's too small." && exit 62
 fi
 
-MSG="Extracting downloaded image..."
+MSG="Extracting installation image..."
 info "Install: $MSG" && html "$MSG"
 
 if { tar tf "$PAT"; } >/dev/null 2>&1; then
@@ -280,21 +186,14 @@ if { tar tf "$PAT"; } >/dev/null 2>&1; then
 
 else
 
-  export LD_LIBRARY_PATH="/run/extract"
+  { (cd "$TMP" && python3 /run/extract.py -i "$PAT" -d 2>/run/extract.log); rc=$?; } || :
 
-  if [ "$ARCH" == "amd64" ]; then
-    { /run/extract/syno_extract_system_patch "$PAT" "$TMP/."; rc=$?; } || :
-  else
-    { qemu-x86_64 /run/extract/syno_extract_system_patch "$PAT" "$TMP/."; rc=$?; } || :
+  if (( rc != 0 )); then
+    cat /run/extract.log
+    error "Failed to extract PAT file, reason $rc" && exit 63
   fi
 
-  export LD_LIBRARY_PATH=""
-
-  (( rc != 0 )) && error "Failed to extract PAT file, reason $rc" && exit 63
-
 fi
-
-rm -rf /run/extract
 
 MSG="Preparing system partition..."
 info "Install: $MSG" && html "$MSG"
@@ -382,22 +281,10 @@ OFFSET="1048576"    # 2048 * 512
 NUMBLOCKS="2097152" # (16777216 * 512) / 4096
 MSG="Installing system partition..."
 
-if [[ "$ROOT" != [Nn]* ]]; then
-
-  tar xpfJ "$HDA.txz" --absolute-names --skip-old-files -C "$MOUNT/"
-
-  info "Install: $MSG" && html "$MSG"
-
-  mke2fs -q -t ext4 -b 4096 -d "$MOUNT/" -L "$LABEL" -F -E "offset=$OFFSET" "$SYSTEM" "$NUMBLOCKS"
-
-else
-
-  fakeroot -- bash -c "set -Eeu;\
-        tar xpfJ $HDA.txz --absolute-names --skip-old-files -C $MOUNT/;\
-        printf '%b%s%b' '\E[1;34m❯ \E[1;36m' 'Install: $MSG' '\E[0m\n';\
-        mke2fs -q -t ext4 -b 4096 -d $MOUNT/ -L $LABEL -F -E offset=$OFFSET $SYSTEM $NUMBLOCKS"
-
-fi
+fakeroot -- bash -c "set -Eeu;\
+  tar xpfJ $HDA.txz --absolute-names --skip-old-files -C $MOUNT/;\
+  printf '%b%s%b' '\E[1;34m❯ \E[1;36m' 'Install: $MSG' '\E[0m\n';\
+  mke2fs -q -t ext4 -b 4096 -d $MOUNT/ -L $LABEL -F -E offset=$OFFSET $SYSTEM $NUMBLOCKS"
 
 rm -rf "$MOUNT"
 echo "$BASE" > "$STORAGE/dsm.ver"

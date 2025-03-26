@@ -15,19 +15,21 @@ ARG DEBCONF_NOWARNINGS="yes"
 ARG DEBIAN_FRONTEND="noninteractive"
 ARG DEBCONF_NONINTERACTIVE_SEEN="true"
 
-RUN set -eu && extra="" && \
-    if [ "$TARGETPLATFORM" != "linux/amd64" ]; then extra="qemu-user"; fi && \
+RUN set -eu && \
     apt-get update && \
     apt-get --no-install-recommends -y install \
         jq \
         tini \
         curl \
-        cpio \
         wget \
         fdisk \
         unzip \
         nginx \
         procps \
+        python3 \
+        python3-pip \
+        python3-msgpack \
+        python3-pysodium \
         xz-utils \
         iptables \
         iproute2 \
@@ -40,9 +42,9 @@ RUN set -eu && extra="" && \
         iputils-ping \
         ca-certificates \
         netcat-openbsd \
-        qemu-system-x86 \
-        "$extra" && \
+        qemu-system-x86 && \
     apt-get clean && \
+    pip3 install --no-cache-dir --break-system-packages dissect.cstruct && \
     mkdir -p /etc/qemu && \
     echo "allow br0" > /etc/qemu/bridge.conf && \
     unlink /etc/nginx/sites-enabled/default && \
@@ -54,6 +56,7 @@ COPY --chmod=755 ./src /run/
 COPY --chmod=755 ./web /var/www/
 COPY --chmod=755 --from=builder /qemu-host.bin /run/host.bin
 COPY --chmod=744 ./web/conf/nginx.conf /etc/nginx/sites-enabled/web.conf
+ADD --chmod=775 https://raw.githubusercontent.com/sud0woodo/patology/refs/heads/main/patology.py /run/extract.py
 
 VOLUME /storage
 EXPOSE 22 139 445 5000
