@@ -31,12 +31,9 @@ if [ -n "$URL" ]; then
     fi
   fi
   if [[ "${URL,,}" != "http"* ]] && [[ "${URL,,}" != "file:"* ]] ; then
-    URL="file://$STORAGE/$BASE.pat"
-    if [ ! -s "$STORAGE/$BASE.pat" ]; then
-      URL="file:///$BASE.pat"
-      if [ ! -s "/$BASE.pat" ]; then
-        error "File '$BASE.pat' does not exist!" && exit 65
-      fi
+    URL="file:///$BASE.pat"
+    if [ ! -s "/$BASE.pat" ]; then
+      error "File '$BASE.pat' does not exist!" && exit 65
     fi
   fi
 fi
