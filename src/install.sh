@@ -14,7 +14,7 @@ fi
 
 FN="boot.pat"
 if [ -d "/$FN" ]; then
-  error "The file /$FN does not exist, please check that you mapped it to a valid path!" && exit 65
+  error "The file /$FN does not exist, please make sure that you mapped it to a valid path!" && exit 65
 fi
 
 FILE=$(find / -maxdepth 1 -type f -iname "$FN" | head -n 1)
@@ -31,10 +31,8 @@ if [ -n "$URL" ]; then
     fi
   fi
   if [[ "${URL,,}" != "http"* ]] && [[ "${URL,,}" != "file:"* ]] ; then
-    URL="file:///$BASE.pat"
-    if [ ! -s "/$BASE.pat" ]; then
-      error "File '$BASE.pat' does not exist!" && exit 65
-    fi
+    [ ! -s "$STORAGE/$BASE.pat" ] && error "Invalid URL:  $URL" && exit 65
+    URL="file://$STORAGE/$BASE.pat"
   fi
 fi
 
