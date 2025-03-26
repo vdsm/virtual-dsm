@@ -262,22 +262,10 @@ OFFSET="1048576"    # 2048 * 512
 NUMBLOCKS="2097152" # (16777216 * 512) / 4096
 MSG="Installing system partition..."
 
-if [[ "$ROOT" != [Nn]* ]]; then
-
-  tar xpfJ "$HDA.txz" --absolute-names --skip-old-files -C "$MOUNT/"
-
-  info "Install: $MSG" && html "$MSG"
-
-  mke2fs -q -t ext4 -b 4096 -d "$MOUNT/" -L "$LABEL" -F -E "offset=$OFFSET" "$SYSTEM" "$NUMBLOCKS"
-
-else
-
-  fakeroot -- bash -c "set -Eeu;\
-        tar xpfJ $HDA.txz --absolute-names --skip-old-files -C $MOUNT/;\
-        printf '%b%s%b' '\E[1;34m❯ \E[1;36m' 'Install: $MSG' '\E[0m\n';\
-        mke2fs -q -t ext4 -b 4096 -d $MOUNT/ -L $LABEL -F -E offset=$OFFSET $SYSTEM $NUMBLOCKS"
-
-fi
+fakeroot -- bash -c "set -Eeu;\
+  tar xpfJ $HDA.txz --absolute-names --skip-old-files -C $MOUNT/;\
+  printf '%b%s%b' '\E[1;34m❯ \E[1;36m' 'Install: $MSG' '\E[0m\n';\
+  mke2fs -q -t ext4 -b 4096 -d $MOUNT/ -L $LABEL -F -E offset=$OFFSET $SYSTEM $NUMBLOCKS"
 
 rm -rf "$MOUNT"
 echo "$BASE" > "$STORAGE/dsm.ver"
