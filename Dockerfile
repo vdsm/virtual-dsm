@@ -58,7 +58,7 @@ COPY --chmod=755 ./web /var/www/
 COPY --chmod=755 --from=builder /qemu-host.bin /run/host.bin
 COPY --chmod=744 ./web/conf/nginx.conf /etc/nginx/sites-enabled/web.conf
 
-ADD https://raw.githubusercontent.com/sud0woodo/patology/refs/heads/main/patology.py /run/patology.py
+ADD https://raw.githubusercontent.com/sud0woodo/patology/refs/heads/main/patology.py /run/extract.py
 
 VOLUME /storage
 EXPOSE 22 139 445 5000
