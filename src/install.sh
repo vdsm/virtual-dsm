@@ -14,7 +14,7 @@ fi
 
 FN="boot.pat"
 if [ -d "/$FN" ]; then
-  error "The file /$FN has an invalid path!" && exit 65
+  error "The file /$FN does not exist, please check that you mapped it to a valid path!" && exit 65
 fi
 
 FILE=$(find / -maxdepth 1 -type f -iname "$FN" | head -n 1)
