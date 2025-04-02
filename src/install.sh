@@ -13,12 +13,16 @@ else
 fi
 
 FN="boot.pat"
-if [ -d "/$FN" ]; then
-  error "The file /$FN does not exist, please make sure that you mapped it to a valid path!" && exit 65
+DIR=$(find / -maxdepth 1 -type d -iname "$FN" | head -n 1)
+[ ! -d "$DIR" ] && DIR=$(find "$STORAGE" -maxdepth 1 -type d -iname "$FN" | head -n 1)
+
+if [ -d "$DIR" ]; then
+  error "The bind $DIR maps to a file that does not exist!" && exit 65
 fi
 
 FILE=$(find / -maxdepth 1 -type f -iname "$FN" | head -n 1)
 [ ! -s "$FILE" ] && FILE=$(find "$STORAGE" -maxdepth 1 -type f -iname "$FN" | head -n 1)
+
 [ -s "$FILE" ] && BASE="DSM_VirtualDSM" && URL="file://$FILE" 
 
 if [ -n "$URL" ]; then
