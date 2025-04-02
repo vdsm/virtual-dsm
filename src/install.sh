@@ -17,22 +17,22 @@ DIR=$(find / -maxdepth 1 -type d -iname "$FN" | head -n 1)
 [ ! -d "$DIR" ] && DIR=$(find "$STORAGE" -maxdepth 1 -type d -iname "$FN" | head -n 1)
 
 if [ -d "$DIR" ]; then
-  error "The bind $DIR maps to a file that does not exist!" && exit 65
+  BASE="DSM_VirtualDSM" && URL="file://$DIR" 
+  if [[ ! -s "$STORAGE/$BASE.boot.img" ]] || [[ ! -s "$STORAGE/$BASE.system.img" ]]; then
+    error "The bind $DIR maps to a file that does not exist!" && exit 65
+  fi
 fi
 
 FILE=$(find / -maxdepth 1 -type f -iname "$FN" | head -n 1)
 [ ! -s "$FILE" ] && FILE=$(find "$STORAGE" -maxdepth 1 -type f -iname "$FN" | head -n 1)
-
 [ -s "$FILE" ] && BASE="DSM_VirtualDSM" && URL="file://$FILE" 
 
-if [ -n "$URL" ]; then
-  if [ ! -s "$FILE" ]; then
-    BASE=$(basename "$URL" .pat)
-    if [ ! -s "$STORAGE/$BASE.system.img" ]; then
-      BASE=$(basename "${URL%%\?*}" .pat)
-      : "${BASE//+/ }"; printf -v BASE '%b' "${_//%/\\x}"
-      BASE=$(echo "$BASE" | sed -e 's/[^A-Za-z0-9._-]/_/g')
-    fi
+if [ -n "$URL" ] && [ ! -s "$FILE" ] && [ ! -d "$DIR" ]; then
+  BASE=$(basename "$URL" .pat)
+  if [ ! -s "$STORAGE/$BASE.system.img" ]; then
+    BASE=$(basename "${URL%%\?*}" .pat)
+    : "${BASE//+/ }"; printf -v BASE '%b' "${_//%/\\x}"
+    BASE=$(echo "$BASE" | sed -e 's/[^A-Za-z0-9._-]/_/g')
   fi
   if [[ "${URL,,}" != "http"* ]] && [[ "${URL,,}" != "file:"* ]] ; then
     [ ! -s "$STORAGE/$BASE.pat" ] && error "Invalid URL:  $URL" && exit 65
