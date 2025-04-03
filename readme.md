@@ -129,10 +129,10 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
   ```yaml
   devices:
-    - /dev/sdc:/disk1
+    - /dev/sdb2:/disk1
   ```
 
-  Replace `/dev/sdc` with the name of the disk. It needs to be totally empty (without any partition table) otherwise DSM does not always format it into a volume.
+  Replace `/dev/sdb2` with the name of the partition you want to use. Make sure it's totally empty (without any filesystem), otherwise DSM may not format it as a volume.
 
 ### How do I change the amount of CPU or RAM?
 
