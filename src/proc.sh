@@ -53,9 +53,17 @@ if [[ "$KVM" != [Nn]* ]]; then
     KVM="N"
     if [[ "$OSTYPE" =~ ^darwin ]]; then
       warn "you are using macOS which has no KVM support, this will cause a major loss of performance."
-    else
-      error "KVM acceleration not available $KVM_ERR, this will cause a major loss of performance."
-      error "See the FAQ on how to diagnose the cause, or continue without KVM by setting KVM=N (not recommended)."
+    else      
+      kernel=$(uname -a)
+      case "${kernel,,}" in
+        *"microsoft"* )
+          error "Please bind '/dev/kvm' as a volume in the optional container settings when using Docker Desktop." ;;
+        *"synology"* )
+          error "Please make sure that Synology VMM (Virtual Machine Manager) is installed and that '/dev/kvm' is binded to this container." ;;
+        *)
+          error "KVM acceleration not available $KVM_ERR, this will cause a major loss of performance."
+          error "See the FAQ on how to diagnose the cause, or continue without KVM by setting KVM=N (not recommended)." ;;
+      esac
       [[ "$DEBUG" != [Yy1]* ]] && exit 88
     fi
   fi
