@@ -37,14 +37,14 @@ if [[ "$KVM" != [Nn]* ]]; then
   KVM_ERR=""
 
   if [ ! -e /dev/kvm ]; then
-    KVM_ERR="(device file missing)"
+    KVM_ERR="(/dev/kvm is missing)"
   else
     if ! sh -c 'echo -n > /dev/kvm' &> /dev/null; then
-      KVM_ERR="(no write access)"
+      KVM_ERR="(/dev/kvm is unwriteable)"
     else
       flags=$(sed -ne '/^flags/s/^.*: //p' /proc/cpuinfo)
       if ! grep -qw "vmx\|svm" <<< "$flags"; then
-        KVM_ERR="(vmx/svm disabled)"
+        KVM_ERR="(not enabled in BIOS)"
       fi
     fi
   fi
@@ -61,8 +61,8 @@ if [[ "$KVM" != [Nn]* ]]; then
         *"synology"* )
           error "Please make sure that Synology VMM (Virtual Machine Manager) is installed and that '/dev/kvm' is binded to this container." ;;
         *)
-          error "KVM acceleration not available $KVM_ERR, this will cause a major loss of performance."
-          error "See the FAQ on how to diagnose the cause, or continue without KVM by setting KVM=N (not recommended)." ;;
+          error "KVM acceleration is not available $KVM_ERR, this will cause a major loss of performance."
+          error "See the FAQ for possible causes, or continue without it by adding KVM: \"N\" (not recommended)." ;;
       esac
       [[ "$DEBUG" != [Yy1]* ]] && exit 88
     fi
