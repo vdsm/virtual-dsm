@@ -284,7 +284,7 @@ NUMBLOCKS="2097152" # (16777216 * 512) / 4096
 MSG="Installing system partition..."
 
 fakeroot -- bash -c "set -Eeu;\
-  [ -d "$INDEX_DB" ] && tar xpfJ "$IDB.txz" --absolute-names -C "$INDEX_DB";\
+  [ -d $INDEX_DB ] && tar xpfJ $IDB.txz --absolute-names -C $INDEX_DB;\
   tar xpfJ $HDA.txz --absolute-names --skip-old-files -C $MOUNT/;\
   printf '%b%s%b' '\E[1;34m❯ \E[1;36m' 'Install: $MSG' '\E[0m\n';\
   mke2fs -q -t ext4 -b 4096 -d $MOUNT/ -L $LABEL -F -E offset=$OFFSET $SYSTEM $NUMBLOCKS"
