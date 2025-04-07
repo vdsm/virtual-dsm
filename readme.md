@@ -123,16 +123,15 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
 ### How do I pass-through a disk?
 
-   It is possible to pass-through a disk device directly, which can be useful when your host is a virtual machine, as it removes an extra layer and allows for easier image management on the host.
-   
-   For use with physical disks this method provides little advantage over using an image and is not recommended. You can add the device to your compose file like this:
+   It is possible to pass-through disk devices or partitions directly by adding them to your compose file in this way:
 
   ```yaml
   devices:
-    - /dev/sdb2:/disk1
+    - /dev/sdb:/disk1
+    - /dev/sdc1:/disk2
   ```
 
-  Replace `/dev/sdb2` with the name of the partition you want to use. Make sure it's totally empty (without any filesystem), otherwise DSM may not format it as a volume.
+  Make sure it is totally empty (without any filesystem), otherwise DSM may not format it as a volume.
 
 ### How do I change the amount of CPU or RAM?
 
