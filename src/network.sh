@@ -338,17 +338,17 @@ closeNetwork() {
 
 checkOS() {
 
-  local name
+  local kernel
   local os=""
   local if="macvlan"
-  name=$(uname -a)
+  kernel=$(uname -a)
 
-  [[ "${name,,}" == *"darwin"* ]] && os="Docker Desktop for macOS"
-  [[ "${name,,}" == *"microsoft"* ]] && os="Docker Desktop for Windows"
+  [[ "${kernel,,}" == *"darwin"* ]] && os="Docker Desktop for macOS"
+  [[ "${kernel,,}" == *"microsoft"* ]] && os="Docker Desktop for Windows"
 
   if [[ "$DHCP" == [Yy1]* ]]; then
     if="macvtap"
-    [[ "${name,,}" == *"synology"* ]] && os="Synology Container Manager"
+    [[ "${kernel,,}" == *"synology"* ]] && os="Synology Container Manager"
   fi
 
   if [ -n "$os" ]; then
