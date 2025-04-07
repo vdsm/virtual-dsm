@@ -270,9 +270,6 @@ mv "$HDA.tgz" "$HDA.txz"
 [ -d "$PKG" ] && mv "$PKG/" "$MOUNT/.SynoUpgradePackages/"
 rm -f "$MOUNT/.SynoUpgradePackages/ActiveInsight-"*
 
-[ -s "$HDP.txz" ] && tar xpfJ "$HDP.txz" --absolute-names -C "$MOUNT/"
-
-INDEX_DB=""
 if [ -s "$IDB.txz" ]; then
   INDEX_DB="$MOUNT/usr/syno/synoman/indexdb"
   mkdir -p "$INDEX_DB"
@@ -284,7 +281,8 @@ NUMBLOCKS="2097152" # (16777216 * 512) / 4096
 MSG="Installing system partition..."
 
 fakeroot -- bash -c "set -Eeu;\
-  [ -d $INDEX_DB ] && tar xpfJ $IDB.txz --absolute-names -C $INDEX_DB/;\
+  [ -s $HDP.txz ] && tar xpfJ $HDP.txz --absolute-names -C $MOUNT/;\
+  [ -s $IDB.txz ] && tar xpfJ $IDB.txz --absolute-names -C $INDEX_DB/;\
   tar xpfJ $HDA.txz --absolute-names --skip-old-files -C $MOUNT/;\
   printf '%b%s%b' '\E[1;34m❯ \E[1;36m' 'Install: $MSG' '\E[0m\n';\
   mke2fs -q -t ext4 -b 4096 -d $MOUNT/ -L $LABEL -F -E offset=$OFFSET $SYSTEM $NUMBLOCKS"
