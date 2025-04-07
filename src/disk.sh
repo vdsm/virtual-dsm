@@ -368,6 +368,8 @@ createDevice () {
   local DISK_FMT=$5
   local DISK_IO=$6
   local DISK_CACHE=$7
+  local DISK_SERIAL=$8
+  local DISK_SECTORS=$9
   local DISK_ID="data$DISK_INDEX"
 
   local index=""
@@ -381,29 +383,29 @@ createDevice () {
       ;;
     "usb" )
       result+=",if=none \
-      -device usb-storage,drive=${DISK_ID}${index}"
+      -device usb-storage,drive=${DISK_ID}${index}${DISK_SERIAL}${DISK_SECTORS}"
       echo "$result"
       ;;
     "nvme" )
       result+=",if=none \
-      -device nvme,drive=${DISK_ID}${index},serial=deadbeaf${DISK_INDEX}"
+      -device nvme,drive=${DISK_ID}${index},serial=deadbeaf${DISK_INDEX}${DISK_SERIAL}${DISK_SECTORS}"
       echo "$result"
       ;;
     "ide" | "sata" )
       result+=",if=none \
       -device ich9-ahci,id=ahci${DISK_INDEX},addr=$DISK_ADDRESS \
-      -device ide-hd,drive=${DISK_ID},bus=ahci$DISK_INDEX.0,rotation_rate=$DISK_ROTATION${index}"
+      -device ide-hd,drive=${DISK_ID},bus=ahci$DISK_INDEX.0,rotation_rate=$DISK_ROTATION${index}${DISK_SERIAL}${DISK_SECTORS}"
       echo "$result"
       ;;
     "blk" | "virtio-blk" )
       result+=",if=none \
-      -device virtio-blk-pci,drive=${DISK_ID},bus=pcie.0,addr=$DISK_ADDRESS,iothread=io2${index}"
+      -device virtio-blk-pci,drive=${DISK_ID},bus=pcie.0,addr=$DISK_ADDRESS,iothread=io2${index}${DISK_SERIAL}${DISK_SECTORS}"
       echo "$result"
       ;;
     "scsi" | "virtio-scsi" )
       result+=",if=none \
       -device virtio-scsi-pci,id=${DISK_ID}b,bus=pcie.0,addr=$DISK_ADDRESS,iothread=io2 \
-      -device scsi-hd,drive=${DISK_ID},bus=${DISK_ID}b.0,channel=0,scsi-id=0,lun=0,rotation_rate=$DISK_ROTATION${index}"
+      -device scsi-hd,drive=${DISK_ID},bus=${DISK_ID}b.0,channel=0,scsi-id=0,lun=0,rotation_rate=$DISK_ROTATION${index}${DISK_SERIAL}${DISK_SECTORS}"
       echo "$result"
       ;;
   esac
@@ -482,7 +484,7 @@ addDisk () {
 
   fi
 
-  DISK_OPTS+=$(createDevice "$DISK_FILE" "$DISK_TYPE" "$DISK_INDEX" "$DISK_ADDRESS" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE")
+  DISK_OPTS+=$(createDevice "$DISK_FILE" "$DISK_TYPE" "$DISK_INDEX" "$DISK_ADDRESS" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE" "" "")
 
   return 0
 }
@@ -497,7 +499,26 @@ addDevice () {
   [ -z "$DISK_DEV" ] && return 0
   [ ! -b "$DISK_DEV" ] && error "Device $DISK_DEV cannot be found! Please add it to the 'devices' section of your compose file." && exit 55
 
-  DISK_OPTS+=$(createDevice "$DISK_DEV" "$DISK_TYPE" "$DISK_INDEX" "$DISK_ADDRESS" "raw" "$DISK_IO" "$DISK_CACHE")
+  local sectors=""
+  local result logical physical
+  result=$(fdisk -l "$DISK_DEV" | grep -m 1 -o "(logical/physical): .*" | cut -c 21-)
+  logical="${result%% *}"
+  physical=$(echo "$result" | grep -m 1 -o "/ .*" | cut -c 3-)
+  physical="${physical%% *}"
+
+  if [ -n "$physical" ]; then
+    if [[ "$physical" == "512" ]] || [[ "$physical" == "4096" ]]; then
+      if [[ "$physical" == "4096" ]]; then
+        sectors=",logical_block_size=$logical,physical_block_size=$physical"
+      fi
+    else
+      warn "Unknown physical sector size: $physical for $DISK_DEV"
+    fi
+  else
+    warn "Failed to determine the sector size for $DISK_DEV"
+  fi
+
+  DISK_OPTS+=$(createDevice "$DISK_DEV" "$DISK_TYPE" "$DISK_INDEX" "$DISK_ADDRESS" "raw" "$DISK_IO" "$DISK_CACHE" "" "$sectors")
 
   return 0
 }
@@ -529,8 +550,8 @@ else
   DISK_ALLOC="preallocation=falloc"
 fi
 
-DISK_OPTS+=$(createDevice "$BOOT" "$DISK_TYPE" "1" "0xa" "raw" "$DISK_IO" "$DISK_CACHE")
-DISK_OPTS+=$(createDevice "$SYSTEM" "$DISK_TYPE" "2" "0xb" "raw" "$DISK_IO" "$DISK_CACHE")
+DISK_OPTS+=$(createDevice "$BOOT" "$DISK_TYPE" "1" "0xa" "raw" "$DISK_IO" "$DISK_CACHE" "" "")
+DISK_OPTS+=$(createDevice "$SYSTEM" "$DISK_TYPE" "2" "0xb" "raw" "$DISK_IO" "$DISK_CACHE" "" "")
 
 DISK1_FILE="$STORAGE/${DISK_NAME}"
 if [[ ! -f "$DISK1_FILE.img" ]] && [[ -f "$STORAGE/data${DISK_SIZE}.img" ]]; then
