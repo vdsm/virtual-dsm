@@ -44,7 +44,7 @@ RUN set -eu && \
         netcat-openbsd \
         qemu-system-x86 && \
     apt-get clean && \
-    pip3 install --no-cache-dir --break-system-packages --root-user-action dissect.cstruct && \
+    pip3 install --no-cache-dir --break-system-packages --root-user-action=ignore dissect.cstruct && \
     mkdir -p /etc/qemu && \
     echo "allow br0" > /etc/qemu/bridge.conf && \
     unlink /etc/nginx/sites-enabled/default && \
