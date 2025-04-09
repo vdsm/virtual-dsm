@@ -192,6 +192,7 @@ configureNAT() {
 
   # Create the necessary file structure for /dev/net/tun
   if [ ! -c /dev/net/tun ]; then
+    [[ "$PODMAN" == [Yy1]* ]] && return 1
     [ ! -d /dev/net ] && mkdir -m 755 /dev/net
     if mknod /dev/net/tun c 10 200; then
       chmod 666 /dev/net/tun
@@ -199,8 +200,7 @@ configureNAT() {
   fi
 
   if [ ! -c /dev/net/tun ]; then
-    [[ "$PODMAN" != [Yy1]* ]] && error "$tuntap"  
-    return 1
+    error "$tuntap" && return 1
   fi
 
   # Check port forwarding flag
