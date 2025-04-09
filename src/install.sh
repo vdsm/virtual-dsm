@@ -13,8 +13,8 @@ else
 fi
 
 FN="boot.pat"
-DIR=$(find / -maxdepth 1 -type d -iname "$FN" | head -n 1)
-[ ! -d "$DIR" ] && DIR=$(find "$STORAGE" -maxdepth 1 -type d -iname "$FN" | head -n 1)
+DIR=$(find / -maxdepth 1 -type d -iname "$FN" -print -quit)
+[ ! -d "$DIR" ] && DIR=$(find "$STORAGE" -maxdepth 1 -type d -iname "$FN" -print -quit)
 
 if [ -d "$DIR" ]; then
   BASE="DSM_VirtualDSM" && URL="file://$DIR" 
@@ -23,8 +23,8 @@ if [ -d "$DIR" ]; then
   fi
 fi
 
-FILE=$(find / -maxdepth 1 -type f -iname "$FN" | head -n 1)
-[ ! -s "$FILE" ] && FILE=$(find "$STORAGE" -maxdepth 1 -type f -iname "$FN" | head -n 1)
+FILE=$(find / -maxdepth 1 -type f -iname "$FN" -print -quit)
+[ ! -s "$FILE" ] && FILE=$(find "$STORAGE" -maxdepth 1 -type f -iname "$FN" -print -quit)
 [ -s "$FILE" ] && BASE="DSM_VirtualDSM" && URL="file://$FILE" 
 
 if [ -n "$URL" ] && [ ! -s "$FILE" ] && [ ! -d "$DIR" ]; then
