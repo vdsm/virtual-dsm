@@ -61,9 +61,9 @@ ADD --chmod=775 https://raw.githubusercontent.com/sud0woodo/patology/refs/heads/
 VOLUME /storage
 EXPOSE 22 139 445 5000
 
-ENV RAM_SIZE="1G"
+ENV RAM_SIZE="2G"
+ENV CPU_CORES="2"
 ENV DISK_SIZE="16G"
-ENV CPU_CORES="1"
 
 HEALTHCHECK --interval=60s --start-period=45s --retries=2 CMD /run/check.sh
 
