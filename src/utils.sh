@@ -147,6 +147,7 @@ cpu() {
   cpu="${cpu// Core TM/ Core}"
   cpu="${cpu// with Radeon Graphics/}"
   cpu="${cpu// with Radeon Vega Graphics/}"
+  cpu="${cpu// with Radeon Vega Mobile Gfx/}"
   
   [ -z "${cpu// /}" ] && cpu="Unknown"
 
