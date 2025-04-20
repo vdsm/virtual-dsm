@@ -113,15 +113,15 @@ cpu() {
   local cpu=""
 
   ret=$(lscpu)
-  
+
   if grep -qi "model name" <<< "$ret"; then
     cpu=$(echo "$ret" | grep -m 1 -i 'model name' | cut -f 2 -d ":" | awk '{$1=$1}1' | sed 's# @.*##g' | sed s/"(R)"//g | sed 's/[^[:alnum:] ]\+/ /g' | sed 's/  */ /g')
   fi
-  
+
   if [ -z "${cpu// /}" ] && grep -qi "model:" <<< "$ret"; then
     cpu=$(echo "$ret" | grep -m 1 -i 'model:' | cut -f 2 -d ":" | awk '{$1=$1}1' | sed 's# @.*##g' | sed s/"(R)"//g | sed 's/[^[:alnum:] ]\+/ /g' | sed 's/  */ /g')
   fi
-  
+
   cpu="${cpu// CPU/}"
   cpu="${cpu// 4 Core/}"
   cpu="${cpu// 6 Core/}"
@@ -148,7 +148,7 @@ cpu() {
   cpu="${cpu// with Radeon Graphics/}"
   cpu="${cpu// with Radeon Vega Graphics/}"
   cpu="${cpu// with Radeon Vega Mobile Gfx/}"
-  
+
   [ -z "${cpu// /}" ] && cpu="Unknown"
 
   echo "$cpu"
