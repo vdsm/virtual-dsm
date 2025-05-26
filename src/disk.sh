@@ -320,7 +320,7 @@ convertDisk() {
 
   msg="Conversion of $DISK_DESC"
   html "$msg completed..."
-  info "$msg to $DST_FMT completed succesfully!"
+  info "$msg to $DST_FMT completed successfully!"
 
   return 0
 }
