@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 FROM qemux/qemu-host:2.05 AS builder
 
 #  FROM golang as builder
