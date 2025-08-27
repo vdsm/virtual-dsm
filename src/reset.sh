@@ -69,6 +69,10 @@ if [ ! -d "$STORAGE" ]; then
   error "Storage folder ($STORAGE) not found!" && exit 13
 fi
 
+if [ ! -w "$STORAGE" ]; then
+  error "Storage folder ($STORAGE) is not writeable!" && exit 13
+fi
+
 # Check filesystem
 FS=$(stat -f -c %T "$STORAGE")
 
@@ -99,7 +103,8 @@ SYS="${SYS/-generic/}"
 FS="${FS/UNKNOWN //}"
 FS="${FS/ext2\/ext3/ext4}"
 FS=$(echo "$FS" | sed 's/[)(]//g')
-SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
+SPACE=$(df --outpu
+t=avail -B 1 "$STORAGE" | tail -n 1)
 SPACE_GB=$(formatBytes "$SPACE" "down")
 AVAIL_MEM=$(formatBytes "$RAM_AVAIL" "down")
 TOTAL_MEM=$(formatBytes "$RAM_TOTAL" "up")
