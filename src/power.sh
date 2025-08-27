@@ -4,12 +4,12 @@ set -Eeuo pipefail
 # Configure QEMU for graceful shutdown
 
 API_CMD=6
-API_TIMEOUT=50
 API_HOST="127.0.0.1:2210"
+: "${API_TIMEOUT:="50"}" # API Call timeout
 
 QEMU_TERM=""
 QEMU_PORT=7100
-QEMU_TIMEOUT=50
+: "${QEMU_TIMEOUT:="50"}" # QEMU Termination timeout
 QEMU_DIR="/run/shm"
 QEMU_PID="$QEMU_DIR/qemu.pid"
 QEMU_LOG="$QEMU_DIR/qemu.log"
