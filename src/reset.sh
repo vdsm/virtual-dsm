@@ -160,6 +160,7 @@ setCountry() {
   [ -z "$COUNTRY" ] && getCountry "https://ifconfig.co/json" ".country_iso"
   [ -z "$COUNTRY" ] && getCountry "https://api.ip2location.io" ".country_code"
   [ -z "$COUNTRY" ] && getCountry "https://ipinfo.io/json" ".country"
+  [ -z "$COUNTRY" ] && getCountry "https://api.ipquery.io/?format=json" ".location.country_code" 
   [ -z "$COUNTRY" ] && getCountry "https://api.myip.com" ".cc"
 
   return 0
