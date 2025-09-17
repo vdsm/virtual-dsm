@@ -152,7 +152,18 @@ getUserPorts() {
   list="${list%% }"
 
   for port in $list; do
-    args+="hostfwd=tcp::$port-$VM_NET_IP:$port,"
+    proto="tcp"
+    num="$port"
+
+    if [[ "$port" == */udp ]]; then
+      proto="udp"
+      num="${port%/udp}"
+    elif [[ "$port" == */tcp ]]; then
+      proto="tcp"
+      num="${port%/tcp}"
+    fi
+
+    args+="hostfwd=$proto::$num-$VM_NET_IP:$num,"
   done
 
   echo "${args%?}"
