@@ -128,6 +128,30 @@ else
 
 fi
 
+if [[ "$ARGUMENTS" == *"-cpu host,"* ]]; then
+
+  args="${ARGUMENTS} "
+  prefix="${args/-cpu host,*/}"
+  suffix="${args/*-cpu host,/}"
+  param="${suffix%% *}"
+  suffix="${suffix#* }"
+  args="${prefix}${suffix}"
+  ARGUMENTS="${args::-1}"
+
+  if [ -z "$CPU_FLAGS" ]; then
+    CPU_FLAGS="$param"
+  else
+    CPU_FLAGS+=",$param"
+  fi
+
+else
+
+  if [[ "$ARGUMENTS" == *"-cpu host"* ]]; then
+    ARGUMENTS="${ARGUMENTS//-cpu host/}"
+  fi
+
+fi
+
 if [ -z "$CPU_FLAGS" ]; then
   if [ -z "$CPU_FEATURES" ]; then
     CPU_FLAGS="$CPU_MODEL"
