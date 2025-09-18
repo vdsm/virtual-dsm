@@ -326,7 +326,7 @@ closeBridge() {
 
 closeNetwork() {
 
-  if [[ "$DHCP" == [Yy1]* ]]; then
+  if [[ "${WEB:-}" != [Nn]* && "$DHCP" == [Yy1]* ]]; then
 
     # Shutdown nginx
     nginx -s stop 2> /dev/null
@@ -504,9 +504,13 @@ else
     checkOS
   fi
 
-  # Shutdown nginx
-  nginx -s stop 2> /dev/null
-  fWait "nginx"
+  if [[ "${WEB:-}" != [Nn]* ]]; then
+
+    # Shutdown nginx
+    nginx -s stop 2> /dev/null
+    fWait "nginx"
+
+  fi
 
   if [[ "${NETWORK,,}" != "user"* ]]; then
 
