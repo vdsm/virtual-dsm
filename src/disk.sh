@@ -82,7 +82,7 @@ isCow() {
 supportsDirect() {
   local FS=$1
 
-  if [[ "${FS,,}" == "ecryptfs" ]] || [[ "${FS,,}" == "tmpfs" ]]; then
+  if [[ "${FS,,}" == "ecryptfs" || "${FS,,}" == "tmpfs" ]]; then
     return 1
   fi
 
@@ -507,7 +507,7 @@ addDevice () {
   physical="${physical%% *}"
 
   if [ -n "$physical" ]; then
-    if [[ "$physical" == "512" ]] || [[ "$physical" == "4096" ]]; then
+    if [[ "$physical" == "512" || "$physical" == "4096" ]]; then
       if [[ "$physical" == "4096" ]]; then
         sectors=",logical_block_size=$logical,physical_block_size=$physical"
       fi
@@ -554,7 +554,7 @@ DISK_OPTS+=$(createDevice "$BOOT" "$DISK_TYPE" "1" "0xa" "raw" "$DISK_IO" "$DISK
 DISK_OPTS+=$(createDevice "$SYSTEM" "$DISK_TYPE" "2" "0xb" "raw" "$DISK_IO" "$DISK_CACHE" "" "")
 
 DISK1_FILE="$STORAGE/${DISK_NAME}"
-if [[ ! -f "$DISK1_FILE.img" ]] && [[ -f "$STORAGE/data${DISK_SIZE}.img" ]]; then
+if [[ ! -f "$DISK1_FILE.img" && -f "$STORAGE/data${DISK_SIZE}.img" ]]; then
   # Fallback for legacy installs
   mv "$STORAGE/data${DISK_SIZE}.img" "$DISK1_FILE.img"
 fi
@@ -563,7 +563,7 @@ DISK2_FILE="/storage2/${DISK_NAME}2"
 if [ ! -f "$DISK2_FILE.img" ]; then
   # Fallback for legacy installs
   FALLBACK="/storage2/data.img"
-  if [[ -f "$DISK1_FILE.img" ]] && [[ -f "$FALLBACK" ]]; then
+  if [[ -f "$DISK1_FILE.img" && -f "$FALLBACK" ]]; then
     SIZE1=$(stat -c%s "$FALLBACK")
     SIZE2=$(stat -c%s "$DISK1_FILE.img")
     if [[ SIZE1 -ne SIZE2 ]]; then
@@ -576,7 +576,7 @@ DISK3_FILE="/storage3/${DISK_NAME}3"
 if [ ! -f "$DISK3_FILE.img" ]; then
   # Fallback for legacy installs
   FALLBACK="/storage3/data.img"
-  if [[ -f "$DISK1_FILE.img" ]] && [[ -f "$FALLBACK" ]]; then
+  if [[ -f "$DISK1_FILE.img" && -f "$FALLBACK" ]]; then
     SIZE1=$(stat -c%s "$FALLBACK")
     SIZE2=$(stat -c%s "$DISK1_FILE.img")
     if [[ SIZE1 -ne SIZE2 ]]; then
