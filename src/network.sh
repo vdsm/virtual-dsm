@@ -59,7 +59,7 @@ configureDHCP() {
       fi ;;
   esac
 
-  if [[ "$MTU" != "0" ]] && [[ "$MTU" != "1500" ]]; then
+  if [[ "$MTU" != "0" && "$MTU" != "1500" ]]; then
     if ! ip link set dev "$VM_NET_TAP" mtu "$MTU"; then
       warn "Failed to set MTU size.."
     fi
@@ -78,7 +78,7 @@ configureDHCP() {
   IFS=: read -r MAJOR MINOR < <(cat /sys/devices/virtual/net/"$VM_NET_TAP"/tap*/dev)
   (( MAJOR < 1)) && error "Cannot find: sys/devices/virtual/net/$VM_NET_TAP" && return 1
 
-  [[ ! -e "$TAP_PATH" ]] && [[ -e "/dev0/${TAP_PATH##*/}" ]] && ln -s "/dev0/${TAP_PATH##*/}" "$TAP_PATH"
+  [[ ! -e "$TAP_PATH" && -e "/dev0/${TAP_PATH##*/}" ]] && ln -s "/dev0/${TAP_PATH##*/}" "$TAP_PATH"
 
   if [[ ! -e "$TAP_PATH" ]]; then
     { mknod "$TAP_PATH" c "$MAJOR" "$MINOR" ; rc=$?; } || :
@@ -249,7 +249,7 @@ configureNAT() {
     error "$tuntap" && return 1
   fi
 
-  if [[ "$MTU" != "0" ]] && [[ "$MTU" != "1500" ]]; then
+  if [[ "$MTU" != "0" && "$MTU" != "1500" ]]; then
     if ! ip link set dev "$VM_NET_TAP" mtu "$MTU"; then
       warn "Failed to set MTU size.."
     fi
@@ -407,7 +407,7 @@ getInfo() {
   fi
 
   if [[ "${ADAPTER,,}" != "virtio-net-pci" ]]; then
-    if [[ "$MTU" != "0" ]] && [[ "$MTU" != "1500" ]]; then
+    if [[ "$MTU" != "0" && "$MTU" != "1500" ]]; then
       warn "MTU size is $MTU, but cannot be set for $ADAPTER adapters!" && MTU="0"
     fi
   fi
@@ -466,7 +466,7 @@ html "Initializing network..."
 if [[ "$DEBUG" == [Yy1]* ]]; then
   mtu=$(cat "/sys/class/net/$VM_NET_DEV/mtu")
   line="Host: $HOST  IP: $IP  Gateway: $GATEWAY  Interface: $VM_NET_DEV  MAC: $VM_NET_MAC  MTU: $mtu"
-  [[ "$MTU" != "0" ]] && [[ "$MTU" != "$mtu" ]] && line+=" ($MTU)"
+  [[ "$MTU" != "0" && "$MTU" != "$mtu" ]] && line+=" ($MTU)"
   info "$line"
   if [ -f /etc/resolv.conf ]; then
     nameservers=$(grep '^nameserver*' /etc/resolv.conf | head -c -1 | sed 's/nameserver //g;' | sed -z 's/\n/, /g')
@@ -500,7 +500,7 @@ if [[ "$DHCP" == [Yy1]* ]]; then
 
 else
 
-  if [[ "$IP" != "172."* ]] && [[ "$IP" != "10.8"* ]] && [[ "$IP" != "10.9"* ]]; then
+  if [[ "$IP" != "172."* && "$IP" != "10.8"* && "$IP" != "10.9"* ]]; then
     checkOS
   fi
 
@@ -542,6 +542,6 @@ else
 fi
 
 NET_OPTS+=" -device $ADAPTER,id=net0,netdev=hostnet0,romfile=,mac=$VM_NET_MAC"
-[[ "$MTU" != "0" ]] && [[ "$MTU" != "1500" ]] && NET_OPTS+=",host_mtu=$MTU"
+[[ "$MTU" != "0" && "$MTU" != "1500" ]] && NET_OPTS+=",host_mtu=$MTU"
 
 return 0
