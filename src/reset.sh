@@ -76,7 +76,7 @@ fi
 # Check filesystem
 FS=$(stat -f -c %T "$STORAGE")
 
-if [[ "${FS,,}" == "ecryptfs" ]] || [[ "${FS,,}" == "tmpfs" ]]; then
+if [[ "${FS,,}" == "ecryptfs" || "${FS,,}" == "tmpfs" ]]; then
   DISK_IO="threads"
   DISK_CACHE="writeback"
 fi
