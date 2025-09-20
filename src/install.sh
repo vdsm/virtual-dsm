@@ -18,7 +18,7 @@ DIR=$(find / -maxdepth 1 -type d -iname "$FN" -print -quit)
 
 if [ -d "$DIR" ]; then
   BASE="DSM_VirtualDSM" && URL="file://$DIR" 
-  if [[ ! -s "$STORAGE/$BASE.boot.img" ]] || [[ ! -s "$STORAGE/$BASE.system.img" ]]; then
+  if [[ ! -s "$STORAGE/$BASE.boot.img" || ! -s "$STORAGE/$BASE.system.img" ]]; then
     error "The bind $DIR maps to a file that does not exist!" && exit 65
   fi
 fi
@@ -34,13 +34,13 @@ if [ -n "$URL" ] && [ ! -s "$FILE" ] && [ ! -d "$DIR" ]; then
     : "${BASE//+/ }"; printf -v BASE '%b' "${_//%/\\x}"
     BASE=$(echo "$BASE" | sed -e 's/[^A-Za-z0-9._-]/_/g')
   fi
-  if [[ "${URL,,}" != "http"* ]] && [[ "${URL,,}" != "file:"* ]] ; then
+  if [[ "${URL,,}" != "http"* && "${URL,,}" != "file:"* ]] ; then
     [ ! -s "$STORAGE/$BASE.pat" ] && error "Invalid URL:  $URL" && exit 65
     URL="file://$STORAGE/$BASE.pat"
   fi
 fi
 
-if [[ -s "$STORAGE/$BASE.boot.img" ]] && [[ -s "$STORAGE/$BASE.system.img" ]]; then
+if [[ -s "$STORAGE/$BASE.boot.img" && -s "$STORAGE/$BASE.system.img" ]]; then
   return 0  # Previous installation found
 fi
 
@@ -88,7 +88,7 @@ if [[ "${FS,,}" == "fuse"* ]]; then
   info "Warning: the filesystem of $STORAGE is FUSE, this extra layer will negatively affect performance!"
 fi
 
-if [[ "${FS,,}" == "ecryptfs" ]] || [[ "${FS,,}" == "tmpfs" ]]; then
+if [[ "${FS,,}" == "ecryptfs" || "${FS,,}" == "tmpfs" ]]; then
   info "Warning: the filesystem of $STORAGE is $FS, which does not support O_DIRECT mode, adjusting settings..."
 fi
 
