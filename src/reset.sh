@@ -50,6 +50,11 @@ fi
 
 [ -n "${CPU_CORES//[0-9 ]}" ] && error "Invalid amount of CPU_CORES: $CPU_CORES" && exit 15
 
+if [ "$CPU_CORES" -gt "$CORES" ]; then
+  warn "The amount for CPU_CORES (${CPU_CORES}) exceeds the amount of physical cores, so will be limited to ${CORES}."
+  CPU_CORES="$CORES"
+fi
+
 # Check system
 
 if [ ! -d "/dev/shm" ]; then
