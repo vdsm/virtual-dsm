@@ -440,7 +440,7 @@ getInfo() {
 
   IP6=""
   # shellcheck disable=SC2143
-  if [ -f /proc/net/if_inet6 ] && [ -n "$(ifconfig -a | grep inet6)" ]; then
+  if [ -f /proc/net/if_inet6 && -n "$(ifconfig -a | grep inet6)" ]; then
     IP6=$(ip -6 addr show dev "$VM_NET_DEV" scope global up)
     [ -n "$IP6" ] && IP6=$(echo "$IP6" | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d' | head -n 1)
   fi
