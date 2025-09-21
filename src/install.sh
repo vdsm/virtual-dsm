@@ -27,7 +27,7 @@ FILE=$(find / -maxdepth 1 -type f -iname "$FN" -print -quit)
 [ ! -s "$FILE" ] && FILE=$(find "$STORAGE" -maxdepth 1 -type f -iname "$FN" -print -quit)
 [ -s "$FILE" ] && BASE="DSM_VirtualDSM" && URL="file://$FILE" 
 
-if [ -n "$URL" && ! -s "$FILE" && ! -d "$DIR" ]; then
+if [ -n "$URL" ] && [ ! -s "$FILE" ] && [ ! -d "$DIR" ]; then
   BASE=$(basename "$URL" .pat)
   if [ ! -s "$STORAGE/$BASE.system.img" ]; then
     BASE=$(basename "${URL%%\?*}" .pat)
