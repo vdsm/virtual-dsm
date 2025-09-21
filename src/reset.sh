@@ -200,7 +200,7 @@ html "Starting $APP for Docker..."
 if [[ "${WEB:-}" != [Nn]* ]]; then
  
   # shellcheck disable=SC2143
-  if [ -f /proc/net/if_inet6 && -n "$(ifconfig -a | grep inet6)" ]; then
+  if [ -f /proc/net/if_inet6 ] && [ -n "$(ifconfig -a | grep inet6)" ]; then
 
     sed -i "s/listen 5000 default_server;/listen [::]:5000 default_server ipv6only=off;/g" /etc/nginx/sites-enabled/web.conf
 
