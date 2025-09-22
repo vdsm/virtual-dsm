@@ -101,8 +101,6 @@ if [[ "${RAM_SIZE,,}" == "max" ]]; then
   RAM_WANTED=$(( RAM_WANTED / 1073741825 ))
   RAM_SIZE="${RAM_WANTED}G"
 fi
-  RAM_SIZE="${RAM_WANTED}G"
-fi
 
 if [ -z "${RAM_SIZE//[0-9. ]}" ]; then
   [ "${RAM_SIZE%%.*}" -lt "130" ] && RAM_SIZE="${RAM_SIZE}G" || RAM_SIZE="${RAM_SIZE}M"
