@@ -97,8 +97,8 @@ RAM_SIZE="${RAM_SIZE// /}"
 [ -z "$RAM_SIZE" ] && error "RAM_SIZE not specified!" && exit 16
 
 if [[ "${RAM_SIZE,,}" == "max" ]]; then
-  RAM_WANTED=(( RAM_AVAIL - RAM_SPARE - RAM_SPARE))
-  RAM_WANTED=(( RAM_WANTED / 1073741825 ))
+  RAM_WANTED=$(( RAM_AVAIL - RAM_SPARE - RAM_SPARE ))
+  RAM_WANTED=$(( RAM_WANTED / 1073741825 ))
   RAM_SIZE="${RAM_WANTED}G"
 fi
 
