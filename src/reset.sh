@@ -48,6 +48,8 @@ else
   SOCKETS=$(lscpu | grep -m 1 -i 'socket(s)' | awk '{print $(2)}')
 fi
 
+CPU_CORES="${CPU_CORES// /}"
+[[ "${CPU_CORES,,}" == "max" ]] && CPU_CORES="$CORES"
 [ -n "${CPU_CORES//[0-9 ]}" ] && error "Invalid amount of CPU_CORES: $CPU_CORES" && exit 15
 
 if [ "$CPU_CORES" -gt "$CORES" ]; then
@@ -93,6 +95,12 @@ RAM_TOTAL=$(free -b | grep -m 1 Mem: | awk '{print $2}')
 
 RAM_SIZE="${RAM_SIZE// /}"
 [ -z "$RAM_SIZE" ] && error "RAM_SIZE not specified!" && exit 16
+
+if [[ "${RAM_SIZE,,}" == "max" ]]; then
+  RAM_WANTED=(( RAM_AVAIL - RAM_SPARE - RAM_SPARE))
+  RAM_WANTED=(( RAM_WANTED / 1073741825 ))
+  RAM_SIZE="${RAM_WANTED}G"
+fi
 
 if [ -z "${RAM_SIZE//[0-9. ]}" ]; then
   [ "${RAM_SIZE%%.*}" -lt "130" ] && RAM_SIZE="${RAM_SIZE}G" || RAM_SIZE="${RAM_SIZE}M"
