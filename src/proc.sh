@@ -65,7 +65,7 @@ if [[ "$KVM" != [Nn]* ]]; then
           error "Please make sure that Synology VMM (Virtual Machine Manager) is installed and that '/dev/kvm' is binded to this container." ;;
         *)
           error "KVM acceleration is not available $KVM_ERR, this will cause the machine to run about 10 times slower."
-          error "See the FAQ for possible causes, or continue without it by adding the \"KVM=N\" variable (not recommended)." ;;
+          error "See the FAQ for possible causes, or disable acceleration by adding the \"KVM=N\" variable (not recommended)." ;;
       esac
       [[ "$DEBUG" != [Yy1]* ]] && exit 88
     fi
