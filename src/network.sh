@@ -393,6 +393,13 @@ getInfo() {
     error "$ADD_ERR -e \"VM_NET_DEV=NAME\" to specify another interface name." && exit 26
   fi
 
+  NIC=$(ethtool -i "$VM_NET_DEV" | grep -m 1 -i 'driver:' | awk '{print $(2)}')
+
+  if [[ "${NIC,,}" != "veth" ]]; then
+    [[ "$DEBUG" == [Yy1]* ]] && info "Detected NIC: $NIC"
+    error "This container does not support host mode networking!" && exit 29
+  fi
+
   BASE_IP="${VM_NET_IP%.*}."
 
   if [ "${VM_NET_IP/$BASE_IP/}" -lt "3" ]; then
