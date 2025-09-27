@@ -67,6 +67,7 @@ configureDHCP() {
 
   while ! ip link set "$VM_NET_TAP" up; do
     info "Waiting for MAC address $VM_NET_MAC to become available..."
+    info "If you cloned this machine, please delete the 'dsm.mac' file to generate a different MAC address."
     sleep 2
   done
 
