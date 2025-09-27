@@ -58,7 +58,7 @@ RUN set -eu && \
 COPY --chmod=755 ./src /run/
 COPY --chmod=755 ./web /var/www/
 COPY --chmod=755 --from=builder /qemu-host.bin /run/host.bin
-COPY --chmod=744 ./web/conf/nginx.conf /etc/nginx/sites-enabled/web.conf
+COPY --chmod=744 ./web/conf/nginx.conf /etc/nginx/default.conf
 ADD --chmod=775 https://raw.githubusercontent.com/sud0woodo/patology/refs/heads/main/patology.py /run/extract.py
 
 VOLUME /storage

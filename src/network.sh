@@ -173,7 +173,7 @@ getUserPorts() {
 
 getHostPorts() {
 
-  local list=$1
+  local list="$1"
 
   [ -z "$list" ] && echo "" && return 0
 
