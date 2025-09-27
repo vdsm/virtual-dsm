@@ -28,6 +28,7 @@ RUN set -eu && \
         unzip \
         nginx \
         procps \
+        ethtool \
         python3 \
         python3-pip \
         python3-msgpack \
