@@ -30,7 +30,7 @@ services:
     container_name: dsm
     image: vdsm/virtual-dsm
     environment:
-      DISK_SIZE: "16G"
+      DISK_SIZE: "256G"
     devices:
       - /dev/kvm
       - /dev/net/tun
@@ -47,7 +47,7 @@ services:
 ##### Via Docker CLI:
 
 ```bash
-docker run -it --rm --name dsm -p 5000:5000 --device=/dev/kvm --device=/dev/net/tun --cap-add NET_ADMIN -v "${PWD:-.}/dsm:/storage" --stop-timeout 120 vdsm/virtual-dsm
+docker run -it --rm --name dsm -e "DISK_SIZE=256G" -p 5000:5000 --device=/dev/kvm --device=/dev/net/tun --cap-add NET_ADMIN -v "${PWD:-.}/dsm:/storage" --stop-timeout 120 vdsm/virtual-dsm
 ```
 
 ##### Via Kubernetes:
@@ -87,11 +87,11 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
  
 ### How do I change the size of the disk?
 
-  To expand the default size of 16 GB, locate the `DISK_SIZE` setting in your compose file and modify it to your preferred capacity:
+  To expand the default size of 256 GB, locate the `DISK_SIZE` setting in your compose file and modify it to your preferred capacity:
 
   ```yaml
   environment:
-    DISK_SIZE: "128G"
+    DISK_SIZE: "512G"
   ```
   
 > [!TIP]
@@ -103,8 +103,8 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
   
   ```yaml
   environment:
-    DISK2_SIZE: "32G"
-    DISK3_SIZE: "64G"
+    DISK2_SIZE: "500G"
+    DISK3_SIZE: "750G"
   volumes:
     - ./example2:/storage2
     - ./example3:/storage3
@@ -251,14 +251,6 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 ### What are the differences compared to the standard DSM?
 
   There are only two minor differences: the Virtual Machine Manager package is not available, and Surveillance Station will not include any free licenses.
-
-### How do I run Windows in a container?
-
-  You can use [dockur/windows](https://github.com/dockur/windows) for that. It shares many of the same features, and even has completely automatic installation.
-
-### How do I run a Linux desktop in a container?
-
-  You can use [qemus/qemu](https://github.com/qemus/qemu) in that case.
 
 ### Is this project legal?
 
