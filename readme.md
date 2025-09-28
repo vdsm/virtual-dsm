@@ -97,17 +97,6 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 > [!TIP]
 > This can also be used to resize the existing disk to a larger capacity without any data loss.
 
-### How do I create a growable disk?
-
-  By default, the entire capacity of the disk will be reserved in advance.
-
-  To create a growable disk that only allocates space that is actually used, add the following environment variable:
-
-  ```yaml
-  environment:
-    DISK_FMT: "qcow2"
-  ```
-
 ### How do I add multiple disks?
 
   To create additional disks, modify your compose file like this:
