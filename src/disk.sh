@@ -535,11 +535,7 @@ case "${DISK_TYPE,,}" in
 esac
 
 if [ -z "$ALLOCATE" ]; then
-  if [[ "${DISK_FMT,,}" == "raw" ]]; then
-    ALLOCATE="Y"
-  else
-    ALLOCATE="N"
-  fi
+  ALLOCATE="N"
 fi
 
 if [[ "$ALLOCATE" == [Nn]* ]]; then
@@ -554,7 +550,7 @@ DISK_OPTS+=$(createDevice "$BOOT" "$DISK_TYPE" "1" "0xa" "raw" "$DISK_IO" "$DISK
 DISK_OPTS+=$(createDevice "$SYSTEM" "$DISK_TYPE" "2" "0xb" "raw" "$DISK_IO" "$DISK_CACHE" "" "")
 
 DISK1_FILE="$STORAGE/${DISK_NAME}"
-if [[ ! -f "$DISK1_FILE.img" && -f "$STORAGE/data${DISK_SIZE}.img" ]]; then
+if [ ! -f "$DISK1_FILE.img" ] && [ -f "$STORAGE/data${DISK_SIZE}.img" ]; then
   # Fallback for legacy installs
   mv "$STORAGE/data${DISK_SIZE}.img" "$DISK1_FILE.img"
 fi

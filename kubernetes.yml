@@ -8,7 +8,7 @@ spec:
   - ReadWriteOnce
   resources:
     requests:
-      storage: 16Gi
+      storage: 256Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -31,7 +31,7 @@ spec:
         image: vdsm/virtual-dsm
         env:
         - name: DISK_SIZE
-          value: "16G"
+          value: "256G"
         ports:
           - containerPort: 5000
             name: http
