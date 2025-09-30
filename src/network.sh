@@ -395,7 +395,7 @@ getInfo() {
 
   NIC=$(ethtool -i "$VM_NET_DEV" | grep -m 1 -i 'driver:' | awk '{print $(2)}')
 
-  if [[ "${NIC,,}" != "veth" ]]; then
+  if [[ "${NIC,,}" != "veth" && "${NIC,,}" != "macvlan" ]]; then
     [[ "$DEBUG" == [Yy1]* ]] && info "Detected NIC: $NIC"
     error "This container does not support host mode networking!" && exit 29
   fi
