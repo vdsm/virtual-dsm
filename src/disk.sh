@@ -507,12 +507,11 @@ addDevice () {
   physical="${physical%% *}"
 
   if [ -n "$physical" ]; then
-    if [[ "$physical" == "512" || "$physical" == "4096" ]]; then
-      if [[ "$physical" == "4096" ]]; then
-        sectors=",logical_block_size=$logical,physical_block_size=$physical"
+    if [[ "$physical" != "512" ]]; then
+      sectors=",logical_block_size=$logical,physical_block_size=$physical"
+      if [[ "$physical" != "4096" && "$physical" != "32768" ]]; then
+        warn "Unknown physical sector size: $physical for $DISK_DEV"
       fi
-    else
-      warn "Unknown physical sector size: $physical for $DISK_DEV"
     fi
   else
     warn "Failed to determine the sector size for $DISK_DEV"
