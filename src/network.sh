@@ -393,11 +393,30 @@ getInfo() {
     error "$ADD_ERR -e \"VM_NET_DEV=NAME\" to specify another interface name." && exit 26
   fi
 
-  NIC=$(ethtool -i "$VM_NET_DEV" | grep -m 1 -i 'driver:' | awk '{print $(2)}')
+  local result nic bus
+  result=$(ethtool -i "$VM_NET_DEV")
+  nic=$(grep -m 1 -i 'driver:' <<< "$result" | awk '{print $(2)}')
+  bus=$(grep -m 1 -i 'bus-info:' <<< "$result" | awk '{print $(2)}')
 
-  if [[ "${NIC,,}" != "veth" && "${NIC,,}" != "macvlan" ]]; then
-    [[ "$DEBUG" == [Yy1]* ]] && info "Detected NIC: $NIC"
-    error "This container does not support host mode networking!" && exit 29
+  if [[ "${bus,,}" != "" && "${bus,,}" != "n/a" ]]; then
+    [[ "$DEBUG" == [Yy1]* ]] && info "Detected BUS: $bus"
+    error "This container does not support host mode networking!"
+    exit 29
+  fi
+
+  if [[ "$DHCP" == [Yy1]* ]]; then
+
+    if [[ "${nic,,}" == "ipvlan" ]]; then
+      error "This container does not support IPVLAN networking when DHCP=Y."
+      exit 29
+    fi
+
+    if [[ "${nic,,}" != "macvlan" ]]; then
+      [[ "$DEBUG" == [Yy1]* ]] && info "Detected NIC: $nic"
+      error "The container needs to be in a MACVLAN network when DHCP=Y."
+      exit 29
+    fi
+
   fi
 
   BASE_IP="${VM_NET_IP%.*}."
@@ -495,10 +514,6 @@ fi
 if [[ "$DHCP" == [Yy1]* ]]; then
 
   checkOS
-
-  if [[ "$IP" == "172."* ]]; then
-    warn "container IP starts with 172.* which is often a sign that you are not on a macvlan network (required for DHCP)!"
-  fi
 
   # Configure for macvtap interface
   configureDHCP || exit 20
