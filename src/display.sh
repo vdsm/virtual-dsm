@@ -18,6 +18,10 @@ if [[ "$GPU" != [Yy1]* || "$CPU_VENDOR" != "GenuineIntel" || "$ARCH" != "amd64" 
 
 fi
 
+msg="Configuring display drivers..."
+html "$msg"
+[[ "$DEBUG" == [Yy1]* ]] && echo "$msg"
+
 DISPLAY_OPTS="-display egl-headless,rendernode=$RENDERNODE"
 DISPLAY_OPTS+=" -vga $VGA"
 

@@ -31,8 +31,9 @@ if [ -n "$URL" ] && [ ! -s "$FILE" ] && [ ! -d "$DIR" ]; then
   BASE=$(basename "$URL" .pat)
   if [ ! -s "$STORAGE/$BASE.system.img" ]; then
     BASE=$(basename "${URL%%\?*}" .pat)
-    : "${BASE//+/ }"; printf -v BASE '%b' "${_//%/\\x}"
-    BASE=$(echo "$BASE" | sed -e 's/[^A-Za-z0-9._-]/_/g')
+    BASE="${BASE//+/ }"
+    printf -v BASE '%b' "${BASE//%/\\x}"
+    BASE="${BASE//[!A-Za-z0-9._-]/_}"
   fi
   if [[ "${URL,,}" != "http"* && "${URL,,}" != "file:"* ]] ; then
     [ ! -s "$STORAGE/$BASE.pat" ] && error "Invalid URL:  $URL" && exit 65
@@ -65,8 +66,9 @@ fi
 
 if [ ! -s "$FILE" ]; then
   BASE=$(basename "${URL%%\?*}" .pat)
-  : "${BASE//+/ }"; printf -v BASE '%b' "${_//%/\\x}"
-  BASE=$(echo "$BASE" | sed -e 's/[^A-Za-z0-9._-]/_/g')
+  BASE="${BASE//+/ }"
+  printf -v BASE '%b' "${BASE//%/\\x}"
+  BASE="${BASE//[!A-Za-z0-9._-]/_}"
 fi
 
 if [[ "$URL" != "file://$STORAGE/$BASE.pat" ]]; then

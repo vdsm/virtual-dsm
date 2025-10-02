@@ -29,6 +29,8 @@ ADD_ERR="Please add the following setting to your container:"
 
 configureDHCP() {
 
+  [[ "$DEBUG" == [Yy1]* ]] && echo "Configuring MACVTAP networking..."
+
   # Create the necessary file structure for /dev/vhost-net
   if [ ! -c /dev/vhost-net ]; then
     if mknod /dev/vhost-net c 10 238; then
@@ -125,6 +127,7 @@ configureDNS() {
   DNSMASQ_OPTS+=" --address=/host.lan/${VM_NET_IP%.*}.1"
 
   DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
+  [[ "$DEBUG" == [Yy1]* ]] && echo "Starting Dnsmasq daemon..."
 
   if [[ "${DEBUG_DNS:-}" == [Yy1]* ]]; then
    DNSMASQ_OPTS+=" -d"
@@ -188,6 +191,8 @@ getHostPorts() {
 
 configureUser() {
 
+  [[ "$DEBUG" == [Yy1]* ]] && echo "Configuring SLIRP networking..."
+
   if [ -z "$IP6" ]; then
     NET_OPTS="-netdev user,id=hostnet0,host=${VM_NET_IP%.*}.1,net=${VM_NET_IP%.*}.0/24,dhcpstart=$VM_NET_IP,hostname=$VM_NET_HOST"
   else
@@ -205,6 +210,8 @@ configureNAT() {
 
   local tuntap="TUN device is missing. $ADD_ERR --device /dev/net/tun"
   local tables="The 'ip_tables' kernel module is not loaded. Try this command: sudo modprobe ip_tables iptable_nat"
+
+  [[ "$DEBUG" == [Yy1]* ]] && echo "Configuring NAT networking..."
 
   # Create the necessary file structure for /dev/net/tun
   if [ ! -c /dev/net/tun ]; then
@@ -486,6 +493,8 @@ if [[ "$NETWORK" == [Nn]* ]]; then
   NET_OPTS=""
   return 0
 fi
+
+[[ "$DEBUG" == [Yy1]* ]] && echo "Retrieving network information..."
 
 getInfo
 html "Initializing network..."

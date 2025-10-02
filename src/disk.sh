@@ -522,7 +522,9 @@ addDevice () {
   return 0
 }
 
-html "Initializing disks..."
+msg="Initializing disks..."
+html "$msg"
+[[ "$DEBUG" == [Yy1]* ]] && echo "$msg"
 
 [ -z "${DISK_OPTS:-}" ] && DISK_OPTS=""
 [ -z "${DISK_TYPE:-}" ] && DISK_TYPE="scsi"
