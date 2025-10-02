@@ -107,6 +107,9 @@ configureDHCP() {
 
 configureDNS() {
 
+  local log="/var/log/dnsmasq.log"
+  rm -f "$log"
+
   # Create lease file for faster resolve
   echo "0 $VM_NET_MAC $VM_NET_IP $VM_NET_HOST 01:$VM_NET_MAC" > /var/lib/misc/dnsmasq.leases
   chmod 644 /var/lib/misc/dnsmasq.leases
@@ -125,18 +128,21 @@ configureDNS() {
 
   # Add DNS entry for container
   DNSMASQ_OPTS+=" --address=/host.lan/${VM_NET_IP%.*}.1"
+  DNSMASQ_OPTS+=" --log-facility=$log"
 
   DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
+
   [[ "$DEBUG" == [Yy1]* ]] && echo "Starting Dnsmasq daemon..."
 
-  if [[ "${DEBUG_DNS:-}" == [Yy1]* ]]; then
-   DNSMASQ_OPTS+=" -d"
-   $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS} &
-   return 0
+  if ! $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS}; then
+    local msg="Failed to start Dnsmasq, reason: $?"
+    [ -f "$log" ] && cat "$log"
+    error "$msg"
+    return 1
   fi
 
-  if ! $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS}; then
-    error "Failed to start dnsmasq, reason: $?" && return 1
+  if [[ "${DEBUG_DNS:-}" == [Yy1]* ]]; then
+    tail -fn +0 "$log" &
   fi
 
   return 0
@@ -514,6 +520,9 @@ fi
 if [[ "$IP" == "172.17."* ]]; then
   warn "your container IP starts with 172.17.* which will cause conflicts when you install the Container Manager package inside DSM!"
 fi
+
+# Clean up old files
+rm -f /var/run/dnsmasq.pid
 
 if [[ -d "/sys/class/net/$VM_NET_TAP" ]]; then
   info "Lingering interface will be removed..."
