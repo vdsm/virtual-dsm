@@ -203,6 +203,7 @@ addPackage() {
   return 0
 }
 
+: "${MON_PORT:="7100"}"    # Monitor port
 : "${WEB_PORT:="5000"}"    # Webserver port
 
 cp -r /var/www/* /run/shm
