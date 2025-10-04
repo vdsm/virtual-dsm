@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+: "${API_TIMEOUT:="50"}"   # API Call timeout
+: "${QEMU_TIMEOUT:="50"}"  # QEMU Termination timeout
+
 # Configure QEMU for graceful shutdown
 
 API_CMD=6
 API_HOST="127.0.0.1:2210"
-: "${API_TIMEOUT:="50"}" # API Call timeout
 
 QEMU_TERM=""
-QEMU_PORT=7100
-: "${QEMU_TIMEOUT:="50"}" # QEMU Termination timeout
 QEMU_DIR="/run/shm"
 QEMU_PID="$QEMU_DIR/qemu.pid"
 QEMU_LOG="$QEMU_DIR/qemu.log"
@@ -83,7 +83,7 @@ terminal() {
   fi
 
   if [ ! -c "$dev" ]; then
-    dev=$(echo 'info chardev' | nc -q 1 -w 1 localhost "$QEMU_PORT" | tr -d '\000')
+    dev=$(echo 'info chardev' | nc -q 1 -w 1 localhost "$MON_PORT" | tr -d '\000')
     dev="${dev#*serial0}"
     dev="${dev#*pty:}"
     dev="${dev%%$'\n'*}"
@@ -127,7 +127,7 @@ _graceful_shutdown() {
   fi
 
   # Don't send the powerdown signal because vDSM ignores ACPI signals
-  # echo 'system_powerdown' | nc -q 1 -w 1 localhost "${QEMU_PORT}" > /dev/null
+  # echo 'system_powerdown' | nc -q 1 -w 1 localhost "$MON_PORT" > /dev/null
 
   # Send shutdown command to guest agent via serial port
   url="http://$API_HOST/read?command=$API_CMD&timeout=$API_TIMEOUT"
@@ -172,7 +172,7 @@ _graceful_shutdown() {
 MON_OPTS="\
         -pidfile $QEMU_PID \
         -name $PROCESS,process=$PROCESS,debug-threads=on \
-        -monitor telnet:localhost:$QEMU_PORT,server,nowait,nodelay"
+        -monitor telnet:localhost:$MON_PORT,server,nowait,nodelay"
 
 if [[ "$CONSOLE" != [Yy]* ]]; then
 
