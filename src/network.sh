@@ -63,7 +63,7 @@ configureDHCP() {
 
   if [[ "$MTU" != "0" && "$MTU" != "1500" ]]; then
     if ! ip link set dev "$VM_NET_TAP" mtu "$MTU"; then
-      warn "Failed to set MTU size.."
+      warn "Failed to set MTU size to $MTU." && MTU="0"
     fi
   fi
 
@@ -183,7 +183,9 @@ getUserPorts() {
 getHostPorts() {
 
   local list="$1"
+
   [ -z "$list" ] && list="$MON_PORT" || list+=",$MON_PORT"
+  [ -z "$list" ] && echo "" && return 0
 
   if [[ "$list" != *","* ]]; then
     echo " ! --dport $list"
@@ -264,7 +266,7 @@ configureNAT() {
 
   if [[ "$MTU" != "0" && "$MTU" != "1500" ]]; then
     if ! ip link set dev "$VM_NET_TAP" mtu "$MTU"; then
-      warn "Failed to set MTU size.."
+      warn "Failed to set MTU size to $MTU." && MTU="0"
     fi
   fi
 
@@ -439,10 +441,6 @@ getInfo() {
   
   if [ -z "$MTU" ]; then
     MTU=$(cat "/sys/class/net/$VM_NET_DEV/mtu")
-  fi
-
-  if [ "$MTU" -gt "1500" ]; then
-    info "MTU size is too large: $MTU, ignoring..." && MTU="0"
   fi
 
   if [[ "${ADAPTER,,}" != "virtio-net-pci" ]]; then
