@@ -183,8 +183,7 @@ getUserPorts() {
 getHostPorts() {
 
   local list="$1"
-
-  [ -z "$list" ] && echo "" && return 0
+  [ -z "$list" ] && list="$MON_PORT" || list+=",$MON_PORT"
 
   if [[ "$list" != *","* ]]; then
     echo " ! --dport $list"
