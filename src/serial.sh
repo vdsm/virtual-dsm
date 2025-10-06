@@ -53,7 +53,7 @@ done
 
 cnt=0
 
-while ! nc -z -w2 127.0.0.1 12345 > /dev/null 2>&1; do
+while ! nc -z -w2 127.0.0.1 "$CHR_PORT" > /dev/null 2>&1; do
   sleep 0.1
   cnt=$((cnt + 1))
   (( cnt > 50 )) && error "Failed to connect to qemu-host.." && exit 59
@@ -69,7 +69,7 @@ fi
 
 SERIAL_OPTS+=" \
         -device virtio-serial-pci,id=virtio-serial0,bus=pcie.0,addr=0x3 \
-        -chardev socket,id=charchannel0,host=127.0.0.1,port=12345,reconnect=10 \
+        -chardev socket,id=charchannel0,host=127.0.0.1,port=$CHR_PORT,reconnect=10 \
         -device virtserialport,bus=virtio-serial0.0,nr=1,chardev=charchannel0,id=channel0,name=vchannel"
 
 return 0
