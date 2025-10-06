@@ -15,7 +15,7 @@ page="/run/shm/index.html"
 address="/run/shm/qemu.ip"
 shutdown="/run/shm/qemu.end"
 template="/var/www/index.html"
-url="http://127.0.0.1:2210/read?command=10"
+url="http://127.0.0.1:$COM_PORT/read?command=10"
 
 resp_err="Guest returned an invalid response:"
 curl_err="Failed to connect to guest: curl error"
