@@ -213,6 +213,7 @@ addPackage() {
 : "${COM_PORT:="2210"}"    # Comm port
 : "${MON_PORT:="7100"}"    # Monitor port
 : "${WEB_PORT:="5000"}"    # Webserver port
+: "${CHR_PORT:="12345"}"   # Character port
 
 cp -r /var/www/* /run/shm
 html "Starting $APP for $ENGINE..."
