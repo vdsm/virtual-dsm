@@ -7,7 +7,7 @@ set -Eeuo pipefail
 # Configure QEMU for graceful shutdown
 
 API_CMD=6
-API_HOST="127.0.0.1:2210"
+API_HOST="127.0.0.1:$COM_PORT"
 
 QEMU_TERM=""
 QEMU_DIR="/run/shm"
