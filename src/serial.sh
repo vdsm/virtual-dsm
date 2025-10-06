@@ -45,7 +45,7 @@ fi
 cnt=0
 sleep 0.2
 
-while ! nc -z -w2 127.0.0.1 2210 > /dev/null 2>&1; do
+while ! nc -z -w2 127.0.0.1 "$COM_PORT" > /dev/null 2>&1; do
   sleep 0.1
   cnt=$((cnt + 1))
   (( cnt > 50 )) && error "Failed to connect to qemu-host.." && exit 58
