@@ -11,6 +11,7 @@ FROM qemux/qemu-host:2.05 AS builder
 
 FROM debian:trixie-slim
 
+ARG TARGETARCH
 ARG TARGETPLATFORM
 ARG VERSION_ARG="0.0"
 ARG DEBCONF_NOWARNINGS="yes"
@@ -46,6 +47,8 @@ RUN set -eu && \
         ca-certificates \
         netcat-openbsd \
         qemu-system-x86 && \
+    wget "https://github.com/qemus/passt/releases/download/v2025_09_19/passt_2025_09_19_${TARGETARCH}.deb" -O /tmp/passt.deb -q && \
+    dpkg -i /tmp/passt.deb && \
     apt-get clean && \
     pip3 install --no-cache-dir --break-system-packages --root-user-action=ignore dissect.cstruct && \
     mkdir -p /etc/qemu && \
