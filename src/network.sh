@@ -305,15 +305,14 @@ configurePasst() {
   PASST_OPTS+=" -u $exclude"
   PASST_OPTS+=" -H $VM_NET_HOST"
   PASST_OPTS+=" -M $VM_NET_MAC"
-
-  if [[ "${DNSMASQ_DISABLE:-}" != [Yy1]* ]]; then
-    PASST_OPTS+=" --dns-forward $gateway"
-    PASST_OPTS+=" --dns-host 127.0.0.1"
-  fi
-
   PASST_OPTS+=" -P /var/run/passt.pid"
   PASST_OPTS+=" -l $log"
   PASST_OPTS+=" -q"
+
+  if [[ "${DNSMASQ_DISABLE:-}" != [Yy1]* ]]; then
+    cp /etc/resolv.conf /etc/resolv.dnsmasq
+    echo -e "nameserver 127.0.0.1\nsearch .\noptions ndots:0" >/etc/resolv.conf
+  fi
 
   PASST_OPTS=$(echo "$PASST_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
   [[ "$DEBUG" == [Yy1]* ]] && printf "Passt arguments:\n\n%s\n\n" "${PASST_OPTS// -/$'\n-'}"
