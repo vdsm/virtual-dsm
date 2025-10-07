@@ -371,7 +371,14 @@ configureNAT() {
     fi
   fi
 
-  local ip="172.30.0.2"
+  local ip base
+  base=$(echo "$IP" | sed -r 's/([^.]*.){2}//')
+  if [[ "$IP" != "172.30."* ]]; then
+    ip="172.30.$base"
+  else
+    ip="172.31.$base"
+  fi
+
   [ -n "$VM_NET_IP" ] && ip="$VM_NET_IP"
 
   local gateway=""
