@@ -11,11 +11,12 @@ error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: $1" "\E[0m\n" >&2; }
 
 file="/run/shm/dsm.url"
 info="/run/shm/msg.html"
+driver="/run/shm/qemu.nic"
 page="/run/shm/index.html"
 address="/run/shm/qemu.ip"
 shutdown="/run/shm/qemu.end"
 template="/var/www/index.html"
-url="http://127.0.0.1:$COM_PORT/read?command=10"
+url="http://127.0.0.1:2210/read?command=10"
 
 resp_err="Guest returned an invalid response:"
 curl_err="Failed to connect to guest: curl error"
@@ -56,11 +57,7 @@ do
   (( rc != 0 )) && error "$jq_err $rc ( $json )" && continue
   [[ "$ip" == "null" ]] && error "$resp_err $json" && continue
 
-  if [ -z "$ip" ]; then
-    [[ "$DHCP" == [Yy1]* ]] && continue
-    ip="20.20.20.21"
-  fi
-
+  [ -z "$ip" ] && continue
   echo "$ip:$port" > $file
 
 done
@@ -69,7 +66,7 @@ done
 
 location=$(<"$file")
 
-if [[ "$location" != "20.20"* ]]; then
+if [[ "$DHCP" == [Yy1]* ]]; then
 
   msg="http://$location"
   title="<title>Virtual DSM</title>"
@@ -88,10 +85,11 @@ if [[ "$location" != "20.20"* ]]; then
 
 else
 
+  nic=$(<"$driver")
   ip=$(<"$address")
   port="${location##*:}"
 
-  if [[ "$ip" == "172."* ]]; then
+  if [[ "${nic,,}" != "macvlan" ]]; then
     msg="port $port"
   else
     msg="http://$ip:$port"
