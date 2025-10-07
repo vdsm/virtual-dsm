@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+: "${DHCP:="N"}"
 : "${NETWORK:="Y"}"
 
 [ -f "/run/shm/qemu.end" ] && echo "QEMU is shutting down.." && exit 1
@@ -9,6 +10,7 @@ set -Eeuo pipefail
 
 file="/run/shm/dsm.url"
 address="/run/shm/qemu.ip"
+gateway="/run/shm/qemu.gw"
 
 [ ! -s  "$file" ] && echo "DSM has not enabled networking yet.." && exit 1
 
@@ -16,13 +18,13 @@ location=$(<"$file")
 
 if ! curl -m 20 -ILfSs "http://$location/" > /dev/null; then
 
-  if [[ "$location" == "20.20"* ]]; then
-    ip="20.20.20.1"
+  if [[ "$DHCP" == [Yy1]* ]]; then
+    ip=$(<"$address")
+    echo "Failed to reach DSM at http://$location"
+  else
+    ip=$(<"$gateway")
     port="${location##*:}"
     echo "Failed to reach DSM at port $port"
-  else
-    echo "Failed to reach DSM at http://$location"
-    ip=$(<"$address")
   fi
 
   echo "You might need to whitelist IP $ip in the DSM firewall." && exit 1
