@@ -121,6 +121,8 @@ configureDNS() {
   local mask="$5"
   local gateway="$6"
 
+  echo "$gateway" > /run/shm/qemu.gw
+  
   [[ "${DNSMASQ_DISABLE:-}" == [Yy1]* ]] && return 0
   [[ "$DEBUG" == [Yy1]* ]] && echo "Starting dnsmasq daemon..."
 
@@ -258,8 +260,9 @@ configureSlirp() {
   if [[ "${DNSMASQ_DISABLE:-}" != [Yy1]* ]]; then
     cp /etc/resolv.conf /etc/resolv.dnsmasq
     echo -e "nameserver 127.0.0.1\nsearch .\noptions ndots:0" >/etc/resolv.conf
-    configureDNS "lo" "$ip" "$VM_NET_MAC" "$VM_NET_HOST" "$VM_NET_MASK" "$gateway" || return 1
   fi
+
+  configureDNS "lo" "$ip" "$VM_NET_MAC" "$VM_NET_HOST" "$VM_NET_MASK" "$gateway" || return 1
 
   VM_NET_IP="$ip"
   return 0
