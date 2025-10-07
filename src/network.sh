@@ -552,8 +552,8 @@ checkOS() {
   local if="macvlan"
   kernel=$(uname -a)
 
-  [[ "${kernel,,}" == *"darwin"* ]] && os="Docker Desktop for macOS"
-  [[ "${kernel,,}" == *"microsoft"* ]] && os="Docker Desktop for Windows"
+  [[ "${kernel,,}" == *"darwin"* ]] && os="$ENGINE Desktop for macOS"
+  [[ "${kernel,,}" == *"microsoft"* ]] && os="$ENGINE Desktop for Windows"
 
   if [[ "$DHCP" == [Yy1]* ]]; then
     if="macvtap"
