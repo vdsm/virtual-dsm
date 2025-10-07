@@ -683,6 +683,8 @@ getInfo() {
   fi
 
   echo "$IP" > /run/shm/qemu.ip
+  echo "$nic" > /run/shm/qemu.nic
+
   return 0
 }
 
