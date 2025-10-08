@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+: "${PLATFORM:="x64"}"
 : "${APP:="Virtual DSM"}"
 : "${SUPPORT:="https://github.com/vdsm/virtual-dsm"}"
 
