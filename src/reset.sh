@@ -207,6 +207,4 @@ rm -f /run/shm/dsm.url
 rm -rf /tmp/dsm
 rm -rf "$STORAGE/tmp"
 
-html "Starting $APP for $ENGINE..."
-
 return 0
