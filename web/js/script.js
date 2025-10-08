@@ -60,7 +60,7 @@ function processInfo() {
                 return true;
             }
 
-            document.location.reload();
+            window.location.reload();
             return false;
         }
 
@@ -144,7 +144,7 @@ function schedule() {
 
 function reload() {
     setTimeout(() => {
-        document.location.reload();
+        window.location.reload();
     }, 3000);
 }
 
@@ -181,7 +181,7 @@ function connect() {
     ws.onerror = function(e) {
         ws.close();
         if (!booting) {
-            document.location.reload();
+            window.location.reload();
         }
     };
 }
