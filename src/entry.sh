@@ -31,7 +31,7 @@ fi
 (( rc != 0 )) && error "$(<"$QEMU_LOG")" && exit 15
 
 terminal
-tail -fn +0 "$QEMU_LOG" 2>/dev/null &
+tail -fn +0 "$QEMU_LOG" --pid=$$ 2>/dev/null &
 cat "$QEMU_TERM" 2>/dev/null & wait $! || :
 
 sleep 1 & wait $!
