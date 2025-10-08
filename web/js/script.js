@@ -56,8 +56,8 @@ function processInfo() {
         if (msg == null || msg.length == 0) {
 
             if (booting) {
-               schedule();
-               return true;
+                schedule();
+                return true;
             }
 
             document.location.reload();
@@ -181,7 +181,7 @@ function connect() {
     ws.onerror = function(e) {
         ws.close();
         if (!booting) {
-          document.location.reload();
+            document.location.reload();
         }
     };
 }
