@@ -729,13 +729,13 @@ if [[ "$IP" == "172.17."* ]]; then
   warn "your container IP starts with 172.17.* which will cause conflicts when you install the Container Manager package inside DSM!"
 fi
 
+MSG="Booting DSM instance..."
+html "$MSG"
+
 if [[ "$DHCP" == [Yy1]* ]]; then
 
   # Configure for macvtap interface
   configureDHCP || exit 20
-
-  MSG="Booting DSM instance..."
-  html "$MSG"
 
 else
 
