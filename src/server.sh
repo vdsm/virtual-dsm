@@ -10,6 +10,8 @@ set -Eeuo pipefail
 cp -r /var/www/* /run/shm
 rm -f /var/run/websocketd.pid
 
+html "Starting $APP for $ENGINE..."
+
 if [[ "${WEB:-}" != [Nn]* ]]; then
 
   mkdir -p /etc/nginx/sites-enabled
