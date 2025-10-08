@@ -1,4 +1,5 @@
 var request;
+var booting = false;
 var interval = 1000;
 
 function getInfo() {
@@ -53,8 +54,13 @@ function processInfo() {
 
         var msg = request.responseText;
         if (msg == null || msg.length == 0) {
-            setInfo("Booting DSM instance", true);
-            setTimeout(getInfo, interval);
+
+            if (booting) {
+               schedule();
+               return true;
+            }
+
+            document.location.reload();
             return false;
         }
 
@@ -66,7 +72,7 @@ function processInfo() {
             } else {
                 processMsg(msg);
                 if (msg.toLowerCase().indexOf("href=") == -1) {
-                    setTimeout(getInfo, interval);
+                    schedule();
                 }
                 return true;
             }
@@ -94,13 +100,23 @@ function setInfo(msg, loading, error) {
             return false;
         }
 
-        var el = document.getElementById("spinner");
+        if (msg.includes("Booting ")) {
+            booting = true;
+        }
+
+        var el = document.getElementById("info");
+
+        if (el.innerText == msg || el.innerHTML == msg) {
+            return true;
+        }
+
+        var spin = document.getElementById("spinner");
 
         error = !!error;
         if (!error) {
-            el.style.visibility = 'visible';
+            spin.style.visibility = 'visible';
         } else {
-            el.style.visibility = 'hidden';
+            spin.style.visibility = 'hidden';
         }
 
         loading = !!loading;
@@ -108,12 +124,7 @@ function setInfo(msg, loading, error) {
             msg = "<p class=\"loading\">" + msg + "</p>";
         }
 
-        el = document.getElementById("info");
-
-        if (el.innerHTML != msg) {
-            el.innerHTML = msg;
-        }
-
+        el.innerHTML = msg;
         return true;
 
     } catch (e) {
@@ -131,6 +142,10 @@ function reload() {
     setTimeout(() => {
         document.location.reload();
     }, 3000);
+}
+
+function schedule() {
+    setTimeout(getInfo, interval);
 }
 
 function connect() {
@@ -165,8 +180,11 @@ function connect() {
 
     ws.onerror = function(e) {
         ws.close();
+        if (!booting) {
+          document.location.reload();
+        }
     };
 }
 
-getInfo();
+schedule();
 connect();
