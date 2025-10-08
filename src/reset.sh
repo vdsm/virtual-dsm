@@ -143,12 +143,18 @@ fi
 
 # Check KVM support
 
+if [[ "${PLATFORM,,}" == "x64" ]]; then
+  TARGET="amd64"
+else
+  TARGET="arm64"
+fi
+
 if [[ "$KVM" == [Nn]* ]]; then
   warn "KVM acceleration is disabled, this will cause the machine to run about 10 times slower!"
 else
-  if [[ "${ARCH,,}" != "amd64" ]]; then
+  if [[ "${ARCH,,}" != "$TARGET" ]]; then
     KVM="N"
-    warn "your CPU architecture is ${ARCH^^} and cannot provide KVM acceleration for x64 instructions, so the machine will run about 10 times slower."
+    warn "your CPU architecture is ${ARCH^^} and cannot provide KVM acceleration for ${PLATFORM^^} instructions, so the machine will run about 10 times slower."
   fi
 fi
 
@@ -162,9 +168,11 @@ if [[ "$KVM" != [Nn]* ]]; then
     if ! sh -c 'echo -n > /dev/kvm' &> /dev/null; then
       KVM_ERR="(/dev/kvm is unwriteable)"
     else
-      flags=$(sed -ne '/^flags/s/^.*: //p' /proc/cpuinfo)
-      if ! grep -qw "vmx\|svm" <<< "$flags"; then
-        KVM_ERR="(not enabled in BIOS)"
+      if [[ "${PLATFORM,,}" == "x64" ]]; then
+        flags=$(sed -ne '/^flags/s/^.*: //p' /proc/cpuinfo)
+        if ! grep -qw "vmx\|svm" <<< "$flags"; then
+          KVM_ERR="(not enabled in BIOS)"
+        fi
       fi
     fi
   fi
