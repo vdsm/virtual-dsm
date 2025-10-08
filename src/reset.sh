@@ -149,67 +149,6 @@ rm -f /run/shm/dsm.url
 rm -rf /tmp/dsm
 rm -rf "$STORAGE/tmp"
 
-getCountry() {
-  local url=$1
-  local query=$2
-  local rc json result
-
-  { json=$(curl -m 5 -H "Accept: application/json" -sfk "$url"); rc=$?; } || :
-  (( rc != 0 )) && return 0
-
-  { result=$(echo "$json" | jq -r "$query" 2> /dev/null); rc=$?; } || :
-  (( rc != 0 )) && return 0
-
-  [[ ${#result} -ne 2 ]] && return 0
-  [[ "${result^^}" == "XX" ]] && return 0
-
-  COUNTRY="${result^^}"
-
-  return 0
-}
-
-setCountry() {
-
-  [[ "${TZ,,}" == "asia/harbin" ]] && COUNTRY="CN"
-  [[ "${TZ,,}" == "asia/beijing" ]] && COUNTRY="CN"
-  [[ "${TZ,,}" == "asia/urumqi" ]] && COUNTRY="CN"
-  [[ "${TZ,,}" == "asia/kashgar" ]] && COUNTRY="CN"
-  [[ "${TZ,,}" == "asia/shanghai" ]] && COUNTRY="CN"
-  [[ "${TZ,,}" == "asia/chongqing" ]] && COUNTRY="CN"
-
-  [ -z "$COUNTRY" ] && getCountry "https://api.ipapi.is" ".location.country_code"
-  [ -z "$COUNTRY" ] && getCountry "https://ifconfig.co/json" ".country_iso"
-  [ -z "$COUNTRY" ] && getCountry "https://api.ip2location.io" ".country_code"
-  [ -z "$COUNTRY" ] && getCountry "https://ipinfo.io/json" ".country"
-  [ -z "$COUNTRY" ] && getCountry "https://api.ipquery.io/?format=json" ".location.country_code" 
-  [ -z "$COUNTRY" ] && getCountry "https://api.myip.com" ".cc"
-
-  return 0
-}
-
-addPackage() {
-  local pkg=$1
-  local desc=$2
-
-  if apt-mark showinstall | grep -qx "$pkg"; then
-    return 0
-  fi
-
-  MSG="Installing $desc..."
-  info "$MSG" && html "$MSG"
-
-  [ -z "$COUNTRY" ] && setCountry
-
-  if [[ "${COUNTRY^^}" == "CN" ]]; then
-    sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debian.sources
-  fi
-
-  DEBIAN_FRONTEND=noninteractive apt-get -qq update
-  DEBIAN_FRONTEND=noninteractive apt-get -qq --no-install-recommends -y install "$pkg" > /dev/null
-
-  return 0
-}
-
 : "${COM_PORT:="2210"}"    # Comm port
 : "${MON_PORT:="7100"}"    # Monitor port
 : "${WEB_PORT:="5000"}"    # Webserver port
