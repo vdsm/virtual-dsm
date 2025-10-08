@@ -24,7 +24,7 @@ if [[ "${WEB:-}" != [Nn]* ]]; then
     sed -i "s/listen $WEB_PORT default_server;/listen [::]:$WEB_PORT default_server ipv6only=off;/g" /etc/nginx/sites-enabled/web.conf
 
   fi
-  
+
   # Start webserver
   nginx -e stderr
 
