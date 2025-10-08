@@ -9,7 +9,8 @@ trap 'error "Status $? while: $BASH_COMMAND (line $LINENO/$BASH_LINENO)"' ERR
 
 # Docker environment variables
 
-: "${TZ:=""}"              # System local timezone
+: "${TZ:=""}"              # System timezone
+: "${KVM:="Y"}"            # KVM acceleration
 : "${DEBUG:="N"}"          # Disable debugging mode
 : "${COUNTRY:=""}"         # Country code for mirror
 : "${CONSOLE:="N"}"        # Disable console mode
