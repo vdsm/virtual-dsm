@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+: "${PLATFORM:="x64"}"
 : "${APP:="Virtual DSM"}"
 : "${SUPPORT:="https://github.com/vdsm/virtual-dsm"}"
 
 cd /run
 
-. start.sh      # Placeholder
+. start.sh      # Startup hook
 . utils.sh      # Load functions
 . reset.sh      # Initialize system
+. server.sh     # Start webserver
 . install.sh    # Run installation
 . disk.sh       # Initialize disks
 . display.sh    # Initialize graphics

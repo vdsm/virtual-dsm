@@ -37,13 +37,15 @@ RUN set -eu && \
         xz-utils \
         iptables \
         iproute2 \
-        apt-utils \
         dnsmasq \
         fakeroot \
+        apt-utils \        
         net-tools \
         e2fsprogs \
         qemu-utils \
+        websocketd \
         iputils-ping \
+        inotify-tools \
         ca-certificates \
         netcat-openbsd \
         qemu-system-x86 && \

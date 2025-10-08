@@ -1,4 +1,5 @@
 var request;
+var booting = false;
 var interval = 1000;
 
 function getInfo() {
@@ -6,7 +7,6 @@ function getInfo() {
     var url = "msg.html";
 
     try {
-
         if (window.XMLHttpRequest) {
             request = new XMLHttpRequest();
         } else {
@@ -18,22 +18,49 @@ function getInfo() {
         request.send();
 
     } catch (e) {
-        var err = "Error: " + e.message;
-        console.log(err);
-        setError(err);
+        setError("Error: " + e.message);
     }
+}
+
+function getURL() {
+
+    var protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    var path = window.location.pathname.replace(/[^/]*$/, '').replace(/\/$/, '');
+
+    return protocol + "//" + window.location.host + path;
+}
+
+function processMsg(msg) {
+
+    if (msg.toLowerCase().indexOf("href=") !== -1) {
+        var div = document.createElement("div");
+        div.innerHTML = msg;
+        var url = div.querySelector("a").href;
+        setTimeout(() => {
+            window.location.assign(url);
+        }, 3000);
+    }
+
+    setInfo(msg);
+    return true;
 }
 
 function processInfo() {
     try {
+
         if (request.readyState != 4) {
             return true;
         }
 
         var msg = request.responseText;
         if (msg == null || msg.length == 0) {
-            setInfo("Booting DSM instance", true);
-            schedule();
+
+            if (booting) {
+                schedule();
+                return true;
+            }
+
+            window.location.reload();
             return false;
         }
 
@@ -43,20 +70,11 @@ function processInfo() {
             if (msg.toLowerCase().indexOf("<html>") !== -1) {
                 notFound = true;
             } else {
-                if (msg.toLowerCase().indexOf("href=") !== -1) {
-                    var div = document.createElement("div");
-                    div.innerHTML = msg;
-                    var url = div.querySelector("a").href;
-                    setTimeout(() => {
-                        window.location.assign(url);
-                    }, 3000);
-                    setInfo(msg);
-                    return true;
-                } else {
-                    setInfo(msg);
+                processMsg(msg);
+                if (msg.toLowerCase().indexOf("href=") == -1) {
                     schedule();
-                    return true;
                 }
+                return true;
             }
         }
 
@@ -67,31 +85,38 @@ function processInfo() {
         }
 
         setError("Error: Received statuscode " + request.status);
-        schedule();
         return false;
 
     } catch (e) {
-        var err = "Error: " + e.message;
-        console.log(err);
-        setError(err);
+        setError("Error: " + e.message);
         return false;
     }
 }
 
 function setInfo(msg, loading, error) {
-
     try {
+
         if (msg == null || msg.length == 0) {
             return false;
         }
 
-        var el = document.getElementById("spinner");
+        if (msg.includes("Booting ")) {
+            booting = true;
+        }
+
+        var el = document.getElementById("info");
+
+        if (el.innerText == msg || el.innerHTML == msg) {
+            return true;
+        }
+
+        var spin = document.getElementById("spinner");
 
         error = !!error;
         if (!error) {
-            el.style.visibility = 'visible';
+            spin.style.visibility = 'visible';
         } else {
-            el.style.visibility = 'hidden';
+            spin.style.visibility = 'hidden';
         }
 
         loading = !!loading;
@@ -99,12 +124,7 @@ function setInfo(msg, loading, error) {
             msg = "<p class=\"loading\">" + msg + "</p>";
         }
 
-        el = document.getElementById("info");
-
-        if (el.innerHTML != msg) {
-            el.innerHTML = msg;
-        }
-
+        el.innerHTML = msg;
         return true;
 
     } catch (e) {
@@ -114,6 +134,7 @@ function setInfo(msg, loading, error) {
 }
 
 function setError(text) {
+    console.warn(text);
     return setInfo(text, false, true);
 }
 
@@ -123,8 +144,47 @@ function schedule() {
 
 function reload() {
     setTimeout(() => {
-        document.location.reload();
+        window.location.reload();
     }, 3000);
 }
 
+function connect() {
+
+    var wsUrl = getURL() + "/status";
+    var ws = new WebSocket(wsUrl);
+
+    ws.onmessage = function(e) {
+
+        var pos = e.data.indexOf(":");
+        var cmd = e.data.substring(0, pos);
+        var msg = e.data.substring(pos + 2);
+
+        switch (cmd) {
+            case "s":
+                processMsg(msg);
+                break;
+            case "e":
+                setError(msg);
+                break;
+            default:
+                console.warn("Unknown event: " + cmd);
+                break;
+        }
+    };
+
+    ws.onclose = function(e) {
+        setTimeout(function() {
+            connect();
+        }, interval);
+    };
+
+    ws.onerror = function(e) {
+        ws.close();
+        if (!booting) {
+            window.location.reload();
+        }
+    };
+}
+
 schedule();
+connect();

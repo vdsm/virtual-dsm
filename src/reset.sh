@@ -9,7 +9,8 @@ trap 'error "Status $? while: $BASH_COMMAND (line $LINENO/$BASH_LINENO)"' ERR
 
 # Docker environment variables
 
-: "${TZ:=""}"              # System local timezone
+: "${TZ:=""}"              # System timezone
+: "${KVM:="Y"}"            # KVM acceleration
 : "${DEBUG:="N"}"          # Disable debugging mode
 : "${COUNTRY:=""}"         # Country code for mirror
 : "${CONSOLE:="N"}"        # Disable console mode
@@ -141,6 +142,63 @@ if [[ "$RAM_CHECK" != [Nn]* ]] && (( (RAM_WANTED + RAM_SPARE) > RAM_AVAIL )); th
   info "$msg"
 fi
 
+# Check KVM support
+
+if [[ "${PLATFORM,,}" == "x64" ]]; then
+  TARGET="amd64"
+else
+  TARGET="arm64"
+fi
+
+if [[ "$KVM" == [Nn]* ]]; then
+  warn "KVM acceleration is disabled, this will cause the machine to run about 10 times slower!"
+else
+  if [[ "${ARCH,,}" != "$TARGET" ]]; then
+    KVM="N"
+    warn "your CPU architecture is ${ARCH^^} and cannot provide KVM acceleration for ${PLATFORM^^} instructions, so the machine will run about 10 times slower."
+  fi
+fi
+
+if [[ "$KVM" != [Nn]* ]]; then
+
+  KVM_ERR=""
+
+  if [ ! -e /dev/kvm ]; then
+    KVM_ERR="(/dev/kvm is missing)"
+  else
+    if ! sh -c 'echo -n > /dev/kvm' &> /dev/null; then
+      KVM_ERR="(/dev/kvm is unwriteable)"
+    else
+      if [[ "${PLATFORM,,}" == "x64" ]]; then
+        flags=$(sed -ne '/^flags/s/^.*: //p' /proc/cpuinfo)
+        if ! grep -qw "vmx\|svm" <<< "$flags"; then
+          KVM_ERR="(not enabled in BIOS)"
+        fi
+      fi
+    fi
+  fi
+
+  if [ -n "$KVM_ERR" ]; then
+    KVM="N"
+    if [[ "$OSTYPE" =~ ^darwin ]]; then
+      warn "you are using macOS which has no KVM support, so the machine will run about 10 times slower."
+    else
+      kernel=$(uname -a)
+      case "${kernel,,}" in
+        *"microsoft"* )
+          error "Please bind '/dev/kvm' as a volume in the optional container settings when using Docker Desktop." ;;
+        *"synology"* )
+          error "Please make sure that Synology VMM (Virtual Machine Manager) is installed and that '/dev/kvm' is binded to this container." ;;
+        *)
+          error "KVM acceleration is not available $KVM_ERR, this will cause the machine to run about 10 times slower."
+          error "See the FAQ for possible causes, or disable acceleration by adding the \"KVM=N\" variable (not recommended)." ;;
+      esac
+      [[ "$DEBUG" != [Yy1]* ]] && exit 88
+    fi
+  fi
+
+fi
+
 # Cleanup files
 rm -f /run/shm/qemu.*
 rm -f /run/shm/dsm.url
@@ -148,93 +206,5 @@ rm -f /run/shm/dsm.url
 # Cleanup dirs
 rm -rf /tmp/dsm
 rm -rf "$STORAGE/tmp"
-
-getCountry() {
-  local url=$1
-  local query=$2
-  local rc json result
-
-  { json=$(curl -m 5 -H "Accept: application/json" -sfk "$url"); rc=$?; } || :
-  (( rc != 0 )) && return 0
-
-  { result=$(echo "$json" | jq -r "$query" 2> /dev/null); rc=$?; } || :
-  (( rc != 0 )) && return 0
-
-  [[ ${#result} -ne 2 ]] && return 0
-  [[ "${result^^}" == "XX" ]] && return 0
-
-  COUNTRY="${result^^}"
-
-  return 0
-}
-
-setCountry() {
-
-  [[ "${TZ,,}" == "asia/harbin" ]] && COUNTRY="CN"
-  [[ "${TZ,,}" == "asia/beijing" ]] && COUNTRY="CN"
-  [[ "${TZ,,}" == "asia/urumqi" ]] && COUNTRY="CN"
-  [[ "${TZ,,}" == "asia/kashgar" ]] && COUNTRY="CN"
-  [[ "${TZ,,}" == "asia/shanghai" ]] && COUNTRY="CN"
-  [[ "${TZ,,}" == "asia/chongqing" ]] && COUNTRY="CN"
-
-  [ -z "$COUNTRY" ] && getCountry "https://api.ipapi.is" ".location.country_code"
-  [ -z "$COUNTRY" ] && getCountry "https://ifconfig.co/json" ".country_iso"
-  [ -z "$COUNTRY" ] && getCountry "https://api.ip2location.io" ".country_code"
-  [ -z "$COUNTRY" ] && getCountry "https://ipinfo.io/json" ".country"
-  [ -z "$COUNTRY" ] && getCountry "https://api.ipquery.io/?format=json" ".location.country_code" 
-  [ -z "$COUNTRY" ] && getCountry "https://api.myip.com" ".cc"
-
-  return 0
-}
-
-addPackage() {
-  local pkg=$1
-  local desc=$2
-
-  if apt-mark showinstall | grep -qx "$pkg"; then
-    return 0
-  fi
-
-  MSG="Installing $desc..."
-  info "$MSG" && html "$MSG"
-
-  [ -z "$COUNTRY" ] && setCountry
-
-  if [[ "${COUNTRY^^}" == "CN" ]]; then
-    sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debian.sources
-  fi
-
-  DEBIAN_FRONTEND=noninteractive apt-get -qq update
-  DEBIAN_FRONTEND=noninteractive apt-get -qq --no-install-recommends -y install "$pkg" > /dev/null
-
-  return 0
-}
-
-: "${COM_PORT:="2210"}"    # Comm port
-: "${MON_PORT:="7100"}"    # Monitor port
-: "${WEB_PORT:="5000"}"    # Webserver port
-: "${CHR_PORT:="12345"}"   # Character port
-
-cp -r /var/www/* /run/shm
-html "Starting $APP for $ENGINE..."
-
-if [[ "${WEB:-}" != [Nn]* ]]; then
-
-  mkdir -p /etc/nginx/sites-enabled
-  cp /etc/nginx/default.conf /etc/nginx/sites-enabled/web.conf
-
-  sed -i "s/listen 5000 default_server;/listen $WEB_PORT default_server;/g" /etc/nginx/sites-enabled/web.conf
-  
-  # shellcheck disable=SC2143
-  if [ -f /proc/net/if_inet6 ] && [ -n "$(ifconfig -a | grep inet6)" ]; then
-
-    sed -i "s/listen $WEB_PORT default_server;/listen [::]:$WEB_PORT default_server ipv6only=off;/g" /etc/nginx/sites-enabled/web.conf
-
-  fi
-  
-  # Start webserver
-  nginx -e stderr
-
-fi
 
 return 0

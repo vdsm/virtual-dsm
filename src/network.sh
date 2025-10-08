@@ -176,7 +176,7 @@ configureDNS() {
   fi
 
   if [[ "$DNSMASQ_DEBUG" == [Yy1]* ]]; then
-    tail -fn +0 "$log" &
+    tail -fn +0 "$log" --pid=$$ &
   fi
 
   return 0
@@ -231,6 +231,7 @@ getHostPorts() {
 
     [ -z "$list" ] && list="$COM_PORT" || list+=",$COM_PORT"
     [ -z "$list" ] && list="$CHR_PORT" || list+=",$CHR_PORT"
+    [ -z "$list" ] && list="$WSD_PORT" || list+=",$WSD_PORT"
 
   fi
 
@@ -327,7 +328,7 @@ configurePasst() {
   fi
 
   if [[ "$PASST_DEBUG" == [Yy1]* ]]; then
-    tail -fn +0 "$log" &
+    tail -fn +0 "$log" --pid=$$ &
   else
     if [[ "$DEBUG" == [Yy1]* ]]; then
       [ -f "$log" ] && cat "$log" && echo ""
@@ -502,14 +503,24 @@ closeBridge() {
   return 0
 }
 
+closeWeb() {
+
+  # Shutdown nginx
+  nginx -s stop 2> /dev/null
+  fWait "nginx"
+
+  # Shutdown websocket
+  local pid="/var/run/websocketd.pid"
+  [ -s "$pid" ] && pKill "$(<"$pid")"
+  rm -f "$pid"
+
+  return 0
+}
+
 closeNetwork() {
 
   if [[ "${WEB:-}" != [Nn]* && "$DHCP" == [Yy1]* ]]; then
-
-    # Shutdown nginx
-    nginx -s stop 2> /dev/null
-    fWait "nginx"
-
+    closeWeb
   fi
 
   [[ "$NETWORK" == [Nn]* ]] && return 0
@@ -718,22 +729,19 @@ if [[ "$IP" == "172.17."* ]]; then
   warn "your container IP starts with 172.17.* which will cause conflicts when you install the Container Manager package inside DSM!"
 fi
 
+MSG="Booting DSM instance..."
+html "$MSG"
+
 if [[ "$DHCP" == [Yy1]* ]]; then
 
   # Configure for macvtap interface
   configureDHCP || exit 20
 
-  MSG="Booting DSM instance..."
-  html "$MSG"
-
 else
 
   if [[ "${WEB:-}" != [Nn]* ]]; then
-
-    # Shutdown nginx
-    nginx -s stop 2> /dev/null
-    fWait "nginx"
-
+    sleep 1.2
+    closeWeb
   fi
 
   case "${NETWORK,,}" in
