@@ -138,14 +138,14 @@ function setError(text) {
     return setInfo(text, false, true);
 }
 
+function schedule() {
+    setTimeout(getInfo, interval);
+}
+
 function reload() {
     setTimeout(() => {
         document.location.reload();
     }, 3000);
-}
-
-function schedule() {
-    setTimeout(getInfo, interval);
 }
 
 function connect() {
