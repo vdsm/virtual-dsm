@@ -740,6 +740,7 @@ if [[ "$DHCP" == [Yy1]* ]]; then
 else
 
   if [[ "${WEB:-}" != [Nn]* ]]; then
+    sleep 1.2
     closeWeb
   fi
 
