@@ -25,7 +25,7 @@ do
   if [ -s "$file" ]; then
     bytes=$(du -sb "$file" | cut -f1)
     if (( bytes > 1000 )); then
-      if [ -z "$total" ] || [[ "$total" == "0" ]]; then
+      if [ -z "$total" ] || [[ "$total" == "0" ]] || [ "$bytes" -gt "$total" ]; then
         size=$(numfmt --to=iec --suffix=B "$bytes" | sed -r 's/([A-Z])/ \1/')
       else
         size="$(echo "$bytes" "$total" | awk '{printf "%.1f", $1 * 100 / $2}')"
