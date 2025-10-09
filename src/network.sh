@@ -20,6 +20,7 @@ set -Eeuo pipefail
 : "${VM_NET_MASK:="255.255.255.0"}"
 
 : "${PASST:="passt"}"
+: "${PASST_MTU:=""}"
 : "${PASST_OPTS:=""}"
 : "${PASST_DEBUG:=""}"
 
@@ -295,13 +296,14 @@ configurePasst() {
   PASST_OPTS+=" -a $ip"
   PASST_OPTS+=" -g $gateway"
   PASST_OPTS+=" -n $VM_NET_MASK"
+  [ -n "$PASST_MTU" ] && PASST_OPTS+=" -m $PASST_MTU"
 
   exclude=$(getHostPorts "$HOST_PORTS")
 
   if [ -z "$exclude" ]; then
-    exclude="all"
+    exclude="%${VM_NET_DEV}/all"
   else
-    exclude="~${exclude//,/,~}"
+    exclude="%${VM_NET_DEV}/~${exclude//,/,~}"
   fi
 
   PASST_OPTS+=" -t $exclude"
