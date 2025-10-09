@@ -299,9 +299,9 @@ configurePasst() {
   exclude=$(getHostPorts "$HOST_PORTS")
 
   if [ -z "$exclude" ]; then
-    exclude="all"
+    exclude="%${VM_NET_DEV}/all"
   else
-    exclude="~${exclude//,/,~}"
+    exclude="%${VM_NET_DEV}/~${exclude//,/,~}"
   fi
 
   PASST_OPTS+=" -t $exclude"
