@@ -300,6 +300,8 @@ configurePasst() {
 
   local forward=""
   forward=$(getUserPorts "${USER_PORTS:-}")
+  forward="${forward///tcp}"
+  forward="${forward///udp}"
 
   if [ -n "$forward" ]; then
     forward="%${VM_NET_DEV}/$forward"
