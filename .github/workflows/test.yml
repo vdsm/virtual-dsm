@@ -1,11 +1,6 @@
 on:
   workflow_dispatch:
   pull_request:
-    paths:
-      - '**/*.sh'
-      - 'Dockerfile'
-      - '.github/workflows/test.yml'
-      - '.github/workflows/check.yml'
 
 name: "Test"
 permissions: {}
