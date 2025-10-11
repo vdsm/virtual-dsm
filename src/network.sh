@@ -258,7 +258,9 @@ configureSlirp() {
   forward=$(getUserPorts "${USER_PORTS:-}")
   [ -n "$forward" ] && NET_OPTS+=",$forward"
 
-  if [[ "${DNSMASQ_DISABLE:-}" != [Yy1]* ]]; then
+  if [[ "${DNSMASQ_DISABLE:-}" == [Yy1]* ]]; then
+    echo "$gateway" > /run/shm/qemu.gw
+  else
     cp /etc/resolv.conf /etc/resolv.dnsmasq
     configureDNS "lo" "$ip" "$VM_NET_MAC" "$VM_NET_HOST" "$VM_NET_MASK" "$gateway" || return 1
     echo -e "nameserver 127.0.0.1\nsearch .\noptions ndots:0" >/etc/resolv.conf
