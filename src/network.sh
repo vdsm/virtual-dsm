@@ -183,38 +183,6 @@ configureDNS() {
   return 0
 }
 
-getUserPorts() {
-
-  local args=""
-  local list=$1
-  local ssh="22"
-  local dsm="5000"
-
-  [ -z "$list" ] && list="$ssh,$dsm" || list+=",$ssh,$dsm"
-
-  list="${list//,/ }"
-  list="${list## }"
-  list="${list%% }"
-
-  for port in $list; do
-    proto="tcp"
-    num="$port"
-
-    if [[ "$port" == */udp ]]; then
-      proto="udp"
-      num="${port%/udp}"
-    elif [[ "$port" == */tcp ]]; then
-      proto="tcp"
-      num="${port%/tcp}"
-    fi
-
-    args+="hostfwd=$proto::$num-$VM_NET_IP:$num,"
-  done
-
-  echo "${args%?}"
-  return 0
-}
-
 getHostPorts() {
 
   local list="$1"
@@ -222,21 +190,52 @@ getHostPorts() {
 
   [ -z "$list" ] && list="$MON_PORT" || list+=",$MON_PORT"
 
-  if [[ "${NETWORK,,}" == "passt" ]]; then
+  echo "$list"
+  return 0
+}
 
-    local DNS_PORT="53"
+getUserPorts() {
 
-    if [[ "${DNSMASQ_DISABLE:-}" != [Yy1]* ]]; then
-      [ -z "$list" ] && list="$DNS_PORT" || list+=",$DNS_PORT"
-    fi
+  local args=""
+  local list=$1
+  list=$(echo "${list// /}" | sed 's/,*$//g')
 
-    [ -z "$list" ] && list="$COM_PORT" || list+=",$COM_PORT"
-    [ -z "$list" ] && list="$CHR_PORT" || list+=",$CHR_PORT"
-    [ -z "$list" ] && list="$WSD_PORT" || list+=",$WSD_PORT"
-
-  fi
+  local ssh="22"
+  local dsm="5000"
+  [ -z "$list" ] && list="$ssh,$dsm" || list+=",$ssh,$dsm"
 
   echo "$list"
+  return 0
+}
+
+getSlirp() {
+
+  local args=""
+  local list=""
+
+  list=$(getUserPorts)
+  list="${list//,/ }"
+  list="${list## }"
+  list="${list%% }"
+
+  for port in $list; do
+
+    proto="tcp"
+    num="${port%/tcp}"
+
+    if [[ "$port" == *"/udp" ]]; then
+      proto="udp"
+      num="${port%/udp}"
+    elif [[ "$port" != *"/tcp" ]]; then
+      args+="hostfwd=$proto::$num-$VM_NET_IP:$num,"
+      proto="udp"
+      num="${port%/udp}"
+    fi
+
+    args+="hostfwd=$proto::$num-$VM_NET_IP:$num,"
+  done
+
+  echo "${args%?}"
   return 0
 }
 
@@ -255,16 +254,17 @@ configureSlirp() {
 
   NET_OPTS="-netdev user,id=hostnet0,ipv4=on,host=$gateway,net=${gateway%.*}.0/24,dhcpstart=$ip,${ipv6}hostname=$VM_NET_HOST"
 
-  local forward
+  local forward=""
   forward=$(getUserPorts "${USER_PORTS:-}")
   [ -n "$forward" ] && NET_OPTS+=",$forward"
 
-  if [[ "${DNSMASQ_DISABLE:-}" != [Yy1]* ]]; then
+  if [[ "${DNSMASQ_DISABLE:-}" == [Yy1]* ]]; then
+    echo "$gateway" > /run/shm/qemu.gw
+  else
     cp /etc/resolv.conf /etc/resolv.dnsmasq
+    configureDNS "lo" "$ip" "$VM_NET_MAC" "$VM_NET_HOST" "$VM_NET_MASK" "$gateway" || return 1
     echo -e "nameserver 127.0.0.1\nsearch .\noptions ndots:0" >/etc/resolv.conf
   fi
-
-  configureDNS "lo" "$ip" "$VM_NET_MAC" "$VM_NET_HOST" "$VM_NET_MASK" "$gateway" || return 1
 
   VM_NET_IP="$ip"
   return 0
@@ -298,16 +298,17 @@ configurePasst() {
   PASST_OPTS+=" -n $VM_NET_MASK"
   [ -n "$PASST_MTU" ] && PASST_OPTS+=" -m $PASST_MTU"
 
-  exclude=$(getHostPorts "$HOST_PORTS")
+  local forward=""
+  forward=$(getUserPorts "${USER_PORTS:-}")
+  forward="${forward///tcp}"
+  forward="${forward///udp}"
 
-  if [ -z "$exclude" ]; then
-    exclude="%${VM_NET_DEV}/all"
-  else
-    exclude="%${VM_NET_DEV}/~${exclude//,/,~}"
+  if [ -n "$forward" ]; then
+    forward="%${VM_NET_DEV}/$forward"
+    PASST_OPTS+=" -t $forward"
+    PASST_OPTS+=" -u $forward"
   fi
 
-  PASST_OPTS+=" -t $exclude"
-  PASST_OPTS+=" -u $exclude"
   PASST_OPTS+=" -H $VM_NET_HOST"
   PASST_OPTS+=" -M $GATEWAY_MAC"
   PASST_OPTS+=" -P /var/run/passt.pid"
@@ -599,12 +600,17 @@ getInfo() {
   fi
 
   GATEWAY=$(ip route list dev "$VM_NET_DEV" | awk ' /^default/ {print $3}' | head -n 1)
-  IP=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/ | head -n 1)
-  IP6=""
+  { IP=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/ | head -n 1); rc=$?; } 2>/dev/null || :
 
+  if (( rc != 0 )); then
+    error "Could not determine container IP address!" && exit 26
+  fi
+
+  IP6=""
   # shellcheck disable=SC2143
   if [ -f /proc/net/if_inet6 ] && [ -n "$(ifconfig -a | grep inet6)" ]; then
-    IP6=$(ip -6 addr show dev "$VM_NET_DEV" scope global up)
+    { IP6=$(ip -6 addr show dev "$VM_NET_DEV" scope global up); rc=$?; } 2>/dev/null || :
+    (( rc != 0 )) && IP6=""
     [ -n "$IP6" ] && IP6=$(echo "$IP6" | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d' | head -n 1)
   fi
 
@@ -650,11 +656,6 @@ getInfo() {
 
   [ -z "$MTU" ] && MTU="$mtu"
   [ -z "$MTU" ] && MTU="0"
-
-  if [ "$MTU" -gt "1500" ]; then
-    [[ "$DEBUG" == [Yy1]* ]] && echo "MTU size is too large: $MTU, ignoring..."
-    MTU="0"
-  fi
 
   if [[ "${ADAPTER,,}" != "virtio-net-pci" ]]; then
     if [[ "$MTU" != "0" && "$MTU" != "1500" ]]; then
@@ -780,14 +781,19 @@ else
       if ! configureSlirp; then
         error "Failed to configure user-mode networking!"
         exit 24
-      fi
-
-      if [ -z "$USER_PORTS" ]; then
-        info "Notice: slirp networking is active, so when you want to expose ports, you will need to map them using this variable: \"USER_PORTS=5000,5001\"."
       fi ;;
 
     *)
       error "Unrecognized NETWORK value: \"$NETWORK\"" && exit 24 ;;
+  esac
+
+  case "${NETWORK,,}" in
+    "passt" | "slirp" )
+
+      if [ -z "$USER_PORTS" ]; then
+        info "Notice: because user-mode networking is active, if you need to expose ports, add them to the \"USER_PORTS\" variable."
+      fi ;;
+
   esac
 
 fi
