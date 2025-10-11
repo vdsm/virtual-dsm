@@ -93,6 +93,12 @@ function processInfo() {
     }
 }
 
+function extractContent(s) {
+    var span = document.createElement('span');
+    span.innerHTML = s;
+    return span.textContent || span.innerText;
+};
+
 function setInfo(msg, loading, error) {
     try {
 
@@ -119,9 +125,17 @@ function setInfo(msg, loading, error) {
             spin.style.visibility = 'hidden';
         }
 
+        var p = "<p class=\"loading\">";
         loading = !!loading;
         if (loading) {
-            msg = "<p class=\"loading\">" + msg + "</p>";
+            msg = p + msg + "</p>";
+        }
+
+        if (msg.includes(p)) {
+            if (el.innerHTML.includes(p)) {
+                el.getElementsByClassName('loading')[0].textContent = extractContent(msg);
+                return true;
+            }
         }
 
         el.innerHTML = msg;
