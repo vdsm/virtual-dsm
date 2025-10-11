@@ -190,20 +190,6 @@ getHostPorts() {
 
   [ -z "$list" ] && list="$MON_PORT" || list+=",$MON_PORT"
 
-  if [[ "${NETWORK,,}" == "passt" ]]; then
-
-    local DNS_PORT="53"
-
-    if [[ "${DNSMASQ_DISABLE:-}" != [Yy1]* ]]; then
-      [ -z "$list" ] && list="$DNS_PORT" || list+=",$DNS_PORT"
-    fi
-
-    [ -z "$list" ] && list="$COM_PORT" || list+=",$COM_PORT"
-    [ -z "$list" ] && list="$CHR_PORT" || list+=",$CHR_PORT"
-    [ -z "$list" ] && list="$WSD_PORT" || list+=",$WSD_PORT"
-
-  fi
-
   echo "$list"
   return 0
 }
@@ -212,25 +198,38 @@ getUserPorts() {
 
   local args=""
   local list=$1
+  list=$(echo "${list// /}" | sed 's/,*$//g')
+
   local ssh="22"
   local dsm="5000"
-
   [ -z "$list" ] && list="$ssh,$dsm" || list+=",$ssh,$dsm"
 
+  echo "$list"
+  return 0
+}
+
+getSlirp() {
+
+  local args=""
+  local list=""
+
+  list=$(getUserPorts)
   list="${list//,/ }"
   list="${list## }"
   list="${list%% }"
 
   for port in $list; do
-    proto="tcp"
-    num="$port"
 
-    if [[ "$port" == */udp ]]; then
+    proto="tcp"
+    num="${port%/tcp}"
+
+    if [[ "$port" == *"/udp" ]]; then
       proto="udp"
       num="${port%/udp}"
-    elif [[ "$port" == */tcp ]]; then
-      proto="tcp"
-      num="${port%/tcp}"
+    elif [[ "$port" != *"/tcp" ]]; then
+      args+="hostfwd=$proto::$num-$VM_NET_IP:$num,"
+      proto="udp"
+      num="${port%/udp}"
     fi
 
     args+="hostfwd=$proto::$num-$VM_NET_IP:$num,"
@@ -255,16 +254,15 @@ configureSlirp() {
 
   NET_OPTS="-netdev user,id=hostnet0,ipv4=on,host=$gateway,net=${gateway%.*}.0/24,dhcpstart=$ip,${ipv6}hostname=$VM_NET_HOST"
 
-  local forward
+  local forward=""
   forward=$(getUserPorts "${USER_PORTS:-}")
   [ -n "$forward" ] && NET_OPTS+=",$forward"
 
   if [[ "${DNSMASQ_DISABLE:-}" != [Yy1]* ]]; then
     cp /etc/resolv.conf /etc/resolv.dnsmasq
+    configureDNS "lo" "$ip" "$VM_NET_MAC" "$VM_NET_HOST" "$VM_NET_MASK" "$gateway" || return 1
     echo -e "nameserver 127.0.0.1\nsearch .\noptions ndots:0" >/etc/resolv.conf
   fi
-
-  configureDNS "lo" "$ip" "$VM_NET_MAC" "$VM_NET_HOST" "$VM_NET_MASK" "$gateway" || return 1
 
   VM_NET_IP="$ip"
   return 0
@@ -298,16 +296,15 @@ configurePasst() {
   PASST_OPTS+=" -n $VM_NET_MASK"
   [ -n "$PASST_MTU" ] && PASST_OPTS+=" -m $PASST_MTU"
 
-  exclude=$(getHostPorts "$HOST_PORTS")
+  local forward=""
+  forward=$(getUserPorts "${USER_PORTS:-}")
 
-  if [ -z "$exclude" ]; then
-    exclude="%${VM_NET_DEV}/all"
-  else
-    exclude="%${VM_NET_DEV}/~${exclude//,/,~}"
+  if [ -n "$forward" ]; then
+    forward="%${VM_NET_DEV}/$forward"
+    PASST_OPTS+=" -t $forward"
+    PASST_OPTS+=" -u $forward"
   fi
 
-  PASST_OPTS+=" -t $exclude"
-  PASST_OPTS+=" -u $exclude"
   PASST_OPTS+=" -H $VM_NET_HOST"
   PASST_OPTS+=" -M $GATEWAY_MAC"
   PASST_OPTS+=" -P /var/run/passt.pid"
