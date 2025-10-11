@@ -781,7 +781,7 @@ else
       if ! configureSlirp; then
         error "Failed to configure user-mode networking!"
         exit 24
-      fi
+      fi ;;
 
     *)
       error "Unrecognized NETWORK value: \"$NETWORK\"" && exit 24 ;;
