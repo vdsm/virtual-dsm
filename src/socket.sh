@@ -4,7 +4,7 @@ set -Eeuo pipefail
 path="/run/shm/msg.html"
 
 if [ -f "$path" ] && [ -s "$path" ]; then
-  echo -n "s: " && cat "$path" ;;
+  echo -n "s: " && cat "$path"
 fi
 
 inotifywait -m "$path" |
