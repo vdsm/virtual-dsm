@@ -183,6 +183,31 @@ configureDNS() {
   return 0
 }
 
+getHostPorts() {
+
+  local list="$1"
+  list=$(echo "${list// /}" | sed 's/,*$//g')
+
+  [ -z "$list" ] && list="$MON_PORT" || list+=",$MON_PORT"
+
+  if [[ "${NETWORK,,}" == "passt" ]]; then
+
+    local DNS_PORT="53"
+
+    if [[ "${DNSMASQ_DISABLE:-}" != [Yy1]* ]]; then
+      [ -z "$list" ] && list="$DNS_PORT" || list+=",$DNS_PORT"
+    fi
+
+    [ -z "$list" ] && list="$COM_PORT" || list+=",$COM_PORT"
+    [ -z "$list" ] && list="$CHR_PORT" || list+=",$CHR_PORT"
+    [ -z "$list" ] && list="$WSD_PORT" || list+=",$WSD_PORT"
+
+  fi
+
+  echo "$list"
+  return 0
+}
+
 getUserPorts() {
 
   local args=""
@@ -212,31 +237,6 @@ getUserPorts() {
   done
 
   echo "${args%?}"
-  return 0
-}
-
-getHostPorts() {
-
-  local list="$1"
-  list=$(echo "${list// /}" | sed 's/,*$//g')
-
-  [ -z "$list" ] && list="$MON_PORT" || list+=",$MON_PORT"
-
-  if [[ "${NETWORK,,}" == "passt" ]]; then
-
-    local DNS_PORT="53"
-
-    if [[ "${DNSMASQ_DISABLE:-}" != [Yy1]* ]]; then
-      [ -z "$list" ] && list="$DNS_PORT" || list+=",$DNS_PORT"
-    fi
-
-    [ -z "$list" ] && list="$COM_PORT" || list+=",$COM_PORT"
-    [ -z "$list" ] && list="$CHR_PORT" || list+=",$CHR_PORT"
-    [ -z "$list" ] && list="$WSD_PORT" || list+=",$WSD_PORT"
-
-  fi
-
-  echo "$list"
   return 0
 }
 
@@ -651,11 +651,6 @@ getInfo() {
   [ -z "$MTU" ] && MTU="$mtu"
   [ -z "$MTU" ] && MTU="0"
 
-  if [ "$MTU" -gt "1500" ]; then
-    [[ "$DEBUG" == [Yy1]* ]] && echo "MTU size is too large: $MTU, ignoring..."
-    MTU="0"
-  fi
-
   if [[ "${ADAPTER,,}" != "virtio-net-pci" ]]; then
     if [[ "$MTU" != "0" && "$MTU" != "1500" ]]; then
       warn "MTU size is $MTU, but cannot be set for $ADAPTER adapters!" && MTU="0"
@@ -782,12 +777,17 @@ else
         exit 24
       fi
 
-      if [ -z "$USER_PORTS" ]; then
-        info "Notice: slirp networking is active, so when you want to expose ports, you will need to map them using this variable: \"USER_PORTS=5000,5001\"."
-      fi ;;
-
     *)
       error "Unrecognized NETWORK value: \"$NETWORK\"" && exit 24 ;;
+  esac
+
+  case "${NETWORK,,}" in
+    "passt" | "slirp" )
+
+      if [ -z "$USER_PORTS" ]; then
+        info "Notice: because user-mode networking is active, if you need to expose ports, add them to the \"USER_PORTS\" variable."
+      fi ;;
+
   esac
 
 fi
