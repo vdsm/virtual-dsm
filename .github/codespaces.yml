@@ -1,0 +1,19 @@
+services:
+  dsm:
+    container_name: dsm
+    image: vdsm/virtual-dsm
+    environment:
+      RAM_SIZE: "max"
+      DISK_SIZE: "max"
+      CPU_CORES: "max"
+    devices:
+      - /dev/kvm
+      - /dev/net/tun
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - 5000:5000
+    volumes:
+      - ./dsm:/storage
+    restart: always
+    stop_grace_period: 2m
