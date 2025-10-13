@@ -98,9 +98,9 @@ createDisk() {
   local FS=$5
   local DATA_SIZE DIR SPACE GB FA
 
-  DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
-
   rm -f "$DISK_FILE"
+
+  DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
 
   if [[ "$ALLOCATE" != [Nn]* ]]; then
 
@@ -424,13 +424,23 @@ addDisk () {
   local DISK_FMT=$7
   local DISK_IO=$8
   local DISK_CACHE=$9
-  local DISK_EXT DIR SPACE DATA_SIZE FS PREV_FMT PREV_EXT CUR_SIZE
+  local DISK_EXT DIR SPACE GB DATA_SIZE FS PREV_FMT PREV_EXT CUR_SIZE
 
   DISK_EXT=$(fmt2ext "$DISK_FMT")
   local DISK_FILE="$DISK_BASE.$DISK_EXT"
 
   DIR=$(dirname "$DISK_FILE")
   [ ! -d "$DIR" ] && return 0
+
+  if [[ "${DISK_SPACE,,}" == "max" ]]; then
+
+    local SPARE=2147483648
+    SPACE=$(df --output=avail -B 1 "$DIR" | tail -n 1)
+    (( SPACE < SPARE )) && SPACE="$SPARE" || SPACE=$((SPACE-SPARE))
+    GB=$(( SPACE/1073741824 ))
+    DISK_SPACE="${GB}G"
+
+  fi
 
   SPACE="${DISK_SPACE// /}"
   [ -z "$SPACE" ] && SPACE="16G"
