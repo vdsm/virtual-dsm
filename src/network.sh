@@ -185,10 +185,14 @@ configureDNS() {
 
 getHostPorts() {
 
-  local list="$1"
+  local list="${HOST_PORTS:-}"
   list=$(echo "${list// /}" | sed 's/,*$//g')
+  list="${list//,,/,}"
 
   [ -z "$list" ] && list="$MON_PORT" || list+=",$MON_PORT"
+
+  # Remove duplicates
+  list=$(echo "$list," | awk 'BEGIN{RS=ORS=","} !seen[$0]++' | sed 's/,*$//g')
 
   echo "$list"
   return 0
@@ -196,15 +200,53 @@ getHostPorts() {
 
 getUserPorts() {
 
-  local args=""
-  local list=$1
+  local list="${USER_PORTS:-}"
   list=$(echo "${list// /}" | sed 's/,*$//g')
 
   local ssh="22"
-  local dsm="5000"
+  local dsm="5000,5001"
   [ -z "$list" ] && list="$ssh,$dsm" || list+=",$ssh,$dsm"
 
-  echo "$list"
+  list="${list//,,/,}"
+  list="${list//,/ }"
+  list="${list## }"
+  list="${list%% }"
+
+  local exclude
+  exclude=$(getHostPorts)
+  exclude="${exclude//,/ }"
+  exclude="${exclude## }"
+  exclude="${exclude%% }"
+
+  local ports=""
+
+  for userport in $list; do
+
+    local num="${userport///tcp}"
+    num="${num///udp}"
+    [ -z "$num" ] && continue
+
+    for hostport in $exclude; do
+
+      local val="${hostport///tcp}"
+
+      if [[ "$num" == "${val///udp}" ]]; then
+        num=""
+        warn "Could not assign port ${val///udp} to \"USER_PORTS\" because it is already in \"HOST_PORTS\"!"
+      fi
+
+    done
+
+    if [ -n "$num" ]; then
+      [ -z "$ports" ] && ports="$userport" || ports+=",$userport"
+    fi
+
+  done
+
+  # Remove duplicates
+  ports=$(echo "$ports," | awk 'BEGIN{RS=ORS=","} !seen[$0]++' | sed 's/,*$//g')
+
+  echo "$ports"
   return 0
 }
 
@@ -213,15 +255,15 @@ getSlirp() {
   local args=""
   local list=""
 
-  list=$(getUserPorts "${USER_PORTS:-}")
+  list=$(getUserPorts)
   list="${list//,/ }"
   list="${list## }"
   list="${list%% }"
 
   for port in $list; do
 
-    proto="tcp"
-    num="${port%/tcp}"
+    local proto="tcp"
+    local num="${port%/tcp}"
 
     if [[ "$port" == *"/udp" ]]; then
       proto="udp"
@@ -234,6 +276,8 @@ getSlirp() {
 
     args+="hostfwd=$proto::$num-$VM_NET_IP:$num,"
   done
+
+  args=$(echo "$args" | sed 's/,*$//g')
 
   echo "${args%?}"
   return 0
@@ -299,7 +343,7 @@ configurePasst() {
   [ -n "$PASST_MTU" ] && PASST_OPTS+=" -m $PASST_MTU"
 
   local forward=""
-  forward=$(getUserPorts "${USER_PORTS:-}")
+  forward=$(getUserPorts)
   forward="${forward///tcp}"
   forward="${forward///udp}"
 
@@ -447,7 +491,7 @@ configureNAT() {
     update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
   fi
 
-  exclude=$(getHostPorts "$HOST_PORTS")
+  exclude=$(getHostPorts)
 
   if [ -n "$exclude" ]; then
     if [[ "$exclude" != *","* ]]; then
