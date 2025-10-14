@@ -204,9 +204,9 @@ getUserPorts() {
   list=$(echo "${list// /}" | sed 's/,*$//g')
 
   local ssh="22"
-  local dsm="5000"
+  local dsm="5000,5001"
   [ -z "$list" ] && list="$ssh,$dsm" || list+=",$ssh,$dsm"
-  
+
   list="${list//,,/,}"
   list="${list//,/ }"
   list="${list## }"
