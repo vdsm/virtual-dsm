@@ -15,5 +15,5 @@ services:
       - 5000:5000
     volumes:
       - ./dsm:/storage
-    restart: always
+    restart: on-failure
     stop_grace_period: 2m
