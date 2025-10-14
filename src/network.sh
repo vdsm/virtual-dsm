@@ -213,7 +213,7 @@ getSlirp() {
   local args=""
   local list=""
 
-  list=$(getUserPorts)
+  list=$(getUserPorts "${USER_PORTS:-}")
   list="${list//,/ }"
   list="${list## }"
   list="${list%% }"
@@ -255,7 +255,7 @@ configureSlirp() {
   NET_OPTS="-netdev user,id=hostnet0,ipv4=on,host=$gateway,net=${gateway%.*}.0/24,dhcpstart=$ip,${ipv6}hostname=$VM_NET_HOST"
 
   local forward=""
-  forward=$(getUserPorts "${USER_PORTS:-}")
+  forward=$(getSlirp)
   [ -n "$forward" ] && NET_OPTS+=",$forward"
 
   if [[ "${DNSMASQ_DISABLE:-}" == [Yy1]* ]]; then
