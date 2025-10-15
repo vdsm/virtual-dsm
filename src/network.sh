@@ -185,14 +185,12 @@ configureDNS() {
 
 getHostPorts() {
 
-  local list="${HOST_PORTS:-}"
-  list=$(echo "${list// /}" | sed 's/,*$//g')
-  list="${list//,,/,}"
-
-  [ -z "$list" ] && list="$MON_PORT" || list+=",$MON_PORT"
+  local list=""
+  list+="$MON_PORT,"
+  list+="${HOST_PORTS// /},"
 
   # Remove duplicates
-  list=$(echo "$list," | awk 'BEGIN{RS=ORS=","} !seen[$0]++' | sed 's/,*$//g')
+  list=$(echo "${list//,,/,}," | awk 'BEGIN{RS=ORS=","} !seen[$0]++' | sed 's/,*$//g')
 
   echo "$list"
   return 0
@@ -200,33 +198,25 @@ getHostPorts() {
 
 getUserPorts() {
 
-  local list="${USER_PORTS:-}"
-  list=$(echo "${list// /}" | sed 's/,*$//g')
-
   local ssh="22"
   local dsm="5000,5001"
-  [ -z "$list" ] && list="$ssh,$dsm" || list+=",$ssh,$dsm"
 
-  list="${list//,,/,}"
-  list="${list//,/ }"
-  list="${list## }"
-  list="${list%% }"
+  local list="$ssh,$dsm,"
+  list+="${USER_PORTS// /},"
 
   local exclude
   exclude=$(getHostPorts)
-  exclude="${exclude//,/ }"
-  exclude="${exclude## }"
-  exclude="${exclude%% }"
 
   local ports=""
+  local userport=""
+  local hostport=""
 
-  for userport in $list; do
+  for userport in ${list//,/ }; do
 
     local num="${userport///tcp}"
     num="${num///udp}"
-    [ -z "$num" ] && continue
 
-    for hostport in $exclude; do
+    for hostport in ${exclude//,/ }; do
 
       local val="${hostport///tcp}"
 
@@ -237,14 +227,12 @@ getUserPorts() {
 
     done
 
-    if [ -n "$num" ]; then
-      [ -z "$ports" ] && ports="$userport" || ports+=",$userport"
-    fi
+    [ -n "$num" ] && ports+="$userport,"
 
   done
 
   # Remove duplicates
-  ports=$(echo "$ports," | awk 'BEGIN{RS=ORS=","} !seen[$0]++' | sed 's/,*$//g')
+  ports=$(echo "${ports//,,/,}," | awk 'BEGIN{RS=ORS=","} !seen[$0]++' | sed 's/,*$//g')
 
   echo "$ports"
   return 0
@@ -256,14 +244,12 @@ getSlirp() {
   local list=""
 
   list=$(getUserPorts)
-  list="${list//,/ }"
-  list="${list## }"
-  list="${list%% }"
 
-  for port in $list; do
+  for port in ${list//,/ }; do
 
     local proto="tcp"
     local num="${port%/tcp}"
+    [ -z "$num" ] && continue
 
     if [[ "$port" == *"/udp" ]]; then
       proto="udp"
@@ -305,7 +291,7 @@ configureSlirp() {
   if [[ "${DNSMASQ_DISABLE:-}" == [Yy1]* ]]; then
     echo "$gateway" > /run/shm/qemu.gw
   else
-    cp /etc/resolv.conf /etc/resolv.dnsmasq
+    [ ! -f /etc/resolv.dnsmasq ] && cp /etc/resolv.conf /etc/resolv.dnsmasq
     configureDNS "lo" "$ip" "$VM_NET_MAC" "$VM_NET_HOST" "$VM_NET_MASK" "$gateway" || return 1
     echo -e "nameserver 127.0.0.1\nsearch .\noptions ndots:0" >/etc/resolv.conf
   fi
@@ -360,7 +346,7 @@ configurePasst() {
   PASST_OPTS+=" -q"
 
   if [[ "${DNSMASQ_DISABLE:-}" != [Yy1]* ]]; then
-    cp /etc/resolv.conf /etc/resolv.dnsmasq
+    [ ! -f /etc/resolv.dnsmasq ] && cp /etc/resolv.conf /etc/resolv.dnsmasq
     echo -e "nameserver 127.0.0.1\nsearch .\noptions ndots:0" >/etc/resolv.conf
   fi
 
@@ -375,8 +361,8 @@ configurePasst() {
 
     if (( rc != 0 )); then
       [ -f "$log" ] && cat "$log"
-      error "Failed to start passt, reason: $rc"
-      return 1
+      warn "failed to start passt ($rc), falling back to slirp networking!"
+      configureSlirp && return 0 || return 1
     fi
 
   fi
