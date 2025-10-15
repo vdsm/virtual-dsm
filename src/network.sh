@@ -185,10 +185,12 @@ configureDNS() {
 
 getHostPorts() {
 
-  local list="$1"
-  list=$(echo "${list// /}" | sed 's/,*$//g')
+  local list=""
+  list+="$MON_PORT,"
+  list+="${HOST_PORTS// /},"
 
-  [ -z "$list" ] && list="$MON_PORT" || list+=",$MON_PORT"
+  # Remove duplicates
+  list=$(echo "${list//,,/,}," | awk 'BEGIN{RS=ORS=","} !seen[$0]++' | sed 's/,*$//g')
 
   echo "$list"
   return 0
@@ -196,15 +198,43 @@ getHostPorts() {
 
 getUserPorts() {
 
-  local args=""
-  local list=$1
-  list=$(echo "${list// /}" | sed 's/,*$//g')
-
   local ssh="22"
-  local dsm="5000"
-  [ -z "$list" ] && list="$ssh,$dsm" || list+=",$ssh,$dsm"
+  local dsm="5000,5001"
 
-  echo "$list"
+  local list="$ssh,$dsm,"
+  list+="${USER_PORTS// /},"
+
+  local exclude
+  exclude=$(getHostPorts)
+
+  local ports=""
+  local userport=""
+  local hostport=""
+
+  for userport in ${list//,/ }; do
+
+    local num="${userport///tcp}"
+    num="${num///udp}"
+
+    for hostport in ${exclude//,/ }; do
+
+      local val="${hostport///tcp}"
+
+      if [[ "$num" == "${val///udp}" ]]; then
+        num=""
+        warn "Could not assign port ${val///udp} to \"USER_PORTS\" because it is already in \"HOST_PORTS\"!"
+      fi
+
+    done
+
+    [ -n "$num" ] && ports+="$userport,"
+
+  done
+
+  # Remove duplicates
+  ports=$(echo "${ports//,,/,}," | awk 'BEGIN{RS=ORS=","} !seen[$0]++' | sed 's/,*$//g')
+
+  echo "$ports"
   return 0
 }
 
@@ -214,14 +244,12 @@ getSlirp() {
   local list=""
 
   list=$(getUserPorts)
-  list="${list//,/ }"
-  list="${list## }"
-  list="${list%% }"
 
-  for port in $list; do
+  for port in ${list//,/ }; do
 
-    proto="tcp"
-    num="${port%/tcp}"
+    local proto="tcp"
+    local num="${port%/tcp}"
+    [ -z "$num" ] && continue
 
     if [[ "$port" == *"/udp" ]]; then
       proto="udp"
@@ -234,6 +262,8 @@ getSlirp() {
 
     args+="hostfwd=$proto::$num-$VM_NET_IP:$num,"
   done
+
+  args=$(echo "$args" | sed 's/,*$//g')
 
   echo "${args%?}"
   return 0
@@ -255,13 +285,13 @@ configureSlirp() {
   NET_OPTS="-netdev user,id=hostnet0,ipv4=on,host=$gateway,net=${gateway%.*}.0/24,dhcpstart=$ip,${ipv6}hostname=$VM_NET_HOST"
 
   local forward=""
-  forward=$(getUserPorts "${USER_PORTS:-}")
+  forward=$(getSlirp)
   [ -n "$forward" ] && NET_OPTS+=",$forward"
 
   if [[ "${DNSMASQ_DISABLE:-}" == [Yy1]* ]]; then
     echo "$gateway" > /run/shm/qemu.gw
   else
-    cp /etc/resolv.conf /etc/resolv.dnsmasq
+    [ ! -f /etc/resolv.dnsmasq ] && cp /etc/resolv.conf /etc/resolv.dnsmasq
     configureDNS "lo" "$ip" "$VM_NET_MAC" "$VM_NET_HOST" "$VM_NET_MASK" "$gateway" || return 1
     echo -e "nameserver 127.0.0.1\nsearch .\noptions ndots:0" >/etc/resolv.conf
   fi
@@ -299,7 +329,7 @@ configurePasst() {
   [ -n "$PASST_MTU" ] && PASST_OPTS+=" -m $PASST_MTU"
 
   local forward=""
-  forward=$(getUserPorts "${USER_PORTS:-}")
+  forward=$(getUserPorts)
   forward="${forward///tcp}"
   forward="${forward///udp}"
 
@@ -316,7 +346,7 @@ configurePasst() {
   PASST_OPTS+=" -q"
 
   if [[ "${DNSMASQ_DISABLE:-}" != [Yy1]* ]]; then
-    cp /etc/resolv.conf /etc/resolv.dnsmasq
+    [ ! -f /etc/resolv.dnsmasq ] && cp /etc/resolv.conf /etc/resolv.dnsmasq
     echo -e "nameserver 127.0.0.1\nsearch .\noptions ndots:0" >/etc/resolv.conf
   fi
 
@@ -331,8 +361,8 @@ configurePasst() {
 
     if (( rc != 0 )); then
       [ -f "$log" ] && cat "$log"
-      error "Failed to start passt, reason: $rc"
-      return 1
+      warn "failed to start passt ($rc), falling back to slirp networking!"
+      configureSlirp && return 0 || return 1
     fi
 
   fi
@@ -447,7 +477,7 @@ configureNAT() {
     update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
   fi
 
-  exclude=$(getHostPorts "$HOST_PORTS")
+  exclude=$(getHostPorts)
 
   if [ -n "$exclude" ]; then
     if [[ "$exclude" != *","* ]]; then
