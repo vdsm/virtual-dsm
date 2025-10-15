@@ -1,6 +1,20 @@
 {
-  "name": "dsm",
+  "name": "Virtual DSM",
   "service": "dsm",
-  "forwardPorts": [5000],
+  "containerEnv": {
+    "RAM_SIZE": "max",
+    "DISK_SIZE": "max",
+    "CPU_CORES": "max"
+  },  
+  "forwardPorts": [5000],  
+  "portsAttributes": {
+    "5000": {
+      "label": "Web",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "otherPortsAttributes": {
+    "onAutoForward": "silent"
+  }, 
   "dockerComposeFile": ".github/codespaces.yml"
 }
