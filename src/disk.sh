@@ -437,7 +437,7 @@ addDisk () {
     local SPARE=536870912
     SPACE=$(df --output=avail -B 1 "$DIR" | tail -n 1)
     (( SPACE < SPARE )) && SPACE="$SPARE" || SPACE=$((SPACE-SPARE))
-    GB=$(( SPACE/1073741824 ))
+    GB=$(( SPACE/1073741825 ))
     DISK_SPACE="${GB}G"
 
   fi
