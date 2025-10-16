@@ -16,5 +16,5 @@
   "otherPortsAttributes": {
     "onAutoForward": "silent"
   }, 
-  "dockerComposeFile": ".github/codespaces.yml"
+  "dockerComposeFile": "codespaces.yml"
 }
