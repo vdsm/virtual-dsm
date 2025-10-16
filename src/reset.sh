@@ -59,6 +59,8 @@ fi
 
 CPU_CORES="${CPU_CORES// /}"
 [[ "${CPU_CORES,,}" == "max" ]] && CPU_CORES="$CORES"
+[[ "${CPU_CORES,,}" == "half" ]] && CPU_CORES=$(( CORES / 2 ))
+[[ "${CPU_CORES,,}" == "0" ]] && CPU_CORES="1"
 [ -n "${CPU_CORES//[0-9 ]}" ] && error "Invalid amount of CPU_CORES: $CPU_CORES" && exit 15
 
 if [ "$CPU_CORES" -gt "$CORES" ]; then
