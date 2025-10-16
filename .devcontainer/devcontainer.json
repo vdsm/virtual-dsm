@@ -2,9 +2,7 @@
   "name": "Virtual DSM",
   "service": "dsm",
   "containerEnv": {
-    "RAM_SIZE": "max",
-    "DISK_SIZE": "max",
-    "CPU_CORES": "max"
+    "ALLOCATE": "Y"
   },  
   "forwardPorts": [5000],  
   "portsAttributes": {
