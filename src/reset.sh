@@ -105,20 +105,18 @@ RAM_TOTAL=$(free -b | grep -m 1 Mem: | awk '{print $2}')
 RAM_SIZE="${RAM_SIZE// /}"
 [ -z "$RAM_SIZE" ] && error "RAM_SIZE not specified!" && exit 16
 
-if [[ "${RAM_SIZE,,}" == "max" ]]; then
-  RAM_WANTED=$(( RAM_AVAIL - RAM_SPARE - RAM_SPARE ))
-  RAM_WANTED=$(( RAM_WANTED / 1073741825 ))
-  RAM_SIZE="${RAM_WANTED}G"
-fi
+if [[ "${RAM_SIZE,,}" != "max" && "${RAM_SIZE,,}" != "half" ]]; then
 
-if [ -z "${RAM_SIZE//[0-9. ]}" ]; then
-  [ "${RAM_SIZE%%.*}" -lt "130" ] && RAM_SIZE="${RAM_SIZE}G" || RAM_SIZE="${RAM_SIZE}M"
-fi
+  if [ -z "${RAM_SIZE//[0-9. ]}" ]; then
+    [ "${RAM_SIZE%%.*}" -lt "130" ] && RAM_SIZE="${RAM_SIZE}G" || RAM_SIZE="${RAM_SIZE}M"
+  fi
 
-RAM_SIZE=$(echo "${RAM_SIZE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
-! numfmt --from=iec "$RAM_SIZE" &>/dev/null && error "Invalid RAM_SIZE: $RAM_SIZE" && exit 16
-RAM_WANTED=$(numfmt --from=iec "$RAM_SIZE")
-[ "$RAM_WANTED" -lt "136314880 " ] && error "RAM_SIZE is too low: $RAM_SIZE" && exit 16
+  RAM_SIZE=$(echo "${RAM_SIZE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
+  ! numfmt --from=iec "$RAM_SIZE" &>/dev/null && error "Invalid RAM_SIZE: $RAM_SIZE" && exit 16
+  RAM_WANTED=$(numfmt --from=iec "$RAM_SIZE")
+  [ "$RAM_WANTED" -lt "136314880 " ] && error "RAM_SIZE is too low: $RAM_SIZE" && exit 16
+
+fi
 
 # Print system info
 SYS="${SYS/-generic/}"
@@ -132,15 +130,6 @@ TOTAL_MEM=$(formatBytes "$RAM_TOTAL" "up")
 
 echo "❯ CPU: ${CPU} | RAM: ${AVAIL_MEM/ GB/}/$TOTAL_MEM | DISK: $SPACE_GB (${FS}) | KERNEL: ${SYS}..."
 echo
-
-# Check available memory
-
-if [[ "$RAM_CHECK" != [Nn]* ]] && (( (RAM_WANTED + RAM_SPARE) > RAM_AVAIL )); then
-  AVAIL_MEM=$(formatBytes "$RAM_AVAIL")
-  msg="Your configured RAM_SIZE of ${RAM_SIZE/G/ GB} is too high for the $AVAIL_MEM of memory available, please set a lower value."
-  [[ "${FS,,}" != "zfs" ]] && error "$msg" && exit 17
-  info "$msg"
-fi
 
 # Check KVM support
 
