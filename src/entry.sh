@@ -19,6 +19,8 @@ cd /run
 . serial.sh     # Initialize serialport
 . power.sh      # Configure shutdown
 . config.sh     # Configure arguments
+. memory.sh     # Check available memory
+. finish.sh     # Finish initialization
 
 trap - ERR
 
