@@ -3,7 +3,8 @@ services:
     container_name: dsm
     image: vdsm/virtual-dsm
     environment:
-      RAM_SIZE: "max"
+      ALLOCATE: "Y"
+      RAM_SIZE: "half"
       DISK_SIZE: "max"
       CPU_CORES: "max"
     devices:
