@@ -18,8 +18,8 @@ cd /run
 . proc.sh       # Initialize processor
 . serial.sh     # Initialize serialport
 . power.sh      # Configure shutdown
-. config.sh     # Configure arguments
 . memory.sh     # Check available memory
+. config.sh     # Configure arguments
 . finish.sh     # Finish initialization
 
 trap - ERR
