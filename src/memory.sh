@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 RAM_AVAIL=$(free -b | grep -m 1 Mem: | awk '{print $7}')
-  
+
 if [[ "$RAM_CHECK" != [Nn]* && "${RAM_SIZE,,}" != "max" && "${RAM_SIZE,,}" != "half" ]]; then
 
   AVAIL_MEM=$(formatBytes "$RAM_AVAIL")
@@ -59,15 +59,15 @@ if [[ "${RAM_SIZE,,}" == "max" ]]; then
       RAM_WANTED=$(( RAM_WANTED / 1073741825 ))
 
       if (( "$RAM_WANTED" < 1 )); then
-  
+
         RAM_WANTED=$(( RAM_AVAIL - RAM_SPARE ))
         RAM_WANTED=$(( RAM_WANTED / 1048577 ))
-  
+
         if (( "$RAM_WANTED" < 1 )); then
 
           RAM_WANTED=$(( RAM_AVAIL ))
           RAM_WANTED=$(( RAM_WANTED / 1048577 ))
-            
+
         fi
 
         RAM_SIZE="${RAM_WANTED}M"
@@ -80,7 +80,7 @@ if [[ "${RAM_SIZE,,}" == "max" ]]; then
   else
     RAM_SIZE="${RAM_WANTED}G"
   fi
-  
+
 fi
 
 return 0
