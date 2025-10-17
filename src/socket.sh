@@ -1,16 +1,31 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+lastmsg=""
 path="/run/shm/msg.html"
 
-if [ -f "$path" ] && [ -s "$path" ]; then
-  echo -n "s: " && cat "$path"
-fi
+refresh() {
+
+  [ ! -f "$path" ] && return 0
+  [ ! -s "$path" ] && return 0
+
+  msg=$(< "$path")
+  msg="${msg%$'\n'}"
+
+  [ -z "$msg" ] && return 0
+  [[ "$msg" == "$lastmsg" ]] && return 0
+
+  lastmsg="$msg"
+  echo "s: $msg"
+  return 0
+}
+
+refresh
 
 inotifywait -m "$path" |
   while read -r fp event fn; do
     case "${event,,}" in
-      "modify"* ) echo -n "s: " && cat "$path" ;;
+      "modify"* ) refresh ;;
       "delete_self" ) echo "c: vnc" ;;
     esac    
   done
