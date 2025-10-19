@@ -13,7 +13,7 @@ escape () {
     return 0
 }
 
-file="$1"
+path="$1"
 total="$2"
 body=$(escape "$3")
 
@@ -21,16 +21,20 @@ if [[ "$body" == *"..." ]]; then
   body="<p class=\"loading\">${body::-3}</p>"
 fi
 
+cluster=$(stat -f "$path" | grep -m 1 "^Block size:" | cut -d':' -f2 | tail -c+2 | cut -d' ' -f1)
+total=$(( ( ( total + cluster / 2 ) / cluster ) * cluster ))
+[ -z "$total" ] && total="4096"
+
 while true
 do
 
-  if [ ! -s "$file" ] && [ ! -d "$file" ]; then
+  if [ ! -s "$path" ] && [ ! -d "$path" ]; then
     bytes="0"
   else
-    bytes=$(du -sb "$file" | cut -f1)
+    bytes=$(du -sB 1 "$path" | cut -f1)
   fi
   
-  if (( bytes > 1000 )); then
+  if (( bytes > cluster )); then
     if [ -z "$total" ] || [[ "$total" == "0" ]] || [ "$bytes" -gt "$total" ]; then
       size=$(numfmt --to=iec --suffix=B "$bytes" | sed -r 's/([A-Z])/ \1/')
     else
