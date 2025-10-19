@@ -1,9 +1,6 @@
 {
   "name": "Virtual DSM",
   "service": "dsm",
-  "containerEnv": {
-    "ALLOCATE": "Y"
-  },  
   "portsAttributes": {
     "5000": {
       "label": "Web",
