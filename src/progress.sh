@@ -21,7 +21,7 @@ if [[ "$body" == *"..." ]]; then
   body="<p class=\"loading\">${body::-3}</p>"
 fi
 
-cluster=$(stat -f "$path" | grep -m 1 "^Block size:" | cut -d':' -f2 | tail -c+2 | awk {'print $1'})
+cluster=$(stat -f "$path" | grep -m 1 "^Block size:" | cut -d':' -f2 | tail -c+2 | cut -d' ' -f1)
 total=$(( ( ( total + cluster / 2 ) / cluster ) * cluster ))
 
 while true
