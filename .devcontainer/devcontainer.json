@@ -4,11 +4,10 @@
   "containerEnv": {
     "ALLOCATE": "Y"
   },  
-  "forwardPorts": [5000],  
   "portsAttributes": {
     "5000": {
       "label": "Web",
-      "onAutoForward": "openBrowser"
+      "onAutoForward": "notify"
     }
   },
   "otherPortsAttributes": {
