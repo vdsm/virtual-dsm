@@ -1,6 +1,7 @@
 {
   "name": "Virtual DSM",
   "service": "vdsm",
+  "forwardPorts": [5000],
   "portsAttributes": {
     "5000": {
       "label": "Web",
