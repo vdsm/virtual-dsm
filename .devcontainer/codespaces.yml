@@ -1,9 +1,8 @@
 services:
   dsm:
     container_name: dsm
-    image: vdsm/virtual-dsm
+    image: ghcr.io/vdsm/virtual-dsm
     environment:
-      ALLOCATE: "Y"
       RAM_SIZE: "half"
       DISK_SIZE: "max"
       CPU_CORES: "max"
