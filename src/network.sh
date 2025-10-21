@@ -218,11 +218,14 @@ getUserPorts() {
 
     for hostport in ${exclude//,/ }; do
 
-      local val="${hostport///tcp}"
+      local port="${hostport///tcp}"
+      port="${port///udp}"
 
-      if [[ "$num" == "${val///udp}" ]]; then
+      if [[ "$num" == "$port" ]]; then
         num=""
-        warn "Could not assign port ${val///udp} to \"USER_PORTS\" because it is already in \"HOST_PORTS\"!"
+        if [[ "$port" != "$WEB_PORT" ]]; then
+          warn "Could not assign port $port to \"USER_PORTS\" because it is already in \"HOST_PORTS\"!"
+        fi
       fi
 
     done
@@ -343,6 +346,12 @@ configurePasst() {
 
   PASST_OPTS+=" -H $VM_NET_HOST"
   PASST_OPTS+=" -M $GATEWAY_MAC"
+
+  local uid gid
+  uid=$(id -u)
+  gid=$(id -g)
+  PASST_OPTS+=" --runas $uid:$gid"
+
   PASST_OPTS+=" -P /var/run/passt.pid"
   PASST_OPTS+=" -l $log"
   PASST_OPTS+=" -q"
@@ -697,7 +706,7 @@ getInfo() {
   [ -z "$MTU" ] && MTU="0"
 
   if [[ "${ADAPTER,,}" != "virtio-net-pci" ]]; then
-    if [[ "$MTU" != "0" && "$MTU" != "1500" ]]; then
+    if [[ "$MTU" != "0" ]] && [ "$MTU" -lt "1500" ]; then
       warn "MTU size is $MTU, but cannot be set for $ADAPTER adapters!" && MTU="0"
     fi
   fi
@@ -710,6 +719,7 @@ getInfo() {
       # Generate MAC address based on Docker container ID in hostname
       VM_NET_MAC=$(echo "$HOST" | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:11:32:\3:\4:\5/')
       echo "${VM_NET_MAC^^}" > "$file"
+      ! setOwner "$file" && error "Failed to set the owner for \"$file\" !"
     fi
   fi
 
@@ -828,7 +838,7 @@ else
     "passt" | "slirp" )
 
       if [ -z "$USER_PORTS" ]; then
-        info "Notice: because user-mode networking is active, if you need to expose ports, add them to the \"USER_PORTS\" variable."
+        info "Notice: because user-mode networking is active, when you need to forward custom ports to $APP, add them to the \"USER_PORTS\" variable."
       fi ;;
 
   esac
