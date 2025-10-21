@@ -67,6 +67,37 @@ fKill() {
   return 0
 }
 
+setOwner() {
+  local file="$1"
+  local dir uid gid
+
+  [ ! -f "$file" ] && return 1
+
+  dir=$(dirname -- "$file")
+  uid=$(stat -c '%u' "$dir")
+  gid=$(stat -c '%g' "$dir")
+
+  ! chown "$uid:$gid" "$file" && return 1
+
+  return 0
+}
+
+makeDir() {
+  local path="$1"
+  local dir uid gid
+
+  [ -d "$path" ] && return 0
+  ! mkdir -p "$path" && return 1
+
+  dir=$(dirname -- "$path")
+  uid=$(stat -c '%u' "$dir")
+  gid=$(stat -c '%g' "$dir")
+
+  ! chown "$uid:$gid" "$path" && return 1
+
+  return 0
+}
+
 escape () {
   local s
   s=${1//&/\&amp;}
@@ -123,11 +154,11 @@ cpu() {
   fi
 
   cpu="${cpu// CPU/}"
-  cpu="${cpu// [0-9] Core}"
-  cpu="${cpu// [0-9][0-9] Core}"
   cpu="${cpu// [0-9][0-9][0-9] Core}"
-  cpu="${cpu//[0-9]th Gen }"
+  cpu="${cpu// [0-9][0-9] Core}"
+  cpu="${cpu// [0-9] Core}"
   cpu="${cpu//[0-9][0-9]th Gen }"
+  cpu="${cpu//[0-9]th Gen }"
   cpu="${cpu// Processor/}"
   cpu="${cpu// Quad core/}"
   cpu="${cpu// Dual core/}"
