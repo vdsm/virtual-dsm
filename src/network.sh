@@ -838,7 +838,7 @@ else
     "passt" | "slirp" )
 
       if [ -z "$USER_PORTS" ]; then
-        info "Notice: because user-mode networking is active, when you need to forward custom ports to $APP, add them to the \"USER_PORTS\" variable."
+        info "Notice: because user-mode networking is active, when you need to forward custom ports to DSM, add them to the \"USER_PORTS\" variable."
       fi ;;
 
   esac
