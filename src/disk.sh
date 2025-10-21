@@ -17,6 +17,14 @@ SYSTEM="$STORAGE/$BASE.system.img"
 [ ! -s "$BOOT" ] && error "Virtual DSM boot-image does not exist ($BOOT)" && exit 81
 [ ! -s "$SYSTEM" ] && error "Virtual DSM system-image does not exist ($SYSTEM)" && exit 82
 
+if ! setOwner "$BOOT"; then
+  error "Failed to set the owner for \"$BOOT\" !"
+fi
+
+if ! setOwner "$SYSTEM"; then
+  error "Failed to set the owner for \"$SYSTEM\" !"
+fi
+
 fmt2ext() {
   local DISK_FMT="$1"
 
@@ -338,7 +346,7 @@ checkFS () {
   DIR=$(dirname "$DISK_FILE")
   [ ! -d "$DIR" ] && return 0
 
-  if [[ "${FS,,}" == "overlay"* ]]; then
+  if [[ "${FS,,}" == "overlay"* && "$PODMAN" != [Yy1]* ]]; then
     info "Warning: the filesystem of $DIR is OverlayFS, this usually means it was binded to an invalid path!"
   fi
 
@@ -541,6 +549,12 @@ addDisk () {
 
     fi
 
+  fi
+
+  if [ -f "$DISK_FILE" ]; then
+    if ! setOwner "$DISK_FILE"; then
+      error "Failed to set the owner for \"$DISK_FILE\" !"
+    fi
   fi
 
   DISK_OPTS+=$(createDevice "$DISK_FILE" "$DISK_TYPE" "$DISK_INDEX" "$DISK_ADDRESS" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE" "" "")
