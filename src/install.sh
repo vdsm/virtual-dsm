@@ -227,6 +227,8 @@ if ! touch "$SYSTEM"; then
   error "Could not create file $SYSTEM for the system disk." && exit 98
 fi
 
+! setOwner "$SYSTEM" && error "Failed to set the owner for \"$SYSTEM\" !"
+
 if [[ "${FS,,}" == "btrfs" ]]; then
   { chattr +C "$SYSTEM"; } || :
   FA=$(lsattr "$SYSTEM")
@@ -311,6 +313,8 @@ if [ -f "$STORAGE/$BASE.pat" ]; then
 fi
 
 mv -f "$BOOT" "$STORAGE/$BASE.boot.img"
+! setOwner "$STORAGE/$BASE.boot.img" && error "Failed to set the owner for \"$STORAGE/$BASE.boot.img\" !"
+
 rm -rf "$TMP"
 
 return 0
