@@ -82,16 +82,16 @@ rm -f "$STORAGE/$BASE.system.img"
 # Check filesystem
 FS=$(stat -f -c %T "$STORAGE")
 
-if [[ "${FS,,}" == "overlay"* ]]; then
-  info "Warning: the filesystem of $STORAGE is OverlayFS, this usually means it was binded to an invalid path!"
+if [[ "${FS,,}" == "overlay"* && "$PODMAN" != [Yy1]* ]]; then
+  warn "the filesystem of $STORAGE is OverlayFS, this usually means it was binded to an invalid path!"
 fi
 
 if [[ "${FS,,}" == "fuse"* ]]; then
-  info "Warning: the filesystem of $STORAGE is FUSE, this extra layer will negatively affect performance!"
+  warn "the filesystem of $STORAGE is FUSE, this extra layer will negatively affect performance!"
 fi
 
 if [[ "${FS,,}" == "ecryptfs" || "${FS,,}" == "tmpfs" ]]; then
-  info "Warning: the filesystem of $STORAGE is $FS, which does not support O_DIRECT mode, adjusting settings..."
+  warn "the filesystem of $STORAGE is $FS, which does not support O_DIRECT mode, adjusting settings..."
 fi
 
 if [[ "${FS,,}" == "fat"* || "${FS,,}" == "vfat"* || "${FS,,}" == "msdos"* ]]; then
@@ -100,6 +100,10 @@ fi
 
 if [[ "${FS,,}" != "exfat"* && "${FS,,}" != "ntfs"* && "${FS,,}" != "unknown"* ]]; then
   TMP="$STORAGE/tmp"
+  rm -rf "$TMP"
+  if ! makeDir "$TMP"; then
+    error "Failed to create directory \"$TMP\" !" && exit 93
+  fi
 else
   TMP="/tmp/dsm"
   TMP_SPACE=2147483648
@@ -108,9 +112,8 @@ else
   if (( TMP_SPACE > SPACE )); then
     error "Not enough free space inside the container, have $SPACE_MB available but need at least 2 GB." && exit 93
   fi
+  rm -rf "$TMP" && mkdir -p "$TMP"
 fi
-
-rm -rf "$TMP" && mkdir -p "$TMP"
 
 # Check free diskspace
 ROOT_SPACE=536870912
@@ -256,8 +259,12 @@ PART="$TMP/partition.fdisk"
 sfdisk -q "$SYSTEM" < "$PART"
 
 MOUNT="$TMP/system"
-rm -rf "$MOUNT" && mkdir -p "$MOUNT"
+rm -rf "$MOUNT" 
 
+if ! makeDir "$MOUNT"; then
+  error "Failed to create directory \"$MOUNT\" !" && exit 93
+fi
+  
 MSG="Extracting system partition..."
 info "Install: $MSG" && html "$MSG"
 
@@ -291,11 +298,16 @@ fakeroot -- bash -c "set -Eeu;\
 
 rm -rf "$MOUNT"
 echo "$BASE" > "$STORAGE/dsm.ver"
+! setOwner "$STORAGE/dsm.ver" && error "Failed to set the owner for \"$STORAGE/dsm.ver\" !"
 
 if [[ "$URL" == "file://$STORAGE/$BASE.pat" ]]; then
   rm -f "$PAT"
 else
   mv -f "$PAT" "$STORAGE/$BASE.pat"
+fi
+
+if [ -f "$STORAGE/$BASE.pat" ]; then
+  ! setOwner "$STORAGE/$BASE.pat" && error "Failed to set the owner for \"$STORAGE/$BASE.pat\" !"
 fi
 
 mv -f "$BOOT" "$STORAGE/$BASE.boot.img"
