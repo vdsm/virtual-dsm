@@ -445,7 +445,7 @@ addDisk () {
 
   if [[ "${DISK_SPACE,,}" == "max" || "${DISK_SPACE,,}" == "half" ]]; then
 
-    local SPARE=2147483648
+    local SPARE=1073741824
     FREE=$(df --output=avail -B 1 "$DIR" | tail -n 1)
 
     if [[ "${DISK_SPACE,,}" == "max" ]]; then
