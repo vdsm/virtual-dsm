@@ -261,12 +261,12 @@ PART="$TMP/partition.fdisk"
 sfdisk -q "$SYSTEM" < "$PART"
 
 MOUNT="$TMP/system"
-rm -rf "$MOUNT" 
+rm -rf "$MOUNT"
 
 if ! makeDir "$MOUNT"; then
   error "Failed to create directory \"$MOUNT\" !" && exit 93
 fi
-  
+
 MSG="Extracting system partition..."
 info "Install: $MSG" && html "$MSG"
 
