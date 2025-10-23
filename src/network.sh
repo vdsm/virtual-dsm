@@ -802,7 +802,7 @@ else
         closeBridge
         NETWORK="user"
 
-       if [[ "$PODMAN" != [Yy1]* ]]; then
+        if [[ "$PODMAN" != [Yy1]* ]]; then
           msg="falling back to user-mode networking!"
           msg="failed to setup NAT networking, $msg"
           warn "$msg"
