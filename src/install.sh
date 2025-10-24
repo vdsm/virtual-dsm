@@ -31,7 +31,6 @@ if [ -n "$URL" ] && [ ! -s "$FILE" ] && [ ! -d "$DIR" ]; then
   BASE=$(basename "$URL" .pat)
   if [ ! -s "$STORAGE/$BASE.system.img" ]; then
     BASE=$(basename "${URL%%\?*}" .pat)
-    BASE="${BASE//+/ }"
     printf -v BASE '%b' "${BASE//%/\\x}"
     BASE="${BASE//[!A-Za-z0-9._-]/_}"
   fi
@@ -66,7 +65,6 @@ fi
 
 if [ ! -s "$FILE" ]; then
   BASE=$(basename "${URL%%\?*}" .pat)
-  BASE="${BASE//+/ }"
   printf -v BASE '%b' "${BASE//%/\\x}"
   BASE="${BASE//[!A-Za-z0-9._-]/_}"
 fi
