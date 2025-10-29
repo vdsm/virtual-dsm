@@ -166,6 +166,10 @@ if [[ "$KVM" != [Nn]* ]]; then
         if ! grep -qw "vmx\|svm" <<< "$flags"; then
           KVM_ERR="(not enabled in BIOS)"
         fi
+        if ! grep -qw "sse4_2" <<< "$flags"; then
+          error "Your CPU does not have the SSE4 instruction set that Virtual DSM requires!"
+          [[ "$DEBUG" != [Yy1]* ]] && exit 88
+        fi
       fi
     fi
   fi
