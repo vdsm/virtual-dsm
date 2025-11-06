@@ -346,7 +346,7 @@ checkFS () {
   DIR=$(dirname "$DISK_FILE")
   [ ! -d "$DIR" ] && return 0
 
-  if [[ "${FS,,}" == "overlay"* && "$PODMAN" != [Yy1]* ]]; then
+  if [[ "${FS,,}" == "overlay"* && "${ENGINE,,}" == "docker" ]]; then
     warn "the filesystem of $DIR is OverlayFS, this usually means it was binded to an invalid path!"
   fi
 
