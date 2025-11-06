@@ -24,18 +24,39 @@ trap 'error "Status $? while: $BASH_COMMAND (line $LINENO/$BASH_LINENO)"' ERR
 
 # Helper variables
 
-PODMAN="N"
+ROOTLESS="N"
+PRIVILEGED="N"
 ENGINE="Docker"
 PROCESS="${APP,,}"
 PROCESS="${PROCESS// /-}"
 
 if [ -f "/run/.containerenv" ]; then
-  PODMAN="Y"
-  ENGINE="Podman"
+  ENGINE="${container:-}"
+  if [[ "${ENGINE,,}" == *"podman"* ]]; then
+    ROOTLESS="Y"
+    ENGINE="Podman"
+  else
+    [ -z "$ENGINE" ] && ENGINE="Kubernetes"
+  fi
 fi
 
 echo "❯ Starting $APP for $ENGINE v$(</run/version)..."
 echo "❯ For support visit $SUPPORT"
+
+# Get the capability bounding set
+CAP_BND=$(grep '^CapBnd:' /proc/$$/status | awk '{print $2}')
+CAP_BND=$(printf "%d" "0x${CAP_BND}")
+
+# Get the last capability number
+LAST_CAP=$(cat /proc/sys/kernel/cap_last_cap)
+
+# Calculate the maximum capability value
+MAX_CAP=$(((1 << (LAST_CAP + 1)) - 1))
+
+if [ "${CAP_BND}" -eq "${MAX_CAP}" ]; then
+  ROOTLESS="N"
+  PRIVILEGED="Y"
+fi
 
 INFO="/run/shm/msg.html"
 PAGE="/run/shm/index.html"
