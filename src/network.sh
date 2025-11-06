@@ -309,7 +309,7 @@ configurePasst() {
   NETWORK="passt"
   [[ "$DEBUG" == [Yy1]* ]] && echo "Configuring user-mode networking..."
 
-  local log="/var/log/passt.log"
+  local log="/tmp/passt.log"
   rm -f "$log"
 
   local pid="/var/run/dnsmasq.pid"
@@ -346,13 +346,7 @@ configurePasst() {
 
   PASST_OPTS+=" -H $VM_NET_HOST"
   PASST_OPTS+=" -M $GATEWAY_MAC"
-
-  local uid gid
-  uid=$(id -u)
-  gid=$(id -g)
-  PASST_OPTS+=" --runas $uid:$gid"
-
-  PASST_OPTS+=" -P /var/run/passt.pid"
+  PASST_OPTS+=" -P /tmp/passt.pid"
   PASST_OPTS+=" -l $log"
   PASST_OPTS+=" -q"
 
@@ -410,7 +404,7 @@ configureNAT() {
   fi
 
   if [ ! -c /dev/net/tun ]; then
-    [[ "$PODMAN" == [Yy1]* ]] && return 1
+    [[ "$ROOTLESS" == [Yy1]* && "$DEBUG" != [Yy1]* ]] && return 1
     warn "$tuntap" && return 1
   fi
 
@@ -418,7 +412,7 @@ configureNAT() {
   if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
     { sysctl -w net.ipv4.ip_forward=1 > /dev/null 2>&1; rc=$?; } || :
     if (( rc != 0 )) || [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
-      [[ "$PODMAN" == [Yy1]* ]] && return 1
+      [[ "$ROOTLESS" == [Yy1]* && "$DEBUG" != [Yy1]* ]] && return 1
       warn "IP forwarding is disabled. $ADD_ERR --sysctl net.ipv4.ip_forward=1"
       return 1
     fi
@@ -445,7 +439,7 @@ configureNAT() {
   { ip link add dev "$VM_NET_BRIDGE" type bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
-    [[ "$PODMAN" == [Yy1]* ]] && return 1
+    [[ "$ROOTLESS" == [Yy1]* && "$DEBUG" != [Yy1]* ]] && return 1
     warn "failed to create bridge. $ADD_ERR --cap-add NET_ADMIN" && return 1
   fi
 
@@ -460,7 +454,7 @@ configureNAT() {
 
   # QEMU Works with taps, set tap to the bridge created
   if ! ip tuntap add dev "$VM_NET_TAP" mode tap; then
-    [[ "$PODMAN" == [Yy1]* ]] && return 1
+    [[ "$ROOTLESS" == [Yy1]* && "$DEBUG" != [Yy1]* ]] && return 1
     warn "$tuntap" && return 1
   fi
 
@@ -536,11 +530,11 @@ configureNAT() {
 
 closeBridge() {
 
-  local pid="/var/run/dnsmasq.pid"
+  local pid="/tmp/passt.pid"
   [ -s "$pid" ] && pKill "$(<"$pid")"
   rm -f "$pid"
 
-  pid="/var/run/passt.pid"
+  pid="/var/run/dnsmasq.pid"
   [ -s "$pid" ] && pKill "$(<"$pid")"
   rm -f "$pid"
 
@@ -598,8 +592,8 @@ closeNetwork() {
 cleanUp() {
 
   # Clean up old files
+  rm -f /tmp/passt.pid
   rm -f /etc/resolv.dnsmasq
-  rm -f /var/run/passt.pid
   rm -f /var/run/dnsmasq.pid
 
   if [[ -d "/sys/class/net/$VM_NET_TAP" ]]; then
