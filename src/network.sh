@@ -634,7 +634,7 @@ getInfo() {
     [ -d "/sys/class/net/net1" ] && VM_NET_DEV="net1"
     [ -d "/sys/class/net/net2" ] && VM_NET_DEV="net2"
     [ -d "/sys/class/net/net3" ] && VM_NET_DEV="net3"
-    # Automaticly detect the default network interface
+    # Automatically detect the default network interface
     [ -z "$VM_NET_DEV" ] && VM_NET_DEV=$(awk '$2 == 00000000 { print $1 }' /proc/net/route)
     [ -z "$VM_NET_DEV" ] && VM_NET_DEV="eth0"
   fi
