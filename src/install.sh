@@ -80,7 +80,7 @@ rm -f "$STORAGE/$BASE.system.img"
 # Check filesystem
 FS=$(stat -f -c %T "$STORAGE")
 
-if [[ "${FS,,}" == "overlay"* && "$PODMAN" != [Yy1]* ]]; then
+if [[ "${FS,,}" == "overlay"* && "${ENGINE,,}" == "docker" ]]; then
   warn "the filesystem of $STORAGE is OverlayFS, this usually means it was binded to an invalid path!"
 fi
 
