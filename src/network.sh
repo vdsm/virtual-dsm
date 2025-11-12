@@ -19,14 +19,16 @@ set -Eeuo pipefail
 : "${VM_NET_HOST:="VirtualDSM"}"
 : "${VM_NET_MASK:="255.255.255.0"}"
 
-: "${PASST:="passt"}"
+: "${PASST:="/run/passt"}"
 : "${PASST_MTU:=""}"
 : "${PASST_OPTS:=""}"
 : "${PASST_DEBUG:=""}"
+: "${PASST_PID:="/var/run/passt.pid"}"
 
 : "${DNSMASQ_OPTS:=""}"
 : "${DNSMASQ_DEBUG:=""}"
 : "${DNSMASQ:="/usr/sbin/dnsmasq"}"
+: "${DNSMASQ_PID:="/var/run/dnsmasq.pid"}"
 : "${DNSMASQ_CONF_DIR:="/etc/dnsmasq.d"}"
 
 ADD_ERR="Please add the following setting to your container:"
@@ -127,8 +129,8 @@ configureDNS() {
   [[ "${DNSMASQ_DISABLE:-}" == [Yy1]* ]] && return 0
   [[ "$DEBUG" == [Yy1]* ]] && echo "Starting dnsmasq daemon..."
 
-  local log="/var/log/dnsmasq.log"
-  rm -f "$log"
+  [ -s "$DNSMASQ_PID" ] && pKill "$(<"$DNSMASQ_PID")"
+  rm -f "$DNSMASQ_PID"
 
   case "${NETWORK,,}" in
     "tap" | "tun" | "tuntap" | "y" )
@@ -162,6 +164,8 @@ configureDNS() {
   [ -f /etc/resolv.dnsmasq ] && DNSMASQ_OPTS+=" --resolv-file=/etc/resolv.dnsmasq"
 
   # Enable logging to file
+  local log="/var/log/dnsmasq.log"
+  rm -f "$log"
   DNSMASQ_OPTS+=" --log-facility=$log"
 
   DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
@@ -312,9 +316,6 @@ configurePasst() {
   local log="/tmp/passt.log"
   rm -f "$log"
 
-  local pid="/var/run/dnsmasq.pid"
-  [ -s "$pid" ] && pKill "$(<"$pid")"
-
   local ip="$IP"
   [ -n "$VM_NET_IP" ] && ip="$VM_NET_IP"
 
@@ -346,7 +347,7 @@ configurePasst() {
 
   PASST_OPTS+=" -H $VM_NET_HOST"
   PASST_OPTS+=" -M $GATEWAY_MAC"
-  PASST_OPTS+=" -P /tmp/passt.pid"
+  PASST_OPTS+=" -P  $PASST_PID"
   PASST_OPTS+=" -l $log"
   PASST_OPTS+=" -q"
 
@@ -357,6 +358,8 @@ configurePasst() {
 
   PASST_OPTS=$(echo "$PASST_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
   [[ "$DEBUG" == [Yy1]* ]] && printf "Passt arguments:\n\n%s\n\n" "${PASST_OPTS// -/$'\n-'}"
+
+  [ ! -f "$PASST" ] && cp /usr/bin/passt* /run
 
   if ! $PASST ${PASST_OPTS:+ $PASST_OPTS} >/dev/null 2>&1; then
 
@@ -495,8 +498,11 @@ configureNAT() {
     fi
   fi
 
-  if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -j MASQUERADE; then
-    warn "$tables" && return 1
+  if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -j MASQUERADE > /dev/null 2>&1; then
+    [[ "$ROOTLESS" == [Yy1]* && "$DEBUG" != [Yy1]* ]] && return 1
+    if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -j MASQUERADE; then
+      warn "$tables" && return 1
+    fi
   fi
 
   # shellcheck disable=SC2086
@@ -530,13 +536,11 @@ configureNAT() {
 
 closeBridge() {
 
-  local pid="/tmp/passt.pid"
-  [ -s "$pid" ] && pKill "$(<"$pid")"
-  rm -f "$pid"
+  [ -s "$PASST_PID" ] && pKill "$(<"$PASST_PID")"
+  rm -f "$PASST_PID"
 
-  pid="/var/run/dnsmasq.pid"
-  [ -s "$pid" ] && pKill "$(<"$pid")"
-  rm -f "$pid"
+  [ -s "$DNSMASQ_PID" ] && pKill "$(<"$DNSMASQ_PID")"
+  rm -f "$DNSMASQ_PID"
 
   case "${NETWORK,,}" in
     "user"* | "passt" | "slirp" ) return 0 ;;
@@ -592,9 +596,9 @@ closeNetwork() {
 cleanUp() {
 
   # Clean up old files
-  rm -f /tmp/passt.pid
+  rm -f "$PASST_PID"
+  rm -f "$DNSMASQ_PID"
   rm -f /etc/resolv.dnsmasq
-  rm -f /var/run/dnsmasq.pid
 
   if [[ -d "/sys/class/net/$VM_NET_TAP" ]]; then
     info "Lingering interface will be removed..."
