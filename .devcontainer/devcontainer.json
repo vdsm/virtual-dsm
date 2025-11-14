@@ -1,6 +1,6 @@
 {
   "name": "Virtual DSM",
-  "service": "vdsm",
+  "service": "dsm",
   "forwardPorts": [5000],
   "portsAttributes": {
     "5000": {
@@ -12,6 +12,6 @@
     "onAutoForward": "ignore"
   }, 
   "dockerComposeFile": "codespaces.yml",
-  "workspaceFolder": "/workspaces/vdsm",
+  "workspaceFolder": "/workspaces/dsm",
   "initializeCommand": "docker system prune --all --force"
 }
