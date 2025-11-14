@@ -12,6 +12,6 @@
     "onAutoForward": "ignore"
   }, 
   "dockerComposeFile": "codespaces.yml",
-  "workspaceFolder": "/workspaces/dsm",
+  "workspaceFolder": "/workspace/dsm",
   "initializeCommand": "docker system prune --all --force"
 }
