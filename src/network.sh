@@ -123,9 +123,10 @@ configureDNS() {
   local host="$4"
   local mask="$5"
   local gateway="$6"
+  local arguments="$DNSMASQ_OPTS"
 
   echo "$gateway" > /run/shm/qemu.gw
-  
+
   [[ "${DNSMASQ_DISABLE:-}" == [Yy1]* ]] && return 0
   [[ "$DEBUG" == [Yy1]* ]] && echo "Starting dnsmasq daemon..."
 
@@ -140,42 +141,45 @@ configureDNS() {
       chmod 644 /var/lib/misc/dnsmasq.leases
 
       # dnsmasq configuration:
-      DNSMASQ_OPTS+=" --dhcp-authoritative"
+      arguments+=" --dhcp-authoritative"
 
       # Set DHCP range and host
-      DNSMASQ_OPTS+=" --dhcp-range=$ip,$ip"
-      DNSMASQ_OPTS+=" --dhcp-host=$mac,,$ip,$host,infinite"
+      arguments+=" --dhcp-range=$ip,$ip"
+      arguments+=" --dhcp-host=$mac,,$ip,$host,infinite"
 
       # Set DNS server and gateway
-      DNSMASQ_OPTS+=" --dhcp-option=option:netmask,$mask"
-      DNSMASQ_OPTS+=" --dhcp-option=option:router,$gateway"
-      DNSMASQ_OPTS+=" --dhcp-option=option:dns-server,$gateway"
+      arguments+=" --dhcp-option=option:netmask,$mask"
+      arguments+=" --dhcp-option=option:router,$gateway"
+      arguments+=" --dhcp-option=option:dns-server,$gateway"
 
   esac
 
   # Set interfaces
-  DNSMASQ_OPTS+=" --interface=$if"
-  DNSMASQ_OPTS+=" --bind-interfaces"
+  arguments+=" --interface=$if"
+  arguments+=" --bind-interfaces"
 
   # Add DNS entry for container
-  DNSMASQ_OPTS+=" --address=/host.lan/$gateway"
+  arguments+=" --address=/host.lan/$gateway"
 
   # Set local dns resolver to dnsmasq when needed
-  [ -f /etc/resolv.dnsmasq ] && DNSMASQ_OPTS+=" --resolv-file=/etc/resolv.dnsmasq"
+  [ -f /etc/resolv.dnsmasq ] && arguments+=" --resolv-file=/etc/resolv.dnsmasq"
 
   # Enable logging to file
   local log="/var/log/dnsmasq.log"
   rm -f "$log"
-  DNSMASQ_OPTS+=" --log-facility=$log"
+  arguments+=" --log-facility=$log"
 
-  DNSMASQ_OPTS=$(echo "$DNSMASQ_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
-  [[ "$DEBUG" == [Yy1]* ]] && printf "Dnsmasq arguments:\n\n%s\n\n" "${DNSMASQ_OPTS// -/$'\n-'}"
+  arguments=$(echo "$arguments" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
+  [[ "$DEBUG" == [Yy1]* ]] && printf "Dnsmasq arguments:\n\n%s\n\n" "${arguments// -/$'\n-'}"
 
-  if ! $DNSMASQ ${DNSMASQ_OPTS:+ $DNSMASQ_OPTS}; then
+  if ! $DNSMASQ ${arguments:+ $arguments}; then
 
     local msg="Failed to start Dnsmasq, reason: $?"
-    [ -f "$log" ] && cat "$log"
-    error "$msg"
+
+    if [[ "${NETWORK,,}" == "slirp" || "${NETWORK,,}" == "passt" || "$ROOTLESS" != [Yy1]* || "$DEBUG" == [Yy1]* ]]; then
+      [ -f "$log" ] && [ -s "$log" ] && cat "$log"
+      error "$msg"
+    fi
 
     return 1
   fi
@@ -368,7 +372,7 @@ configurePasst() {
     { $PASST ${PASST_OPTS:+ $PASST_OPTS}; rc=$?; } || :
 
     if (( rc != 0 )); then
-      [ -f "$log" ] && cat "$log"
+      [ -f "$log" ] && [ -s "$log" ] && cat "$log"
       warn "failed to start passt ($rc), falling back to slirp networking!"
       configureSlirp && return 0 || return 1
     fi
@@ -379,7 +383,7 @@ configurePasst() {
     tail -fn +0 "$log" --pid=$$ &
   else
     if [[ "$DEBUG" == [Yy1]* ]]; then
-      [ -f "$log" ] && cat "$log" && echo ""
+      [ -f "$log" ] && [ -s "$log" ] && cat "$log" && echo ""
     fi
   fi
 
@@ -792,7 +796,7 @@ else
 
   case "${NETWORK,,}" in
     "passt" | "slirp" | "user"* ) ;;
-    "tap" | "tun" | "tuntap" | "y" )
+    "tap" | "tun" | "tuntap" | "y" | "" )
 
       # Configure tap interface
       if ! configureNAT; then
@@ -811,7 +815,7 @@ else
   esac
 
   case "${NETWORK,,}" in
-    "tap" | "tun" | "tuntap" | "y" ) ;;
+    "tap" | "tun" | "tuntap" | "y" | "" ) ;;
     "passt" | "user"* )
 
       # Configure for user-mode networking (passt)
