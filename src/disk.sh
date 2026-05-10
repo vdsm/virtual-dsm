@@ -399,7 +399,7 @@ createDevice () {
       ;;
     "nvme" )
       result+=",if=none \
-      -device nvme,drive=${DISK_ID}${index},serial=deadbeef${DISK_INDEX}${DISK_SERIAL}${DISK_SECTORS}"
+      -device nvme,drive=${DISK_ID}${index},serial=deadbeaf${DISK_INDEX}${DISK_SERIAL}${DISK_SECTORS}"
       echo "$result"
       ;;
     "ide" | "sata" )
