@@ -484,7 +484,7 @@ configureNAT() {
     warn "failed to set master bridge!" && return 1
   fi
 
-  if grep -wq "nf_tables" /proc/modules; then
+  if command -v iptables-nft >/dev/null 2>&1 && iptables-nft -V >/dev/null 2>&1; then
     update-alternatives --set iptables /usr/sbin/iptables-nft > /dev/null
     update-alternatives --set ip6tables /usr/sbin/ip6tables-nft > /dev/null
   else
