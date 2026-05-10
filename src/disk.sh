@@ -640,7 +640,7 @@ if [ ! -f "$DISK2_FILE.img" ]; then
   if [[ -f "$DISK1_FILE.img" && -f "$FALLBACK" ]]; then
     SIZE1=$(stat -c%s "$FALLBACK")
     SIZE2=$(stat -c%s "$DISK1_FILE.img")
-    if [[ SIZE1 -ne SIZE2 ]]; then
+    if [[ $SIZE1 -ne $SIZE2 ]]; then
       mv "$FALLBACK" "$DISK2_FILE.img"
     fi
   fi
@@ -653,7 +653,7 @@ if [ ! -f "$DISK3_FILE.img" ]; then
   if [[ -f "$DISK1_FILE.img" && -f "$FALLBACK" ]]; then
     SIZE1=$(stat -c%s "$FALLBACK")
     SIZE2=$(stat -c%s "$DISK1_FILE.img")
-    if [[ SIZE1 -ne SIZE2 ]]; then
+    if [[ $SIZE1 -ne $SIZE2 ]]; then
       mv "$FALLBACK" "$DISK3_FILE.img"
     fi
   fi
