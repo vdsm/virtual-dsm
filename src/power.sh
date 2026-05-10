@@ -10,8 +10,6 @@ API_CMD=6
 API_HOST="127.0.0.1:$COM_PORT"
 
 QEMU_TERM=""
-QEMU_DIR="/run/shm"
-QEMU_PID="$QEMU_DIR/qemu.pid"
 QEMU_LOG="$QEMU_DIR/qemu.log"
 QEMU_OUT="$QEMU_DIR/qemu.out"
 QEMU_END="$QEMU_DIR/qemu.end"
