@@ -91,11 +91,16 @@ fi
 
 # Check system
 
+QEMU_DIR="/run/shm"
+
 if [ ! -d "/dev/shm" ]; then
   error "Directory /dev/shm not found!" && exit 14
 else
-  [ ! -d "/run/shm" ] && ln -s /dev/shm /run/shm
+  [ ! -d "$QEMU_DIR" ] && ln -s /dev/shm "$QEMU_DIR"
 fi
+
+QEMU_PID="$QEMU_DIR/qemu.pid"
+rm -f "$QEMU_PID"
 
 # Check folder
 
