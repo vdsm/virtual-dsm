@@ -14,6 +14,8 @@ FROM debian:trixie-slim
 ARG TARGETARCH
 ARG TARGETPLATFORM
 ARG VERSION_ARG="0.0"
+ARG VERSION_PASST="2026_05_07"
+
 ARG DEBCONF_NOWARNINGS="yes"
 ARG DEBIAN_FRONTEND="noninteractive"
 ARG DEBCONF_NONINTERACTIVE_SEEN="true"
@@ -49,7 +51,7 @@ RUN set -eu && \
         ca-certificates \
         netcat-openbsd \
         qemu-system-x86 && \
-    wget "https://github.com/qemus/passt/releases/download/v2025_09_19/passt_2025_09_19_${TARGETARCH}.deb" -O /tmp/passt.deb -q && \
+    wget "https://github.com/qemus/passt/releases/download/v${VERSION_PASST}/passt_${VERSION_PASST}_${TARGETARCH}.deb" -O /tmp/passt.deb -q --timeout=10 && \
     dpkg -i /tmp/passt.deb && \
     apt-get clean && \
     pip3 install --no-cache-dir --break-system-packages --root-user-action=ignore dissect.cstruct && \
