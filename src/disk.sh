@@ -628,37 +628,8 @@ DISK_OPTS+=$(createDevice "$BOOT" "$DISK_TYPE" "1" "0xa" "raw" "$DISK_IO" "$DISK
 DISK_OPTS+=$(createDevice "$SYSTEM" "$DISK_TYPE" "2" "0xb" "raw" "$DISK_IO" "$DISK_CACHE" "" "")
 
 DISK1_FILE="$STORAGE/${DISK_NAME}"
-if [ ! -f "$DISK1_FILE.img" ] && [ -f "$STORAGE/data${DISK_SIZE}.img" ]; then
-  # Fallback for legacy installs
-  mv "$STORAGE/data${DISK_SIZE}.img" "$DISK1_FILE.img"
-fi
-
 DISK2_FILE="/storage2/${DISK_NAME}2"
-if [ ! -f "$DISK2_FILE.img" ]; then
-  # Fallback for legacy installs
-  FALLBACK="/storage2/data.img"
-  if [[ -f "$DISK1_FILE.img" && -f "$FALLBACK" ]]; then
-    SIZE1=$(stat -c%s "$FALLBACK")
-    SIZE2=$(stat -c%s "$DISK1_FILE.img")
-    if [[ $SIZE1 -ne $SIZE2 ]]; then
-      mv "$FALLBACK" "$DISK2_FILE.img"
-    fi
-  fi
-fi
-
 DISK3_FILE="/storage3/${DISK_NAME}3"
-if [ ! -f "$DISK3_FILE.img" ]; then
-  # Fallback for legacy installs
-  FALLBACK="/storage3/data.img"
-  if [[ -f "$DISK1_FILE.img" && -f "$FALLBACK" ]]; then
-    SIZE1=$(stat -c%s "$FALLBACK")
-    SIZE2=$(stat -c%s "$DISK1_FILE.img")
-    if [[ $SIZE1 -ne $SIZE2 ]]; then
-      mv "$FALLBACK" "$DISK3_FILE.img"
-    fi
-  fi
-fi
-
 DISK4_FILE="/storage4/${DISK_NAME}4"
 
 : "${DISK2_SIZE:=""}"
