@@ -501,7 +501,11 @@ configureNAT() {
   exclude=$(getHostPorts)
 
   if [ -n "$exclude" ]; then
-    exclude=" ! --dport ${exclude//,/ ! --dport }"
+    if [[ "$exclude" != *","* ]]; then
+      exclude=" ! --dport $exclude"
+    else
+      exclude=" -m multiport ! --dports $exclude"
+    fi
   fi
 
   if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -j MASQUERADE > /dev/null 2>&1; then
