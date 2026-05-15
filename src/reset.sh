@@ -127,12 +127,13 @@ if [[ "${FS,,}" == "ecryptfs" || "${FS,,}" == "tmpfs" ]]; then
 fi
 
 # Read memory
-RAM_SPARE=500000000
 RAM_AVAIL=$(free -b | grep -m 1 Mem: | awk '{print $7}')
 RAM_TOTAL=$(free -b | grep -m 1 Mem: | awk '{print $2}')
 
+RAM_SPARE=500000000
+RAM_MINIMUM=136314880
 RAM_SIZE="${RAM_SIZE// /}"
-[ -z "$RAM_SIZE" ] && error "RAM_SIZE not specified!" && exit 16
+[ -z "$RAM_SIZE" ] && RAM_SIZE="2G"
 
 if [[ "${RAM_SIZE,,}" != "max" && "${RAM_SIZE,,}" != "half" ]]; then
 
@@ -142,8 +143,8 @@ if [[ "${RAM_SIZE,,}" != "max" && "${RAM_SIZE,,}" != "half" ]]; then
 
   RAM_SIZE=$(echo "${RAM_SIZE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
   ! numfmt --from=iec "$RAM_SIZE" &>/dev/null && error "Invalid RAM_SIZE: $RAM_SIZE" && exit 16
-  RAM_WANTED=$(numfmt --from=iec "$RAM_SIZE")
-  [ "$RAM_WANTED" -lt "136314880 " ] && error "RAM_SIZE is too low: $RAM_SIZE" && exit 16
+  wanted=$(numfmt --from=iec "$RAM_SIZE")
+  [ "$wanted" -lt "$RAM_MINIMUM " ] && error "RAM_SIZE is too low: $RAM_SIZE" && exit 16
 
 fi
 
