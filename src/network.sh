@@ -158,6 +158,9 @@ configureDNS() {
   arguments+=" --interface=$if"
   arguments+=" --bind-interfaces"
 
+  # Workaround NET_RAW capability
+  arguments+=" --no-ping"
+
   # Add DNS entry for container
   arguments+=" --address=/host.lan/$gateway"
 
