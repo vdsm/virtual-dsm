@@ -19,7 +19,6 @@ if [[ "$KVM" == [Nn]* ]]; then
   QEMU_TIMEOUT=$(( QEMU_TIMEOUT*2 ))
 fi
 
-rm -f "$QEMU_DIR/qemu.*"
 touch "$QEMU_LOG"
 
 _trap() {
