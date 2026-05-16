@@ -64,6 +64,7 @@ TEMPLATE="/var/www/index.html"
 FOOTER1="$APP for $ENGINE v$(</run/version)"
 FOOTER2="<a href='$SUPPORT'>$SUPPORT</a>"
 
+SOCKETS=1
 CPU=$(cpu)
 SYS=$(uname -r)
 HOST=$(hostname -s)
@@ -72,10 +73,9 @@ MINOR=$(echo "$SYS" | cut -d '.' -f2)
 ARCH=$(dpkg --print-architecture)
 CORES=$(grep -c '^processor' /proc/cpuinfo)
 
-if ! grep -qi "socket(s)" <<< "$(lscpu)"; then
-  SOCKETS=1
-else
-  SOCKETS=$(lscpu | grep -m 1 -i 'socket(s)' | awk '{print $(2)}')
+if grep -qi "socket(s)" <<< "$(lscpu)"; then
+  SOCKETS=$(lscpu | grep -m 1 -i 'socket(s)' | awk '{print $2}')
+  [ -z "${SOCKETS##*[!0-9]*}" ] && SOCKETS=1
 fi
 
 CPU_CORES="${CPU_CORES// /}"
@@ -144,7 +144,7 @@ if [[ "${RAM_SIZE,,}" != "max" && "${RAM_SIZE,,}" != "half" ]]; then
   RAM_SIZE=$(echo "${RAM_SIZE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
   ! numfmt --from=iec "$RAM_SIZE" &>/dev/null && error "Invalid RAM_SIZE: $RAM_SIZE" && exit 16
   wanted=$(numfmt --from=iec "$RAM_SIZE")
-  [ "$wanted" -lt "$RAM_MINIMUM " ] && error "RAM_SIZE is too low: $RAM_SIZE" && exit 16
+  [ "$wanted" -lt "$RAM_MINIMUM" ] && error "RAM_SIZE is too low: $RAM_SIZE" && exit 16
 
 fi
 
