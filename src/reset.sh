@@ -75,13 +75,14 @@ CORES=$(grep -c '^processor' /proc/cpuinfo)
 
 if grep -qi "socket(s)" <<< "$(lscpu)"; then
   SOCKETS=$(lscpu | grep -m 1 -i 'socket(s)' | awk '{print $2}')
+  [ "$SOCKETS" -lt "1" ] && SOCKETS=1
   [ -z "${SOCKETS##*[!0-9]*}" ] && SOCKETS=1
 fi
 
 CPU_CORES="${CPU_CORES// /}"
 [[ "${CPU_CORES,,}" == "max" ]] && CPU_CORES="$CORES"
 [[ "${CPU_CORES,,}" == "half" ]] && CPU_CORES=$(( CORES / 2 ))
-[[ "${CPU_CORES,,}" == "0" ]] && CPU_CORES="1"
+[ "$CPU_CORES" -lt "1" ] && CPU_CORES=1
 [ -n "${CPU_CORES//[0-9 ]}" ] && error "Invalid amount of CPU_CORES: $CPU_CORES" && exit 15
 
 if [ "$CPU_CORES" -gt "$CORES" ]; then
