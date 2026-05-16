@@ -175,9 +175,11 @@ configureDNS() {
   arguments=$(echo "$arguments" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
   [[ "$DEBUG" == [Yy1]* ]] && printf "Dnsmasq arguments:\n\n%s\n\n" "${arguments// -/$'\n-'}"
 
-  if ! $DNSMASQ ${arguments:+ $arguments}; then
+  { $DNSMASQ ${arguments:+ $arguments}; rc=$?; } || :
 
-    local msg="Failed to start Dnsmasq, reason: $?"
+  if (( rc != 0 )); then
+
+    local msg="Failed to start Dnsmasq, reason: $rc"
 
     if [[ "${NETWORK,,}" == "slirp" || "${NETWORK,,}" == "passt" || "$ROOTLESS" != [Yy1]* || "$DEBUG" == [Yy1]* ]]; then
       [ -f "$log" ] && [ -s "$log" ] && cat "$log"
@@ -246,9 +248,7 @@ getUserPorts() {
   done
 
   # Remove duplicates
-  ports=$(echo "${ports//,,/,}," | awk 'BEGIN{RS=ORS=","} !seen[$0]++' | sed 's/,*$//g')
-
-  echo "$ports"
+  echo "${ports//,,/,}," | awk 'BEGIN{RS=ORS=","} !seen[$0]++' | sed 's/,*$//g'
   return 0
 }
 
