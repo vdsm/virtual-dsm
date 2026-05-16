@@ -41,7 +41,7 @@ RUN set -eu && \
         iproute2 \
         dnsmasq \
         fakeroot \
-        apt-utils \        
+        apt-utils \
         net-tools \
         e2fsprogs \
         qemu-utils \
