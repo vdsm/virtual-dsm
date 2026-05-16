@@ -75,18 +75,19 @@ CORES=$(grep -c '^processor' /proc/cpuinfo)
 
 if grep -qi "socket(s)" <<< "$(lscpu)"; then
   SOCKETS=$(lscpu | grep -m 1 -i 'socket(s)' | awk '{print $2}')
-  [ "$SOCKETS" -lt "1" ] && SOCKETS=1
   [ -z "${SOCKETS##*[!0-9]*}" ] && SOCKETS=1
+  [ "$SOCKETS" -lt "1" ] && SOCKETS=1
 fi
 
 CPU_CORES="${CPU_CORES// /}"
+[ -z "$CPU_CORES" ] && CPU_CORES=2
 [[ "${CPU_CORES,,}" == "max" ]] && CPU_CORES="$CORES"
 [[ "${CPU_CORES,,}" == "half" ]] && CPU_CORES=$(( CORES / 2 ))
-[ "$CPU_CORES" -lt "1" ] && CPU_CORES=1
-[ -n "${CPU_CORES//[0-9 ]}" ] && error "Invalid amount of CPU_CORES: $CPU_CORES" && exit 15
+[ -z "${CPU_CORES##*[!0-9]*}" ] && error "Invalid amount of CPU_CORES: $CPU_CORES" && exit 15
 
+[ "$CPU_CORES" -lt "1" ] && CPU_CORES=1
 if [ "$CPU_CORES" -gt "$CORES" ]; then
-  warn "The amount for CPU_CORES (${CPU_CORES}) exceeds the amount of logical cores available, so will be limited to ${CORES}."
+  warn "The amount for CPU_CORES (${CPU_CORES}) exceeds the amount of logical cores available (${CORES}) and will be limited."
   CPU_CORES="$CORES"
 fi
 
