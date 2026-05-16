@@ -269,12 +269,14 @@ convertDisk() {
   local TMP_FILE="$DISK_BASE.tmp"
   rm -f "$TMP_FILE"
 
+  local DIR
+  DIR=$(dirname "$TMP_FILE")
+
   if [[ "$ALLOCATE" != [Nn]* ]]; then
 
-    local DIR CUR_SIZE SPACE GB
+    local CUR_SIZE SPACE GB
 
     # Check free diskspace
-    DIR=$(dirname "$TMP_FILE")
     CUR_SIZE=$(getSize "$SOURCE_FILE")
     SPACE=$(df --output=avail -B 1 "$DIR" | tail -n 1)
 
