@@ -12,7 +12,7 @@ CLOCKSOURCE="tsc"
 CLOCK="/sys/devices/system/clocksource/clocksource0/current_clocksource"
 
 if [ ! -f "$CLOCK" ]; then
-  warn "file \"$CLOCK\" cannot not found?"
+  warn "file \"$CLOCK\" cannot be found?"
 else
   result=$(<"$CLOCK")
   result="${result//[![:print:]]/}"
