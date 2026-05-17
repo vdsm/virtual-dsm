@@ -697,6 +697,20 @@ getInfo() {
       exit 29
     fi
 
+    if uname -a | grep -Eqi 'unraid|truenas'; then
+
+      # Check if host exposes the bridge-nf sysctl
+      # (only visible if br_netfilter is loaded and /proc/sys is accessible)
+  
+      BNF="/proc/sys/net/bridge/bridge-nf-call-iptables"
+  
+      if [[ -r "$BNF" ]] && [[ "$(cat "$BNF")" != "0" ]]; then
+        warn "detected net.bridge.bridge-nf-call-iptables=1 on the host, external LAN clients will not be able to reach this container's ports."
+        warn "you can fix this issue by running 'sysctl -w net.bridge.bridge-nf-call-iptables=0' on the host (persist in /etc/sysctl.d/)."
+      fi
+  
+    fi
+
   else
 
     if [[ "$IP" != "172."* && "$IP" != "10.8"* && "$IP" != "10.9"* ]]; then
