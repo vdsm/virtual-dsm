@@ -254,6 +254,7 @@ getUserPorts() {
 
 getSlirp() {
 
+  local ip="$1"
   local args=""
   local list=""
 
@@ -269,12 +270,12 @@ getSlirp() {
       proto="udp"
       num="${port%/udp}"
     elif [[ "$port" != *"/tcp" ]]; then
-      args+="hostfwd=$proto::$num-$VM_NET_IP:$num,"
+      args+="hostfwd=$proto::$num-$ip:$num,"
       proto="udp"
       num="${port%/udp}"
     fi
 
-    args+="hostfwd=$proto::$num-$VM_NET_IP:$num,"
+    args+="hostfwd=$proto::$num-$ip:$num,"
   done
 
   echo "$args" | sed 's/,*$//g'
@@ -298,7 +299,7 @@ configureSlirp() {
   NET_OPTS="-netdev user,id=hostnet0,ipv4=on,host=$gateway,net=${gateway%.*}.0/24,dhcpstart=$ip,${ipv6}hostname=$VM_NET_HOST"
 
   local forward=""
-  forward=$(getSlirp)
+  forward=$(getSlirp "$ip")
   [ -n "$forward" ] && NET_OPTS+=",$forward"
 
   if [[ "${DNSMASQ_DISABLE:-}" == [Yy1]* ]]; then
@@ -618,21 +619,22 @@ cleanUp() {
 
 checkOS() {
 
-  local kernel
   local os=""
-  local if="macvlan"
+  local kernel=""
+  local iface="macvlan"
+
   kernel=$(uname -a)
 
   [[ "${kernel,,}" == *"darwin"* ]] && os="$ENGINE Desktop for macOS"
   [[ "${kernel,,}" == *"microsoft"* ]] && os="$ENGINE Desktop for Windows"
 
   if [[ "$DHCP" == [Yy1]* ]]; then
-    if="macvtap"
+    iface="macvtap"
     [[ "${kernel,,}" == *"synology"* ]] && os="Synology Container Manager"
   fi
 
   if [ -n "$os" ]; then
-    warn "you are using $os which does not support $if, please revert to bridge networking!"
+    warn "you are using $os which does not support $iface, please revert to bridge networking!"
   fi
 
   return 0
