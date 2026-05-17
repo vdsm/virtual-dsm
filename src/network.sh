@@ -117,7 +117,7 @@ configureDHCP() {
 
 configureDNS() {
 
-  local if="$1"
+  local fa="$1"
   local ip="$2"
   local mac="$3"
   local host="$4"
@@ -155,7 +155,7 @@ configureDNS() {
   esac
 
   # Set interfaces
-  arguments+=" --interface=$if"
+  arguments+=" --interface=$fa"
   arguments+=" --bind-interfaces"
 
   # Workaround NET_RAW capability
