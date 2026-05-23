@@ -710,7 +710,6 @@ getInfo() {
         warn "external LAN clients may not be able to reach this container, because net.bridge.bridge-nf-call-iptables=1."
         warn "you can fix this issue by running 'sysctl -w net.bridge.bridge-nf-call-iptables=0' on the host system."
       fi
-      fi
   
     fi
 
