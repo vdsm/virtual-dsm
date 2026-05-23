@@ -707,8 +707,9 @@ getInfo() {
       BNF="/proc/sys/net/bridge/bridge-nf-call-iptables"
   
       if [[ -r "$BNF" ]] && [[ "$(cat "$BNF")" != "0" ]]; then
-        warn "detected net.bridge.bridge-nf-call-iptables=1 on the host, external LAN clients will not be able to reach this container's ports."
-        warn "you can fix this issue by running 'sysctl -w net.bridge.bridge-nf-call-iptables=0' on the host (persist in /etc/sysctl.d/)."
+        warn "external LAN clients may not be able to reach this container, because net.bridge.bridge-nf-call-iptables=1."
+        warn "you can fix this issue by running 'sysctl -w net.bridge.bridge-nf-call-iptables=0' on the host system."
+      fi
       fi
   
     fi
