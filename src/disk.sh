@@ -538,16 +538,15 @@ addDisk () {
       GB=$(formatBytes "$FREE")
       LEFT=$(formatBytes "$LEFT")
       CUR_SIZE=$(formatBytes "$CUR_SIZE")
-      msg="the virtual size of the ${DISK_DESC,,} is $CUR_SIZE"
+      msg="The virtual size of the ${DISK_DESC,,} is $CUR_SIZE"
 
-      if [[ "$USED" == "0" ]]; then
-        msg+=","
-      else
+      if [ -n "$USED" ] && [[ "$USED" != "0" ]]; then
         USED=$(formatBytes "$USED")
-        msg+=" (of which $USED is used),"
+        msg+=" (of which $USED is used)"
       fi
 
-      warn "$msg but there is only $GB of free space left in $DIR, make at least $LEFT more room available!"
+      info "$msg, but there is only $GB of free space remaining in $DIR now."
+      info "Please consider making at least $LEFT more space available in $DIR for future expansions."
 
     fi
 
