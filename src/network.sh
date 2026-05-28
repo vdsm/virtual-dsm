@@ -782,7 +782,7 @@ getInfo() {
     [[ "$MTU" != "0" && "$MTU" != "$mtu" ]] && line+=" ($MTU)"
     info "$line"
     if [ -f /etc/resolv.conf ]; then
-      nameservers=$(grep '^nameserver ' /etc/resolv.conf | head -c -1 | sed 's/nameserver //g;' | sed -z 's/\n/, /g')
+      nameservers=$(grep '^nameserver ' /etc/resolv.conf | sed 's/^nameserver //' | paste -sd ',' | sed 's/,/, /g')
       [ -n "$nameservers" ] && info "Nameservers: $nameservers"
     fi
     echo
