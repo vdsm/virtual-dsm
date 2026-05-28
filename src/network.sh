@@ -447,6 +447,9 @@ configureNAT() {
     gateway="${ip%.*}.2"
   fi
 
+  local subnet="$gateway/24"
+  local broadcast="${ip%.*}.255"
+
   # Create a bridge with a static IP for the VM guest
   { ip link add dev "$VM_NET_BRIDGE" type bridge ; rc=$?; } || :
 
@@ -455,7 +458,7 @@ configureNAT() {
     warn "failed to create bridge. $ADD_ERR --cap-add NET_ADMIN" && return 1
   fi
 
-  if ! ip address add "$gateway/24" broadcast "${ip%.*}.255" dev "$VM_NET_BRIDGE"; then
+  if ! ip address add "$subnet" broadcast "$broadcast" dev "$VM_NET_BRIDGE"; then
     warn "failed to add IP address pool!" && return 1
   fi
 
@@ -464,7 +467,7 @@ configureNAT() {
     sleep 2
   done
 
-  # QEMU Works with taps, set tap to the bridge created
+  # Set tap to the bridge created
   if ! ip tuntap add dev "$VM_NET_TAP" mode tap; then
     [[ "$ROOTLESS" == [Yy1]* && "$DEBUG" != [Yy1]* ]] && return 1
     warn "$tuntap" && return 1
@@ -489,6 +492,7 @@ configureNAT() {
     warn "failed to set master bridge!" && return 1
   fi
 
+  # Choose between iptables or nftables
   if command -v iptables-nft >/dev/null 2>&1 && iptables-nft -V >/dev/null 2>&1; then
     update-alternatives --set iptables /usr/sbin/iptables-nft > /dev/null
     update-alternatives --set ip6tables /usr/sbin/ip6tables-nft > /dev/null
@@ -507,9 +511,10 @@ configureNAT() {
     fi
   fi
 
-  if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -j MASQUERADE > /dev/null 2>&1; then
+  # NAT traffic from bridge subnet to Docker uplink
+  if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -s "$subnet" ! -d "$subnet" -j MASQUERADE > /dev/null 2>&1; then
     [[ "$ROOTLESS" == [Yy1]* && "$DEBUG" != [Yy1]* ]] && return 1
-    if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -j MASQUERADE; then
+    if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -s "$subnet" ! -d "$subnet" -j MASQUERADE; then
       warn "$tables" && return 1
     fi
   fi
@@ -526,6 +531,16 @@ configureNAT() {
   if (( KERNEL > 4 )); then
     # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
     iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill > /dev/null 2>&1 || true
+  fi
+
+  # Allow forwarding from bridge -> dev
+  if ! iptables -A FORWARD -i "$VM_NET_BRIDGE" -o "$VM_NET_DEV" -j ACCEPT; then
+    warn "failed to configure IP tables!" && return 1
+  fi
+
+  # Allow return traffic
+  if ! iptables -A FORWARD -i "$VM_NET_DEV" -o "$VM_NET_BRIDGE" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT; then
+    warn "failed to configure IP tables!" && return 1
   fi
 
   NET_OPTS="-netdev tap,id=hostnet0,ifname=$VM_NET_TAP"
