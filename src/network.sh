@@ -680,7 +680,7 @@ getInfo() {
   { IP=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/ | head -n 1); rc=$?; } 2>/dev/null || :
 
   if [ -z "$IP" ] || (( rc != 0 )); then
-    [[ "$DHCP" != [Yy1]* ]] && error "Could not determine container IP address!" && exit 26
+    [[ "$DHCP" != [Yy1]* ]] && error "Could not determine container IPv4 address!" && exit 26
   fi
 
   IP6=""
