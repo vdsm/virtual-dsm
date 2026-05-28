@@ -566,10 +566,6 @@ closeBridge() {
   [ -s "$DNSMASQ_PID" ] && pKill "$(<"$DNSMASQ_PID")"
   rm -f "$DNSMASQ_PID"
 
-  case "${NETWORK,,}" in
-    "user"* | "passt" | "slirp" ) return 0 ;;
-  esac
-
   ip link set "$VM_NET_TAP" down promisc off &> /dev/null || true
   ip link delete "$VM_NET_TAP" &> /dev/null || true
 
@@ -604,30 +600,18 @@ closeNetwork() {
   exec 30<&- || true
   exec 40<&- || true
 
-  if [[ "$DHCP" != [Yy1]* ]]; then
-
-    closeBridge
-    return 0
-
-  fi
-
-  ip link set "$VM_NET_TAP" down || true
-  ip link delete "$VM_NET_TAP" || true
-
+  closeBridge
   return 0
 }
 
 cleanUp() {
 
+  closeBridge
+
   # Clean up old files
   rm -f "$PASST_PID"
   rm -f "$DNSMASQ_PID"
   rm -f /etc/resolv.dnsmasq
-
-  if [[ -d "/sys/class/net/$VM_NET_TAP" ]]; then
-    info "Lingering interface will be removed..."
-    ip link delete "$VM_NET_TAP" || true
-  fi
 
   return 0
 }
