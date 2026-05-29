@@ -457,7 +457,7 @@ addDisk () {
     fi
 
     (( FREE < SPARE )) && FREE="$SPARE"
-    GB=$(( FREE / 1073741825 ))
+    GB=$(( FREE / 1073741824 ))
     DISK_SPACE="${GB}G"
 
   fi
