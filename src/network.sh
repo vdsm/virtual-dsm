@@ -420,10 +420,12 @@ clearTables() {
       \*mangle) table="mangle" ;;
       \*raw)    table="raw" ;;
     esac
-    if [[ "$line" == -A* && ( "$line" == *"--comment \"remove\""* || \
-	      "$line" == *"--comment remove "* || "$line" == *"--comment remove" ) ]]; then
-      read -ra args <<< "${line/-A /-D }"
-      iptables -t "$table" "${args[@]}" 2>/dev/null || true
+    if [[ "$line" == -A* ]]; then
+      local re="--comment[[:space:]]+\"?remove\"?([[:space:]]|\$)"
+      if [[ "$line" =~ $re ]]; then
+        read -ra args <<< "${line/-A /-D }"
+        iptables -t "$table" "${args[@]}" 2>/dev/null || true
+      fi
     fi
   done < <(iptables-save 2>/dev/null)
 
