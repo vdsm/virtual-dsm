@@ -14,7 +14,7 @@ function getInfo() {
         if (window.XMLHttpRequest) {
             request = new XMLHttpRequest();
         } else {
-            throw "XMLHttpRequest not available!";
+            throw new Error("XMLHttpRequest not available!");
         }
 
         request.onreadystatechange = processInfo;
