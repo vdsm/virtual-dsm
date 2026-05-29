@@ -462,7 +462,7 @@ configureNAT() {
     fi
   fi
 
-  local ip base gateway
+  local ip base gateway exclude
   base=$(echo "$IP" | sed -r 's/([^.]*.){2}//')
 
   if [[ "$IP" != "172.30."* ]]; then
@@ -675,7 +675,7 @@ getInfo() {
     [ -d "/sys/class/net/net2" ] && VM_NET_DEV="net2"
     [ -d "/sys/class/net/net3" ] && VM_NET_DEV="net3"
     # Automatically detect the default network interface
-    [ -z "$VM_NET_DEV" ] && VM_NET_DEV=$(awk '$2 == 00000000 { print $1 }' /proc/net/route)
+    [ -z "$VM_NET_DEV" ] && VM_NET_DEV=$(awk '$2 == 00000000 { print $1; exit }' /proc/net/route)
     [ -z "$VM_NET_DEV" ] && VM_NET_DEV="eth0"
   fi
 
@@ -685,11 +685,8 @@ getInfo() {
   fi
 
   GATEWAY=$(ip route list dev "$VM_NET_DEV" | awk ' /^default/ {print $3}' | head -n 1)
-  { IP=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/ | head -n 1); rc=$?; } 2>/dev/null || :
-
-  if [ -z "$IP" ] || (( rc != 0 )); then
-    [[ "$DHCP" != [Yy1]* ]] && error "Could not determine container IPv4 address!" && exit 26
-  fi
+  { IP=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/ | head -n 1); } 2>/dev/null || :
+  [ -z "$IP" ] && [[ "$DHCP" != [Yy1]* ]] && error "Could not determine container IPv4 address!" && exit 26
 
   IP6=""
   # shellcheck disable=SC2143
