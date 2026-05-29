@@ -264,7 +264,7 @@ convertDisk() {
   local FS="$7"
 
   [ -f "$DST_FILE" ] && error "Conversion failed, destination file $DST_FILE already exists?" && exit 79
-  [ ! -f "$SOURCE_FILE" ] && error "Conversion failed, source file $SOURCE_FILE does not exists?" && exit 79
+  [ ! -f "$SOURCE_FILE" ] && error "Conversion failed, source file $SOURCE_FILE does not exist?" && exit 79
 
   local TMP_FILE="$DISK_BASE.tmp"
   rm -f "$TMP_FILE"
