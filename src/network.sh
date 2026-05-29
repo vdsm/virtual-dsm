@@ -400,6 +400,38 @@ configurePasst() {
   return 0
 }
 
+clearTables() {
+
+  # Choose between iptables or nftables
+  if command -v iptables-nft >/dev/null 2>&1 && iptables-nft -V >/dev/null 2>&1; then
+    update-alternatives --set iptables /usr/sbin/iptables-nft > /dev/null
+    update-alternatives --set ip6tables /usr/sbin/ip6tables-nft > /dev/null
+  else
+    update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
+    update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
+  fi
+
+  # Delete every rule tagged with our unique identifier, leaving all other rules intact.
+  local table="" line
+  while IFS= read -r line; do
+    case "$line" in
+      \*nat)    table="nat" ;;
+      \*filter) table="filter" ;;
+      \*mangle) table="mangle" ;;
+      \*raw)    table="raw" ;;
+    esac
+    if [[ "$line" == -A* ]]; then
+      local re="--comment[[:space:]]+\"?remove\"?([[:space:]]|\$)"
+      if [[ "$line" =~ $re ]]; then
+        read -ra args <<< "${line/-A /-D }"
+        iptables -t "$table" "${args[@]}" 2>/dev/null || true
+      fi
+    fi
+  done < <(iptables-save 2>/dev/null)
+
+  return 0
+}
+
 configureNAT() {
 
   local tuntap="TUN device is missing. $ADD_ERR --device /dev/net/tun"
@@ -430,8 +462,9 @@ configureNAT() {
     fi
   fi
 
-  local ip base
+  local ip base gateway
   base=$(echo "$IP" | sed -r 's/([^.]*.){2}//')
+
   if [[ "$IP" != "172.30."* ]]; then
     ip="172.30.$base"
   else
@@ -440,14 +473,13 @@ configureNAT() {
 
   [ -n "$VM_NET_IP" ] && ip="$VM_NET_IP"
 
-  local gateway=""
   if [[ "$ip" != *".1" ]]; then
     gateway="${ip%.*}.1"
   else
     gateway="${ip%.*}.2"
   fi
 
-  local subnet="$gateway/24"
+  local subnet="${ip%.*}.0/24"
   local broadcast="${ip%.*}.255"
 
   # Create a bridge with a static IP for the VM guest
@@ -458,7 +490,7 @@ configureNAT() {
     warn "failed to create bridge. $ADD_ERR --cap-add NET_ADMIN" && return 1
   fi
 
-  if ! ip address add "$subnet" broadcast "$broadcast" dev "$VM_NET_BRIDGE"; then
+  if ! ip address add "$gateway/24" broadcast "$broadcast" dev "$VM_NET_BRIDGE"; then
     warn "failed to add IP address pool!" && return 1
   fi
 
@@ -480,7 +512,7 @@ configureNAT() {
   fi
 
   if ! ip link set dev "$VM_NET_TAP" address "$GATEWAY_MAC"; then
-    warn "failed to set gateway MAC address.."
+    warn "failed to set gateway MAC address."
   fi
 
   while ! ip link set "$VM_NET_TAP" up promisc on; do
@@ -492,14 +524,8 @@ configureNAT() {
     warn "failed to set master bridge!" && return 1
   fi
 
-  # Choose between iptables or nftables
-  if command -v iptables-nft >/dev/null 2>&1 && iptables-nft -V >/dev/null 2>&1; then
-    update-alternatives --set iptables /usr/sbin/iptables-nft > /dev/null
-    update-alternatives --set ip6tables /usr/sbin/ip6tables-nft > /dev/null
-  else
-    update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
-    update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
-  fi
+  # Flush existing tables
+  clearTables
 
   exclude=$(getHostPorts)
 
@@ -512,34 +538,34 @@ configureNAT() {
   fi
 
   # NAT traffic from bridge subnet to Docker uplink
-  if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -s "$subnet" ! -d "$subnet" -j MASQUERADE > /dev/null 2>&1; then
+  if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -s "$subnet" ! -d "$subnet" -m comment --comment "remove" -j MASQUERADE > /dev/null 2>&1; then
     [[ "$ROOTLESS" == [Yy1]* && "$DEBUG" != [Yy1]* ]] && return 1
-    if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -s "$subnet" ! -d "$subnet" -j MASQUERADE; then
+    if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -s "$subnet" ! -d "$subnet" -m comment --comment "remove" -j MASQUERADE; then
       warn "$tables" && return 1
     fi
   fi
 
   # shellcheck disable=SC2086
-  if ! iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p tcp${exclude} -j DNAT --to "$ip"; then
+  if ! iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p tcp${exclude} -m comment --comment "remove" -j DNAT --to "$ip"; then
     warn "failed to configure IP tables!" && return 1
   fi
 
-  if ! iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p udp -j DNAT --to "$ip"; then
+  if ! iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p udp -m comment --comment "remove" -j DNAT --to "$ip"; then
     warn "failed to configure IP tables!" && return 1
   fi
 
   if (( KERNEL > 4 )); then
     # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
-    iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill > /dev/null 2>&1 || true
+    iptables -A POSTROUTING -t mangle -p udp --dport bootpc -m comment --comment "remove" -j CHECKSUM --checksum-fill > /dev/null 2>&1 || true
   fi
 
   # Allow forwarding from bridge -> dev
-  if ! iptables -A FORWARD -i "$VM_NET_BRIDGE" -o "$VM_NET_DEV" -j ACCEPT; then
+  if ! iptables -A FORWARD -i "$VM_NET_BRIDGE" -o "$VM_NET_DEV" -m comment --comment "remove" -j ACCEPT; then
     warn "failed to configure IP tables!" && return 1
   fi
 
   # Allow return traffic
-  if ! iptables -A FORWARD -i "$VM_NET_DEV" -o "$VM_NET_BRIDGE" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT; then
+  if ! iptables -A FORWARD -i "$VM_NET_DEV" -o "$VM_NET_BRIDGE" -m conntrack --ctstate RELATED,ESTABLISHED -m comment --comment "remove" -j ACCEPT; then
     warn "failed to configure IP tables!" && return 1
   fi
 
@@ -566,16 +592,13 @@ closeBridge() {
   [ -s "$DNSMASQ_PID" ] && pKill "$(<"$DNSMASQ_PID")"
   rm -f "$DNSMASQ_PID"
 
-  case "${NETWORK,,}" in
-    "user"* | "passt" | "slirp" ) return 0 ;;
-  esac
-
   ip link set "$VM_NET_TAP" down promisc off &> /dev/null || true
   ip link delete "$VM_NET_TAP" &> /dev/null || true
 
   ip link set "$VM_NET_BRIDGE" down &> /dev/null || true
   ip link delete "$VM_NET_BRIDGE" &> /dev/null || true
 
+  clearTables
   return 0
 }
 
@@ -604,30 +627,18 @@ closeNetwork() {
   exec 30<&- || true
   exec 40<&- || true
 
-  if [[ "$DHCP" != [Yy1]* ]]; then
-
-    closeBridge
-    return 0
-
-  fi
-
-  ip link set "$VM_NET_TAP" down || true
-  ip link delete "$VM_NET_TAP" || true
-
+  closeBridge
   return 0
 }
 
 cleanUp() {
 
+  closeBridge
+
   # Clean up old files
   rm -f "$PASST_PID"
   rm -f "$DNSMASQ_PID"
   rm -f /etc/resolv.dnsmasq
-
-  if [[ -d "/sys/class/net/$VM_NET_TAP" ]]; then
-    info "Lingering interface will be removed..."
-    ip link delete "$VM_NET_TAP" || true
-  fi
 
   return 0
 }
@@ -676,8 +687,8 @@ getInfo() {
   GATEWAY=$(ip route list dev "$VM_NET_DEV" | awk ' /^default/ {print $3}' | head -n 1)
   { IP=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/ | head -n 1); rc=$?; } 2>/dev/null || :
 
-  if (( rc != 0 )); then
-    error "Could not determine container IP address!" && exit 26
+  if [ -z "$IP" ] || (( rc != 0 )); then
+    [[ "$DHCP" != [Yy1]* ]] && error "Could not determine container IPv4 address!" && exit 26
   fi
 
   IP6=""
@@ -690,8 +701,8 @@ getInfo() {
 
   local result nic bus
   result=$(ethtool -i "$VM_NET_DEV")
-  nic=$(grep -m 1 -i 'driver:' <<< "$result" | awk '{print $(2)}')
-  bus=$(grep -m 1 -i 'bus-info:' <<< "$result" | awk '{print $(2)}')
+  nic=$(grep -m 1 -i 'driver:' <<< "$result" | awk '{print $2}')
+  bus=$(grep -m 1 -i 'bus-info:' <<< "$result" | awk '{print $2}')
 
   if [[ "${bus,,}" != "" && "${bus,,}" != "n/a" && "${bus,,}" != "tap" ]]; then
     [[ "$DEBUG" == [Yy1]* ]] && info "Detected BUS: $bus"
@@ -782,7 +793,7 @@ getInfo() {
     [[ "$MTU" != "0" && "$MTU" != "$mtu" ]] && line+=" ($MTU)"
     info "$line"
     if [ -f /etc/resolv.conf ]; then
-      nameservers=$(grep '^nameserver*' /etc/resolv.conf | head -c -1 | sed 's/nameserver //g;' | sed -z 's/\n/, /g')
+      nameservers=$(grep '^nameserver ' /etc/resolv.conf | sed 's/^nameserver //' | paste -sd ',' | sed 's/,/, /g')
       [ -n "$nameservers" ] && info "Nameservers: $nameservers"
     fi
     echo
