@@ -411,15 +411,19 @@ clearTables() {
     update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
   fi
 
-  iptables -P INPUT ACCEPT &> /dev/null || true
-  iptables -P FORWARD ACCEPT &> /dev/null || true
-  iptables -P OUTPUT ACCEPT &> /dev/null || true
-  iptables -t nat -F &> /dev/null || true
-  iptables -t raw -F &> /dev/null || true
-  iptables -t filter -F &> /dev/null || true
-  iptables -t mangle -F &> /dev/null || true
-  iptables -F &> /dev/null || true
-  iptables -X &> /dev/null || true
+  # Delete every rule tagged with our unique identifier, leaving all other rules intact.
+  local table="" line
+  while IFS= read -r line; do
+    case "$line" in
+      \*nat)    table="nat" ;;
+      \*filter) table="filter" ;;
+      \*mangle) table="mangle" ;;
+      \*raw)    table="raw" ;;
+    esac
+    if [[ "$line" == -A* && "$line" == *"--comment \"remove\""* ]]; then
+      echo "${line/-A /-D }" | xargs iptables -t "$table" 2>/dev/null || true
+    fi
+  done < <(iptables-save 2>/dev/null)
 
   return 0
 }
@@ -504,7 +508,7 @@ configureNAT() {
   fi
 
   if ! ip link set dev "$VM_NET_TAP" address "$GATEWAY_MAC"; then
-    warn "failed to set gateway MAC address.."
+    warn "failed to set gateway MAC address."
   fi
 
   while ! ip link set "$VM_NET_TAP" up promisc on; do
@@ -530,34 +534,34 @@ configureNAT() {
   fi
 
   # NAT traffic from bridge subnet to Docker uplink
-  if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -s "$subnet" ! -d "$subnet" -j MASQUERADE > /dev/null 2>&1; then
+  if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -s "$subnet" ! -d "$subnet" -m comment --comment "remove" -j MASQUERADE > /dev/null 2>&1; then
     [[ "$ROOTLESS" == [Yy1]* && "$DEBUG" != [Yy1]* ]] && return 1
-    if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -s "$subnet" ! -d "$subnet" -j MASQUERADE; then
+    if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -s "$subnet" ! -d "$subnet" -m comment --comment "remove" -j MASQUERADE; then
       warn "$tables" && return 1
     fi
   fi
 
   # shellcheck disable=SC2086
-  if ! iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p tcp${exclude} -j DNAT --to "$ip"; then
+  if ! iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p tcp${exclude} -m comment --comment "remove" -j DNAT --to "$ip"; then
     warn "failed to configure IP tables!" && return 1
   fi
 
-  if ! iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p udp -j DNAT --to "$ip"; then
+  if ! iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p udp -m comment --comment "remove" -j DNAT --to "$ip"; then
     warn "failed to configure IP tables!" && return 1
   fi
 
   if (( KERNEL > 4 )); then
     # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
-    iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill > /dev/null 2>&1 || true
+    iptables -A POSTROUTING -t mangle -p udp --dport bootpc -m comment --comment "remove" -j CHECKSUM --checksum-fill > /dev/null 2>&1 || true
   fi
 
   # Allow forwarding from bridge -> dev
-  if ! iptables -A FORWARD -i "$VM_NET_BRIDGE" -o "$VM_NET_DEV" -j ACCEPT; then
+  if ! iptables -A FORWARD -i "$VM_NET_BRIDGE" -o "$VM_NET_DEV" -m comment --comment "remove" -j ACCEPT; then
     warn "failed to configure IP tables!" && return 1
   fi
 
   # Allow return traffic
-  if ! iptables -A FORWARD -i "$VM_NET_DEV" -o "$VM_NET_BRIDGE" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT; then
+  if ! iptables -A FORWARD -i "$VM_NET_DEV" -o "$VM_NET_BRIDGE" -m conntrack --ctstate RELATED,ESTABLISHED -m comment --comment "remove" -j ACCEPT; then
     warn "failed to configure IP tables!" && return 1
   fi
 
