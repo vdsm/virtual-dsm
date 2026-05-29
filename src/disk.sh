@@ -677,7 +677,11 @@ else
   addDisk "$DISK4_FILE" "$DISK_TYPE" "disk4" "$DISK4_SIZE" "6" "0xf" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE" || exit $?
 fi
 
-DISK_OPTS+=" -object iothread,id=io2"
+case "$DISK_TYPE" in
+  blk|scsi)
+    DISK_OPTS+=" -object iothread,id=io2"
+    ;;
+esac
 
 html "Initialized disks successfully..."
 return 0
