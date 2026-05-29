@@ -59,7 +59,7 @@ RUN set -eu && \
     echo "allow br0" > /etc/qemu/bridge.conf && \
     unlink /etc/nginx/sites-enabled/default && \
     sed -i 's/^worker_processes.*/worker_processes 1;/' /etc/nginx/nginx.conf && \
-    echo "$VERSION_ARG" > /run/version && \
+    echo "$VERSION_ARG" > /etc/version && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY --chmod=755 ./src /run/
