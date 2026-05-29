@@ -462,7 +462,7 @@ configureNAT() {
     fi
   fi
 
-  local ip base gateway
+  local ip base gateway exclude
   base=$(echo "$IP" | sed -r 's/([^.]*.){2}//')
 
   if [[ "$IP" != "172.30."* ]]; then
