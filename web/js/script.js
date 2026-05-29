@@ -7,6 +7,10 @@ function getInfo() {
     var url = "msg.html";
 
     try {
+        if (request) {
+            request.abort();
+        }
+
         if (window.XMLHttpRequest) {
             request = new XMLHttpRequest();
         } else {
