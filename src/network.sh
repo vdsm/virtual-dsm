@@ -701,8 +701,8 @@ getInfo() {
 
   local result nic bus
   result=$(ethtool -i "$VM_NET_DEV")
-  nic=$(grep -m 1 -i 'driver:' <<< "$result" | awk '{print $(2)}')
-  bus=$(grep -m 1 -i 'bus-info:' <<< "$result" | awk '{print $(2)}')
+  nic=$(grep -m 1 -i 'driver:' <<< "$result" | awk '{print $2}')
+  bus=$(grep -m 1 -i 'bus-info:' <<< "$result" | awk '{print $2}')
 
   if [[ "${bus,,}" != "" && "${bus,,}" != "n/a" && "${bus,,}" != "tap" ]]; then
     [[ "$DEBUG" == [Yy1]* ]] && info "Detected BUS: $bus"
