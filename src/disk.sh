@@ -274,7 +274,7 @@ convertDisk() {
 
   if [[ "$ALLOCATE" != [Nn]* ]]; then
 
-    local CUR_SIZE SPACE GB
+    local CUR_SIZE SPACE GB FA
 
     # Check free diskspace
     CUR_SIZE=$(getSize "$SOURCE_FILE")
