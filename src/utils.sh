@@ -178,7 +178,7 @@ cpu() {
 
 hasDisk() {
 
-  [[ "${DISK_DISABLED:-}" == [Yy1]* ]] && return 1
+  [[ "${DISK_DISABLE:-}" == [Yy1]* ]] && return 1
 
   [ -b "/disk" ] && return 0
   [ -b "/disk1" ] && return 0
