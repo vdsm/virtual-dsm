@@ -699,11 +699,6 @@ else
   addDisk "$DISK4_FILE" "$DISK_TYPE" "disk4" "$DISK4_SIZE" "6" "0xf" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE" || exit $?
 fi
 
-case "${DISK_TYPE,,}" in
-  "blk" | "scsi" | "virtio-blk" | "virtio-scsi" )
-    DISK_OPTS+=" -object iothread,id=io2" ;;
-esac
-
 finishDisks
 
 return 0
