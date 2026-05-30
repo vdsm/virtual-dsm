@@ -401,6 +401,7 @@ configurePasst() {
 }
 
 clearTables() {
+  local table="" line rules
 
   # Choose between iptables or nftables
   if command -v iptables-nft >/dev/null 2>&1 && iptables-nft -V >/dev/null 2>&1; then
@@ -411,8 +412,11 @@ clearTables() {
     update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
   fi
 
+  # Store the current iptables ruleset
+  ! rules=$(iptables-save 2> /dev/null) && return 0
+  [ -z "$rules" ] && return 0
+
   # Delete every rule tagged with our unique identifier, leaving all other rules intact.
-  local table="" line
   while IFS= read -r line; do
     case "$line" in
       \*nat)    table="nat" ;;
@@ -424,10 +428,10 @@ clearTables() {
       local re="--comment[[:space:]]+\"?remove\"?([[:space:]]|\$)"
       if [[ "$line" =~ $re ]]; then
         read -ra args <<< "${line/-A /-D }"
-        iptables -t "$table" "${args[@]}" 2>/dev/null || true
+        iptables -t "$table" "${args[@]}" &> /dev/null || :
       fi
     fi
-  done < <(iptables-save 2>/dev/null)
+  done <<< "$rules"
 
   return 0
 }
@@ -592,11 +596,11 @@ closeBridge() {
   [ -s "$DNSMASQ_PID" ] && pKill "$(<"$DNSMASQ_PID")"
   rm -f "$DNSMASQ_PID"
 
-  ip link set "$VM_NET_TAP" down promisc off &> /dev/null || true
-  ip link delete "$VM_NET_TAP" &> /dev/null || true
+  ip link set "$VM_NET_TAP" down promisc off &> /dev/null || :
+  ip link delete "$VM_NET_TAP" &> /dev/null || :
 
-  ip link set "$VM_NET_BRIDGE" down &> /dev/null || true
-  ip link delete "$VM_NET_BRIDGE" &> /dev/null || true
+  ip link set "$VM_NET_BRIDGE" down &> /dev/null || :
+  ip link delete "$VM_NET_BRIDGE" &> /dev/null || :
 
   clearTables
   return 0
