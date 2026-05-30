@@ -426,6 +426,20 @@ createDevice () {
   return 0
 }
 
+finishDisks () {
+
+  case "${DISK_TYPE,,}" in
+    "blk" | "scsi" | "virtio-blk" | "virtio-scsi" )
+      DISK_OPTS+=" -object iothread,id=io2" ;;
+  esac
+
+  if [[ "$DISK_DISABLE" != [Yy1]* ]]; then
+    html "Initialized disks successfully..."
+  fi
+
+  return 0
+}
+
 addDisk () {
 
   local DISK_BASE="$1"
@@ -600,14 +614,16 @@ addDevice () {
   return 0
 }
 
-msg="Initializing disks..."
-html "$msg"
-[[ "$DEBUG" == [Yy1]* ]] && echo "$msg"
-
 [ -z "${DISK_OPTS:-}" ] && DISK_OPTS=""
 [ -z "${DISK_TYPE:-}" ] && DISK_TYPE="scsi"
 [ -z "${DISK_NAME:-}" ] && DISK_NAME="data"
 [ -z "${DISK_DISABLE:-}" ] && DISK_DISABLE=""
+
+if [[ "$DISK_DISABLE" != [Yy1]* ]]; then
+  msg="Initializing disks..."
+  html "$msg"
+  [[ "$DEBUG" == [Yy1]* ]] && echo "$msg"
+fi
 
 case "${DISK_TYPE,,}" in
   "ide" | "sata" | "nvme" | "usb" | "scsi" | "blk" | "auto" | "none" ) ;;
@@ -630,10 +646,7 @@ DISK_OPTS+=$(createDevice "$BOOT" "$DISK_TYPE" "1" "0xa" "raw" "$DISK_IO" "$DISK
 DISK_OPTS+=$(createDevice "$SYSTEM" "$DISK_TYPE" "2" "0xb" "raw" "$DISK_IO" "$DISK_CACHE" "" "")
 
 if [[ "$DISK_DISABLE" == [Yy1]* ]]; then
-  case "${DISK_TYPE,,}" in
-    "blk" | "scsi" | "virtio-blk" | "virtio-scsi" )
-      DISK_OPTS+=" -object iothread,id=io2" ;;
-  esac
+  finishDisks
   return 0
 fi
 
@@ -686,10 +699,6 @@ else
   addDisk "$DISK4_FILE" "$DISK_TYPE" "disk4" "$DISK4_SIZE" "6" "0xf" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE" || exit $?
 fi
 
-case "${DISK_TYPE,,}" in
-  "blk" | "scsi" | "virtio-blk" | "virtio-scsi" )
-    DISK_OPTS+=" -object iothread,id=io2" ;;
-esac
+finishDisks
 
-html "Initialized disks successfully..."
 return 0
