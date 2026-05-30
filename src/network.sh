@@ -800,8 +800,8 @@ getInfo() {
     echo
   fi
 
-  echo "$IP" > /run/shm/qemu.ip
-  echo "$nic" > /run/shm/qemu.nic
+  echo "$IP" > "$QEMU_DIR"/qemu.ip
+  echo "$nic" > "$QEMU_DIR"//qemu.nic
 
   return 0
 }
