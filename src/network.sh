@@ -800,8 +800,8 @@ getInfo() {
     echo
   fi
 
-  echo "$IP" > /run/shm/qemu.ip
-  echo "$nic" > /run/shm/qemu.nic
+  echo "$IP" > "$QEMU_DIR"/qemu.ip
+  echo "$nic" > "$QEMU_DIR"//qemu.nic
 
   return 0
 }
@@ -896,5 +896,6 @@ fi
 
 NET_OPTS+=" -device $ADAPTER,id=net0,netdev=hostnet0,romfile=,mac=$VM_NET_MAC"
 [[ "$MTU" != "0" && "$MTU" != "1500" ]] && NET_OPTS+=",host_mtu=$MTU"
+echo "$VM_NET_IP" > "$QEMU_DIR"/remote.ip
 
 return 0
