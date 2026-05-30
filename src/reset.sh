@@ -102,7 +102,6 @@ else
 fi
 
 QEMU_PID="$QEMU_DIR/qemu.pid"
-rm -f "$QEMU_PID"
 
 # Check folder
 
@@ -225,8 +224,9 @@ if [[ "$KVM" != [Nn]* ]]; then
 fi
 
 # Cleanup files
-rm -f /run/shm/qemu.*
-rm -f /run/shm/dsm.url
+rm -f "$QEMU_DIR"/qemu.*
+rm -f "$QEMU_DIR"/dsm.url
+rm -f "$QEMU_DIR"/remote.ip
 
 # Cleanup dirs
 rm -rf /tmp/dsm
