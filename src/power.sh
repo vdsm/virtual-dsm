@@ -108,16 +108,24 @@ terminal() {
 
 _graceful_shutdown() {
 
-  local code=$?
+  local sig="$1"
+  local code=0
   local pid url response
 
-  set +e
+  case "$sig" in
+    SIGTERM) code=143 ;;
+    SIGINT)  code=130 ;;
+    SIGHUP)  code=129 ;;
+    SIGABRT) code=134 ;;
+    SIGQUIT) code=131 ;;
+  esac  
 
   if [ -f "$QEMU_END" ]; then
     echo && info "Received $1 signal while already shutting down..."
     return
   fi
 
+  set +e
   touch "$QEMU_END"
   echo && info "Received $1 signal, sending shutdown command..."
 

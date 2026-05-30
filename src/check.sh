@@ -4,15 +4,15 @@ set -Eeuo pipefail
 : "${DHCP:="N"}"
 : "${NETWORK:="Y"}"
 
-[ -f "/run/shm/qemu.end" ] && echo "QEMU is shutting down.." && exit 1
-[ ! -s "/run/shm/qemu.pid" ] && echo "QEMU is not running yet.." && exit 0
-[[ "$NETWORK" == [Nn]* ]] && echo "Networking is disabled.." && exit 0
+[ -f "/run/shm/qemu.end" ] && echo "QEMU is shutting down..." && exit 1
+[ ! -s "/run/shm/qemu.pid" ] && echo "QEMU is not running yet..." && exit 0
+[[ "$NETWORK" == [Nn]* ]] && echo "Networking is disabled." && exit 0
 
 file="/run/shm/dsm.url"
 address="/run/shm/qemu.ip"
 gateway="/run/shm/qemu.gw"
 
-[ ! -s  "$file" ] && echo "DSM has not enabled networking yet.." && exit 1
+[ ! -s  "$file" ] && echo "DSM has not enabled networking yet..." && exit 1
 
 location=$(<"$file")
 
