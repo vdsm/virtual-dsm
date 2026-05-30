@@ -607,6 +607,7 @@ html "$msg"
 [ -z "${DISK_OPTS:-}" ] && DISK_OPTS=""
 [ -z "${DISK_TYPE:-}" ] && DISK_TYPE="scsi"
 [ -z "${DISK_NAME:-}" ] && DISK_NAME="data"
+[ -z "${DISK_DISABLE:-}" ] && DISK_DISABLE=""
 
 case "${DISK_TYPE,,}" in
   "ide" | "sata" | "nvme" | "usb" | "scsi" | "blk" | "auto" | "none" ) ;;
@@ -627,6 +628,14 @@ fi
 
 DISK_OPTS+=$(createDevice "$BOOT" "$DISK_TYPE" "1" "0xa" "raw" "$DISK_IO" "$DISK_CACHE" "" "")
 DISK_OPTS+=$(createDevice "$SYSTEM" "$DISK_TYPE" "2" "0xb" "raw" "$DISK_IO" "$DISK_CACHE" "" "")
+
+if [[ "$DISK_DISABLE" == [Yy1]* ]]; then
+  case "${DISK_TYPE,,}" in
+    "blk" | "scsi" | "virtio-blk" | "virtio-scsi" )
+      DISK_OPTS+=" -object iothread,id=io2" ;;
+  esac
+  return 0
+fi
 
 DISK1_FILE="$STORAGE/${DISK_NAME}"
 DISK2_FILE="/storage2/${DISK_NAME}2"
