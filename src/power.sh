@@ -19,10 +19,8 @@ if [[ "$KVM" == [Nn]* ]]; then
   QEMU_TIMEOUT=$(( QEMU_TIMEOUT*2 ))
 fi
 
-touch "$QEMU_LOG"
-
 _trap() {
-  func="$1" ; shift
+  local func="$1" ; shift
   for sig ; do
     trap "$func $sig" "$sig"
   done
@@ -177,6 +175,8 @@ _graceful_shutdown() {
 
   finish "$code" && return "$code"
 }
+
+touch "$QEMU_LOG"
 
 MON_OPTS="\
         -pidfile $QEMU_PID \
