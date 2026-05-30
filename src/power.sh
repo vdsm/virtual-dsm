@@ -112,8 +112,6 @@ _graceful_shutdown() {
   local code=0
   local pid url response
 
-  set +e
-
   case "$sig" in
     SIGTERM) code=143 ;;
     SIGINT)  code=130 ;;
@@ -127,6 +125,7 @@ _graceful_shutdown() {
     return
   fi
 
+  set +e
   touch "$QEMU_END"
   echo && info "Received $1 signal, sending shutdown command..."
 
