@@ -13,7 +13,6 @@ trap 'error "Status $? while: $BASH_COMMAND (line $LINENO/$BASH_LINENO)"' ERR
 : "${KVM:="Y"}"            # KVM acceleration
 : "${DEBUG:="N"}"          # Disable debugging mode
 : "${COUNTRY:=""}"         # Country code for mirror
-: "${CONSOLE:="N"}"        # Disable console mode
 : "${ALLOCATE:=""}"        # Preallocate diskspace
 : "${ARGUMENTS:=""}"       # Extra QEMU parameters
 : "${CPU_CORES:="2"}"      # Amount of CPU cores
