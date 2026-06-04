@@ -225,8 +225,8 @@ fi
 
 # Cleanup files
 rm -f "$QEMU_DIR"/qemu.*
+rm -f "$QEMU_DIR"/*.pid
 rm -f "$QEMU_DIR"/dsm.url
-rm -f "$QEMU_DIR"/remote.ip
 
 # Cleanup dirs
 rm -rf /tmp/dsm
