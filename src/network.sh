@@ -588,11 +588,8 @@ configureNAT() {
 
 closeBridge() {
 
-  [ -s "$PASST_PID" ] && pKill "$(<"$PASST_PID")"
-  rm -f "$PASST_PID"
-
-  [ -s "$DNSMASQ_PID" ] && pKill "$(<"$DNSMASQ_PID")"
-  rm -f "$DNSMASQ_PID"
+  local pids=( "$PASST_PID" "$DNSMASQ_PID" )
+  mKill "${pids[@]}"
 
   ip link set "$VM_NET_TAP" down promisc off &> /dev/null || :
   ip link delete "$VM_NET_TAP" &> /dev/null || :
@@ -606,14 +603,8 @@ closeBridge() {
 
 closeWeb() {
 
-  # Shutdown nginx
-  nginx -s stop 2> /dev/null
-  fWait "nginx"
-
-  # Shutdown websocket
-  local pid="/var/run/websocketd.pid"
-  [ -s "$pid" ] && pKill "$(<"$pid")"
-  rm -f "$pid"
+  local pids=( "$WEB_PID" "$WSD_PID" )
+  mKill "${pids[@]}"
 
   return 0
 }
@@ -630,6 +621,7 @@ closeNetwork() {
   exec 40<&- || true
 
   closeBridge
+
   return 0
 }
 
