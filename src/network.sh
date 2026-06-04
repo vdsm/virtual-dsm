@@ -198,9 +198,7 @@ configureDNS() {
 
 getHostPorts() {
 
-  local list=""
-  list+="$MON_PORT,"
-  list+="${HOST_PORTS// /},"
+  local list="${HOST_PORTS// /},"
 
   # Remove duplicates
   list=$(echo "${list//,,/,}," | awk 'BEGIN{RS=ORS=","} !seen[$0]++' | sed 's/,*$//g')
