@@ -6,8 +6,12 @@ set -Eeuo pipefail
 : "${CHR_PORT:="12345"}"   # Character port
 : "${WSD_PORT:="8004"}"    # Websockets port
 
-cp -r /var/www/* /run/shm
-rm -f /var/run/websocketd.pid
+WEB_PID="/run/nginx.pid"
+WSD_PID="$QEMU_DIR/websocketd.pid"
+
+cp -r /var/www/* "$QEMU_DIR"
+rm -f "$WSD_PID"
+rm -f "$WEB_PID"
 
 html "Starting $APP for $ENGINE..."
 
@@ -31,7 +35,7 @@ if [[ "${WEB:-}" != [Nn]* ]]; then
 
   # Start websocket server
   websocketd --address 127.0.0.1 --port="$WSD_PORT" /run/socket.sh >/var/log/websocketd.log &
-  echo "$!" > /var/run/websocketd.pid
+  echo "$!" > "$WSD_PID"
 
 fi
 
