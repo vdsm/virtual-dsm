@@ -124,17 +124,18 @@ graceful_shutdown() {
     { kill -15 -- "$pid" || :; } 2>/dev/null
 
   fi
-  
-  local cnt=0 offset=3 min max name
+
+  local cnt=0 abort=0 factor=3 offset=3 min max name
 
   [[ "$TIMEOUT" =~ ^[0-9]+$ ]] || TIMEOUT=115
-  [ "$TIMEOUT" -ge 15 ] && offset=4
-  [ "$TIMEOUT" -ge 30 ] && offset=5
-  min=$((offset + 1))
+  [ "$TIMEOUT" -ge 15 ] && factor=4 && offset=4
+  [ "$TIMEOUT" -ge 30 ] && factor=5 && offset=5
+  min=$((factor + offset + 1))
   [ "$TIMEOUT" -lt "$min" ] && TIMEOUT="$min"
   elapsed=$(( $SECONDS - $start ))
   max=$(( TIMEOUT - offset - elapsed ))
-  [ "$max" -lt 1 ] && max=1
+  [ "$max" -lt "$factor" ] && max=$((factor + 1))
+  abort=$(( max - factor ))
   name="$(app)"
 
   while [ "$cnt" -le "$max" ]; do
@@ -146,18 +147,19 @@ graceful_shutdown() {
     # Workaround for zombie pid
     [ ! -s "$QEMU_PID" ] && break
 
-    if [ "$cnt" -gt 0 ]; then
-      [[ "$DEBUG" == [Yy1]* ]] && info "Waiting for $name to shut down... ($cnt/$max)"
+    if [ "$cnt" -ne "$abort" ]; then
+      if [ "$cnt" -gt 0 ] && [[ "$DEBUG" == [Yy1]* ]]; then
+        info "Waiting for $name to shut down... ($cnt/$max)"
+      fi
+    else
+      info "${name^} is still running, sending SIGTERM... ($cnt/$max)"
+      { kill -15 -- "$pid" || :; } 2>/dev/null
     fi
 
     wait $slp
     (( cnt++ ))
 
   done
-
-  if [ "$cnt" -ge "$max" ]; then
-    echo && error "Shutdown timeout reached, aborting..."
-  fi
 
   finish "$code"
 }
