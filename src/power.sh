@@ -1,27 +1,29 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-: "${API_TIMEOUT:="50"}"   # API Call timeout
-: "${QEMU_TIMEOUT:="50"}"  # QEMU Termination timeout
+: "${SHUTDOWN:="Y"}"        # Graceful ACPI shutdown
+: "${TIMEOUT:="115"}"       # QEMU termination timeout
+: "${API_TIMEOUT:="100"}"   # Single API call timeout
 
 # Configure QEMU for graceful shutdown
 
 API_CMD=6
 API_HOST="127.0.0.1:$COM_PORT"
 
+# Configure QEMU for graceful shutdown
+
 QEMU_END="$QEMU_DIR/qemu.end"
 
-if [[ "$KVM" == [Nn]* ]]; then
-  API_TIMEOUT=$(( API_TIMEOUT*2 ))
-  QEMU_TIMEOUT=$(( QEMU_TIMEOUT*2 ))
-fi
-
 _trap() {
-  local func="$1" ; shift
-  for sig ; do
+  local func="$1"; shift
+  local sig
+  TRAP_PID=$BASHPID
+
+  for sig; do
     trap "$func $sig" "$sig"
   done
 }
+
 
 finish() {
 
