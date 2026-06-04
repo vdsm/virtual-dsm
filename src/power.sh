@@ -9,9 +9,6 @@ set -Eeuo pipefail
 API_CMD=6
 API_HOST="127.0.0.1:$COM_PORT"
 
-QEMU_TERM=""
-QEMU_LOG="$QEMU_DIR/qemu.log"
-QEMU_OUT="$QEMU_DIR/qemu.out"
 QEMU_END="$QEMU_DIR/qemu.end"
 
 if [[ "$KVM" == [Nn]* ]]; then
@@ -68,45 +65,7 @@ finish() {
   exit "$reason"
 }
 
-terminal() {
-
-  local dev=""
-
-  if [ -s "$QEMU_OUT" ]; then
-
-    local msg
-    msg=$(<"$QEMU_OUT")
-
-    if [ -n "$msg" ]; then
-
-      if [[ "${msg,,}" != "char"* ||  "$msg" != *"serial0)" ]]; then
-        echo "$msg"
-      fi
-
-      dev="${msg#*/dev/p}"
-      dev="/dev/p${dev%% *}"
-
-    fi
-  fi
-
-  if [ ! -c "$dev" ]; then
-    dev=$(echo 'info chardev' | nc -q 1 -w 1 localhost "$MON_PORT" | tr -d '\000')
-    dev="${dev#*serial0}"
-    dev="${dev#*pty:}"
-    dev="${dev%%$'\n'*}"
-    dev="${dev%%$'\r'*}"
-  fi
-
-  if [ ! -c "$dev" ]; then
-    error "Device '$dev' not found!"
-    finish 34 && return 34
-  fi
-
-  QEMU_TERM="$dev"
-  return 0
-}
-
-_graceful_shutdown() {
+graceful_shutdown() {
 
   local sig="$1"
   local code=0
@@ -184,19 +143,6 @@ _graceful_shutdown() {
   finish "$code" && return "$code"
 }
 
-touch "$QEMU_LOG"
-
-MON_OPTS="\
-        -pidfile $QEMU_PID \
-        -name $PROCESS,process=$PROCESS,debug-threads=on \
-        -monitor telnet:localhost:$MON_PORT,server,nowait,nodelay"
-
-if [[ "$CONSOLE" != [Yy]* ]]; then
-
-  MON_OPTS+=" -daemonize -D $QEMU_LOG"
-
-  _trap _graceful_shutdown SIGTERM SIGHUP SIGINT SIGABRT SIGQUIT
-
-fi
+_trap graceful_shutdown SIGTERM SIGHUP SIGABRT SIGQUIT
 
 return 0
