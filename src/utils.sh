@@ -28,6 +28,7 @@ formatBytes() {
 
 isAlive() {
   local pid="$1"
+  [ -z "$pid" ] && return 1
 
   if kill -0 "$pid" 2>/dev/null; then
     return 0
@@ -36,23 +37,67 @@ isAlive() {
   return 1
 }
 
-pKill() {
+waitPid() {
+  local i=0
   local pid="$1"
+  local timeout="${2:-10}"
 
-  { kill -15 "$pid" || true; } 2>/dev/null
-
-  while isAlive "$pid"; do
+  while [ -n "$pid" ] && isAlive "$pid"; do
     sleep 0.2
+    i=$((i + 1))
+    (( i >= timeout * 5 )) && return 1
   done
 
   return 0
 }
 
+waitPidFile() {
+  local i=0
+  local pid=""
+  local file="$1"
+  local timeout="${2:-10}"
+
+  [ ! -s "$file" ] && return 0
+  ! read -r pid <"$file" && return 0
+  [ -z "$pid" ] && return 0
+
+  while [ -s "$file" ] && isAlive "$pid"; do
+    sleep 0.2
+    i=$((i + 1))
+    (( i >= timeout * 5 )) && return 1
+  done
+
+  rm -f -- "$file"
+  return 0
+}
+
+pKill() {
+  local pid="$1"
+  local timeout="${2:-10}"
+
+  { kill -15 -- "$pid" || :; } 2>/dev/null
+
+  if ! waitPid "$pid" "$timeout"; then
+    warn "Timed out while waiting for PID $pid"
+  fi
+
+  return 0
+}
+
 fWait() {
+  local i=0
   local name="$1"
+  local timeout="${2:-10}"
+
+  [ -z "$name" ] && return 0
 
   while pgrep -f -l "$name" >/dev/null; do
     sleep 0.2
+    i=$((i + 1))
+    if (( i >= timeout * 5 )); then
+      warn "Timed out while waiting for process: $name"
+      break
+    fi
   done
 
   return 0
@@ -60,9 +105,44 @@ fWait() {
 
 fKill() {
   local name="$1"
+  local timeout="${2:-10}"
 
-  { pkill -f "$name" || true; } 2>/dev/null
-  fWait "$name"
+  [ -z "$name" ] && return 0
+
+  { pkill -f "$name" || :; } 2>/dev/null
+  fWait "$name" "$timeout"
+
+  return 0
+}
+
+sKill() {
+  local pid=""
+  local file="$1"
+
+  [ ! -s "$file" ] && return 0
+  ! read -r pid <"$file" && return 0
+  [ -z "$pid" ] && return 0
+
+  if isAlive "$pid"; then
+    { kill -15 -- "$pid" || :; } 2>/dev/null
+  fi
+
+  return 0
+}
+
+mKill() {
+  local timeout=10
+  local files=("$@")
+
+  for file in "${files[@]}"; do
+    sKill "$file"
+  done
+
+  for file in "${files[@]}"; do
+    if ! waitPidFile "$file" "$timeout"; then
+      warn "Timed out while waiting for PID file: $file"
+    fi
+  done
 
   return 0
 }
