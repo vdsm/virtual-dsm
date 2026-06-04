@@ -24,6 +24,8 @@ if [ -n "$HOST_MAC" ]; then
 
 fi
 
+HOST_PID="$QEMU_DIR/host.pid"
+
 HOST_ARGS=()
 HOST_ARGS+=("-cpu=$CPU_CORES")
 HOST_ARGS+=("-cpu_arch=$HOST_CPU")
@@ -37,15 +39,17 @@ if [[ "$HOST_DEBUG" == [Yy1]* ]]; then
   set -x
   ./host.bin "${HOST_ARGS[@]}" &
   { set +x; } 2>/dev/null
+  echo "$!" > "$HOST_PID"
   echo
 else
   ./host.bin "${HOST_ARGS[@]}" >/dev/null &
+  echo "$!" > "$HOST_PID"
 fi
 
 cnt=0
 sleep 0.2
 
-while ! nc -z -w2 127.0.0.1 "$COM_PORT" > /dev/null 2>&1; do
+while ! nc -z -w2 127.0.0.1 "$COM_PORT" > /dev/null 2&1; do
   sleep 0.1
   cnt=$((cnt + 1))
   (( cnt > 50 )) && error "Failed to connect to qemu-host.." && exit 58
@@ -60,14 +64,7 @@ while ! nc -z -w2 127.0.0.1 "$CHR_PORT" > /dev/null 2>&1; do
 done
 
 # Configure serial ports
-
-if [[ "$CONSOLE" != [Yy]* ]]; then
-  SERIAL_OPTS="-serial pty"
-else
-  SERIAL_OPTS="-serial mon:stdio"
-fi
-
-SERIAL_OPTS+=" \
+SERIAL_OPTS="-serial mon:stdio \
         -device virtio-serial-pci,id=virtio-serial0,bus=pcie.0,addr=0x3 \
         -chardev socket,id=charchannel0,host=127.0.0.1,port=$CHR_PORT,reconnect=10 \
         -device virtserialport,bus=virtio-serial0.0,nr=1,chardev=charchannel0,id=channel0,name=vchannel"
