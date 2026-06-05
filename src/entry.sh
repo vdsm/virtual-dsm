@@ -24,19 +24,23 @@ cd /run
 
 trap - ERR
 
-version=$(qemu-system-x86_64 --version | head -n 1 | cut -d '(' -f 1 | awk '{ print $NF }')
+cmd=(qemu-system-x86_64)
+version=$("${cmd[@]}" --version | awk 'NR==1 { print $4 }')
 info "Booting $APP using QEMU v$version..."
 
-if [[ "$CONSOLE" == [Yy]* ]]; then
-  exec qemu-system-x86_64 ${ARGS:+ $ARGS}
+if [[ "$SHUTDOWN" != [Yy1]* ]]; then
+  exec "${cmd[@]}" ${ARGS:+ $ARGS}
 fi
 
-{ qemu-system-x86_64 ${ARGS:+ $ARGS} >"$QEMU_OUT" 2>"$QEMU_LOG"; rc=$?; } || :
-(( rc != 0 )) && error "$(<"$QEMU_LOG")" && exit 15
+if [ ! -t 1 ] || [ ! -c /dev/tty ]; then
+  "${cmd[@]}" ${ARGS:+ $ARGS} &
+else
+  "${cmd[@]}" ${ARGS:+ $ARGS} </dev/tty >/dev/tty &
+fi
 
-terminal
-tail -fn +0 "$QEMU_LOG" --pid=$$ 2>/dev/null &
-cat "$QEMU_TERM" 2>/dev/null & wait $! || :
+rc=0
+wait $! || rc=$?
+[ -f "$QEMU_END" ] && exit "$rc"
 
 sleep 1 & wait $!
-[ ! -f "$QEMU_END" ] && finish 0
+finish "$rc"

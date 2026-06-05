@@ -13,7 +13,6 @@ trap 'error "Status $? while: $BASH_COMMAND (line $LINENO/$BASH_LINENO)"' ERR
 : "${KVM:="Y"}"            # KVM acceleration
 : "${DEBUG:="N"}"          # Disable debugging mode
 : "${COUNTRY:=""}"         # Country code for mirror
-: "${CONSOLE:="N"}"        # Disable console mode
 : "${ALLOCATE:=""}"        # Preallocate diskspace
 : "${ARGUMENTS:=""}"       # Extra QEMU parameters
 : "${CPU_CORES:="2"}"      # Amount of CPU cores
@@ -225,8 +224,8 @@ fi
 
 # Cleanup files
 rm -f "$QEMU_DIR"/qemu.*
+rm -f "$QEMU_DIR"/*.pid
 rm -f "$QEMU_DIR"/dsm.url
-rm -f "$QEMU_DIR"/remote.ip
 
 # Cleanup dirs
 rm -rf /tmp/dsm

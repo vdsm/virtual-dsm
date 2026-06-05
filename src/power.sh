@@ -1,124 +1,89 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-: "${API_TIMEOUT:="50"}"   # API Call timeout
-: "${QEMU_TIMEOUT:="50"}"  # QEMU Termination timeout
+: "${SHUTDOWN:="Y"}"        # Graceful ACPI shutdown
+: "${TIMEOUT:="115"}"       # QEMU termination timeout
+: "${API_TIMEOUT:="90"}"    # External API call timeout
 
 # Configure QEMU for graceful shutdown
 
 API_CMD=6
 API_HOST="127.0.0.1:$COM_PORT"
 
-QEMU_TERM=""
-QEMU_LOG="$QEMU_DIR/qemu.log"
-QEMU_OUT="$QEMU_DIR/qemu.out"
+# Configure QEMU for graceful shutdown
+
 QEMU_END="$QEMU_DIR/qemu.end"
 
-if [[ "$KVM" == [Nn]* ]]; then
-  API_TIMEOUT=$(( API_TIMEOUT*2 ))
-  QEMU_TIMEOUT=$(( QEMU_TIMEOUT*2 ))
-fi
-
 _trap() {
-  local func="$1" ; shift
-  for sig ; do
+  local func="$1"; shift
+  local sig
+  TRAP_PID=$BASHPID
+
+  for sig; do
     trap "$func $sig" "$sig"
   done
 }
 
+app() {
+  echo "$APP" && return 0
+}
+
 finish() {
 
-  local pid
-  local cnt=0
+  local i=0
+  local pid=""
   local reason=$1
+  local pids=( "${HOST_PID:-}" "${WSD_PID:-}" \
+               "${WEB_PID:-}" "${PASST_PID:-}" "${DNSMASQ_PID:-}" )
 
   touch "$QEMU_END"
 
   if [ -s "$QEMU_PID" ]; then
-
-    pid=$(<"$QEMU_PID")
-    echo && error "Forcefully terminating Virtual DSM, reason: $reason..."
-    { kill -15 "$pid" || true; } 2>/dev/null
-
-    while isAlive "$pid"; do
-
-      sleep 1
-      (( cnt++ ))
-
-      # Workaround for zombie pid
-      [ ! -s "$QEMU_PID" ] && break
-
-      if [ "$cnt" -eq 5 ]; then
-        echo && error "QEMU did not terminate itself, forcefully killing process..."
-        { kill -9 "$pid" || true; } 2>/dev/null
+    if read -r pid <"$QEMU_PID"; then
+      if [ -n "$pid" ] && isAlive "$pid"; then
+        local display="$reason"
+        case "$reason" in
+          129 ) display="SIGHUP" ;;
+          130 ) display="SIGINT" ;;
+          131 ) display="SIGQUIT" ;;
+          134 ) display="SIGABRT" ;;
+          143 ) display="SIGTERM" ;;
+        esac
+        error "Forcefully terminating $(app), reason: $display..."
+        { disown "$pid" || :; kill -9 -- "$pid" || :; } 2>/dev/null
       fi
-
-    done
-
-  fi
-
-  fKill "print.sh"
-  fKill "host.bin"
-
-  closeNetwork
-
-  sleep 1
-  echo && echo "❯ Shutdown completed!"
-
-  exit "$reason"
-}
-
-terminal() {
-
-  local dev=""
-
-  if [ -s "$QEMU_OUT" ]; then
-
-    local msg
-    msg=$(<"$QEMU_OUT")
-
-    if [ -n "$msg" ]; then
-
-      if [[ "${msg,,}" != "char"* ||  "$msg" != *"serial0)" ]]; then
-        echo "$msg"
-      fi
-
-      dev="${msg#*/dev/p}"
-      dev="/dev/p${dev%% *}"
-
     fi
   fi
 
-  if [ ! -c "$dev" ]; then
-    dev=$(echo 'info chardev' | nc -q 1 -w 1 localhost "$MON_PORT" | tr -d '\000')
-    dev="${dev#*serial0}"
-    dev="${dev#*pty:}"
-    dev="${dev%%$'\n'*}"
-    dev="${dev%%$'\r'*}"
+  mKill "${pids[@]}"
+  fKill "print.sh"
+
+  closeNetwork
+
+  if ! waitPidFile "$QEMU_PID" 10; then
+    warn "Timed out while waiting for $(app) to exit!"
   fi
 
-  if [ ! -c "$dev" ]; then
-    error "Device '$dev' not found!"
-    finish 34 && return 34
-  fi
-
-  QEMU_TERM="$dev"
-  return 0
+  (( reason != 1 )) && echo && echo "❯ Shutdown completed!"
+  exit "$reason"
 }
 
-_graceful_shutdown() {
+graceful_shutdown() {
 
   local sig="$1"
+  local pid=""
   local code=0
-  local pid url response
+  local start url response elapsed
+
+  [[ $BASHPID != "$TRAP_PID" ]] && return
 
   case "$sig" in
-    SIGTERM) code=143 ;;
-    SIGINT)  code=130 ;;
     SIGHUP)  code=129 ;;
-    SIGABRT) code=134 ;;
+    SIGINT)  code=130 ;;
     SIGQUIT) code=131 ;;
-  esac  
+    SIGABRT) code=134 ;;
+    SIGTERM) code=143 ;;
+  esac
 
   if [ -f "$QEMU_END" ]; then
     echo && info "Received $1 signal while already shutting down..."
@@ -126,23 +91,22 @@ _graceful_shutdown() {
   fi
 
   set +e
+  start=$SECONDS
   touch "$QEMU_END"
   echo && info "Received $1 signal, sending shutdown command..."
 
-  if [ ! -s "$QEMU_PID" ]; then
-    echo && error "QEMU PID file does not exist?"
-    finish "$code" && return "$code"
+  if [ ! -s "$QEMU_PID" ] || ! read -r pid <"$QEMU_PID"; then
+    warn "QEMU PID file ($QEMU_PID) does not exist?"
+    finish "$code"
   fi
 
-  pid=$(<"$QEMU_PID")
-
-  if ! isAlive "$pid"; then
-    echo && error "QEMU process does not exist?"
-    finish "$code" && return "$code"
+  if [ -z "$pid" ] || ! isAlive "$pid"; then
+    warn "QEMU process with PID $pid does not exist?"
+    finish "$code"
   fi
 
   # Don't send the powerdown signal because vDSM ignores ACPI signals
-  # echo 'system_powerdown' | nc -q 1 -w 1 localhost "$MON_PORT" > /dev/null
+  # nc -q 1 -w 1 -U "$QEMU_DIR/monitor.sock" &> /dev/null <<<'system_powerdown' || :
 
   # Send shutdown command to guest agent via serial port
   url="http://$API_HOST/read?command=$API_CMD&timeout=$API_TIMEOUT"
@@ -157,46 +121,52 @@ _graceful_shutdown() {
     response="${response#*message\"\: \"}"
     [ -z "$response" ] && response="second signal"
     echo && error "Forcefully terminating because of: ${response%%\"*}"
-    { kill -15 "$pid" || true; } 2>/dev/null
+    { kill -15 -- "$pid" || :; } 2>/dev/null
 
   fi
 
-  local cnt=0
+  local cnt=0 abort=0 factor=3 offset=3 min max name
 
-  while [ "$cnt" -lt "$QEMU_TIMEOUT" ]; do
+  [[ "$TIMEOUT" =~ ^[0-9]+$ ]] || TIMEOUT=115
+  [ "$TIMEOUT" -ge 15 ] && factor=4 && offset=4
+  [ "$TIMEOUT" -ge 30 ] && factor=5 && offset=5
+  min=$(( factor + offset + 1 ))
+  [ "$TIMEOUT" -lt "$min" ] && TIMEOUT="$min"
+  elapsed=$(( SECONDS - start ))
+  max=$(( TIMEOUT - offset - elapsed ))
+  [ "$max" -lt "$factor" ] && max=$(( factor + 1 ))
+  abort=$(( max - factor ))
+  name="$(app)"
+
+  while [ "$cnt" -le "$max" ]; do
+
+    sleep 1 &
+    local slp=$!
 
     ! isAlive "$pid" && break
-
-    sleep 1
-    (( cnt++ ))
-
-    [[ "$DEBUG" == [Yy1]* ]] && info "Shutting down, waiting... ($cnt/$QEMU_TIMEOUT)"
-
     # Workaround for zombie pid
     [ ! -s "$QEMU_PID" ] && break
 
+    if [ "$cnt" -ne "$abort" ]; then
+      if [ "$cnt" -gt 0 ] && [[ "$DEBUG" == [Yy1]* ]]; then
+        info "Waiting for $name to shut down... ($cnt/$max)"
+      fi
+    else
+      info "${name^} is still running, sending SIGTERM... ($cnt/$max)"
+      { kill -15 -- "$pid" || :; } 2>/dev/null
+    fi
+
+    wait $slp
+    (( cnt++ ))
+
   done
 
-  if [ "$cnt" -ge "$QEMU_TIMEOUT" ]; then
-    echo && error "Shutdown timeout reached, aborting..."
-  fi
-
-  finish "$code" && return "$code"
+  finish "$code"
 }
 
-touch "$QEMU_LOG"
+[[ "$SHUTDOWN" != [Yy1]* ]] && return 0
+[ -n "${QEMU_TIMEOUT:-}" ] && TIMEOUT="$QEMU_TIMEOUT"
 
-MON_OPTS="\
-        -pidfile $QEMU_PID \
-        -name $PROCESS,process=$PROCESS,debug-threads=on \
-        -monitor telnet:localhost:$MON_PORT,server,nowait,nodelay"
-
-if [[ "$CONSOLE" != [Yy]* ]]; then
-
-  MON_OPTS+=" -daemonize -D $QEMU_LOG"
-
-  _trap _graceful_shutdown SIGTERM SIGHUP SIGINT SIGABRT SIGQUIT
-
-fi
+_trap graceful_shutdown SIGTERM SIGHUP SIGABRT SIGQUIT
 
 return 0

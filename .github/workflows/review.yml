@@ -66,5 +66,5 @@ jobs:
           level: warning
           fail_level: error
           reporter: github-pr-review
-          shellcheck_flags: -x -e SC2001 -e SC2034 -e SC2064 -e SC2317 -e SC2153 -e SC2028
+          shellcheck_flags: -x -e SC1091 -e SC2001 -e SC2034 -e SC2064 -e SC2317 -e SC2153 -e SC2028
           github_token: ${{ secrets.GITHUB_TOKEN }}
