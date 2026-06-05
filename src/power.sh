@@ -86,7 +86,7 @@ graceful_shutdown() {
   esac
 
   if [ -f "$QEMU_END" ]; then
-    echo && info "Received $1 while already shutting down..."
+    echo && info "Received $1 signal while already shutting down..."
     return
   fi
 
