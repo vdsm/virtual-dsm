@@ -130,11 +130,11 @@ graceful_shutdown() {
   [[ "$TIMEOUT" =~ ^[0-9]+$ ]] || TIMEOUT=115
   [ "$TIMEOUT" -ge 15 ] && factor=4 && offset=4
   [ "$TIMEOUT" -ge 30 ] && factor=5 && offset=5
-  min=$((factor + offset + 1))
+  min=$(( factor + offset + 1 ))
   [ "$TIMEOUT" -lt "$min" ] && TIMEOUT="$min"
-  elapsed=$(( $SECONDS - $start ))
+  elapsed=$(( SECONDS - start ))
   max=$(( TIMEOUT - offset - elapsed ))
-  [ "$max" -lt "$factor" ] && max=$((factor + 1))
+  [ "$max" -lt "$factor" ] && max=$(( factor + 1 ))
   abort=$(( max - factor ))
   name="$(app)"
 
