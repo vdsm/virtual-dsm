@@ -259,7 +259,7 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
   However, by installing Synology's Virtual DSM, you must accept their end-user license agreement, which does not permit installation on non-Synology hardware. So only run this container on an official Synology NAS, as any other use will be a violation of their terms and conditions.
 
 ## Stars 🌟
-[![Stars](https://starchart.cc/vdsm/virtual-dsm.svg?variant=adaptive)](https://starchart.cc/vdsm/virtual-dsm)
+[![Stargazers](https://raw.githubusercontent.com/star-stats/stars/refs/heads/data/charts/vdsm-virtual-dsm.svg)](https://github.com/vdsm/virtual-dsm/stargazers)
 
 ## Disclaimer ⚖️
 
