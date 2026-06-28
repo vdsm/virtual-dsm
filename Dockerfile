@@ -1,20 +1,12 @@
 # syntax=docker/dockerfile:1
 
 FROM qemux/qemu-host:2.05 AS builder
-
-#  FROM golang as builder
-#  WORKDIR /
-#  RUN git clone https://github.com/qemus/qemu-host.git
-#  WORKDIR /qemu-host/src
-#  RUN go mod download
-#  RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /qemu-host.bin .
-
 FROM debian:trixie-slim
 
 ARG TARGETARCH
 ARG TARGETPLATFORM
 ARG VERSION_ARG="0.0"
-ARG VERSION_PASST="2026_05_26"
+ARG VERSION_PASST="2026_06_11"
 
 ARG DEBCONF_NOWARNINGS="yes"
 ARG DEBIAN_FRONTEND="noninteractive"
