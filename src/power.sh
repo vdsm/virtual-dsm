@@ -143,14 +143,16 @@ graceful_shutdown() {
     cleanup_grace=4
   fi
 
-  local cnt=0 sigterm_at=0 min wait_until
+  local cnt=0 sigterm_at=0 min wait_until elapsed timeout_left
+
+  elapsed=$((SECONDS - start))
+  timeout_left=$((TIMEOUT - elapsed))
 
   min=$((term_grace + cleanup_grace + 1))
-  (( TIMEOUT < min )) && (( TIMEOUT = min ))
+  (( timeout_left < min )) && timeout_left=$min
 
-  wait_until=$((TIMEOUT - cleanup_grace))
+  wait_until=$((timeout_left - cleanup_grace))
   sigterm_at=$((wait_until - term_grace))
-
   while (( cnt <= wait_until )); do
 
     sleep 1 &
