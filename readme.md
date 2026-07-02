@@ -19,7 +19,8 @@ Virtual DSM in a Docker container.
  - Multiple disks
  - KVM acceleration
  - Upgrades supported
- 
+ - Automatic download
+
 ## Usage  🐳
 
 ##### Via Docker Compose:
@@ -110,9 +111,9 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
     - ./example3:/storage3
   ```
 
-### How do I pass-through a disk?
+### How do I pass through a disk?
 
-   It is possible to pass-through disk devices or partitions directly by adding them to your compose file in this way:
+   You can pass through disk devices or partitions directly by adding them to your compose file in this way:
 
   ```yaml
   devices:
@@ -214,9 +215,9 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
     - 'c *:* rwm'
   ```
 
-### How do I pass-through the GPU?
+### How do I pass through the GPU?
 
-  To pass-through your Intel GPU, add the following lines to your compose file:
+  To pass through your Intel GPU, add the following lines to your compose file:
 
   ```yaml
   environment:
