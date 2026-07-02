@@ -153,6 +153,7 @@ graceful_shutdown() {
 
   wait_until=$((timeout_left - cleanup_grace))
   sigterm_at=$((wait_until - term_grace))
+
   while (( cnt <= wait_until )); do
 
     sleep 1 &
