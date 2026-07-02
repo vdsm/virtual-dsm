@@ -18,11 +18,11 @@ Virtual DSM in a Docker container.
 
  - Multiple disks
  - KVM acceleration
- - Upgrades supported
- 
+ - Automatic download
+
 ## Usage  🐳
 
-##### Via Docker Compose:
+##### Docker Compose:
 
 ```yaml
 services:
@@ -44,21 +44,30 @@ services:
     stop_grace_period: 2m
 ```
 
-##### Via Docker CLI:
+##### Docker CLI:
 
 ```bash
 docker run -it --rm --name dsm -e "DISK_SIZE=256G" -p 5000:5000 --device=/dev/kvm --device=/dev/net/tun --cap-add NET_ADMIN -v "${PWD:-.}/dsm:/storage" --stop-timeout 120 docker.io/vdsm/virtual-dsm
 ```
 
-##### Via Kubernetes:
+##### Kubernetes:
 
 ```shell
 kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/master/kubernetes.yml
 ```
 
-##### Via Github Codespaces:
+##### GitHub Codespaces:
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/vdsm/virtual-dsm)
+
+## Requirements ⚙️
+
+- A Linux host with KVM support, or Docker Desktop / Podman on Windows 11 with nested virtualization enabled.
+- At least 2 GB of RAM available.
+- At least 32 GB of free disk space.
+
+> [!NOTE]
+> Docker Desktop on macOS and Windows 10 do not currently provide the required KVM support for this image.
 
 ## FAQ 💬
 
@@ -95,7 +104,7 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
   ```
   
 > [!TIP]
-> This can also be used to resize the existing disk to a larger capacity without any data loss.
+> This can also be used to resize an existing disk to a larger capacity without any data loss.
 
 ### How do I add multiple disks?
 
@@ -110,9 +119,9 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
     - ./example3:/storage3
   ```
 
-### How do I pass-through a disk?
+### How do I pass through a disk?
 
-   It is possible to pass-through disk devices or partitions directly by adding them to your compose file in this way:
+   You can pass through disk devices or partitions directly by adding them to your compose file in this way:
 
   ```yaml
   devices:
@@ -158,7 +167,7 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
   - you enabled "nested virtualization" if you are running the container inside a virtual machine.
 
-  - you are not using a cloud provider, as most of them do not allow nested virtualization for their VPS's.
+  - you are not using a cloud provider, as most of them do not allow nested virtualization for their VPSs.
 
   If you did not receive any error from `kvm-ok` but the container still complains about a missing KVM device, it could help to add `privileged: true` to your compose file (or `sudo` to your `docker` command) to rule out any permission issue.
 
@@ -214,9 +223,9 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
     - 'c *:* rwm'
   ```
 
-### How do I pass-through the GPU?
+### How do I pass through the GPU?
 
-  To pass-through your Intel GPU, add the following lines to your compose file:
+  To pass through your Intel GPU, add the following lines to your compose file:
 
   ```yaml
   environment:
@@ -254,7 +263,7 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
 ### Is this project legal?
 
-  Yes, this project contains only open-source code and does not distribute any copyrighted material. Neither does it try to circumvent any copyright protection measures. So under all applicable laws, this project will be considered legal. 
+  Yes, this project contains only open-source code and does not distribute any material owned by Synology. Neither does it try to circumvent any copyright protection measures.
   
   However, by installing Synology's Virtual DSM, you must accept their end-user license agreement, which does not permit installation on non-Synology hardware. So only run this container on an official Synology NAS, as any other use will be a violation of their terms and conditions.
 
