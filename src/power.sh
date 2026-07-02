@@ -165,7 +165,7 @@ graceful_shutdown() {
     if (( cnt == sigterm_at )); then
       info "${name^} is still running, sending SIGTERM... ($cnt/$wait_until)"
       kill -15 -- "$pid" 2>/dev/null || :
-    elif (( cnt > 0 )); then
+    elif (( cnt > 0 )) && [[ "${DEBUG:-}" == [Yy1]* ]]; then
       info "Waiting for $name to shut down... ($cnt/$wait_until)"
     fi
 
