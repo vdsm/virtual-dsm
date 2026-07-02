@@ -56,7 +56,7 @@ docker run -it --rm --name dsm -e "DISK_SIZE=256G" -p 5000:5000 --device=/dev/kv
 kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/master/kubernetes.yml
 ```
 
-##### Via Github Codespaces:
+##### Via GitHub Codespaces:
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/vdsm/virtual-dsm)
 
@@ -95,7 +95,7 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
   ```
   
 > [!TIP]
-> This can also be used to resize the existing disk to a larger capacity without any data loss.
+> This can also be used to resize an existing disk to a larger capacity without any data loss.
 
 ### How do I add multiple disks?
 
