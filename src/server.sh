@@ -10,8 +10,7 @@ WEB_PID="/run/nginx.pid"
 WSD_PID="$QEMU_DIR/websocketd.pid"
 
 cp -r /var/www/* "$QEMU_DIR"
-rm -f "$WSD_PID"
-rm -f "$WEB_PID"
+rm -f "$WSD_PID" "$WEB_PID"
 
 html "Starting $APP for $ENGINE..."
 

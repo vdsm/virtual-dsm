@@ -24,6 +24,7 @@ set -Eeuo pipefail
 : "${PASST_OPTS:=""}"
 : "${PASST_DEBUG:=""}"
 : "${PASST_PID:="/var/run/passt.pid"}"
+: "${PASST_SOCKET:="/tmp/passt.socket"}"
 
 : "${DNSMASQ_OPTS:=""}"
 : "${DNSMASQ_DEBUG:=""}"
@@ -305,7 +306,10 @@ configureSlirp() {
   else
     [ ! -f /etc/resolv.dnsmasq ] && cp /etc/resolv.conf /etc/resolv.dnsmasq
     configureDNS "lo" "$ip" "$VM_NET_MAC" "$VM_NET_HOST" "$VM_NET_MASK" "$gateway" || return 1
-    echo -e "nameserver 127.0.0.1\nsearch .\noptions ndots:0" >/etc/resolv.conf
+    printf '%s\n' \
+      'nameserver 127.0.0.1' \
+      'search .' \
+      'options ndots:0' > /etc/resolv.conf
   fi
 
   VM_NET_IP="$ip"
@@ -352,12 +356,16 @@ configurePasst() {
   PASST_OPTS+=" -H $VM_NET_HOST"
   PASST_OPTS+=" -M $GATEWAY_MAC"
   PASST_OPTS+=" -P $PASST_PID"
+  PASST_OPTS+=" -s $PASST_SOCKET"
   PASST_OPTS+=" -l $log"
   PASST_OPTS+=" -q"
 
   if [[ "${DNSMASQ_DISABLE:-}" != [Yy1]* ]]; then
     [ ! -f /etc/resolv.dnsmasq ] && cp /etc/resolv.conf /etc/resolv.dnsmasq
-    echo -e "nameserver 127.0.0.1\nsearch .\noptions ndots:0" >/etc/resolv.conf
+    printf '%s\n' \
+      'nameserver 127.0.0.1' \
+      'search .' \
+      'options ndots:0' > /etc/resolv.conf
   fi
 
   PASST_OPTS=$(echo "$PASST_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
@@ -368,11 +376,11 @@ configurePasst() {
 
   [ ! -f "$PASST" ] && cp /usr/bin/passt* /run
 
-  if ! $PASST ${PASST_OPTS:+ $PASST_OPTS} >/dev/null 2>&1; then
+  if ! "$PASST" ${PASST_OPTS:+$PASST_OPTS} >/dev/null 2>&1; then
 
     rm -f "$log"
     PASST_OPTS="${PASST_OPTS/ -q/}"
-    { $PASST ${PASST_OPTS:+ $PASST_OPTS}; rc=$?; } || :
+    { "$PASST" ${PASST_OPTS:+$PASST_OPTS}; rc=$?; } || :
 
     if (( rc != 0 )); then
       [ -f "$log" ] && [ -s "$log" ] && cat "$log"
@@ -390,7 +398,7 @@ configurePasst() {
     fi
   fi
 
-  NET_OPTS="-netdev stream,id=hostnet0,server=off,addr.type=unix,addr.path=/tmp/passt_1.socket"
+  NET_OPTS="-netdev stream,id=hostnet0,server=off,addr.type=unix,addr.path=$PASST_SOCKET"
 
   configureDNS "lo" "$ip" "$VM_NET_MAC" "$VM_NET_HOST" "$VM_NET_MASK" "$gateway" || return 1
 
@@ -630,9 +638,8 @@ cleanUp() {
   closeBridge
 
   # Clean up old files
-  rm -f "$PASST_PID"
-  rm -f "$DNSMASQ_PID"
-  rm -f /etc/resolv.dnsmasq
+  rm -f "$PASST_PID" "$PASST_SOCKET"
+  rm -f "$DNSMASQ_PID" /etc/resolv.dnsmasq
 
   return 0
 }
