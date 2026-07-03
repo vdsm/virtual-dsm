@@ -3,8 +3,6 @@ set -Eeuo pipefail
 
 : "${URL:=""}"    # URL of the PAT file to be downloaded.
 
-URL=$(strip "$URL")
-
 if [ -f "$STORAGE/dsm.ver" ]; then
   BASE=$(<"$STORAGE/dsm.ver")
   BASE="${BASE//[![:print:]]/}"
@@ -28,6 +26,8 @@ fi
 FILE=$(find / -maxdepth 1 -type f -iname "$FN" -print -quit)
 [ ! -s "$FILE" ] && FILE=$(find "$STORAGE" -maxdepth 1 -type f -iname "$FN" -print -quit)
 [ -s "$FILE" ] && BASE="DSM_VirtualDSM" && URL="file://$FILE" 
+
+URL=$(strip "$URL")
 
 if [ -n "$URL" ] && [ ! -s "$FILE" ] && [ ! -d "$DIR" ]; then
   BASE=$(basename "$URL" .pat)
