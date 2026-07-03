@@ -25,6 +25,7 @@ enabled "${TRACE:-}" && set -o functrace && trap 'echo "# $BASH_COMMAND" >&2' DE
 TZ=$(strip "$TZ")
 STORAGE=$(strip "$STORAGE")
 COUNTRY=$(strip "$COUNTRY")
+ARGUMENTS=$(strip "$ARGUMENTS")
 DISK_SIZE=$(strip "$DISK_SIZE")
 
 # Helper variables
