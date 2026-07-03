@@ -5,9 +5,6 @@ set -Eeuo pipefail
 : "${TIMEOUT:="115"}"       # QEMU termination timeout
 : "${API_TIMEOUT:="90"}"    # External API call timeout
 
-TIMEOUT=$(strip "$TIMEOUT")
-API_TIMEOUT=$(strip "$API_TIMEOUT")
-
 # Configure QEMU for graceful shutdown
 
 API_CMD=6
@@ -112,6 +109,7 @@ graceful_shutdown() {
   # nc -q 1 -w 1 -U "$QEMU_DIR/monitor.sock" &> /dev/null <<<'system_powerdown' || :
 
   # Send shutdown command to guest agent via serial port
+  API_TIMEOUT=$(strip "$API_TIMEOUT")
   url="http://$API_HOST/read?command=$API_CMD&timeout=$API_TIMEOUT"
   response=$(curl -sk -m "$(( API_TIMEOUT+2 ))" -S "$url" 2>&1)
 
@@ -134,6 +132,7 @@ graceful_shutdown() {
   local term_grace=3      # seconds before loop ends to send SIGTERM
   local cleanup_grace=3   # seconds reserved after the loop for cleanup
 
+  TIMEOUT=$(strip "$TIMEOUT")
   if [[ ! "$TIMEOUT" =~ ^[0-9]+$ ]]; then
     TIMEOUT=115
   fi
