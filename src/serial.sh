@@ -35,7 +35,7 @@ HOST_ARGS+=("-cpu_arch=$HOST_CPU")
 [ -n "$HOST_SERIAL" ] && HOST_ARGS+=("-hostsn=$HOST_SERIAL")
 [ -n "$GUEST_SERIAL" ] && HOST_ARGS+=("-guestsn=$GUEST_SERIAL")
 
-if [[ "$HOST_DEBUG" == [Yy1]* ]]; then
+if enabled "$HOST_DEBUG"; then
   set -x
   ./host.bin "${HOST_ARGS[@]}" &
   { set +x; } 2>/dev/null
