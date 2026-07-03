@@ -673,9 +673,6 @@ DISK4_FILE="/storage4/${DISK_NAME}4"
 : "${DEVICE3:=""}"
 : "${DEVICE4:=""}"
 
-DISK2_SIZE=$(strip "$DISK2_SIZE")
-DISK3_SIZE=$(strip "$DISK3_SIZE")
-DISK4_SIZE=$(strip "$DISK4_SIZE")
 DEVICE=$(strip "$DEVICE")
 DEVICE2=$(strip "$DEVICE2")
 DEVICE3=$(strip "$DEVICE3")
