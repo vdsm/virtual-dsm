@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 trap 'error "Status $? while: $BASH_COMMAND (line $LINENO/$BASH_LINENO)"' ERR
-[[ "${TRACE:-}" == [Yy1]* ]] && set -o functrace && trap 'echo "# $BASH_COMMAND" >&2' DEBUG
+enabled "${TRACE:-}" && set -o functrace && trap 'echo "# $BASH_COMMAND" >&2' DEBUG
 
 [ ! -f "/run/entry.sh" ] && error "Script must be run inside the container!" && exit 11
 [ "$(id -u)" -ne "0" ] && error "Script must be executed with root privileges." && exit 12
@@ -169,7 +169,7 @@ else
   TARGET="arm64"
 fi
 
-if [[ "$KVM" == [Nn]* ]]; then
+if disabled "$KVM"; then
   warn "KVM acceleration is disabled, this will cause the machine to run about 10 times slower!"
 else
   if [[ "${ARCH,,}" != "$TARGET" ]]; then
@@ -178,7 +178,7 @@ else
   fi
 fi
 
-if [[ "$KVM" != [Nn]* ]]; then
+if ! disabled "$KVM"; then
 
   KVM_ERR=""
 
@@ -195,7 +195,7 @@ if [[ "$KVM" != [Nn]* ]]; then
         fi
         if ! grep -qw "sse4_2" <<< "$flags"; then
           error "Your CPU does not have the SSE4 instruction set that Virtual DSM requires!"
-          [[ "$DEBUG" != [Yy1]* ]] && exit 88
+          ! enabled "$DEBUG" && exit 88
         fi
       fi
     fi
@@ -216,7 +216,7 @@ if [[ "$KVM" != [Nn]* ]]; then
           error "KVM acceleration is not available $KVM_ERR, this will cause the machine to run about 10 times slower."
           error "See the FAQ for possible causes, or disable acceleration by adding the \"KVM=N\" variable (not recommended)." ;;
       esac
-      [[ "$DEBUG" != [Yy1]* ]] && exit 88
+      ! enabled "$DEBUG" && exit 88
     fi
   fi
 

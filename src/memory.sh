@@ -2,12 +2,12 @@
 set -Eeuo pipefail
 
 msg="Checking memory..."
-[[ "$DEBUG" == [Yy1]* ]] && echo "$msg"
+enabled "$DEBUG" && echo "$msg"
 
 RAM_AVAIL=$(free -b | grep -m 1 Mem: | awk '{print $7}')
 AVAIL_MEM=$(formatBytes "$RAM_AVAIL")
 
-if [[ "$RAM_CHECK" != [Nn]* && "${RAM_SIZE,,}" != "max" && "${RAM_SIZE,,}" != "half" ]]; then
+if ! disabled "$RAM_CHECK" && [[ "${RAM_SIZE,,}" != "max" && "${RAM_SIZE,,}" != "half" ]]; then
 
   wanted=$(numfmt --from=iec "$RAM_SIZE")
 

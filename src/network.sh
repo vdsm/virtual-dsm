@@ -40,7 +40,7 @@ ADD_ERR="Please add the following setting to your container:"
 
 configureDHCP() {
 
-  [[ "$DEBUG" == [Yy1]* ]] && echo "Configuring MACVTAP networking..."
+  enabled "$DEBUG" && echo "Configuring MACVTAP networking..."
 
   # Create the necessary file structure for /dev/vhost-net
   if [ ! -c /dev/vhost-net ]; then
@@ -128,8 +128,8 @@ configureDNS() {
 
   echo "$gateway" > /run/shm/qemu.gw
 
-  [[ "${DNSMASQ_DISABLE:-}" == [Yy1]* ]] && return 0
-  [[ "$DEBUG" == [Yy1]* ]] && echo "Starting dnsmasq daemon..."
+  enabled "${DNSMASQ_DISABLE:-}" && return 0
+  enabled "$DEBUG" && echo "Starting dnsmasq daemon..."
 
   [ -s "$DNSMASQ_PID" ] && pKill "$(<"$DNSMASQ_PID")"
   rm -f "$DNSMASQ_PID"
@@ -174,7 +174,7 @@ configureDNS() {
   arguments+=" --log-facility=$log"
 
   arguments=$(echo "$arguments" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
-  [[ "$DEBUG" == [Yy1]* ]] && printf "Dnsmasq arguments:\n\n%s\n\n" "${arguments// -/$'\n-'}"
+  enabled "$DEBUG" && printf "Dnsmasq arguments:\n\n%s\n\n" "${arguments// -/$'\n-'}"
 
   { $DNSMASQ ${arguments:+ $arguments}; rc=$?; } || :
 
@@ -182,7 +182,7 @@ configureDNS() {
 
     local msg="Failed to start Dnsmasq, reason: $rc"
 
-    if [[ "${NETWORK,,}" == "slirp" || "${NETWORK,,}" == "passt" || "$ROOTLESS" != [Yy1]* || "$DEBUG" == [Yy1]* ]]; then
+    if [[ "${NETWORK,,}" == "slirp" || "${NETWORK,,}" == "passt" ]] || ! enabled "$ROOTLESS" || enabled "$DEBUG"; then
       [ -f "$log" ] && [ -s "$log" ] && cat "$log"
       error "$msg"
     fi
@@ -190,7 +190,7 @@ configureDNS() {
     return 1
   fi
 
-  if [[ "$DNSMASQ_DEBUG" == [Yy1]* ]]; then
+  if enabled "$DNSMASQ_DEBUG"; then
     tail -fn +0 "$log" --pid=$$ &
   fi
 
@@ -284,7 +284,7 @@ getSlirp() {
 configureSlirp() {
 
   NETWORK="slirp"
-  [[ "$DEBUG" == [Yy1]* ]] && echo "Configuring slirp networking..."
+  enabled "$DEBUG" && echo "Configuring slirp networking..."
 
   local ip="$IP"
   [ -n "$VM_NET_IP" ] && ip="$VM_NET_IP"
@@ -301,7 +301,7 @@ configureSlirp() {
   forward=$(getSlirp "$ip")
   [ -n "$forward" ] && NET_OPTS+=",$forward"
 
-  if [[ "${DNSMASQ_DISABLE:-}" == [Yy1]* ]]; then
+  if enabled "${DNSMASQ_DISABLE:-}"; then
     echo "$gateway" > /run/shm/qemu.gw
   else
     [ ! -f /etc/resolv.dnsmasq ] && cp /etc/resolv.conf /etc/resolv.dnsmasq
@@ -319,7 +319,7 @@ configureSlirp() {
 configurePasst() {
 
   NETWORK="passt"
-  [[ "$DEBUG" == [Yy1]* ]] && echo "Configuring user-mode networking..."
+  enabled "$DEBUG" && echo "Configuring user-mode networking..."
 
   local log="/tmp/passt.log"
   rm -f "$log"
@@ -360,7 +360,7 @@ configurePasst() {
   PASST_OPTS+=" -l $log"
   PASST_OPTS+=" -q"
 
-  if [[ "${DNSMASQ_DISABLE:-}" != [Yy1]* ]]; then
+  if ! enabled "${DNSMASQ_DISABLE:-}"; then
     [ ! -f /etc/resolv.dnsmasq ] && cp /etc/resolv.conf /etc/resolv.dnsmasq
     printf '%s\n' \
       'nameserver 127.0.0.1' \
@@ -370,7 +370,7 @@ configurePasst() {
 
   PASST_OPTS=$(echo "$PASST_OPTS" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
 
-  if [[ "$DEBUG" == [Yy1]* || "$PASST_DEBUG" == [Yy1]* ]]; then
+  if enabled "$DEBUG" || enabled "$PASST_DEBUG"; then
     printf "Passt arguments:\n\n%s\n\n" "${PASST_OPTS// -/$'\n-'}"
   fi
 
@@ -390,10 +390,10 @@ configurePasst() {
 
   fi
 
-  if [[ "$PASST_DEBUG" == [Yy1]* ]]; then
+  if enabled "$PASST_DEBUG"; then
     tail -fn +0 "$log" --pid=$$ &
   else
-    if [[ "$DEBUG" == [Yy1]* ]]; then
+    if enabled "$DEBUG"; then
       [ -f "$log" ] && [ -s "$log" ] && cat "$log" && echo ""
     fi
   fi
@@ -447,7 +447,7 @@ configureNAT() {
   local tuntap="TUN device is missing. $ADD_ERR --device /dev/net/tun"
   local tables="the 'ip_tables' kernel module is not loaded. Try this command: sudo modprobe ip_tables iptable_nat"
 
-  [[ "$DEBUG" == [Yy1]* ]] && echo "Configuring NAT networking..."
+  enabled "$DEBUG" && echo "Configuring NAT networking..."
 
   # Create the necessary file structure for /dev/net/tun
   if [ ! -c /dev/net/tun ]; then
@@ -458,7 +458,7 @@ configureNAT() {
   fi
 
   if [ ! -c /dev/net/tun ]; then
-    [[ "$ROOTLESS" == [Yy1]* && "$DEBUG" != [Yy1]* ]] && return 1
+    enabled "$ROOTLESS" && ! enabled "$DEBUG" && return 1
     warn "$tuntap" && return 1
   fi
 
@@ -466,7 +466,7 @@ configureNAT() {
   if [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
     { sysctl -w net.ipv4.ip_forward=1 > /dev/null 2>&1; rc=$?; } || :
     if (( rc != 0 )) || [[ $(< /proc/sys/net/ipv4/ip_forward) -eq 0 ]]; then
-      [[ "$ROOTLESS" == [Yy1]* && "$DEBUG" != [Yy1]* ]] && return 1
+      enabled "$ROOTLESS" && ! enabled "$DEBUG" && return 1
       warn "IP forwarding is disabled. $ADD_ERR --sysctl net.ipv4.ip_forward=1"
       return 1
     fi
@@ -496,7 +496,7 @@ configureNAT() {
   { ip link add dev "$VM_NET_BRIDGE" type bridge ; rc=$?; } || :
 
   if (( rc != 0 )); then
-    [[ "$ROOTLESS" == [Yy1]* && "$DEBUG" != [Yy1]* ]] && return 1
+    enabled "$ROOTLESS" && ! enabled "$DEBUG" && return 1
     warn "failed to create bridge. $ADD_ERR --cap-add NET_ADMIN" && return 1
   fi
 
@@ -511,7 +511,7 @@ configureNAT() {
 
   # Set tap to the bridge created
   if ! ip tuntap add dev "$VM_NET_TAP" mode tap; then
-    [[ "$ROOTLESS" == [Yy1]* && "$DEBUG" != [Yy1]* ]] && return 1
+    enabled "$ROOTLESS" && ! enabled "$DEBUG" && return 1
     warn "$tuntap" && return 1
   fi
 
@@ -549,7 +549,7 @@ configureNAT() {
 
   # NAT traffic from bridge subnet to Docker uplink
   if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -s "$subnet" ! -d "$subnet" -m comment --comment "remove" -j MASQUERADE > /dev/null 2>&1; then
-    [[ "$ROOTLESS" == [Yy1]* && "$DEBUG" != [Yy1]* ]] && return 1
+    enabled "$ROOTLESS" && ! enabled "$DEBUG" && return 1
     if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -s "$subnet" ! -d "$subnet" -m comment --comment "remove" -j MASQUERADE; then
       warn "$tables" && return 1
     fi
@@ -619,11 +619,11 @@ closeWeb() {
 
 closeNetwork() {
 
-  if [[ "${WEB:-}" != [Nn]* && "$DHCP" == [Yy1]* ]]; then
+  if ! disabled "${WEB:-}" && enabled "$DHCP"; then
     closeWeb
   fi
 
-  [[ "$NETWORK" == [Nn]* ]] && return 0
+  disabled "$NETWORK" && return 0
 
   exec 30<&- || true
   exec 40<&- || true
@@ -655,7 +655,7 @@ checkOS() {
   [[ "${kernel,,}" == *"darwin"* ]] && os="$ENGINE Desktop for macOS"
   [[ "${kernel,,}" == *"microsoft"* ]] && os="$ENGINE Desktop for Windows"
 
-  if [[ "$DHCP" == [Yy1]* ]]; then
+  if enabled "$DHCP"; then
     iface="macvtap"
     [[ "${kernel,,}" == *"synology"* ]] && os="Synology Container Manager"
   fi
@@ -687,7 +687,7 @@ getInfo() {
 
   GATEWAY=$(ip route list dev "$VM_NET_DEV" | awk ' /^default/ {print $3}' | head -n 1)
   { IP=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/ | head -n 1); } 2>/dev/null || :
-  [ -z "$IP" ] && [[ "$DHCP" != [Yy1]* ]] && error "Could not determine container IPv4 address!" && exit 26
+  [ -z "$IP" ] && ! enabled "$DHCP" && error "Could not determine container IPv4 address!" && exit 26
 
   IP6=""
   # shellcheck disable=SC2143
@@ -703,12 +703,12 @@ getInfo() {
   bus=$(grep -m 1 -i 'bus-info:' <<< "$result" | awk '{print $2}')
 
   if [[ "${bus,,}" != "" && "${bus,,}" != "n/a" && "${bus,,}" != "tap" ]]; then
-    [[ "$DEBUG" == [Yy1]* ]] && info "Detected BUS: $bus"
+    enabled "$DEBUG" && info "Detected BUS: $bus"
     error "This container does not support host mode networking!"
     exit 29
   fi
 
-  if [[ "$DHCP" == [Yy1]* ]]; then
+  if enabled "$DHCP"; then
 
     checkOS
 
@@ -718,7 +718,7 @@ getInfo() {
     fi
 
     if [[ "${nic,,}" != "macvlan" ]]; then
-      [[ "$DEBUG" == [Yy1]* ]] && info "Detected NIC: $nic"
+      enabled "$DEBUG" && info "Detected NIC: $nic"
       error "The container needs to be in a MACVLAN network when DHCP=Y."
       exit 29
     fi
@@ -786,7 +786,7 @@ getInfo() {
 
   GATEWAY_MAC=$(echo "$VM_NET_MAC" | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:\1:\2:\3:\4:\5/')
 
-  if [[ "$DEBUG" == [Yy1]* ]]; then
+  if enabled "$DEBUG"; then
     line="Host: $HOST  IP: $IP  Gateway: $GATEWAY  Interface: $VM_NET_DEV  MAC: $VM_NET_MAC  MTU: $mtu"
     [[ "$MTU" != "0" && "$MTU" != "$mtu" ]] && line+=" ($MTU)"
     info "$line"
@@ -807,14 +807,14 @@ getInfo() {
 #  Configure Network
 # ######################################
 
-if [[ "$NETWORK" == [Nn]* ]]; then
+if disabled "$NETWORK"; then
   NET_OPTS=""
   return 0
 fi
 
 msg="Initializing network..."
 html "$msg"
-[[ "$DEBUG" == [Yy1]* ]] && echo "$msg"
+enabled "$DEBUG" && echo "$msg"
 
 getInfo
 cleanUp
@@ -826,14 +826,14 @@ fi
 MSG="Booting DSM instance..."
 html "$MSG"
 
-if [[ "$DHCP" == [Yy1]* ]]; then
+if enabled "$DHCP"; then
 
   # Configure for macvtap interface
   configureDHCP || exit 20
 
 else
 
-  if [[ "${WEB:-}" != [Nn]* ]]; then
+  if ! disabled "${WEB:-}"; then
     sleep 1.2
     closeWeb
   fi
@@ -848,7 +848,7 @@ else
         closeBridge
         NETWORK="user"
 
-        if [[ "$ROOTLESS" != [Yy1]* || "$DEBUG" == [Yy1]* ]]; then
+        if ! enabled "$ROOTLESS" || enabled "$DEBUG"; then
           msg="falling back to user-mode networking!"
           msg="failed to setup NAT networking, $msg"
           warn "$msg"

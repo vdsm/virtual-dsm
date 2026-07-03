@@ -110,7 +110,7 @@ createDisk() {
 
   DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
 
-  if [[ "$ALLOCATE" != [Nn]* ]]; then
+  if ! disabled "$ALLOCATE"; then
 
     # Check free diskspace
     DIR=$(dirname "$DISK_FILE")
@@ -139,7 +139,7 @@ createDisk() {
         { chattr +C "$DISK_FILE"; } || :
       fi
 
-      if [[ "$ALLOCATE" == [Nn]* ]]; then
+      if disabled "$ALLOCATE"; then
 
         # Create an empty file
         if ! truncate -s "$DATA_SIZE" "$DISK_FILE"; then
@@ -198,7 +198,7 @@ resizeDisk() {
   local REQ=$(( DATA_SIZE - CUR_SIZE ))
   (( REQ < 1 )) && error "Shrinking disks is not supported yet, please increase ${DISK_DESC^^}_SIZE." && exit 71
 
-  if [[ "$ALLOCATE" != [Nn]* ]]; then
+  if ! disabled "$ALLOCATE"; then
 
     # Check free diskspace
     DIR=$(dirname "$DISK_FILE")
@@ -221,7 +221,7 @@ resizeDisk() {
   case "${DISK_FMT,,}" in
     raw)
 
-      if [[ "$ALLOCATE" == [Nn]* ]]; then
+      if disabled "$ALLOCATE"; then
 
         # Resize file by changing its length
         if ! truncate -s "$DATA_SIZE" "$DISK_FILE"; then
@@ -272,7 +272,7 @@ convertDisk() {
   local DIR FA
   DIR=$(dirname "$TMP_FILE")
 
-  if [[ "$ALLOCATE" != [Nn]* ]]; then
+  if ! disabled "$ALLOCATE"; then
 
     local CUR_SIZE SPACE GB
 
@@ -297,7 +297,7 @@ convertDisk() {
   isCow "$FS" && DISK_PARAM+=",nocow=on"
 
   if [[ "$DST_FMT" != "raw" ]]; then
-    if [[ "$ALLOCATE" == [Nn]* ]]; then
+    if disabled "$ALLOCATE"; then
       CONV_FLAGS+=" -c"
     fi
     [ -n "$DISK_FLAGS" ] && DISK_PARAM+=",$DISK_FLAGS"
@@ -310,7 +310,7 @@ convertDisk() {
   fi
 
   if [[ "$DST_FMT" == "raw" ]]; then
-    if [[ "$ALLOCATE" != [Nn]* ]]; then
+    if ! disabled "$ALLOCATE"; then
       # Work around qemu-img bug
       CUR_SIZE=$(stat -c%s "$TMP_FILE")
       if ! fallocate -l "$CUR_SIZE" "$TMP_FILE" &>/dev/null; then
@@ -433,7 +433,7 @@ finishDisks () {
       DISK_OPTS+=" -object iothread,id=io2" ;;
   esac
 
-  if [[ "$DISK_DISABLE" != [Yy1]* ]]; then
+  if ! enabled "$DISK_DISABLE"; then
     html "Initialized disks successfully..."
   fi
 
@@ -540,7 +540,7 @@ addDisk () {
 
   fi
 
-  if [ -f "$DISK_FILE" ] && [[ "$ALLOCATE" == [Nn]* ]]; then
+  if [ -f "$DISK_FILE" ] && disabled "$ALLOCATE"; then
 
     CUR_SIZE=$(getSize "$DISK_FILE")
     USED=$(du -sB 1 "$DISK_FILE" | cut -f1)
@@ -619,10 +619,10 @@ addDevice () {
 [ -z "${DISK_NAME:-}" ] && DISK_NAME="data"
 [ -z "${DISK_DISABLE:-}" ] && DISK_DISABLE=""
 
-if [[ "$DISK_DISABLE" != [Yy1]* ]]; then
+if ! enabled "$DISK_DISABLE"; then
   msg="Initializing disks..."
   html "$msg"
-  [[ "$DEBUG" == [Yy1]* ]] && echo "$msg"
+  enabled "$DEBUG" && echo "$msg"
 fi
 
 case "${DISK_TYPE,,}" in
@@ -634,7 +634,7 @@ if [ -z "$ALLOCATE" ]; then
   ALLOCATE="N"
 fi
 
-if [[ "$ALLOCATE" == [Nn]* ]]; then
+if disabled "$ALLOCATE"; then
   DISK_STYLE="growable"
   DISK_ALLOC="preallocation=off"
 else
@@ -645,7 +645,7 @@ fi
 DISK_OPTS+=$(createDevice "$BOOT" "$DISK_TYPE" "1" "0xa" "raw" "$DISK_IO" "$DISK_CACHE" "" "")
 DISK_OPTS+=$(createDevice "$SYSTEM" "$DISK_TYPE" "2" "0xb" "raw" "$DISK_IO" "$DISK_CACHE" "" "")
 
-if [[ "$DISK_DISABLE" == [Yy1]* ]]; then
+if enabled "$DISK_DISABLE"; then
   finishDisks
   return 0
 fi

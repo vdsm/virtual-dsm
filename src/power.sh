@@ -168,7 +168,7 @@ graceful_shutdown() {
     if (( cnt == sigterm_at )); then
       info "${name^} is still running, sending SIGTERM... ($cnt/$wait_until)"
       kill -15 -- "$pid" 2>/dev/null || :
-    elif (( cnt > 0 )) && [[ "${DEBUG:-}" == [Yy1]* ]]; then
+    elif (( cnt > 0 )) && enabled "${DEBUG:-}"; then
       info "Waiting for $name to shut down... ($cnt/$wait_until)"
     fi
 
@@ -180,7 +180,7 @@ graceful_shutdown() {
   finish "$code"
 }
 
-[[ "$SHUTDOWN" != [Yy1]* ]] && return 0
+! enabled "$SHUTDOWN" && return 0
 [ -n "${QEMU_TIMEOUT:-}" ] && TIMEOUT="$QEMU_TIMEOUT"
 
 _trap graceful_shutdown SIGTERM SIGHUP SIGABRT SIGQUIT

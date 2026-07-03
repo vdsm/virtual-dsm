@@ -10,7 +10,7 @@ set -Eeuo pipefail
 
 CPU_VENDOR=$(lscpu | awk '/Vendor ID/{print $3}')
 
-if [[ "$GPU" != [Yy1]* || "$CPU_VENDOR" != "GenuineIntel" || "$ARCH" != "amd64" ]]; then
+if ! enabled "$GPU" || [[ "$CPU_VENDOR" != "GenuineIntel" || "$ARCH" != "amd64" ]]; then
 
   [[ "${DISPLAY,,}" == "none" ]] && VGA="none"
   DISPLAY_OPTS="-display $DISPLAY -vga $VGA"
@@ -20,7 +20,7 @@ fi
 
 msg="Configuring display drivers..."
 html "$msg"
-[[ "$DEBUG" == [Yy1]* ]] && echo "$msg"
+enabled "$DEBUG" && echo "$msg"
 
 DISPLAY_OPTS="-display egl-headless,rendernode=$RENDERNODE"
 DISPLAY_OPTS+=" -vga $VGA"

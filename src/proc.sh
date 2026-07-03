@@ -27,14 +27,14 @@ fi
 
 flags=$(sed -ne '/^flags/s/^.*: //p' /proc/cpuinfo)
 
-if [[ "$KVM" != [Nn]* ]]; then
+if ! disabled "$KVM"; then
 
   CPU_FEATURES="kvm=on,l3-cache=on,+hypervisor"
   KVM_OPTS=",accel=kvm -enable-kvm -global kvm-pit.lost_tick_policy=discard"
 
   if ! grep -qw "sse4_2" <<< "$flags"; then
     error "Your CPU does not have the SSE4 instruction set that Virtual DSM requires!"
-    [[ "$DEBUG" != [Yy1]* ]] && exit 88
+    ! enabled "$DEBUG" && exit 88
   fi
 
   if [ -z "$CPU_MODEL" ]; then

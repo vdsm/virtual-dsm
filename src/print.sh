@@ -4,7 +4,7 @@ set -Eeuo pipefail
 : "${DHCP:="N"}"
 : "${NETWORK:="Y"}"
 
-[[ "$NETWORK" == [Nn]* ]] && exit 0
+disabled "$NETWORK" && exit 0
 
 info () { printf "%b%s%b" "\E[1;34m❯ \E[1;36m" "$1" "\E[0m\n" >&2; }
 error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: $1" "\E[0m\n" >&2; }
@@ -66,7 +66,7 @@ done
 
 location=$(<"$file")
 
-if [[ "$DHCP" == [Yy1]* ]]; then
+if enabled "$DHCP"; then
 
   msg="http://$location"
   title="<title>Virtual DSM</title>"

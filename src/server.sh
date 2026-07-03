@@ -14,7 +14,7 @@ rm -f "$WSD_PID" "$WEB_PID"
 
 html "Starting $APP for $ENGINE..."
 
-if [[ "${WEB:-}" != [Nn]* ]]; then
+if ! disabled "${WEB:-}"; then
 
   mkdir -p /etc/nginx/sites-enabled
   cp /etc/nginx/default.conf /etc/nginx/sites-enabled/web.conf

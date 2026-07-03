@@ -6,7 +6,7 @@ set -Eeuo pipefail
 
 [ -f "/run/shm/qemu.end" ] && echo "QEMU is shutting down..." && exit 1
 [ ! -s "/run/shm/qemu.pid" ] && echo "QEMU is not running yet..." && exit 0
-[[ "$NETWORK" == [Nn]* ]] && echo "Networking is disabled." && exit 0
+disabled "$NETWORK" && echo "Networking is disabled." && exit 0
 
 file="/run/shm/dsm.url"
 address="/run/shm/qemu.ip"
@@ -18,7 +18,7 @@ location=$(<"$file")
 
 if ! curl -m 20 -ILfSs "http://$location/" > /dev/null; then
 
-  if [[ "$DHCP" == [Yy1]* ]]; then
+  if enabled "$DHCP"; then
     ip=$(<"$address")
     echo "Failed to reach DSM at http://$location"
   else

@@ -28,7 +28,7 @@ cmd=(qemu-system-x86_64)
 version=$("${cmd[@]}" --version | awk 'NR==1 { print $4 }')
 info "Booting $APP using QEMU v$version..."
 
-if [[ "$SHUTDOWN" != [Yy1]* ]]; then
+if ! enabled "$SHUTDOWN"; then
   exec "${cmd[@]}" ${ARGS:+ $ARGS}
 fi
 
