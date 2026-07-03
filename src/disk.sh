@@ -673,11 +673,6 @@ DISK4_FILE="/storage4/${DISK_NAME}4"
 : "${DEVICE3:=""}"
 : "${DEVICE4:=""}"
 
-DEVICE=$(strip "$DEVICE")
-DEVICE2=$(strip "$DEVICE2")
-DEVICE3=$(strip "$DEVICE3")
-DEVICE4=$(strip "$DEVICE4")
-
 [ -z "$DEVICE" ] && [ -b "/disk" ] && DEVICE="/disk"
 [ -z "$DEVICE" ] && [ -b "/disk1" ] && DEVICE="/disk1"
 [ -z "$DEVICE2" ] && [ -b "/disk2" ] && DEVICE2="/disk2"
