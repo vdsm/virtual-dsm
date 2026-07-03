@@ -139,6 +139,7 @@ RAM_SPARE=500000000
 RAM_MINIMUM=136314880
 
 RAM_SIZE=$(strip "$RAM_SIZE")
+RAM_SIZE="${RAM_SIZE// /}"
 [ -z "$RAM_SIZE" ] && RAM_SIZE="2G"
 
 if [[ "${RAM_SIZE,,}" != "max" && "${RAM_SIZE,,}" != "half" ]]; then
