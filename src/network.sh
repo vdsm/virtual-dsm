@@ -19,20 +19,6 @@ set -Eeuo pipefail
 : "${VM_NET_HOST:="VirtualDSM"}"
 : "${VM_NET_MASK:="255.255.255.0"}"
 
-MAC=$(strip "$MAC")
-MTU=$(strip "$MTU")
-NETWORK=$(strip "$NETWORK")
-HOST_PORTS=$(strip "$HOST_PORTS")
-USER_PORTS=$(strip "$USER_PORTS")
-ADAPTER=$(strip "$ADAPTER")
-VM_NET_IP=$(strip "$VM_NET_IP")
-VM_NET_DEV=$(strip "$VM_NET_DEV")
-VM_NET_TAP=$(strip "$VM_NET_TAP")
-VM_NET_MAC=$(strip "$VM_NET_MAC")
-VM_NET_BRIDGE=$(strip "$VM_NET_BRIDGE")
-VM_NET_HOST=$(strip "$VM_NET_HOST")
-VM_NET_MASK=$(strip "$VM_NET_MASK")
-
 : "${PASST:="/run/passt"}"
 : "${PASST_MTU:=""}"
 : "${PASST_OPTS:=""}"
@@ -46,9 +32,14 @@ VM_NET_MASK=$(strip "$VM_NET_MASK")
 : "${DNSMASQ_PID:="/var/run/dnsmasq.pid"}"
 : "${DNSMASQ_CONF_DIR:="/etc/dnsmasq.d"}"
 
+# Sanitize variables
+MAC=$(strip "$MAC")
+MTU=$(strip "$MTU")
+ADAPTER=$(strip "$ADAPTER")
+NETWORK=$(strip "$NETWORK")
 PASST_MTU=$(strip "$PASST_MTU")
-PASST_OPTS=$(strip "$PASST_OPTS")
-DNSMASQ_OPTS=$(strip "$DNSMASQ_OPTS")
+HOST_PORTS=$(strip "$HOST_PORTS")
+USER_PORTS=$(strip "$USER_PORTS")
 
 ADD_ERR="Please add the following setting to your container:"
 
