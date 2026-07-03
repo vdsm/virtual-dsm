@@ -11,6 +11,13 @@ set -Eeuo pipefail
 : "${DISK_DISCARD:="on"}"         # Controls whether unmap (TRIM) commands are passed to the host.
 : "${DISK_ROTATION:="1"}"         # Rotation rate, set to 1 for SSD storage and increase for HDD
 
+DISK_IO=$(strip "$DISK_IO")
+DISK_FMT=$(strip "$DISK_FMT")
+DISK_FLAGS=$(strip "$DISK_FLAGS")
+DISK_CACHE=$(strip "$DISK_CACHE")
+DISK_DISCARD=$(strip "$DISK_DISCARD")
+DISK_ROTATION=$(strip "$DISK_ROTATION")
+
 BOOT="$STORAGE/$BASE.boot.img"
 SYSTEM="$STORAGE/$BASE.system.img"
 
@@ -619,6 +626,9 @@ addDevice () {
 [ -z "${DISK_NAME:-}" ] && DISK_NAME="data"
 [ -z "${DISK_DISABLE:-}" ] && DISK_DISABLE=""
 
+DISK_TYPE=$(strip "$DISK_TYPE")
+DISK_NAME=$(strip "$DISK_NAME")
+
 if ! enabled "$DISK_DISABLE"; then
   msg="Initializing disks..."
   html "$msg"
@@ -663,6 +673,14 @@ DISK4_FILE="/storage4/${DISK_NAME}4"
 : "${DEVICE2:=""}"
 : "${DEVICE3:=""}"
 : "${DEVICE4:=""}"
+
+DISK2_SIZE=$(strip "$DISK2_SIZE")
+DISK3_SIZE=$(strip "$DISK3_SIZE")
+DISK4_SIZE=$(strip "$DISK4_SIZE")
+DEVICE=$(strip "$DEVICE")
+DEVICE2=$(strip "$DEVICE2")
+DEVICE3=$(strip "$DEVICE3")
+DEVICE4=$(strip "$DEVICE4")
 
 [ -z "$DEVICE" ] && [ -b "/disk" ] && DEVICE="/disk"
 [ -z "$DEVICE" ] && [ -b "/disk1" ] && DEVICE="/disk1"

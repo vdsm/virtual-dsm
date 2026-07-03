@@ -7,6 +7,10 @@ set -Eeuo pipefail
 : "${CPU_FLAGS:=""}"
 : "${CPU_MODEL:=""}"
 
+HOST_CPU=$(strip "$HOST_CPU")
+CPU_FLAGS=$(strip "$CPU_FLAGS")
+CPU_MODEL=$(strip "$CPU_MODEL")
+
 CLOCKSOURCE="tsc"
 [[ "${ARCH,,}" == "arm64" ]] && CLOCKSOURCE="arch_sys_counter"
 CLOCK="/sys/devices/system/clocksource/clocksource0/current_clocksource"

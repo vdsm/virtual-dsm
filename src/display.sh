@@ -8,6 +8,10 @@ set -Eeuo pipefail
 : "${DISPLAY:="none"}"  # Display type
 : "${RENDERNODE:="/dev/dri/renderD128"}"  # Render node
 
+VGA=$(strip "$VGA")
+DISPLAY=$(strip "$DISPLAY")
+RENDERNODE=$(strip "$RENDERNODE")
+
 CPU_VENDOR=$(lscpu | awk '/Vendor ID/{print $3}')
 
 if ! enabled "$GPU" || [[ "$CPU_VENDOR" != "GenuineIntel" || "$ARCH" != "amd64" ]]; then

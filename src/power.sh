@@ -5,6 +5,9 @@ set -Eeuo pipefail
 : "${TIMEOUT:="115"}"       # QEMU termination timeout
 : "${API_TIMEOUT:="90"}"    # External API call timeout
 
+TIMEOUT=$(strip "$TIMEOUT")
+API_TIMEOUT=$(strip "$API_TIMEOUT")
+
 # Configure QEMU for graceful shutdown
 
 API_CMD=6

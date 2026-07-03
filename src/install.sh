@@ -3,6 +3,8 @@ set -Eeuo pipefail
 
 : "${URL:=""}"    # URL of the PAT file to be downloaded.
 
+URL=$(strip "$URL")
+
 if [ -f "$STORAGE/dsm.ver" ]; then
   BASE=$(<"$STORAGE/dsm.ver")
   BASE="${BASE//[![:print:]]/}"

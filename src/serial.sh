@@ -9,6 +9,11 @@ set -Eeuo pipefail
 : "${HOST_MODEL:=""}"
 : "${GUEST_SERIAL:=""}"
 
+HOST_MAC=$(strip "$HOST_MAC")
+HOST_SERIAL=$(strip "$HOST_SERIAL")
+HOST_MODEL=$(strip "$HOST_MODEL")
+GUEST_SERIAL=$(strip "$GUEST_SERIAL")
+
 if [ -n "$HOST_MAC" ]; then
 
   HOST_MAC="${HOST_MAC//-/:}"
