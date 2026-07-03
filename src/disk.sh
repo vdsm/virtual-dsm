@@ -11,8 +11,10 @@ set -Eeuo pipefail
 : "${DISK_DISCARD:="on"}"         # Controls whether unmap (TRIM) commands are passed to the host.
 : "${DISK_ROTATION:="1"}"         # Rotation rate, set to 1 for SSD storage and increase for HDD
 
+# Sanitize all variables
 DISK_IO=$(strip "$DISK_IO")
 DISK_FMT=$(strip "$DISK_FMT")
+DISK_TYPE=$(strip "$DISK_TYPE")
 DISK_FLAGS=$(strip "$DISK_FLAGS")
 DISK_CACHE=$(strip "$DISK_CACHE")
 DISK_DISCARD=$(strip "$DISK_DISCARD")
@@ -625,9 +627,6 @@ addDevice () {
 [ -z "${DISK_TYPE:-}" ] && DISK_TYPE="scsi"
 [ -z "${DISK_NAME:-}" ] && DISK_NAME="data"
 [ -z "${DISK_DISABLE:-}" ] && DISK_DISABLE=""
-
-DISK_TYPE=$(strip "$DISK_TYPE")
-DISK_NAME=$(strip "$DISK_NAME")
 
 if ! enabled "$DISK_DISABLE"; then
   msg="Initializing disks..."
