@@ -8,6 +8,7 @@ set -Eeuo pipefail
 : "${DISPLAY:="none"}"  # Display type
 : "${RENDERNODE:="/dev/dri/renderD128"}"  # Render node
 
+# Sanitize variables
 VGA=$(strip "$VGA")
 DISPLAY=$(strip "$DISPLAY")
 RENDERNODE=$(strip "$RENDERNODE")
