@@ -21,8 +21,13 @@ enabled "${TRACE:-}" && set -o functrace && trap 'echo "# $BASH_COMMAND" >&2' DE
 : "${DISK_SIZE:="16G"}"    # Initial data disk size
 : "${STORAGE:="/storage"}" # Storage folder location
 
-# Helper variables
+# Sanitize variables
+TZ=$(strip "$TZ")
+STORAGE=$(strip "$STORAGE")
+COUNTRY=$(strip "$COUNTRY")
+DISK_SIZE=$(strip "$DISK_SIZE")
 
+# Helper variables
 ROOTLESS="N"
 PRIVILEGED="N"
 ENGINE="Docker"
@@ -78,7 +83,7 @@ if grep -qi "socket(s)" <<< "$(lscpu)"; then
   [ "$SOCKETS" -lt "1" ] && SOCKETS=1
 fi
 
-CPU_CORES="${CPU_CORES// /}"
+CPU_CORES=$(strip "$CPU_CORES")
 [ -z "$CPU_CORES" ] && CPU_CORES=2
 [[ "${CPU_CORES,,}" == "max" ]] && CPU_CORES="$CORES"
 [[ "${CPU_CORES,,}" == "half" ]] && CPU_CORES=$(( CORES / 2 ))
@@ -132,6 +137,8 @@ RAM_TOTAL=$(free -b | grep -m 1 Mem: | awk '{print $2}')
 
 RAM_SPARE=500000000
 RAM_MINIMUM=136314880
+
+RAM_SIZE=$(strip "$RAM_SIZE")
 RAM_SIZE="${RAM_SIZE// /}"
 [ -z "$RAM_SIZE" ] && RAM_SIZE="2G"
 

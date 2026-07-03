@@ -5,9 +5,15 @@ set -Eeuo pipefail
 
 : "${HOST_MAC:=""}"
 : "${HOST_DEBUG:=""}"
-: "${HOST_SERIAL:=""}"
 : "${HOST_MODEL:=""}"
+: "${HOST_SERIAL:=""}"
 : "${GUEST_SERIAL:=""}"
+
+# Sanitize variables
+HOST_MAC=$(strip "$HOST_MAC")
+HOST_MODEL=$(strip "$HOST_MODEL")
+HOST_SERIAL=$(strip "$HOST_SERIAL")
+GUEST_SERIAL=$(strip "$GUEST_SERIAL")
 
 if [ -n "$HOST_MAC" ]; then
 

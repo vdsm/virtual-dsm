@@ -32,6 +32,15 @@ set -Eeuo pipefail
 : "${DNSMASQ_PID:="/var/run/dnsmasq.pid"}"
 : "${DNSMASQ_CONF_DIR:="/etc/dnsmasq.d"}"
 
+# Sanitize variables
+MAC=$(strip "$MAC")
+MTU=$(strip "$MTU")
+ADAPTER=$(strip "$ADAPTER")
+NETWORK=$(strip "$NETWORK")
+PASST_MTU=$(strip "$PASST_MTU")
+HOST_PORTS=$(strip "$HOST_PORTS")
+USER_PORTS=$(strip "$USER_PORTS")
+
 ADD_ERR="Please add the following setting to your container:"
 
 # ######################################
