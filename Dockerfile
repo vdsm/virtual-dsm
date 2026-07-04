@@ -12,47 +12,62 @@ ARG DEBCONF_NOWARNINGS="yes"
 ARG DEBIAN_FRONTEND="noninteractive"
 ARG DEBCONF_NONINTERACTIVE_SEEN="true"
 
-RUN set -eu && \
-    apt-get update && \
-    apt-get --no-install-recommends -y install \
-        jq \
-        tini \
-        curl \
-        wget \
-        fdisk \
-        unzip \
-        nginx \
-        procps \
-        ethtool \
-        python3 \
-        python3-pip \
-        python3-msgpack \
-        python3-pysodium \
-        xz-utils \
-        iptables \
-        iproute2 \
-        dnsmasq \
-        fakeroot \
-        apt-utils \
-        net-tools \
-        e2fsprogs \
-        qemu-utils \
-        websocketd \
-        iputils-ping \
-        inotify-tools \
-        ca-certificates \
-        netcat-openbsd \
-        qemu-system-x86 && \
-    wget "https://github.com/qemus/passt/releases/download/v${VERSION_PASST}/passt_${VERSION_PASST}_${TARGETARCH}.deb" -O /tmp/passt.deb -q --timeout=10 && \
-    dpkg -i /tmp/passt.deb && \
-    apt-get clean && \
-    pip3 install --no-cache-dir --break-system-packages --root-user-action=ignore dissect.cstruct && \
-    mkdir -p /etc/qemu && \
-    echo "allow br0" > /etc/qemu/bridge.conf && \
-    unlink /etc/nginx/sites-enabled/default && \
-    sed -i 's/^worker_processes.*/worker_processes 1;/' /etc/nginx/nginx.conf && \
-    echo "$VERSION_ARG" > /etc/version && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN <<EOF
+  set -eu
+
+  apt-get update
+  apt-get --no-install-recommends -y install \
+    jq \
+    tini \
+    curl \
+    wget \
+    fdisk \
+    unzip \
+    nginx \
+    procps \
+    ethtool \
+    python3 \
+    python3-pip \
+    python3-msgpack \
+    python3-pysodium \
+    xz-utils \
+    iptables \
+    iproute2 \
+    dnsmasq \
+    fakeroot \
+    apt-utils \
+    net-tools \
+    e2fsprogs \
+    qemu-utils \
+    websocketd \
+    iputils-ping \
+    inotify-tools \
+    ca-certificates \
+    netcat-openbsd \
+    qemu-system-x86
+
+  # Install Passt package
+  wget "https://github.com/qemus/passt/releases/download/v${VERSION_PASST}/passt_${VERSION_PASST}_${TARGETARCH}.deb" -O /tmp/passt.deb -q --timeout=10
+  dpkg -i /tmp/passt.deb
+
+  apt-get clean
+
+  # Install Python dependencies
+  pip3 install --no-cache-dir --break-system-packages --root-user-action=ignore dissect.cstruct
+
+  # Configure QEMU
+  mkdir -p /etc/qemu
+  echo "allow br0" > /etc/qemu/bridge.conf
+
+  # Configure nginx
+  unlink /etc/nginx/sites-enabled/default
+  sed -i 's/^worker_processes.*/worker_processes 1;/' /etc/nginx/nginx.conf
+
+  # Set version file
+  echo "$VERSION_ARG" > /etc/version
+
+  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+EOF
 
 COPY --chmod=755 ./src /run/
 COPY --chmod=755 ./web /var/www/
