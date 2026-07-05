@@ -1,16 +1,20 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2329
 set -Eeuo pipefail
 
 : "${DHCP:="N"}"
 : "${NETWORK:="Y"}"
 
-[[ "$NETWORK" == [Nn]* ]] && exit 0
+cd /run
+. utils.sh      # Load functions
 
 info () { printf "%b%s%b" "\E[1;34m❯ \E[1;36m" "$1" "\E[0m\n" >&2; }
 error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: $1" "\E[0m\n" >&2; }
 
+disabled "$NETWORK" && exit 0
+
 file="/run/shm/dsm.url"
-info="/run/shm/msg.html"
+msgs="/run/shm/msg.html"
 driver="/run/shm/qemu.nic"
 page="/run/shm/index.html"
 address="/run/shm/qemu.ip"
@@ -43,28 +47,28 @@ queryGuest() {
 readJsonField() {
 
   local query="$1"
-  local -n _result="$2"
+  local result
 
-  { _result=$(echo "$json" | jq -r "$query"); rc=$?; } || :
+  { result=$(echo "$json" | jq -r "$query"); rc=$?; } || :
 
   if (( rc != 0 )); then
     error "$jq_err $rc ( $json )"
     return 1
   fi
 
-  if [[ "$_result" == "null" ]]; then
+  if [[ "$result" == "null" ]]; then
     error "$resp_err $json"
     return 1
   fi
 
-  return 0
+  printf '%s\n' "$result"
 }
 
 readGuestStatus() {
 
-  readJsonField '.status' result || return 1
+  result=$(readJsonField '.status') || return 1
 
-  if [[ "$result" != "success" ]] ; then
+  if [[ "$result" != "success" ]]; then
     { msg=$(echo "$json" | jq -r '.message'); rc=$?; } || :
     error "Guest replied $result: $msg"
     return 1
@@ -75,7 +79,7 @@ readGuestStatus() {
 
 readGuestPort() {
 
-  readJsonField '.data.data.dsm_setting.data.http_port' port || return 1
+  port=$(readJsonField '.data.data.dsm_setting.data.http_port') || return 1
   [ -z "$port" ] && return 1
 
   return 0
@@ -83,7 +87,7 @@ readGuestPort() {
 
 readGuestIp() {
 
-  readJsonField '.data.data.ip.data[] | select((.name=="eth0") and has("ip")).ip' ip || return 1
+  ip=$(readJsonField '.data.data.ip.data[] | select((.name=="eth0") and has("ip")).ip') || return 1
   [ -z "$ip" ] && return 1
 
   return 0
@@ -95,8 +99,7 @@ writeDsmLocation() {
 
 pollGuestLocation() {
 
-  while [ ! -s  "$file" ]
-  do
+  while [ ! -s "$file" ]; do
 
     # Check if not shutting down
     exitIfShuttingDown
@@ -111,7 +114,6 @@ pollGuestLocation() {
     readGuestStatus || continue
     readGuestPort || continue
     readGuestIp || continue
-
     writeDsmLocation
 
   done
@@ -134,7 +136,7 @@ writeDhcpPage() {
   html="${html/\[5\]/}"
 
   echo "$html" > "$page"
-  echo "$body" > "$info"
+  echo "$body" > "$msgs"
 }
 
 buildStaticMessage() {
@@ -165,7 +167,7 @@ exitIfShuttingDown
 
 location=$(<"$file")
 
-if [[ "$DHCP" == [Yy1]* ]]; then
+if enabled "$DHCP"; then
   writeDhcpPage
 else
   buildStaticMessage
