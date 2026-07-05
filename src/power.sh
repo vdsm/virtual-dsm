@@ -28,37 +28,84 @@ app() {
   echo "$APP" && return 0
 }
 
-finish() {
+signalCode() {
+  local sig="$1"
 
-  local i=0
+  case "$sig" in
+    SIGHUP)  echo 129 ;;
+    SIGINT)  echo 130 ;;
+    SIGQUIT) echo 131 ;;
+    SIGABRT) echo 134 ;;
+    SIGTERM) echo 143 ;;
+    *)       echo 0 ;;
+  esac
+
+  return 0
+}
+
+displayReason() {
+  local reason="$1"
+
+  case "$reason" in
+    129 ) echo "SIGHUP" ;;
+    130 ) echo "SIGINT" ;;
+    131 ) echo "SIGQUIT" ;;
+    134 ) echo "SIGABRT" ;;
+    143 ) echo "SIGTERM" ;;
+    * )   echo "$reason" ;;
+  esac
+
+  return 0
+}
+
+readQemuPid() {
+  local file="$1"
+  local __var="$2"
   local pid=""
-  local reason=$1
-  local pids=( "${HOST_PID:-}" "${WSD_PID:-}" \
-               "${WEB_PID:-}" "${PASST_PID:-}" "${DNSMASQ_PID:-}" )
 
-  touch "$QEMU_END"
+  [ -s "$file" ] || return 1
+  read -r pid <"$file" || return 1
+  [ -n "$pid" ] || return 1
 
-  if [ -s "$QEMU_PID" ]; then
-    if read -r pid <"$QEMU_PID"; then
-      if [ -n "$pid" ] && isAlive "$pid"; then
-        local display="$reason"
-        case "$reason" in
-          129 ) display="SIGHUP" ;;
-          130 ) display="SIGINT" ;;
-          131 ) display="SIGQUIT" ;;
-          134 ) display="SIGABRT" ;;
-          143 ) display="SIGTERM" ;;
-        esac
-        error "Forcefully terminating $(app), reason: $display..."
-        { disown "$pid" || :; kill -9 -- "$pid" || :; } 2>/dev/null
-      fi
+  printf -v "$__var" '%s' "$pid"
+  return 0
+}
+
+forceKillQemu() {
+  local reason="$1"
+  local pid=""
+  local display
+
+  if readQemuPid "$QEMU_PID" pid; then
+    if isAlive "$pid"; then
+      display=$(displayReason "$reason")
+      error "Forcefully terminating $(app), reason: $display..."
+      { disown "$pid" || :; kill -9 -- "$pid" || :; } 2>/dev/null
     fi
   fi
 
+  return 0
+}
+
+cleanupHelpers() {
+  local pids=( "${HOST_PID:-}" "${WSD_PID:-}" \
+               "${WEB_PID:-}" "${PASST_PID:-}" "${DNSMASQ_PID:-}" )
+
   mKill "${pids[@]}"
   fKill "print.sh"
-
   closeNetwork
+
+  return 0
+}
+
+finish() {
+
+  local reason=$1
+
+  touch "$QEMU_END"
+
+  forceKillQemu "$reason"
+  cleanupHelpers
 
   if ! waitPidFile "$QEMU_PID" 10; then
     warn "Timed out while waiting for $(app) to exit!"
@@ -68,42 +115,10 @@ finish() {
   exit "$reason"
 }
 
-graceful_shutdown() {
-
-  local sig="$1"
-  local pid=""
-  local code=0
-  local start url response elapsed
-
-  [[ $BASHPID != "$TRAP_PID" ]] && return
-
-  case "$sig" in
-    SIGHUP)  code=129 ;;
-    SIGINT)  code=130 ;;
-    SIGQUIT) code=131 ;;
-    SIGABRT) code=134 ;;
-    SIGTERM) code=143 ;;
-  esac
-
-  if [ -f "$QEMU_END" ]; then
-    echo && info "Received $1 signal while already shutting down..."
-    return
-  fi
-
-  set +e
-  start=$SECONDS
-  touch "$QEMU_END"
-  echo && info "Received $1 signal, sending shutdown command..."
-
-  if [ ! -s "$QEMU_PID" ] || ! read -r pid <"$QEMU_PID"; then
-    warn "QEMU PID file ($QEMU_PID) does not exist?"
-    finish "$code"
-  fi
-
-  if [ -z "$pid" ] || ! isAlive "$pid"; then
-    warn "QEMU process with PID $pid does not exist?"
-    finish "$code"
-  fi
+sendGuestShutdown() {
+  local pid="$1"
+  local response
+  local url
 
   # Don't send the powerdown signal because vDSM ignores ACPI signals
   # nc -q 1 -w 1 -U "$QEMU_DIR/monitor.sock" &> /dev/null <<<'system_powerdown' || :
@@ -126,11 +141,14 @@ graceful_shutdown() {
 
   fi
 
-  local name
-  name="$(app)"
+  return 0
+}
 
-  local term_grace=3      # seconds before loop ends to send SIGTERM
-  local cleanup_grace=3   # seconds reserved after the loop for cleanup
+normalizeTimeout() {
+  local min
+
+  term_grace=3      # seconds before loop ends to send SIGTERM
+  cleanup_grace=3   # seconds reserved after the loop for cleanup
 
   TIMEOUT=$(strip "$TIMEOUT")
   if [[ ! "$TIMEOUT" =~ ^[0-9]+$ ]]; then
@@ -145,8 +163,6 @@ graceful_shutdown() {
     cleanup_grace=4
   fi
 
-  local cnt=0 sigterm_at=0 min wait_until elapsed timeout_left
-
   elapsed=$((SECONDS - start))
   timeout_left=$((TIMEOUT - elapsed))
 
@@ -156,10 +172,19 @@ graceful_shutdown() {
   wait_until=$((timeout_left - cleanup_grace))
   sigterm_at=$((wait_until - term_grace))
 
+  return 0
+}
+
+waitForShutdown() {
+  local cnt=0
+  local name="$1"
+  local pid="$2"
+  local slp
+
   while (( cnt <= wait_until )); do
 
     sleep 1 &
-    local slp=$!
+    slp=$!
 
     # Stop waiting if the process has exited
     ! isAlive "$pid" && break
@@ -178,6 +203,49 @@ graceful_shutdown() {
     (( cnt++ ))
 
   done
+
+  return 0
+}
+
+graceful_shutdown() {
+
+  local sig="$1"
+  local pid=""
+  local code=0
+  local name
+  local term_grace cleanup_grace
+  local sigterm_at=0 wait_until=0 elapsed timeout_left
+  local start
+
+  [[ $BASHPID != "$TRAP_PID" ]] && return
+
+  code=$(signalCode "$sig")
+
+  if [ -f "$QEMU_END" ]; then
+    echo && info "Received $1 signal while already shutting down..."
+    return
+  fi
+
+  set +e
+  start=$SECONDS
+  touch "$QEMU_END"
+  echo && info "Received $1 signal, sending shutdown command..."
+
+  if ! readQemuPid "$QEMU_PID" pid; then
+    warn "QEMU PID file ($QEMU_PID) does not exist?"
+    finish "$code"
+  fi
+
+  if ! isAlive "$pid"; then
+    warn "QEMU process with PID $pid does not exist?"
+    finish "$code"
+  fi
+
+  sendGuestShutdown "$pid"
+
+  name="$(app)"
+  normalizeTimeout
+  waitForShutdown "$name" "$pid"
 
   finish "$code"
 }
