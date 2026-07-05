@@ -21,6 +21,203 @@ enabled "${TRACE:-}" && set -o functrace && trap 'echo "# $BASH_COMMAND" >&2' DE
 : "${DISK_SIZE:="16G"}"    # Initial data disk size
 : "${STORAGE:="/storage"}" # Storage folder location
 
+detectEngine() {
+
+  if [ -f "/run/.containerenv" ]; then
+    ENGINE="${container:-}"
+    if [[ "${ENGINE,,}" == *"podman"* ]]; then
+      ROOTLESS="Y"
+      ENGINE="Podman"
+    else
+      [ -z "$ENGINE" ] && ENGINE="Kubernetes"
+    fi
+  fi
+
+  return 0
+}
+
+checkPrivileged() {
+
+  local cap_bnd
+  local last_cap
+  local max_cap
+
+  # Get the capability bounding set
+  cap_bnd=$(grep '^CapBnd:' /proc/$$/status | awk '{print $2}')
+  cap_bnd=$(printf "%d" "0x${cap_bnd}")
+
+  # Get the last capability number
+  last_cap=$(cat /proc/sys/kernel/cap_last_cap)
+
+  # Calculate the maximum capability value
+  max_cap=$(((1 << (last_cap + 1)) - 1))
+
+  if [ "$cap_bnd" -eq "$max_cap" ]; then
+    ROOTLESS="N"
+    PRIVILEGED="Y"
+  fi
+
+  return 0
+}
+
+normalizeCpuCores() {
+
+  CPU_CORES=$(strip "$CPU_CORES")
+  [ -z "$CPU_CORES" ] && CPU_CORES=2
+  [[ "${CPU_CORES,,}" == "max" ]] && CPU_CORES="$CORES"
+  [[ "${CPU_CORES,,}" == "half" ]] && CPU_CORES=$(( CORES / 2 ))
+  [ -z "${CPU_CORES##*[!0-9]*}" ] && error "Invalid amount of CPU_CORES: $CPU_CORES" && exit 15
+
+  [ "$CPU_CORES" -lt "1" ] && CPU_CORES=1
+  if [ "$CPU_CORES" -gt "$CORES" ]; then
+    warn "The amount for CPU_CORES (${CPU_CORES}) exceeds the amount of logical cores available (${CORES}) and will be limited."
+    CPU_CORES="$CORES"
+  fi
+
+  return 0
+}
+
+checkStorage() {
+
+  # Check system
+
+  QEMU_DIR="/run/shm"
+
+  if [ ! -d "/dev/shm" ]; then
+    error "Directory /dev/shm not found!" && exit 14
+  else
+    [ ! -d "$QEMU_DIR" ] && ln -s /dev/shm "$QEMU_DIR"
+  fi
+
+  QEMU_PID="$QEMU_DIR/qemu.pid"
+
+  # Check folder
+
+  if [[ "${STORAGE,,}" != "/storage" ]]; then
+    mkdir -p "$STORAGE"
+  fi
+
+  if [ ! -d "$STORAGE" ]; then
+    error "Storage folder ($STORAGE) not found!" && exit 13
+  fi
+
+  if [ ! -w "$STORAGE" ]; then
+    msg="Storage folder ($STORAGE) is not writeable!"
+    msg+=" If SELinux is active, you need to add the \":Z\" flag to the bind mount."
+    error "$msg" && exit 13
+  fi
+
+  return 0
+}
+
+checkFilesystem() {
+
+  # Check filesystem
+  FS=$(stat -f -c %T "$STORAGE")
+
+  if [[ "${FS,,}" == "ecryptfs" || "${FS,,}" == "tmpfs" ]]; then
+    DISK_IO="threads"
+    DISK_CACHE="writeback"
+  fi
+
+  return 0
+}
+
+normalizeRamSize() {
+
+  # Read memory
+  RAM_AVAIL=$(free -b | grep -m 1 Mem: | awk '{print $7}')
+  RAM_TOTAL=$(free -b | grep -m 1 Mem: | awk '{print $2}')
+
+  RAM_SPARE=500000000
+  RAM_MINIMUM=136314880
+
+  RAM_SIZE=$(strip "$RAM_SIZE")
+  RAM_SIZE="${RAM_SIZE// /}"
+  [ -z "$RAM_SIZE" ] && RAM_SIZE="2G"
+
+  if [[ "${RAM_SIZE,,}" != "max" && "${RAM_SIZE,,}" != "half" ]]; then
+
+    if [ -z "${RAM_SIZE//[0-9. ]}" ]; then
+      [ "${RAM_SIZE%%.*}" -lt "130" ] && RAM_SIZE="${RAM_SIZE}G" || RAM_SIZE="${RAM_SIZE}M"
+    fi
+
+    RAM_SIZE=$(echo "${RAM_SIZE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
+    ! numfmt --from=iec "$RAM_SIZE" &>/dev/null && error "Invalid RAM_SIZE: $RAM_SIZE" && exit 16
+    wanted=$(numfmt --from=iec "$RAM_SIZE")
+    [ "$wanted" -lt "$RAM_MINIMUM" ] && error "RAM_SIZE is too low: $RAM_SIZE" && exit 16
+
+  fi
+
+  return 0
+}
+
+checkKvm() {
+
+  # Check KVM support
+
+  if [[ "${PLATFORM,,}" == "x64" ]]; then
+    TARGET="amd64"
+  else
+    TARGET="arm64"
+  fi
+
+  if disabled "$KVM"; then
+    warn "KVM acceleration is disabled, this will cause the machine to run about 10 times slower!"
+  else
+    if [[ "${ARCH,,}" != "$TARGET" ]]; then
+      KVM="N"
+      warn "your CPU architecture is ${ARCH^^} and cannot provide KVM acceleration for ${PLATFORM^^} instructions, so the machine will run about 10 times slower."
+    fi
+  fi
+
+  if ! disabled "$KVM"; then
+
+    KVM_ERR=""
+
+    if [ ! -e /dev/kvm ]; then
+      KVM_ERR="(/dev/kvm is missing)"
+    else
+      if ! sh -c 'echo -n > /dev/kvm' &> /dev/null; then
+        KVM_ERR="(/dev/kvm is unwriteable)"
+      else
+        if [[ "${PLATFORM,,}" == "x64" ]]; then
+          flags=$(sed -ne '/^flags/s/^.*: //p' /proc/cpuinfo)
+          if ! grep -qw "vmx\|svm" <<< "$flags"; then
+            KVM_ERR="(not enabled in BIOS)"
+          fi
+          if ! grep -qw "sse4_2" <<< "$flags"; then
+            error "Your CPU does not have the SSE4 instruction set that Virtual DSM requires!"
+            ! enabled "$DEBUG" && exit 88
+          fi
+        fi
+      fi
+    fi
+
+    if [ -n "$KVM_ERR" ]; then
+      KVM="N"
+      if [[ "$OSTYPE" =~ ^darwin ]]; then
+        warn "you are using macOS which has no KVM support, so the machine will run about 10 times slower."
+      else
+        kernel=$(uname -a)
+        case "${kernel,,}" in
+          *"microsoft"* )
+            error "Please bind '/dev/kvm' as a volume in the optional container settings when using Docker Desktop." ;;
+          *"synology"* )
+            error "Please make sure that Synology VMM (Virtual Machine Manager) is installed and that '/dev/kvm' is binded to this container." ;;
+          *)
+            error "KVM acceleration is not available $KVM_ERR, this will cause the machine to run about 10 times slower."
+            error "See the FAQ for possible causes, or disable acceleration by adding the \"KVM=N\" variable (not recommended)." ;;
+        esac
+        ! enabled "$DEBUG" && exit 88
+      fi
+    fi
+
+  fi
+
+  return 0
+}
+
 # Sanitize variables
 TZ=$(strip "$TZ")
 STORAGE=$(strip "$STORAGE")
@@ -34,33 +231,12 @@ ENGINE="Docker"
 PROCESS="${APP,,}"
 PROCESS="${PROCESS// /-}"
 
-if [ -f "/run/.containerenv" ]; then
-  ENGINE="${container:-}"
-  if [[ "${ENGINE,,}" == *"podman"* ]]; then
-    ROOTLESS="Y"
-    ENGINE="Podman"
-  else
-    [ -z "$ENGINE" ] && ENGINE="Kubernetes"
-  fi
-fi
+detectEngine
 
 echo "❯ Starting $APP for $ENGINE v$(</etc/version)..."
 echo "❯ For support visit $SUPPORT"
 
-# Get the capability bounding set
-CAP_BND=$(grep '^CapBnd:' /proc/$$/status | awk '{print $2}')
-CAP_BND=$(printf "%d" "0x${CAP_BND}")
-
-# Get the last capability number
-LAST_CAP=$(cat /proc/sys/kernel/cap_last_cap)
-
-# Calculate the maximum capability value
-MAX_CAP=$(((1 << (LAST_CAP + 1)) - 1))
-
-if [ "${CAP_BND}" -eq "${MAX_CAP}" ]; then
-  ROOTLESS="N"
-  PRIVILEGED="Y"
-fi
+checkPrivileged
 
 INFO="/run/shm/msg.html"
 PAGE="/run/shm/index.html"
@@ -83,77 +259,10 @@ if grep -qi "socket(s)" <<< "$(lscpu)"; then
   [ "$SOCKETS" -lt "1" ] && SOCKETS=1
 fi
 
-CPU_CORES=$(strip "$CPU_CORES")
-[ -z "$CPU_CORES" ] && CPU_CORES=2
-[[ "${CPU_CORES,,}" == "max" ]] && CPU_CORES="$CORES"
-[[ "${CPU_CORES,,}" == "half" ]] && CPU_CORES=$(( CORES / 2 ))
-[ -z "${CPU_CORES##*[!0-9]*}" ] && error "Invalid amount of CPU_CORES: $CPU_CORES" && exit 15
-
-[ "$CPU_CORES" -lt "1" ] && CPU_CORES=1
-if [ "$CPU_CORES" -gt "$CORES" ]; then
-  warn "The amount for CPU_CORES (${CPU_CORES}) exceeds the amount of logical cores available (${CORES}) and will be limited."
-  CPU_CORES="$CORES"
-fi
-
-# Check system
-
-QEMU_DIR="/run/shm"
-
-if [ ! -d "/dev/shm" ]; then
-  error "Directory /dev/shm not found!" && exit 14
-else
-  [ ! -d "$QEMU_DIR" ] && ln -s /dev/shm "$QEMU_DIR"
-fi
-
-QEMU_PID="$QEMU_DIR/qemu.pid"
-
-# Check folder
-
-if [[ "${STORAGE,,}" != "/storage" ]]; then
-  mkdir -p "$STORAGE"
-fi
-
-if [ ! -d "$STORAGE" ]; then
-  error "Storage folder ($STORAGE) not found!" && exit 13
-fi
-
-if [ ! -w "$STORAGE" ]; then
-  msg="Storage folder ($STORAGE) is not writeable!"
-  msg+=" If SELinux is active, you need to add the \":Z\" flag to the bind mount."
-  error "$msg" && exit 13
-fi
-
-# Check filesystem
-FS=$(stat -f -c %T "$STORAGE")
-
-if [[ "${FS,,}" == "ecryptfs" || "${FS,,}" == "tmpfs" ]]; then
-  DISK_IO="threads"
-  DISK_CACHE="writeback"
-fi
-
-# Read memory
-RAM_AVAIL=$(free -b | grep -m 1 Mem: | awk '{print $7}')
-RAM_TOTAL=$(free -b | grep -m 1 Mem: | awk '{print $2}')
-
-RAM_SPARE=500000000
-RAM_MINIMUM=136314880
-
-RAM_SIZE=$(strip "$RAM_SIZE")
-RAM_SIZE="${RAM_SIZE// /}"
-[ -z "$RAM_SIZE" ] && RAM_SIZE="2G"
-
-if [[ "${RAM_SIZE,,}" != "max" && "${RAM_SIZE,,}" != "half" ]]; then
-
-  if [ -z "${RAM_SIZE//[0-9. ]}" ]; then
-    [ "${RAM_SIZE%%.*}" -lt "130" ] && RAM_SIZE="${RAM_SIZE}G" || RAM_SIZE="${RAM_SIZE}M"
-  fi
-
-  RAM_SIZE=$(echo "${RAM_SIZE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
-  ! numfmt --from=iec "$RAM_SIZE" &>/dev/null && error "Invalid RAM_SIZE: $RAM_SIZE" && exit 16
-  wanted=$(numfmt --from=iec "$RAM_SIZE")
-  [ "$wanted" -lt "$RAM_MINIMUM" ] && error "RAM_SIZE is too low: $RAM_SIZE" && exit 16
-
-fi
+normalizeCpuCores
+checkStorage
+checkFilesystem
+normalizeRamSize
 
 # Print system info
 SYS="${SYS/-generic/}"
@@ -168,66 +277,7 @@ TOTAL_MEM=$(formatBytes "$RAM_TOTAL" "up")
 echo "❯ CPU: ${CPU} | RAM: ${AVAIL_MEM/ GB/}/$TOTAL_MEM | DISK: $SPACE_GB (${FS}) | KERNEL: ${SYS}..."
 echo
 
-# Check KVM support
-
-if [[ "${PLATFORM,,}" == "x64" ]]; then
-  TARGET="amd64"
-else
-  TARGET="arm64"
-fi
-
-if disabled "$KVM"; then
-  warn "KVM acceleration is disabled, this will cause the machine to run about 10 times slower!"
-else
-  if [[ "${ARCH,,}" != "$TARGET" ]]; then
-    KVM="N"
-    warn "your CPU architecture is ${ARCH^^} and cannot provide KVM acceleration for ${PLATFORM^^} instructions, so the machine will run about 10 times slower."
-  fi
-fi
-
-if ! disabled "$KVM"; then
-
-  KVM_ERR=""
-
-  if [ ! -e /dev/kvm ]; then
-    KVM_ERR="(/dev/kvm is missing)"
-  else
-    if ! sh -c 'echo -n > /dev/kvm' &> /dev/null; then
-      KVM_ERR="(/dev/kvm is unwriteable)"
-    else
-      if [[ "${PLATFORM,,}" == "x64" ]]; then
-        flags=$(sed -ne '/^flags/s/^.*: //p' /proc/cpuinfo)
-        if ! grep -qw "vmx\|svm" <<< "$flags"; then
-          KVM_ERR="(not enabled in BIOS)"
-        fi
-        if ! grep -qw "sse4_2" <<< "$flags"; then
-          error "Your CPU does not have the SSE4 instruction set that Virtual DSM requires!"
-          ! enabled "$DEBUG" && exit 88
-        fi
-      fi
-    fi
-  fi
-
-  if [ -n "$KVM_ERR" ]; then
-    KVM="N"
-    if [[ "$OSTYPE" =~ ^darwin ]]; then
-      warn "you are using macOS which has no KVM support, so the machine will run about 10 times slower."
-    else
-      kernel=$(uname -a)
-      case "${kernel,,}" in
-        *"microsoft"* )
-          error "Please bind '/dev/kvm' as a volume in the optional container settings when using Docker Desktop." ;;
-        *"synology"* )
-          error "Please make sure that Synology VMM (Virtual Machine Manager) is installed and that '/dev/kvm' is binded to this container." ;;
-        *)
-          error "KVM acceleration is not available $KVM_ERR, this will cause the machine to run about 10 times slower."
-          error "See the FAQ for possible causes, or disable acceleration by adding the \"KVM=N\" variable (not recommended)." ;;
-      esac
-      ! enabled "$DEBUG" && exit 88
-    fi
-  fi
-
-fi
+checkKvm
 
 # Cleanup files
 rm -f "$QEMU_DIR"/dsm.url
