@@ -13,7 +13,7 @@ info () { printf "%b%s%b" "\E[1;34m❯ \E[1;36m" "$1" "\E[0m\n" >&2; }
 error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: $1" "\E[0m\n" >&2; }
 
 file="/run/shm/dsm.url"
-info="/run/shm/msg.html"
+msgs="/run/shm/msg.html"
 driver="/run/shm/qemu.nic"
 page="/run/shm/index.html"
 address="/run/shm/qemu.ip"
@@ -25,8 +25,7 @@ resp_err="Guest returned an invalid response:"
 curl_err="Failed to connect to guest: curl error"
 jq_err="Failed to parse response from guest: jq error"
 
-while [ ! -s  "$file" ]
-do
+while [ ! -s "$file" ]; do
 
   # Check if not shutting down
   [ -f "$shutdown" ] && exit 1
@@ -46,7 +45,7 @@ do
   (( rc != 0 )) && error "$jq_err $rc ( $json )" && continue
   [[ "$result" == "null" ]] && error "$resp_err $json" && continue
 
-  if [[ "$result" != "success" ]] ; then
+  if [[ "$result" != "success" ]]; then
     { msg=$(echo "$json" | jq -r '.message'); rc=$?; } || :
     error "Guest replied $result: $msg" && continue
   fi
@@ -61,7 +60,7 @@ do
   [[ "$ip" == "null" ]] && error "$resp_err $json" && continue
 
   [ -z "$ip" ] && continue
-  echo "$ip:$port" > $file
+  echo "$ip:$port" > "$file"
 
 done
 
@@ -84,7 +83,7 @@ if enabled "$DHCP"; then
   HTML="${HTML/\[5\]/}"
 
   echo "$HTML" > "$page"
-  echo "$body" > "$info"
+  echo "$body" > "$msgs"
 
 else
 
