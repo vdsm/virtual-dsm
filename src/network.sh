@@ -816,13 +816,14 @@ getInfo() {
     [ -n "$IP6" ] && IP6=$(echo "$IP6" | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d' | head -n 1)
   fi
 
-  local result nic bus
-  result=$(ethtool -i "$VM_NET_DEV")
+  local nic="" bus="" result=""
+  result=$(ethtool -i "$VM_NET_DEV" 2>/dev/null || :)
+
   nic=$(grep -m 1 -i 'driver:' <<< "$result" | awk '{print $2}')
   bus=$(grep -m 1 -i 'bus-info:' <<< "$result" | awk '{print $2}')
 
-  if [[ "${bus,,}" != "" && "${bus,,}" != "n/a" && "${bus,,}" != "tap" ]]; then
-    enabled "$DEBUG" && info "Detected BUS: $bus"
+  if [[ -n "$bus" && "${bus,,}" != "n/a" && "${bus,,}" != "tap" ]]; then
+    enabled "$DEBUG" && info "Detected NIC: ${nic:-unknown}  BUS: $bus"
     error "This container does not support host mode networking!"
     exit 29
   fi
