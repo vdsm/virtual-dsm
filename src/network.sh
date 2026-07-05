@@ -901,6 +901,9 @@ else
 fi
 
 NET_OPTS+=" -device $ADAPTER,id=net0,netdev=hostnet0,romfile=,mac=$VM_NET_MAC"
-[[ "$MTU" != "0" && "$MTU" != "1500" ]] && NET_OPTS+=",host_mtu=$MTU"
+
+if [[ "${ADAPTER,,}" == "virtio-net-pci" && "$MTU" != "0" && "$MTU" != "1500" ]]; then
+  NET_OPTS+=",host_mtu=$MTU"
+fi
 
 return 0
