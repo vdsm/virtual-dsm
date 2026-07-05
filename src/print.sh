@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2329
 set -Eeuo pipefail
 
 : "${DHCP:="N"}"
