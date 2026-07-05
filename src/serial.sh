@@ -15,7 +15,12 @@ HOST_MODEL=$(strip "$HOST_MODEL")
 HOST_SERIAL=$(strip "$HOST_SERIAL")
 GUEST_SERIAL=$(strip "$GUEST_SERIAL")
 
-if [ -n "$HOST_MAC" ]; then
+validateHostMac() {
+  local m
+
+  if [ -z "$HOST_MAC" ]; then
+    return 0
+  fi
 
   HOST_MAC="${HOST_MAC//-/:}"
 
@@ -27,52 +32,68 @@ if [ -n "$HOST_MAC" ]; then
   if [[ ${#HOST_MAC} != 17 ]]; then
     error "Invalid HOST_MAC address: '$HOST_MAC', should be 12 or 17 digits long!" && exit 28
   fi
+}
 
-fi
+buildHostArguments() {
 
-HOST_PID="$QEMU_DIR/host.pid"
+  HOST_ARGS=()
+  HOST_ARGS+=("-cpu=$CPU_CORES")
+  HOST_ARGS+=("-cpu_arch=$HOST_CPU")
 
-HOST_ARGS=()
-HOST_ARGS+=("-cpu=$CPU_CORES")
-HOST_ARGS+=("-cpu_arch=$HOST_CPU")
+  [ -n "$HOST_MAC" ] && HOST_ARGS+=("-mac=$HOST_MAC")
+  [ -n "$HOST_MODEL" ] && HOST_ARGS+=("-model=$HOST_MODEL")
+  [ -n "$HOST_SERIAL" ] && HOST_ARGS+=("-hostsn=$HOST_SERIAL")
+  [ -n "$GUEST_SERIAL" ] && HOST_ARGS+=("-guestsn=$GUEST_SERIAL")
+}
 
-[ -n "$HOST_MAC" ] && HOST_ARGS+=("-mac=$HOST_MAC")
-[ -n "$HOST_MODEL" ] && HOST_ARGS+=("-model=$HOST_MODEL")
-[ -n "$HOST_SERIAL" ] && HOST_ARGS+=("-hostsn=$HOST_SERIAL")
-[ -n "$GUEST_SERIAL" ] && HOST_ARGS+=("-guestsn=$GUEST_SERIAL")
+startHostBinary() {
 
-if enabled "$HOST_DEBUG"; then
-  set -x
-  ./host.bin "${HOST_ARGS[@]}" &
-  { set +x; } 2>/dev/null
-  echo "$!" > "$HOST_PID"
-  echo
-else
-  ./host.bin "${HOST_ARGS[@]}" >/dev/null &
-  echo "$!" > "$HOST_PID"
-fi
+  if enabled "$HOST_DEBUG"; then
+    set -x
+    ./host.bin "${HOST_ARGS[@]}" &
+    { set +x; } 2>/dev/null
+    echo "$!" > "$HOST_PID"
+    echo
+  else
+    ./host.bin "${HOST_ARGS[@]}" >/dev/null &
+    echo "$!" > "$HOST_PID"
+  fi
+}
 
-cnt=0
-sleep 0.2
+waitForPort() {
 
-while ! nc -z -w2 127.0.0.1 "$COM_PORT" > /dev/null 2>&1; do
-  sleep 0.1
-  cnt=$((cnt + 1))
-  (( cnt > 50 )) && error "Failed to connect to qemu-host.." && exit 58
-done
+  local port="$1"
+  local exit_code="$2"
+  local cnt=0
 
-cnt=0
+  while ! nc -z -w2 127.0.0.1 "$port" > /dev/null 2>&1; do
+    sleep 0.1
+    cnt=$((cnt + 1))
+    (( cnt > 50 )) && error "Failed to connect to qemu-host.." && exit "$exit_code"
+  done
+}
 
-while ! nc -z -w2 127.0.0.1 "$CHR_PORT" > /dev/null 2>&1; do
-  sleep 0.1
-  cnt=$((cnt + 1))
-  (( cnt > 50 )) && error "Failed to connect to qemu-host.." && exit 59
-done
+configureSerialPorts() {
 
-# Configure serial ports
-SERIAL_OPTS="-serial mon:stdio \
+  # Configure serial ports
+  SERIAL_OPTS="-serial mon:stdio \
         -device virtio-serial-pci,id=virtio-serial0,bus=pcie.0,addr=0x3 \
         -chardev socket,id=charchannel0,host=127.0.0.1,port=$CHR_PORT,reconnect=10 \
         -device virtserialport,bus=virtio-serial0.0,nr=1,chardev=charchannel0,id=channel0,name=vchannel"
+}
+
+validateHostMac
+
+HOST_PID="$QEMU_DIR/host.pid"
+
+buildHostArguments
+startHostBinary
+
+sleep 0.2
+
+waitForPort "$COM_PORT" 58
+waitForPort "$CHR_PORT" 59
+
+configureSerialPorts
 
 return 0
