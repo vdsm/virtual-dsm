@@ -877,13 +877,6 @@ getInfo() {
 
   GUEST_MTU="$MTU"
 
-  if [[ "${ADAPTER,,}" != "virtio-net-pci" ]]; then
-    if [[ "$GUEST_MTU" != "0" && "$GUEST_MTU" -lt "1500" ]]; then
-      warn "MTU size is $GUEST_MTU, but cannot be advertised for $ADAPTER adapters; networking may break on paths below 1500 MTU."
-      GUEST_MTU="0"
-    fi
-  fi
-
   # Automatically propagate smaller-than-standard MTUs, but do not automatically
   # advertise jumbo frames unless the user explicitly requested MTU.
   if [[ "$GUEST_MTU" != "0" && "$GUEST_MTU" -gt "1500" ]] && ! enabled "$mtu_custom"; then
@@ -1023,8 +1016,12 @@ fi
 
 NET_OPTS+=" -device $ADAPTER,id=net0,netdev=hostnet0,romfile=,mac=$VM_NET_MAC"
 
-if [[ "${ADAPTER,,}" == "virtio-net-pci" && "$GUEST_MTU" != "0" && "$GUEST_MTU" != "1500" ]]; then
-  NET_OPTS+=",host_mtu=$GUEST_MTU"
+if [[ "$GUEST_MTU" != "0" && "$GUEST_MTU" != "1500" ]]; then
+  if [[ "${ADAPTER,,}" == "virtio-net-pci" ]]; then
+    NET_OPTS+=",host_mtu=$GUEST_MTU"
+  elif [[ "$GUEST_MTU" -lt "1500" ]]; then
+    warn "MTU size is $GUEST_MTU, but cannot be advertised for $ADAPTER adapters; networking may break on paths below 1500 MTU."
+  fi
 fi
 
 return 0
