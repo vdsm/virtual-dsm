@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2329
 set -Eeuo pipefail
-
-cd /run
-. utils.sh      # Load functions
 
 : "${DHCP:="N"}"
 : "${NETWORK:="Y"}"
 
-disabled "$NETWORK" && exit 0
+cd /run
+. utils.sh      # Load functions
 
 info () { printf "%b%s%b" "\E[1;34m❯ \E[1;36m" "$1" "\E[0m\n" >&2; }
 error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: $1" "\E[0m\n" >&2; }
+
+disabled "$NETWORK" && exit 0
 
 file="/run/shm/dsm.url"
 msgs="/run/shm/msg.html"
