@@ -26,67 +26,122 @@ resp_err="Guest returned an invalid response:"
 curl_err="Failed to connect to guest: curl error"
 jq_err="Failed to parse response from guest: jq error"
 
-while [ ! -s "$file" ]; do
-
-  # Check if not shutting down
+exitIfShuttingDown() {
   [ -f "$shutdown" ] && exit 1
+}
 
-  sleep 3
+queryGuest() {
 
-  [ -f "$shutdown" ] && exit 1
-  [ -s "$file" ] && break
-
-  # Retrieve network info from guest VM
   { json=$(curl -m 20 -sk "$url"); rc=$?; } || :
 
-  [ -f "$shutdown" ] && exit 1
-  (( rc != 0 )) && error "$curl_err $rc" && continue
+  exitIfShuttingDown
 
-  { result=$(echo "$json" | jq -r '.status'); rc=$?; } || :
-  (( rc != 0 )) && error "$jq_err $rc ( $json )" && continue
-  [[ "$result" == "null" ]] && error "$resp_err $json" && continue
+  if (( rc != 0 )); then
+    error "$curl_err $rc"
+    return 1
+  fi
+
+  return 0
+}
+
+readJsonField() {
+
+  local query="$1"
+  local result
+
+  { result=$(echo "$json" | jq -r "$query"); rc=$?; } || :
+
+  if (( rc != 0 )); then
+    error "$jq_err $rc ( $json )"
+    return 1
+  fi
+
+  if [[ "$result" == "null" ]]; then
+    error "$resp_err $json"
+    return 1
+  fi
+
+  printf '%s\n' "$result"
+}
+
+readGuestStatus() {
+
+  result=$(readJsonField '.status') || return 1
 
   if [[ "$result" != "success" ]]; then
     { msg=$(echo "$json" | jq -r '.message'); rc=$?; } || :
-    error "Guest replied $result: $msg" && continue
+    error "Guest replied $result: $msg"
+    return 1
   fi
 
-  { port=$(echo "$json" | jq -r '.data.data.dsm_setting.data.http_port'); rc=$?; } || :
-  (( rc != 0 )) && error "$jq_err $rc ( $json )" && continue
-  [[ "$port" == "null" ]] && error "$resp_err $json" && continue
-  [ -z "$port" ] && continue
+  return 0
+}
 
-  { ip=$(echo "$json" | jq -r '.data.data.ip.data[] | select((.name=="eth0") and has("ip")).ip'); rc=$?; } || :
-  (( rc != 0 )) && error "$jq_err $rc ( $json )" && continue
-  [[ "$ip" == "null" ]] && error "$resp_err $json" && continue
+readGuestPort() {
 
-  [ -z "$ip" ] && continue
+  port=$(readJsonField '.data.data.dsm_setting.data.http_port') || return 1
+  [ -z "$port" ] && return 1
+
+  return 0
+}
+
+readGuestIp() {
+
+  ip=$(readJsonField '.data.data.ip.data[] | select((.name=="eth0") and has("ip")).ip') || return 1
+  [ -z "$ip" ] && return 1
+
+  return 0
+}
+
+writeDsmLocation() {
   echo "$ip:$port" > "$file"
+}
 
-done
+pollGuestLocation() {
 
-[ -f "$shutdown" ] && exit 1
+  while [ ! -s "$file" ]; do
 
-location=$(<"$file")
+    # Check if not shutting down
+    exitIfShuttingDown
 
-if enabled "$DHCP"; then
+    sleep 3
+
+    exitIfShuttingDown
+    [ -s "$file" ] && break
+
+    # Retrieve network info from guest VM
+    queryGuest || continue
+    readGuestStatus || continue
+    readGuestPort || continue
+    readGuestIp || continue
+    writeDsmLocation
+
+  done
+}
+
+writeDhcpPage() {
+
+  local title body script html
 
   msg="http://$location"
   title="<title>Virtual DSM</title>"
   body="The location of DSM is <a href='http://$location'>http://$location</a>"
   script="<script>setTimeout(function(){ window.location.assign('http://$location'); }, 3000);</script>"
 
-  HTML=$(<"$template")
-  HTML="${HTML/\[1\]/$title}"
-  HTML="${HTML/\[2\]/$script}"
-  HTML="${HTML/\[3\]/$body}"
-  HTML="${HTML/\[4\]/}"
-  HTML="${HTML/\[5\]/}"
+  html=$(<"$template")
+  html="${html/\[1\]/$title}"
+  html="${html/\[2\]/$script}"
+  html="${html/\[3\]/$body}"
+  html="${html/\[4\]/}"
+  html="${html/\[5\]/}"
 
-  echo "$HTML" > "$page"
+  echo "$html" > "$page"
   echo "$body" > "$msgs"
+}
 
-else
+buildStaticMessage() {
+
+  local nic ip port
 
   nic=$(<"$driver")
   ip=$(<"$address")
@@ -97,13 +152,27 @@ else
   else
     msg="http://$ip:$port"
   fi
+}
 
+printLoginMessage() {
+  echo "" >&2
+  info "-----------------------------------------------------------"
+  info " You can now login to DSM at $msg"
+  info "-----------------------------------------------------------"
+  echo "" >&2
+}
+
+pollGuestLocation
+exitIfShuttingDown
+
+location=$(<"$file")
+
+if enabled "$DHCP"; then
+  writeDhcpPage
+else
+  buildStaticMessage
 fi
 
-echo "" >&2
-info "-----------------------------------------------------------"
-info " You can now login to DSM at $msg"
-info "-----------------------------------------------------------"
-echo "" >&2
+printLoginMessage
 
 exit 0
