@@ -7,7 +7,12 @@ enabled "$DEBUG" && echo "$msg"
 RAM_AVAIL=$(free -b | grep -m 1 Mem: | awk '{print $7}')
 AVAIL_MEM=$(formatBytes "$RAM_AVAIL")
 
-if ! disabled "$RAM_CHECK" && [[ "${RAM_SIZE,,}" != "max" && "${RAM_SIZE,,}" != "half" ]]; then
+checkConfiguredMemory() {
+  local wanted msg
+
+  if disabled "$RAM_CHECK" || [[ "${RAM_SIZE,,}" == "max" || "${RAM_SIZE,,}" == "half" ]]; then
+    return 0
+  fi
 
   wanted=$(numfmt --from=iec "$RAM_SIZE")
 
@@ -29,10 +34,14 @@ if ! disabled "$RAM_CHECK" && [[ "${RAM_SIZE,,}" != "max" && "${RAM_SIZE,,}" != 
       fi
     fi
   fi
+}
 
-fi
+configureHalfMemory() {
+  local wanted
 
-if [[ "${RAM_SIZE,,}" == "half" ]]; then
+  if [[ "${RAM_SIZE,,}" != "half" ]]; then
+    return 0
+  fi
 
   if (( (RAM_AVAIL / 2) > RAM_SPARE )); then
     wanted=$(( (RAM_AVAIL / 2) / 1048577 ))
@@ -41,10 +50,14 @@ if [[ "${RAM_SIZE,,}" == "half" ]]; then
   else
     RAM_SIZE="max"
   fi
+}
 
-fi
+configureMaxMemory() {
+  local wanted
 
-if [[ "${RAM_SIZE,,}" == "max" ]]; then
+  if [[ "${RAM_SIZE,,}" != "max" ]]; then
+    return 0
+  fi
 
   if (( RAM_AVAIL < (RAM_SPARE * 2) )); then
 
@@ -64,15 +77,23 @@ if [[ "${RAM_SIZE,,}" == "max" ]]; then
   RAM_SIZE="${wanted}M"
 
   info "Allocated $wanted MB of RAM for the virtual machine."
+}
 
-fi
+checkMinimumMemory() {
+  local wanted
 
-wanted=$(numfmt --from=iec "$RAM_SIZE")
+  wanted=$(numfmt --from=iec "$RAM_SIZE")
 
-if [ "$wanted" -lt "$RAM_MINIMUM" ]; then
-  wanted=$(( wanted / 1048577 ))
-  error "Not enough memory available, there is only $wanted MB left!"
-  exit 16
-fi
+  if [ "$wanted" -lt "$RAM_MINIMUM" ]; then
+    wanted=$(( wanted / 1048577 ))
+    error "Not enough memory available, there is only $wanted MB left!"
+    exit 16
+  fi
+}
+
+checkConfiguredMemory
+configureHalfMemory
+configureMaxMemory
+checkMinimumMemory
 
 return 0
