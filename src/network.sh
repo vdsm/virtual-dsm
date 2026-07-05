@@ -30,7 +30,6 @@ set -Eeuo pipefail
 : "${DNSMASQ_DEBUG:=""}"
 : "${DNSMASQ:="/usr/sbin/dnsmasq"}"
 : "${DNSMASQ_PID:="/var/run/dnsmasq.pid"}"
-: "${DNSMASQ_CONF_DIR:="/etc/dnsmasq.d"}"
 
 # Sanitize variables
 MAC=$(strip "$MAC")
@@ -634,8 +633,8 @@ closeNetwork() {
 
   disabled "$NETWORK" && return 0
 
-  exec 30<&- || true
-  exec 40<&- || true
+  exec 30>&- 2>/dev/null || true
+  exec 40>&- 2>/dev/null || true
 
   closeBridge
 
