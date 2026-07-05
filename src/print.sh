@@ -1,20 +1,16 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC2329
 set -Eeuo pipefail
 
 : "${DHCP:="N"}"
 : "${NETWORK:="Y"}"
 
-cd /run
-. utils.sh      # Load functions
+[[ "$NETWORK" == [Nn]* ]] && exit 0
 
 info () { printf "%b%s%b" "\E[1;34m❯ \E[1;36m" "$1" "\E[0m\n" >&2; }
 error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: $1" "\E[0m\n" >&2; }
 
-disabled "$NETWORK" && exit 0
-
 file="/run/shm/dsm.url"
-msgs="/run/shm/msg.html"
+info="/run/shm/msg.html"
 driver="/run/shm/qemu.nic"
 page="/run/shm/index.html"
 address="/run/shm/qemu.ip"
@@ -26,67 +22,124 @@ resp_err="Guest returned an invalid response:"
 curl_err="Failed to connect to guest: curl error"
 jq_err="Failed to parse response from guest: jq error"
 
-while [ ! -s "$file" ]; do
-
-  # Check if not shutting down
+exitIfShuttingDown() {
   [ -f "$shutdown" ] && exit 1
+}
 
-  sleep 3
+queryGuest() {
 
-  [ -f "$shutdown" ] && exit 1
-  [ -s "$file" ] && break
-
-  # Retrieve network info from guest VM
   { json=$(curl -m 20 -sk "$url"); rc=$?; } || :
 
-  [ -f "$shutdown" ] && exit 1
-  (( rc != 0 )) && error "$curl_err $rc" && continue
+  exitIfShuttingDown
 
-  { result=$(echo "$json" | jq -r '.status'); rc=$?; } || :
-  (( rc != 0 )) && error "$jq_err $rc ( $json )" && continue
-  [[ "$result" == "null" ]] && error "$resp_err $json" && continue
-
-  if [[ "$result" != "success" ]]; then
-    { msg=$(echo "$json" | jq -r '.message'); rc=$?; } || :
-    error "Guest replied $result: $msg" && continue
+  if (( rc != 0 )); then
+    error "$curl_err $rc"
+    return 1
   fi
 
-  { port=$(echo "$json" | jq -r '.data.data.dsm_setting.data.http_port'); rc=$?; } || :
-  (( rc != 0 )) && error "$jq_err $rc ( $json )" && continue
-  [[ "$port" == "null" ]] && error "$resp_err $json" && continue
-  [ -z "$port" ] && continue
+  return 0
+}
 
-  { ip=$(echo "$json" | jq -r '.data.data.ip.data[] | select((.name=="eth0") and has("ip")).ip'); rc=$?; } || :
-  (( rc != 0 )) && error "$jq_err $rc ( $json )" && continue
-  [[ "$ip" == "null" ]] && error "$resp_err $json" && continue
+readJsonField() {
 
-  [ -z "$ip" ] && continue
+  local query="$1"
+  local -n _result="$2"
+
+  { _result=$(echo "$json" | jq -r "$query"); rc=$?; } || :
+
+  if (( rc != 0 )); then
+    error "$jq_err $rc ( $json )"
+    return 1
+  fi
+
+  if [[ "$_result" == "null" ]]; then
+    error "$resp_err $json"
+    return 1
+  fi
+
+  return 0
+}
+
+readGuestStatus() {
+
+  readJsonField '.status' result || return 1
+
+  if [[ "$result" != "success" ]] ; then
+    { msg=$(echo "$json" | jq -r '.message'); rc=$?; } || :
+    error "Guest replied $result: $msg"
+    return 1
+  fi
+
+  return 0
+}
+
+readGuestPort() {
+
+  readJsonField '.data.data.dsm_setting.data.http_port' port || return 1
+  [ -z "$port" ] && return 1
+
+  return 0
+}
+
+readGuestIp() {
+
+  readJsonField '.data.data.ip.data[] | select((.name=="eth0") and has("ip")).ip' ip || return 1
+  [ -z "$ip" ] && return 1
+
+  return 0
+}
+
+writeDsmLocation() {
   echo "$ip:$port" > "$file"
+}
 
-done
+pollGuestLocation() {
 
-[ -f "$shutdown" ] && exit 1
+  while [ ! -s  "$file" ]
+  do
 
-location=$(<"$file")
+    # Check if not shutting down
+    exitIfShuttingDown
 
-if enabled "$DHCP"; then
+    sleep 3
+
+    exitIfShuttingDown
+    [ -s "$file" ] && break
+
+    # Retrieve network info from guest VM
+    queryGuest || continue
+    readGuestStatus || continue
+    readGuestPort || continue
+    readGuestIp || continue
+
+    writeDsmLocation
+
+  done
+}
+
+writeDhcpPage() {
+
+  local title body script html
 
   msg="http://$location"
   title="<title>Virtual DSM</title>"
   body="The location of DSM is <a href='http://$location'>http://$location</a>"
   script="<script>setTimeout(function(){ window.location.assign('http://$location'); }, 3000);</script>"
 
-  HTML=$(<"$template")
-  HTML="${HTML/\[1\]/$title}"
-  HTML="${HTML/\[2\]/$script}"
-  HTML="${HTML/\[3\]/$body}"
-  HTML="${HTML/\[4\]/}"
-  HTML="${HTML/\[5\]/}"
+  html=$(<"$template")
+  html="${html/\[1\]/$title}"
+  html="${html/\[2\]/$script}"
+  html="${html/\[3\]/$body}"
+  html="${html/\[4\]/}"
+  html="${html/\[5\]/}"
 
-  echo "$HTML" > "$page"
-  echo "$body" > "$msgs"
+  echo "$html" > "$page"
+  echo "$body" > "$info"
+}
 
-else
+buildStaticMessage() {
+
+  local nic ip port
 
   nic=$(<"$driver")
   ip=$(<"$address")
@@ -97,13 +150,27 @@ else
   else
     msg="http://$ip:$port"
   fi
+}
 
+printLoginMessage() {
+  echo "" >&2
+  info "-----------------------------------------------------------"
+  info " You can now login to DSM at $msg"
+  info "-----------------------------------------------------------"
+  echo "" >&2
+}
+
+pollGuestLocation
+exitIfShuttingDown
+
+location=$(<"$file")
+
+if [[ "$DHCP" == [Yy1]* ]]; then
+  writeDhcpPage
+else
+  buildStaticMessage
 fi
 
-echo "" >&2
-info "-----------------------------------------------------------"
-info " You can now login to DSM at $msg"
-info "-----------------------------------------------------------"
-echo "" >&2
+printLoginMessage
 
 exit 0
