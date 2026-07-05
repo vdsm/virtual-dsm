@@ -56,7 +56,6 @@ configureKvmCpuModel() {
 }
 
 appendKvmInvtscFeature() {
-
   if grep -qw "svm" <<< "$flags"; then
 
     # AMD processor
@@ -67,6 +66,7 @@ appendKvmInvtscFeature() {
   else
 
     # Intel processor
+    local vmx
     vmx=$(sed -ne '/^vmx flags/s/^.*: //p' /proc/cpuinfo)
 
     if grep -qw "tsc_scaling" <<< "$vmx"; then
