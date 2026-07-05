@@ -16,9 +16,13 @@ Virtual DSM in a Docker container.
 
 ## Features ✨
 
- - Multiple disks
- - KVM acceleration
- - Automatic download
+- Runs Virtual DSM inside a Docker container
+- Automatic download of the installation files
+- Web-based access to the DSM desktop
+- Near-native performance with KVM acceleration
+- Customizable CPU, memory, and storage allocation
+- Supports multiple disks and physical disk passthrough
+- Supports bridge, user-mode, macvlan, and macvtap networking
 
 ## Usage  🐳
 
@@ -79,7 +83,7 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
   - Wait until DSM finishes its installation
  
-  - Choose an username and password, and you will be taken to the desktop.
+  - Choose a username and password, and you will be taken to the desktop.
   
   Enjoy your brand new NAS, and don't forget to star this repo!
 
