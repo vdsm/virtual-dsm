@@ -18,7 +18,7 @@ Virtual DSM in a Docker container.
 
 - Runs Virtual DSM inside a Docker container
 - Web-based access to the DSM desktop
-- Automatic download and installation of Virtual DSM
+- Automatic download of the installation files
 - Near-native performance with KVM acceleration
 - Configurable CPU, RAM, and disk size
 - Supports multiple disks and physical disk passthrough
