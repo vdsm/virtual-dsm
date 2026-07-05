@@ -11,15 +11,23 @@ HOST_CPU=$(strip "$HOST_CPU")
 CPU_FLAGS=$(strip "$CPU_FLAGS")
 CPU_MODEL=$(strip "$CPU_MODEL")
 
-CLOCKSOURCE="tsc"
-[[ "${ARCH,,}" == "arm64" ]] && CLOCKSOURCE="arch_sys_counter"
-CLOCK="/sys/devices/system/clocksource/clocksource0/current_clocksource"
+selectClocksource() {
+  CLOCKSOURCE="tsc"
+  [[ "${ARCH,,}" == "arm64" ]] && CLOCKSOURCE="arch_sys_counter"
+  CLOCK="/sys/devices/system/clocksource/clocksource0/current_clocksource"
+}
 
-if [ ! -f "$CLOCK" ]; then
-  warn "file \"$CLOCK\" cannot be found?"
-else
+checkClocksource() {
+  local result
+
+  if [ ! -f "$CLOCK" ]; then
+    warn "file \"$CLOCK\" cannot be found?"
+    return 0
+  fi
+
   result=$(<"$CLOCK")
   result="${result//[![:print:]]/}"
+
   case "${result,,}" in
     "${CLOCKSOURCE,,}" ) ;;
     "kvm-clock" ) info "Nested KVM virtualization detected.." ;;
@@ -27,29 +35,31 @@ else
     "hpet" ) warn "unsupported clock source ﻿detected﻿: '$result'. Please﻿ ﻿set host clock source to '$CLOCKSOURCE'." ;;
     *) warn "unexpected clock source ﻿detected﻿: '$result'. Please﻿ ﻿set host clock source to '$CLOCKSOURCE'." ;;
   esac
-fi
+}
 
-flags=$(sed -ne '/^flags/s/^.*: //p' /proc/cpuinfo)
-
-if ! disabled "$KVM"; then
-
-  CPU_FEATURES="kvm=on,l3-cache=on,+hypervisor"
-  KVM_OPTS=",accel=kvm -enable-kvm -global kvm-pit.lost_tick_policy=discard"
-
+checkSse42() {
   if ! grep -qw "sse4_2" <<< "$flags"; then
     error "Your CPU does not have the SSE4 instruction set that Virtual DSM requires!"
     ! enabled "$DEBUG" && exit 88
   fi
+}
+
+configureKvmCpuModel() {
+
+  CPU_FEATURES="kvm=on,l3-cache=on,+hypervisor"
+  KVM_OPTS=",accel=kvm -enable-kvm -global kvm-pit.lost_tick_policy=discard"
 
   if [ -z "$CPU_MODEL" ]; then
     CPU_MODEL="host"
     CPU_FEATURES+=",migratable=no"
   fi
+}
+
+appendKvmInvtscFeature() {
 
   if grep -qw "svm" <<< "$flags"; then
 
     # AMD processor
-
     if grep -qw "tsc_scale" <<< "$flags"; then
       CPU_FEATURES+=",+invtsc"
     fi
@@ -57,7 +67,6 @@ if ! disabled "$KVM"; then
   else
 
     # Intel processor
-
     vmx=$(sed -ne '/^vmx flags/s/^.*: //p' /proc/cpuinfo)
 
     if grep -qw "tsc_scaling" <<< "$vmx"; then
@@ -65,8 +74,29 @@ if ! disabled "$KVM"; then
     fi
 
   fi
+}
 
-else
+configureKvm() {
+  configureKvmCpuModel
+  checkSse42
+  appendKvmInvtscFeature
+}
+
+configureTcgCpuModel() {
+
+  if [ -n "$CPU_MODEL" ]; then
+    return 0
+  fi
+
+  if [[ "$ARCH" == "amd64" ]]; then
+    CPU_MODEL="max"
+    CPU_FEATURES+=",migratable=no"
+  else
+    CPU_MODEL="qemu64"
+  fi
+}
+
+configureTcg() {
 
   KVM_OPTS=""
   CPU_FEATURES="l3-cache=on,+hypervisor"
@@ -75,70 +105,87 @@ else
     KVM_OPTS=" -accel tcg,thread=multi"
   fi
 
-  if [ -z "$CPU_MODEL" ]; then
-    if [[ "$ARCH" == "amd64" ]]; then
-      CPU_MODEL="max"
-      CPU_FEATURES+=",migratable=no"
-    else
-      CPU_MODEL="qemu64"
-    fi
-  fi
-
+  configureTcgCpuModel
   CPU_FEATURES+=",+ssse3,+sse4.1,+sse4.2"
+}
 
-fi
+extractHostCpuArgument() {
 
-if [[ "$ARGUMENTS" == *"-cpu host,"* ]]; then
+  local args prefix suffix param
 
-  args="${ARGUMENTS} "
-  prefix="${args/-cpu host,*/}"
-  suffix="${args/*-cpu host,/}"
-  param="${suffix%% *}"
-  suffix="${suffix#* }"
-  args="${prefix}${suffix}"
-  ARGUMENTS="${args::-1}"
+  if [[ "$ARGUMENTS" == *"-cpu host,"* ]]; then
+
+    args="${ARGUMENTS} "
+    prefix="${args/-cpu host,*/}"
+    suffix="${args/*-cpu host,/}"
+    param="${suffix%% *}"
+    suffix="${suffix#* }"
+    args="${prefix}${suffix}"
+    ARGUMENTS="${args::-1}"
+
+    if [ -z "$CPU_FLAGS" ]; then
+      CPU_FLAGS="$param"
+    else
+      CPU_FLAGS+=",$param"
+    fi
+
+  else
+
+    if [[ "$ARGUMENTS" == *"-cpu host"* ]]; then
+      ARGUMENTS="${ARGUMENTS//-cpu host/}"
+    fi
+
+  fi
+}
+
+composeCpuFlags() {
 
   if [ -z "$CPU_FLAGS" ]; then
-    CPU_FLAGS="$param"
+    if [ -z "$CPU_FEATURES" ]; then
+      CPU_FLAGS="$CPU_MODEL"
+    else
+      CPU_FLAGS="$CPU_MODEL,$CPU_FEATURES"
+    fi
   else
-    CPU_FLAGS+=",$param"
+    if [ -z "$CPU_FEATURES" ]; then
+      CPU_FLAGS="$CPU_MODEL,$CPU_FLAGS"
+    else
+      CPU_FLAGS="$CPU_MODEL,$CPU_FEATURES,$CPU_FLAGS"
+    fi
+  fi
+}
+
+configureHostCpuName() {
+
+  if [ -z "$HOST_CPU" ]; then
+    [[ "${CPU,,}" != "unknown" ]] && HOST_CPU="$CPU"
   fi
 
+  if [ -n "$HOST_CPU" ]; then
+    HOST_CPU="${HOST_CPU%%,*},,"
+  else
+    HOST_CPU="QEMU, Virtual CPU,"
+    if [ "$ARCH" == "amd64" ]; then
+      HOST_CPU+=" X86_64"
+    else
+      HOST_CPU+=" $ARCH"
+    fi
+  fi
+}
+
+selectClocksource
+checkClocksource
+
+flags=$(sed -ne '/^flags/s/^.*: //p' /proc/cpuinfo)
+
+if ! disabled "$KVM"; then
+  configureKvm
 else
-
-  if [[ "$ARGUMENTS" == *"-cpu host"* ]]; then
-    ARGUMENTS="${ARGUMENTS//-cpu host/}"
-  fi
-
+  configureTcg
 fi
 
-if [ -z "$CPU_FLAGS" ]; then
-  if [ -z "$CPU_FEATURES" ]; then
-    CPU_FLAGS="$CPU_MODEL"
-  else
-    CPU_FLAGS="$CPU_MODEL,$CPU_FEATURES"
-  fi
-else
-  if [ -z "$CPU_FEATURES" ]; then
-    CPU_FLAGS="$CPU_MODEL,$CPU_FLAGS"
-  else
-    CPU_FLAGS="$CPU_MODEL,$CPU_FEATURES,$CPU_FLAGS"
-  fi
-fi
-
-if [ -z "$HOST_CPU" ]; then
-  [[ "${CPU,,}" != "unknown" ]] && HOST_CPU="$CPU"
-fi
-
-if [ -n "$HOST_CPU" ]; then
-  HOST_CPU="${HOST_CPU%%,*},,"
-else
-  HOST_CPU="QEMU, Virtual CPU,"
-  if [ "$ARCH" == "amd64" ]; then
-    HOST_CPU+=" X86_64"
-  else
-    HOST_CPU+=" $ARCH"
-  fi
-fi
+extractHostCpuArgument
+composeCpuFlags
+configureHostCpuName
 
 return 0
