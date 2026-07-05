@@ -16,9 +16,13 @@ Virtual DSM in a Docker container.
 
 ## Features ✨
 
- - Multiple disks
- - KVM acceleration
- - Automatic download
+- Runs Virtual DSM inside a Docker container
+- Web-based access to the DSM desktop
+- Automatic download and installation of Virtual DSM
+- Near-native performance with KVM acceleration
+- Configurable CPU, RAM, and disk size
+- Supports multiple disks and physical disk passthrough
+- Supports bridge, user-mode, macvlan, and DHCP networking
 
 ## Usage  🐳
 
