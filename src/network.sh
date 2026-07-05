@@ -89,6 +89,19 @@ setMTU() {
   return 0
 }
 
+disableIPv6() {
+
+  local dev="$1"
+
+  [ -d "/proc/sys/net/ipv6/conf/$dev" ] || return 0
+
+  # Best-effort only: Docker/rootless/container sysctl writes can fail.
+  sysctl -w "net.ipv6.conf.$dev.disable_ipv6=1" > /dev/null 2>&1 || :
+  sysctl -w "net.ipv6.conf.$dev.accept_ra=0" > /dev/null 2>&1 || :
+
+  return 0
+}
+
 configureDHCP() {
 
   enabled "$DEBUG" && echo "Configuring MACVTAP networking..."
@@ -202,7 +215,7 @@ configureDNS() {
       arguments+=" --dhcp-option=option:netmask,$mask"
       arguments+=" --dhcp-option=option:router,$gateway"
       arguments+=" --dhcp-option=option:dns-server,$gateway"
-  
+
       # Set MTU through DHCP option 26
       if [[ "$GUEST_MTU" != "0" && "$GUEST_MTU" != "1500" ]]; then
         arguments+=" --dhcp-option=option:interface-mtu,$GUEST_MTU"
@@ -221,6 +234,11 @@ configureDNS() {
 
   # Add DNS entry for container
   arguments+=" --address=/host.lan/$gateway"
+
+  # Avoid returning IPv6 records when the active network mode is IPv4-only.
+  if [[ "${NETWORK,,}" == "tap" || "${NETWORK,,}" == "tun" || "${NETWORK,,}" == "tuntap" || "${NETWORK,,}" == "y" || -z "$IP6" ]]; then
+    arguments+=" --filter-AAAA"
+  fi
 
   # Set local dns resolver to dnsmasq when needed
   [ -f /etc/resolv.dnsmasq ] && arguments+=" --resolv-file=/etc/resolv.dnsmasq"
@@ -576,6 +594,9 @@ configureNAT() {
     sleep 2
   done
 
+  # NAT networking is IPv4-only; disable IPv6 on the guest bridge if possible.
+  disableIPv6 "$VM_NET_BRIDGE"
+
   # Set tap to the bridge created
   if ! ip tuntap add dev "$VM_NET_TAP" mode tap; then
     enabled "$ROOTLESS" && ! enabled "$DEBUG" && return 1
@@ -594,6 +615,9 @@ configureNAT() {
     info "Waiting for TAP to become available..."
     sleep 2
   done
+
+  # NAT networking is IPv4-only; disable IPv6 on the guest tap if possible.
+  disableIPv6 "$VM_NET_TAP"
 
   if ! ip link set dev "$VM_NET_TAP" master "$VM_NET_BRIDGE"; then
     warn "failed to set master bridge!" && return 1
@@ -847,14 +871,14 @@ getInfo() {
 
       # Check if host exposes the bridge-nf sysctl
       # (only visible if br_netfilter is loaded and /proc/sys is accessible)
-  
+
       BNF="/proc/sys/net/bridge/bridge-nf-call-iptables"
-  
+
       if [[ -r "$BNF" ]] && [[ "$(cat "$BNF")" != "0" ]]; then
         warn "external LAN clients may not be able to reach this container, because net.bridge.bridge-nf-call-iptables=1."
         warn "you can fix this issue by running 'sysctl -w net.bridge.bridge-nf-call-iptables=0' on the host system."
       fi
-  
+
     fi
 
   else
