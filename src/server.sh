@@ -15,33 +15,54 @@ WSD_PORT=$(strip "$WSD_PORT")
 WEB_PID="/run/nginx.pid"
 WSD_PID="$QEMU_DIR/websocketd.pid"
 
-cp -r /var/www/* "$QEMU_DIR"
-rm -f "$WSD_PID" "$WEB_PID"
+prepareWebFiles() {
+  cp -r /var/www/* "$QEMU_DIR"
+  rm -f "$WSD_PID" "$WEB_PID"
+}
 
-html "Starting $APP for $ENGINE..."
+configureWebPorts() {
+  sed -i "s/listen 5000 default_server;/listen $WEB_PORT default_server;/g" /etc/nginx/sites-enabled/web.conf
+  sed -i "s/proxy_pass http:\/\/127.0.0.1:8004\/;/proxy_pass http:\/\/127.0.0.1:$WSD_PORT\/;/g" /etc/nginx/sites-enabled/web.conf
+}
 
-if ! disabled "${WEB:-}"; then
+configureIpv6Listen() {
+
+  # shellcheck disable=SC2143
+  if [ -f /proc/net/if_inet6 ] && [[ "$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6 2>/dev/null)" != "1" ]] && [ -n "$(ifconfig -a | grep inet6)" ]; then
+    sed -i "s/listen $WEB_PORT default_server;/listen [::]:$WEB_PORT default_server ipv6only=off;/g" /etc/nginx/sites-enabled/web.conf
+  fi
+}
+
+configureWebServer() {
 
   mkdir -p /etc/nginx/sites-enabled
   cp /etc/nginx/default.conf /etc/nginx/sites-enabled/web.conf
 
-  sed -i "s/listen 5000 default_server;/listen $WEB_PORT default_server;/g" /etc/nginx/sites-enabled/web.conf
-  sed -i "s/proxy_pass http:\/\/127.0.0.1:8004\/;/proxy_pass http:\/\/127.0.0.1:$WSD_PORT\/;/g" /etc/nginx/sites-enabled/web.conf
+  configureWebPorts
+  configureIpv6Listen
+}
 
-  # shellcheck disable=SC2143
-  if [ -f /proc/net/if_inet6 ] && [[ "$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6 2>/dev/null)" != "1" ]] && [ -n "$(ifconfig -a | grep inet6)" ]; then
-
-    sed -i "s/listen $WEB_PORT default_server;/listen [::]:$WEB_PORT default_server ipv6only=off;/g" /etc/nginx/sites-enabled/web.conf
-
-  fi
+startWebServer() {
 
   # Start webserver
   nginx -e stderr
+}
+
+startWebsocketServer() {
 
   # Start websocket server
   websocketd --address 127.0.0.1 --port="$WSD_PORT" /run/socket.sh >/var/log/websocketd.log &
   echo "$!" > "$WSD_PID"
+}
 
+prepareWebFiles
+
+html "Starting $APP for $ENGINE..."
+
+if ! disabled "${WEB:-}"; then
+  configureWebServer
+  startWebServer
+  startWebsocketServer
 fi
 
 return 0
