@@ -41,8 +41,28 @@ USER_PORTS=$(strip "$USER_PORTS")
 ADD_ERR="Please add the following setting to your container:"
 
 # ######################################
-#  Functions
+#  Generic helpers
 # ######################################
+
+isNAT() {
+
+  case "${NETWORK,,}" in
+    "tap" | "tun" | "tuntap" | "y" | "" )
+      return 0 ;;
+    *)
+      return 1 ;;
+  esac
+}
+
+isUserMode() {
+
+  case "${NETWORK,,}" in
+    "passt" | "slirp" | "user"* )
+      return 0 ;;
+    *)
+      return 1 ;;
+  esac
+}
 
 getMTU() {
 
@@ -102,82 +122,9 @@ disableIPv6() {
   return 0
 }
 
-configureDHCP() {
-
-  enabled "$DEBUG" && echo "Configuring MACVTAP networking..."
-
-  # Create the necessary file structure for /dev/vhost-net
-  if [ ! -c /dev/vhost-net ]; then
-    if mknod /dev/vhost-net c 10 238; then
-      chmod 660 /dev/vhost-net
-    fi
-  fi
-
-  # Create a macvtap network for the VM guest
-  { msg=$(ip link add link "$VM_NET_DEV" name "$VM_NET_TAP" address "$VM_NET_MAC" type macvtap mode bridge 2>&1); rc=$?; } || :
-
-  case "$msg" in
-    "RTNETLINK answers: File exists"* )
-      while ! ip link add link "$VM_NET_DEV" name "$VM_NET_TAP" address "$VM_NET_MAC" type macvtap mode bridge; do
-        info "Waiting for macvtap interface to become available.."
-        sleep 5
-      done ;;
-    "RTNETLINK answers: Invalid argument"* )
-      error "Cannot create macvtap interface. Please make sure that the network type of the container is 'macvlan' and not 'ipvlan'."
-      return 1 ;;
-    "RTNETLINK answers: Operation not permitted"* )
-      error "No permission to create macvtap interface. Please make sure that your host kernel supports it and that the NET_ADMIN capability is set."
-      return 1 ;;
-    *)
-      [ -n "$msg" ] && echo "$msg" >&2
-      if (( rc != 0 )); then
-        error "Cannot create macvtap interface."
-        return 1
-      fi ;;
-  esac
-
-  if [[ "$GUEST_MTU" != "0" ]]; then
-    setMTU "$VM_NET_TAP" "$GUEST_MTU"
-    GUEST_MTU=$(minMTU "$GUEST_MTU" "$(getMTU "$VM_NET_TAP")")
-  fi
-
-  while ! ip link set "$VM_NET_TAP" up; do
-    info "Waiting for MAC address $VM_NET_MAC to become available..."
-    info "If you cloned this machine, please delete the 'dsm.mac' file to generate a different MAC address."
-    sleep 2
-  done
-
-  local TAP_NR TAP_PATH MAJOR MINOR
-  TAP_NR=$(</sys/class/net/"$VM_NET_TAP"/ifindex)
-  TAP_PATH="/dev/tap${TAP_NR}"
-
-  # Create dev file (there is no udev in container: need to be done manually)
-  IFS=: read -r MAJOR MINOR < <(cat /sys/devices/virtual/net/"$VM_NET_TAP"/tap*/dev)
-  (( MAJOR < 1)) && error "Cannot find: sys/devices/virtual/net/$VM_NET_TAP" && return 1
-
-  [[ ! -e "$TAP_PATH" && -e "/dev0/${TAP_PATH##*/}" ]] && ln -s "/dev0/${TAP_PATH##*/}" "$TAP_PATH"
-
-  if [[ ! -e "$TAP_PATH" ]]; then
-    { mknod "$TAP_PATH" c "$MAJOR" "$MINOR"; rc=$?; } || :
-    (( rc != 0 )) && error "Cannot mknod: $TAP_PATH ($rc)" && return 1
-  fi
-
-  { exec 30>>"$TAP_PATH"; rc=$?; } 2>/dev/null || :
-
-  if (( rc != 0 )); then
-    error "Cannot create TAP interface ($rc). $ADD_ERR --device-cgroup-rule='c *:* rwm'" && return 1
-  fi
-
-  { exec 40>>/dev/vhost-net; rc=$?; } 2>/dev/null || :
-
-  if (( rc != 0 )); then
-    error "VHOST can not be found ($rc). $ADD_ERR --device=/dev/vhost-net" && return 1
-  fi
-
-  NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30"
-
-  return 0
-}
+# ######################################
+#  DNS / port helpers
+# ######################################
 
 configureDNS() {
 
@@ -197,30 +144,30 @@ configureDNS() {
   [ -s "$DNSMASQ_PID" ] && pKill "$(<"$DNSMASQ_PID")"
   rm -f "$DNSMASQ_PID"
 
-  case "${NETWORK,,}" in
-    "tap" | "tun" | "tuntap" | "y" )
+  if isNAT; then
 
-      # Create lease file for faster resolve
-      echo "0 $mac $ip $host 01:$mac" > /var/lib/misc/dnsmasq.leases
-      chmod 644 /var/lib/misc/dnsmasq.leases
+    # Create lease file for faster resolve
+    echo "0 $mac $ip $host 01:$mac" > /var/lib/misc/dnsmasq.leases
+    chmod 644 /var/lib/misc/dnsmasq.leases
 
-      # dnsmasq configuration:
-      arguments+=" --dhcp-authoritative"
+    # dnsmasq configuration:
+    arguments+=" --dhcp-authoritative"
 
-      # Set DHCP range and host
-      arguments+=" --dhcp-range=$ip,$ip"
-      arguments+=" --dhcp-host=$mac,,$ip,$host,infinite"
+    # Set DHCP range and host
+    arguments+=" --dhcp-range=$ip,$ip"
+    arguments+=" --dhcp-host=$mac,,$ip,$host,infinite"
 
-      # Set DNS server and gateway
-      arguments+=" --dhcp-option=option:netmask,$mask"
-      arguments+=" --dhcp-option=option:router,$gateway"
-      arguments+=" --dhcp-option=option:dns-server,$gateway"
+    # Set DNS server and gateway
+    arguments+=" --dhcp-option=option:netmask,$mask"
+    arguments+=" --dhcp-option=option:router,$gateway"
+    arguments+=" --dhcp-option=option:dns-server,$gateway"
 
-      # Set MTU through DHCP option 26
-      if [[ "$GUEST_MTU" != "0" && "$GUEST_MTU" != "1500" ]]; then
-        arguments+=" --dhcp-option=option:interface-mtu,$GUEST_MTU"
-      fi ;;
-  esac
+    # Set MTU through DHCP option 26
+    if [[ "$GUEST_MTU" != "0" && "$GUEST_MTU" != "1500" ]]; then
+      arguments+=" --dhcp-option=option:interface-mtu,$GUEST_MTU"
+    fi
+
+  fi
 
   # Set interfaces
   arguments+=" --interface=$fa"
@@ -236,7 +183,7 @@ configureDNS() {
   arguments+=" --address=/host.lan/$gateway"
 
   # Avoid returning IPv6 records when the active network mode is IPv4-only.
-  if [[ "${NETWORK,,}" == "tap" || "${NETWORK,,}" == "tun" || "${NETWORK,,}" == "tuntap" || "${NETWORK,,}" == "y" || -z "$IP6" ]]; then
+  if isNAT || [ -z "$IP6" ]; then
     arguments+=" --filter-AAAA"
   fi
 
@@ -353,6 +300,87 @@ getSlirp() {
   done
 
   echo "$args" | sed 's/,*$//g'
+  return 0
+}
+
+# ######################################
+#  Network mode setup
+# ######################################
+
+configureDHCP() {
+
+  enabled "$DEBUG" && echo "Configuring MACVTAP networking..."
+
+  # Create the necessary file structure for /dev/vhost-net
+  if [ ! -c /dev/vhost-net ]; then
+    if mknod /dev/vhost-net c 10 238; then
+      chmod 660 /dev/vhost-net
+    fi
+  fi
+
+  # Create a macvtap network for the VM guest
+  { msg=$(ip link add link "$VM_NET_DEV" name "$VM_NET_TAP" address "$VM_NET_MAC" type macvtap mode bridge 2>&1); rc=$?; } || :
+
+  case "$msg" in
+    "RTNETLINK answers: File exists"* )
+      while ! ip link add link "$VM_NET_DEV" name "$VM_NET_TAP" address "$VM_NET_MAC" type macvtap mode bridge; do
+        info "Waiting for macvtap interface to become available.."
+        sleep 5
+      done ;;
+    "RTNETLINK answers: Invalid argument"* )
+      error "Cannot create macvtap interface. Please make sure that the network type of the container is 'macvlan' and not 'ipvlan'."
+      return 1 ;;
+    "RTNETLINK answers: Operation not permitted"* )
+      error "No permission to create macvtap interface. Please make sure that your host kernel supports it and that the NET_ADMIN capability is set."
+      return 1 ;;
+    *)
+      [ -n "$msg" ] && echo "$msg" >&2
+      if (( rc != 0 )); then
+        error "Cannot create macvtap interface."
+        return 1
+      fi ;;
+  esac
+
+  if [[ "$GUEST_MTU" != "0" ]]; then
+    setMTU "$VM_NET_TAP" "$GUEST_MTU"
+    GUEST_MTU=$(minMTU "$GUEST_MTU" "$(getMTU "$VM_NET_TAP")")
+  fi
+
+  while ! ip link set "$VM_NET_TAP" up; do
+    info "Waiting for MAC address $VM_NET_MAC to become available..."
+    info "If you cloned this machine, please delete the 'dsm.mac' file to generate a different MAC address."
+    sleep 2
+  done
+
+  local TAP_NR TAP_PATH MAJOR MINOR
+  TAP_NR=$(</sys/class/net/"$VM_NET_TAP"/ifindex)
+  TAP_PATH="/dev/tap${TAP_NR}"
+
+  # Create dev file (there is no udev in container: need to be done manually)
+  IFS=: read -r MAJOR MINOR < <(cat /sys/devices/virtual/net/"$VM_NET_TAP"/tap*/dev)
+  (( MAJOR < 1)) && error "Cannot find: sys/devices/virtual/net/$VM_NET_TAP" && return 1
+
+  [[ ! -e "$TAP_PATH" && -e "/dev0/${TAP_PATH##*/}" ]] && ln -s "/dev0/${TAP_PATH##*/}" "$TAP_PATH"
+
+  if [[ ! -e "$TAP_PATH" ]]; then
+    { mknod "$TAP_PATH" c "$MAJOR" "$MINOR"; rc=$?; } || :
+    (( rc != 0 )) && error "Cannot mknod: $TAP_PATH ($rc)" && return 1
+  fi
+
+  { exec 30>>"$TAP_PATH"; rc=$?; } 2>/dev/null || :
+
+  if (( rc != 0 )); then
+    error "Cannot create TAP interface ($rc). $ADD_ERR --device-cgroup-rule='c *:* rwm'" && return 1
+  fi
+
+  { exec 40>>/dev/vhost-net; rc=$?; } 2>/dev/null || :
+
+  if (( rc != 0 )); then
+    error "VHOST can not be found ($rc). $ADD_ERR --device=/dev/vhost-net" && return 1
+  fi
+
+  NET_OPTS="-netdev tap,id=hostnet0,vhost=on,vhostfd=40,fd=30"
+
   return 0
 }
 
@@ -486,38 +514,171 @@ configurePasst() {
   return 0
 }
 
-clearTables() {
-  local table="" line rules
+createBridge() {
 
-  # Choose between iptables or nftables
-  if command -v iptables-nft >/dev/null 2>&1 && iptables-nft -V >/dev/null 2>&1; then
-    update-alternatives --set iptables /usr/sbin/iptables-nft > /dev/null
-    update-alternatives --set ip6tables /usr/sbin/ip6tables-nft > /dev/null
-  else
-    update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
-    update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
+  local gateway="$1"
+  local broadcast="$2"
+  local rc
+
+  # Create a bridge with a static IP for the VM guest
+  { ip link add dev "$VM_NET_BRIDGE" type bridge; rc=$?; } || :
+
+  if (( rc != 0 )); then
+    enabled "$ROOTLESS" && ! enabled "$DEBUG" && return 1
+    warn "failed to create bridge. $ADD_ERR --cap-add NET_ADMIN" && return 1
   fi
 
-  # Store the current iptables ruleset
-  ! rules=$(iptables-save 2> /dev/null) && return 0
-  [ -z "$rules" ] && return 0
+  if [[ "$GUEST_MTU" != "0" ]]; then
+    setMTU "$VM_NET_BRIDGE" "$GUEST_MTU"
+  fi
 
-  # Delete every rule tagged with our unique identifier, leaving all other rules intact.
-  while IFS= read -r line; do
-    case "$line" in
-      \*nat)    table="nat" ;;
-      \*filter) table="filter" ;;
-      \*mangle) table="mangle" ;;
-      \*raw)    table="raw" ;;
-    esac
-    if [[ "$line" == -A* ]]; then
-      local re="--comment[[:space:]]+\"?remove\"?([[:space:]]|\$)"
-      if [[ "$line" =~ $re ]]; then
-        read -ra args <<< "${line/-A /-D }"
-        iptables -t "$table" "${args[@]}" &> /dev/null || :
-      fi
+  if ! ip address add "$gateway/24" broadcast "$broadcast" dev "$VM_NET_BRIDGE"; then
+    warn "failed to add IP address pool!" && return 1
+  fi
+
+  while ! ip link set "$VM_NET_BRIDGE" up; do
+    info "Waiting for IP address to become available..."
+    sleep 2
+  done
+
+  # NAT networking is IPv4-only; disable IPv6 on the guest bridge if possible.
+  disableIPv6 "$VM_NET_BRIDGE"
+
+  return 0
+}
+
+createTap() {
+
+  local tuntap="$1"
+
+  # Set tap to the bridge created
+  if ! ip tuntap add dev "$VM_NET_TAP" mode tap; then
+    enabled "$ROOTLESS" && ! enabled "$DEBUG" && return 1
+    warn "$tuntap" && return 1
+  fi
+
+  if [[ "$GUEST_MTU" != "0" ]]; then
+    setMTU "$VM_NET_TAP" "$GUEST_MTU"
+  fi
+
+  if ! ip link set dev "$VM_NET_TAP" address "$GATEWAY_MAC"; then
+    warn "failed to set gateway MAC address."
+  fi
+
+  while ! ip link set "$VM_NET_TAP" up promisc on; do
+    info "Waiting for TAP to become available..."
+    sleep 2
+  done
+
+  # NAT networking is IPv4-only; disable IPv6 on the guest tap if possible.
+  disableIPv6 "$VM_NET_TAP"
+
+  if ! ip link set dev "$VM_NET_TAP" master "$VM_NET_BRIDGE"; then
+    warn "failed to set master bridge!" && return 1
+  fi
+
+  return 0
+}
+
+configureTables() {
+
+  local ip="$1"
+  local subnet="$2"
+  local exclude="$3"
+  local rule_tag="remove"
+  local tables_err="failed to configure IP tables!"
+  local tables="the 'ip_tables' kernel module is not loaded. Try this command: sudo modprobe ip_tables iptable_nat"
+
+  clearTables
+
+  if [ -n "$exclude" ]; then
+    if [[ "$exclude" != *","* ]]; then
+      exclude=" ! --dport $exclude"
+    else
+      exclude=" -m multiport ! --dports $exclude"
     fi
-  done <<< "$rules"
+  fi
+
+  # NAT traffic from bridge subnet to Docker uplink
+  if ! iptables -t nat -A POSTROUTING \
+    -o "$VM_NET_DEV" \
+    -s "$subnet" \
+    ! -d "$subnet" \
+    -m comment --comment "$rule_tag" \
+    -j MASQUERADE > /dev/null 2>&1; then
+    enabled "$ROOTLESS" && ! enabled "$DEBUG" && return 1
+    if ! iptables -t nat -A POSTROUTING \
+      -o "$VM_NET_DEV" \
+      -s "$subnet" \
+      ! -d "$subnet" \
+      -m comment --comment "$rule_tag" \
+      -j MASQUERADE; then
+      warn "$tables" && return 1
+    fi
+  fi
+
+  # shellcheck disable=SC2086
+  if ! iptables -t nat -A PREROUTING \
+    -i "$VM_NET_DEV" \
+    -d "$IP" \
+    -p tcp${exclude} \
+    -m comment --comment "$rule_tag" \
+    -j DNAT --to "$ip"; then
+    warn "$tables_err" && return 1
+  fi
+
+  if ! iptables -t nat -A PREROUTING \
+    -i "$VM_NET_DEV" \
+    -d "$IP" \
+    -p udp \
+    -m comment --comment "$rule_tag" \
+    -j DNAT --to "$ip"; then
+    warn "$tables_err" && return 1
+  fi
+
+  if (( KERNEL > 4 )); then
+    # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
+    iptables -t mangle -A POSTROUTING \
+      -s "$subnet" \
+      -p udp \
+      --dport bootpc \
+      -m comment --comment "$rule_tag" \
+      -j CHECKSUM --checksum-fill > /dev/null 2>&1 || true
+  fi
+
+  # Clamp TCP MSS to avoid subtle MTU blackholes when the outer path has a smaller MTU.
+  iptables -t mangle -A FORWARD \
+    -s "$subnet" \
+    -p tcp \
+    --tcp-flags SYN,RST SYN \
+    -m comment --comment "$rule_tag" \
+    -j TCPMSS --clamp-mss-to-pmtu > /dev/null 2>&1 || true
+
+  iptables -t mangle -A FORWARD \
+    -d "$ip" \
+    -p tcp \
+    --tcp-flags SYN,RST SYN \
+    -m comment --comment "$rule_tag" \
+    -j TCPMSS --clamp-mss-to-pmtu > /dev/null 2>&1 || true
+
+  # Allow forwarding from bridge -> dev
+  if ! iptables -A FORWARD \
+    -i "$VM_NET_BRIDGE" \
+    -o "$VM_NET_DEV" \
+    -m comment --comment "$rule_tag" \
+    -j ACCEPT; then
+    warn "$tables_err" && return 1
+  fi
+
+  # Allow return traffic
+  if ! iptables -A FORWARD \
+    -i "$VM_NET_DEV" \
+    -o "$VM_NET_BRIDGE" \
+    -m conntrack --ctstate RELATED,ESTABLISHED \
+    -m comment --comment "$rule_tag" \
+    -j ACCEPT; then
+    warn "$tables_err" && return 1
+  fi
 
   return 0
 }
@@ -525,7 +686,6 @@ clearTables() {
 configureNAT() {
 
   local tuntap="TUN device is missing. $ADD_ERR --device /dev/net/tun"
-  local tables="the 'ip_tables' kernel module is not loaded. Try this command: sudo modprobe ip_tables iptable_nat"
 
   enabled "$DEBUG" && echo "Configuring NAT networking..."
 
@@ -573,154 +733,16 @@ configureNAT() {
   local subnet="${ip%.*}.0/24"
   local broadcast="${ip%.*}.255"
 
-  # Create a bridge with a static IP for the VM guest
-  { ip link add dev "$VM_NET_BRIDGE" type bridge; rc=$?; } || :
-
-  if (( rc != 0 )); then
-    enabled "$ROOTLESS" && ! enabled "$DEBUG" && return 1
-    warn "failed to create bridge. $ADD_ERR --cap-add NET_ADMIN" && return 1
-  fi
-
-  if [[ "$GUEST_MTU" != "0" ]]; then
-    setMTU "$VM_NET_BRIDGE" "$GUEST_MTU"
-  fi
-
-  if ! ip address add "$gateway/24" broadcast "$broadcast" dev "$VM_NET_BRIDGE"; then
-    warn "failed to add IP address pool!" && return 1
-  fi
-
-  while ! ip link set "$VM_NET_BRIDGE" up; do
-    info "Waiting for IP address to become available..."
-    sleep 2
-  done
-
-  # NAT networking is IPv4-only; disable IPv6 on the guest bridge if possible.
-  disableIPv6 "$VM_NET_BRIDGE"
-
-  # Set tap to the bridge created
-  if ! ip tuntap add dev "$VM_NET_TAP" mode tap; then
-    enabled "$ROOTLESS" && ! enabled "$DEBUG" && return 1
-    warn "$tuntap" && return 1
-  fi
-
-  if [[ "$GUEST_MTU" != "0" ]]; then
-    setMTU "$VM_NET_TAP" "$GUEST_MTU"
-  fi
-
-  if ! ip link set dev "$VM_NET_TAP" address "$GATEWAY_MAC"; then
-    warn "failed to set gateway MAC address."
-  fi
-
-  while ! ip link set "$VM_NET_TAP" up promisc on; do
-    info "Waiting for TAP to become available..."
-    sleep 2
-  done
-
-  # NAT networking is IPv4-only; disable IPv6 on the guest tap if possible.
-  disableIPv6 "$VM_NET_TAP"
-
-  if ! ip link set dev "$VM_NET_TAP" master "$VM_NET_BRIDGE"; then
-    warn "failed to set master bridge!" && return 1
-  fi
+  createBridge "$gateway" "$broadcast" || return 1
+  createTap "$tuntap" || return 1
 
   # Use the lowest effective guest-facing MTU, without mutating the parent/uplink MTU.
   if [[ "$GUEST_MTU" != "0" ]]; then
     GUEST_MTU=$(minMTU "$GUEST_MTU" "$(getMTU "$VM_NET_BRIDGE")" "$(getMTU "$VM_NET_TAP")")
   fi
 
-  # Flush existing tables
-  clearTables
-
   exclude=$(getHostPorts)
-
-  if [ -n "$exclude" ]; then
-    if [[ "$exclude" != *","* ]]; then
-      exclude=" ! --dport $exclude"
-    else
-      exclude=" -m multiport ! --dports $exclude"
-    fi
-  fi
-
-  # NAT traffic from bridge subnet to Docker uplink
-  if ! iptables -t nat -A POSTROUTING \
-    -o "$VM_NET_DEV" \
-    -s "$subnet" \
-    ! -d "$subnet" \
-    -m comment --comment "remove" \
-    -j MASQUERADE > /dev/null 2>&1; then
-    enabled "$ROOTLESS" && ! enabled "$DEBUG" && return 1
-    if ! iptables -t nat -A POSTROUTING \
-      -o "$VM_NET_DEV" \
-      -s "$subnet" \
-      ! -d "$subnet" \
-      -m comment --comment "remove" \
-      -j MASQUERADE; then
-      warn "$tables" && return 1
-    fi
-  fi
-
-  # shellcheck disable=SC2086
-  if ! iptables -t nat -A PREROUTING \
-    -i "$VM_NET_DEV" \
-    -d "$IP" \
-    -p tcp${exclude} \
-    -m comment --comment "remove" \
-    -j DNAT --to "$ip"; then
-    warn "failed to configure IP tables!" && return 1
-  fi
-
-  if ! iptables -t nat -A PREROUTING \
-    -i "$VM_NET_DEV" \
-    -d "$IP" \
-    -p udp \
-    -m comment --comment "remove" \
-    -j DNAT --to "$ip"; then
-    warn "failed to configure IP tables!" && return 1
-  fi
-
-  if (( KERNEL > 4 )); then
-    # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
-    iptables -t mangle -A POSTROUTING \
-      -s "$subnet" \
-      -p udp \
-      --dport bootpc \
-      -m comment --comment "remove" \
-      -j CHECKSUM --checksum-fill > /dev/null 2>&1 || true
-  fi
-
-  # Clamp TCP MSS to avoid subtle MTU blackholes when the outer path has a smaller MTU.
-  iptables -t mangle -A FORWARD \
-    -s "$subnet" \
-    -p tcp \
-    --tcp-flags SYN,RST SYN \
-    -m comment --comment "remove" \
-    -j TCPMSS --clamp-mss-to-pmtu > /dev/null 2>&1 || true
-
-  iptables -t mangle -A FORWARD \
-    -d "$ip" \
-    -p tcp \
-    --tcp-flags SYN,RST SYN \
-    -m comment --comment "remove" \
-    -j TCPMSS --clamp-mss-to-pmtu > /dev/null 2>&1 || true
-
-  # Allow forwarding from bridge -> dev
-  if ! iptables -A FORWARD \
-    -i "$VM_NET_BRIDGE" \
-    -o "$VM_NET_DEV" \
-    -m comment --comment "remove" \
-    -j ACCEPT; then
-    warn "failed to configure IP tables!" && return 1
-  fi
-
-  # Allow return traffic
-  if ! iptables -A FORWARD \
-    -i "$VM_NET_DEV" \
-    -o "$VM_NET_BRIDGE" \
-    -m conntrack --ctstate RELATED,ESTABLISHED \
-    -m comment --comment "remove" \
-    -j ACCEPT; then
-    warn "failed to configure IP tables!" && return 1
-  fi
+  configureTables "$ip" "$subnet" "$exclude" || return 1
 
   NET_OPTS="-netdev tap,id=hostnet0,ifname=$VM_NET_TAP"
 
@@ -734,6 +756,46 @@ configureNAT() {
   configureDNS "$VM_NET_BRIDGE" "$ip" "$VM_NET_MAC" "$VM_NET_HOST" "$VM_NET_MASK" "$gateway" || return 1
 
   VM_NET_IP="$ip"
+  return 0
+}
+
+# ######################################
+#  Cleanup
+# ######################################
+
+clearTables() {
+  local table="" line rules
+  local rule_tag="remove"
+
+  # Choose between iptables or nftables
+  if command -v iptables-nft >/dev/null 2>&1 && iptables-nft -V >/dev/null 2>&1; then
+    update-alternatives --set iptables /usr/sbin/iptables-nft > /dev/null
+    update-alternatives --set ip6tables /usr/sbin/ip6tables-nft > /dev/null
+  else
+    update-alternatives --set iptables /usr/sbin/iptables-legacy > /dev/null
+    update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy > /dev/null
+  fi
+
+  # Store the current iptables ruleset
+  ! rules=$(iptables-save 2> /dev/null) && return 0
+  [ -z "$rules" ] && return 0
+
+  # Delete every rule tagged with our unique identifier, leaving all other rules intact.
+  while IFS= read -r line; do
+    case "$line" in
+      \*nat)    table="nat" ;;
+      \*filter) table="filter" ;;
+      \*mangle) table="mangle" ;;
+      \*raw)    table="raw" ;;
+    esac
+    if [[ "$line" == -A* ]]; then
+      if [[ "$line" == *"--comment $rule_tag"* || "$line" == *"--comment \"$rule_tag\""* ]]; then
+        read -ra args <<< "${line/-A /-D }"
+        iptables -t "$table" "${args[@]}" &> /dev/null || :
+      fi
+    fi
+  done <<< "$rules"
+
   return 0
 }
 
@@ -786,6 +848,10 @@ cleanUp() {
 
   return 0
 }
+
+# ######################################
+#  Detection
+# ######################################
 
 checkOS() {
 
@@ -946,7 +1012,7 @@ getInfo() {
   fi
 
   echo "$IP" > "$QEMU_DIR"/qemu.ip
-  echo "$nic" > "$QEMU_DIR"//qemu.nic
+  echo "$nic" > "$QEMU_DIR"/qemu.nic
 
   return 0
 }
@@ -986,56 +1052,56 @@ else
     closeWeb
   fi
 
-  case "${NETWORK,,}" in
-    "passt" | "slirp" | "user"* ) ;;
-    "tap" | "tun" | "tuntap" | "y" | "" )
+  if isNAT; then
 
-      # Configure tap interface
-      if ! configureNAT; then
+    # Configure tap interface
+    if ! configureNAT; then
 
-        closeBridge
-        NETWORK="user"
+      closeBridge
+      NETWORK="user"
 
-        if ! enabled "$ROOTLESS" || enabled "$DEBUG"; then
-          msg="falling back to user-mode networking!"
-          msg="failed to setup NAT networking, $msg"
-          warn "$msg"
-        fi
+      if ! enabled "$ROOTLESS" || enabled "$DEBUG"; then
+        msg="falling back to user-mode networking!"
+        msg="failed to setup NAT networking, $msg"
+        warn "$msg"
+      fi
 
-      fi ;;
+    fi
 
-  esac
+  fi
 
-  case "${NETWORK,,}" in
-    "tap" | "tun" | "tuntap" | "y" | "" ) ;;
-    "passt" | "user"* )
+  if isUserMode; then
 
-      # Configure for user-mode networking (passt)
-      if ! configurePasst; then
-        error "Failed to configure user-mode networking!"
-        exit 24
-      fi ;;
+    case "${NETWORK,,}" in
+      "passt" | "user"* )
 
-    "slirp" )
+        # Configure for user-mode networking (passt)
+        if ! configurePasst; then
+          error "Failed to configure user-mode networking!"
+          exit 24
+        fi ;;
 
-      # Configure for user-mode networking (slirp)
-      if ! configureSlirp; then
-        error "Failed to configure user-mode networking!"
-        exit 24
-      fi ;;
+      "slirp" )
 
-    *)
-      error "Unrecognized NETWORK value: \"$NETWORK\"" && exit 24 ;;
-  esac
+        # Configure for user-mode networking (slirp)
+        if ! configureSlirp; then
+          error "Failed to configure user-mode networking!"
+          exit 24
+        fi ;;
 
-  case "${NETWORK,,}" in
-    "passt" | "slirp" )
+    esac
 
-      if [ -z "$USER_PORTS" ]; then
-        info "Notice: because user-mode networking is active, when you need to forward custom ports to DSM, add them to the \"USER_PORTS\" variable."
-      fi ;;
+  elif ! isNAT; then
 
-  esac
+    error "Unrecognized NETWORK value: \"$NETWORK\"" && exit 24
+
+  fi
+
+  if [[ "${NETWORK,,}" == "passt" || "${NETWORK,,}" == "slirp" ]]; then
+    if [ -z "$USER_PORTS" ]; then
+      info "Notice: because user-mode networking is active, when you need to forward custom ports to DSM, add them to the \"USER_PORTS\" variable."
+    fi
+  fi
 
 fi
 
