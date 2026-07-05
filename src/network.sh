@@ -20,7 +20,6 @@ set -Eeuo pipefail
 : "${VM_NET_MASK:="255.255.255.0"}"
 
 : "${PASST:="/run/passt"}"
-: "${PASST_MTU:=""}"
 : "${PASST_OPTS:=""}"
 : "${PASST_DEBUG:=""}"
 : "${PASST_PID:="/var/run/passt.pid"}"
@@ -36,7 +35,6 @@ MAC=$(strip "$MAC")
 MTU=$(strip "$MTU")
 ADAPTER=$(strip "$ADAPTER")
 NETWORK=$(strip "$NETWORK")
-PASST_MTU=$(strip "$PASST_MTU")
 HOST_PORTS=$(strip "$HOST_PORTS")
 USER_PORTS=$(strip "$USER_PORTS")
 
@@ -45,6 +43,51 @@ ADD_ERR="Please add the following setting to your container:"
 # ######################################
 #  Functions
 # ######################################
+
+getMTU() {
+
+  local dev="$1"
+
+  if [ -r "/sys/class/net/$dev/mtu" ]; then
+    cat "/sys/class/net/$dev/mtu"
+  else
+    echo "0"
+  fi
+
+  return 0
+}
+
+minMTU() {
+
+  local mtu=""
+  local min=""
+
+  for mtu in "$@"; do
+    [[ -z "$mtu" || "$mtu" == "0" ]] && continue
+
+    if [[ -z "$min" || "$mtu" -lt "$min" ]]; then
+      min="$mtu"
+    fi
+  done
+
+  echo "${min:-0}"
+  return 0
+}
+
+setMTU() {
+
+  local dev="$1"
+  local mtu="$2"
+
+  # MTU 0 means "do not set"; MTU 1500 is the normal default and does not need setting.
+  [[ "$mtu" == "0" || "$mtu" == "1500" ]] && return 0
+
+  if ! ip link set dev "$dev" mtu "$mtu"; then
+    warn "failed to set MTU size of $dev to $mtu."
+  fi
+
+  return 0
+}
 
 configureDHCP() {
 
@@ -65,7 +108,7 @@ configureDHCP() {
       while ! ip link add link "$VM_NET_DEV" name "$VM_NET_TAP" address "$VM_NET_MAC" type macvtap mode bridge; do
         info "Waiting for macvtap interface to become available.."
         sleep 5
-      done  ;;
+      done ;;
     "RTNETLINK answers: Invalid argument"* )
       error "Cannot create macvtap interface. Please make sure that the network type of the container is 'macvlan' and not 'ipvlan'."
       return 1 ;;
@@ -80,10 +123,9 @@ configureDHCP() {
       fi ;;
   esac
 
-  if [[ "$MTU" != "0" && "$MTU" != "1500" ]]; then
-    if ! ip link set dev "$VM_NET_TAP" mtu "$MTU"; then
-      warn "Failed to set MTU size to $MTU."
-    fi
+  if [[ "$GUEST_MTU" != "0" ]]; then
+    setMTU "$VM_NET_TAP" "$GUEST_MTU"
+    GUEST_MTU=$(minMTU "$GUEST_MTU" "$(getMTU "$VM_NET_TAP")")
   fi
 
   while ! ip link set "$VM_NET_TAP" up; do
@@ -103,7 +145,7 @@ configureDHCP() {
   [[ ! -e "$TAP_PATH" && -e "/dev0/${TAP_PATH##*/}" ]] && ln -s "/dev0/${TAP_PATH##*/}" "$TAP_PATH"
 
   if [[ ! -e "$TAP_PATH" ]]; then
-    { mknod "$TAP_PATH" c "$MAJOR" "$MINOR" ; rc=$?; } || :
+    { mknod "$TAP_PATH" c "$MAJOR" "$MINOR"; rc=$?; } || :
     (( rc != 0 )) && error "Cannot mknod: $TAP_PATH ($rc)" && return 1
   fi
 
@@ -160,12 +202,19 @@ configureDNS() {
       arguments+=" --dhcp-option=option:netmask,$mask"
       arguments+=" --dhcp-option=option:router,$gateway"
       arguments+=" --dhcp-option=option:dns-server,$gateway"
-
+  
+      # Set MTU through DHCP option 26
+      if [[ "$GUEST_MTU" != "0" && "$GUEST_MTU" != "1500" ]]; then
+        arguments+=" --dhcp-option=option:interface-mtu,$GUEST_MTU"
+      fi ;;
   esac
 
   # Set interfaces
   arguments+=" --interface=$fa"
   arguments+=" --bind-interfaces"
+
+  # Set pid file
+  arguments+=" --pid-file=$DNSMASQ_PID"
 
   # Workaround NET_RAW capability
   arguments+=" --no-ping"
@@ -300,7 +349,7 @@ configureSlirp() {
   [ "${ip/$base/}" -lt "4" ] && ip="${ip%.*}.4"
   local gateway="${ip%.*}.1"
 
-  local ipv6=""
+  local ipv6="ipv6=off,"
   [ -n "$IP6" ] && ipv6="ipv6=on,"
 
   NET_OPTS="-netdev user,id=hostnet0,ipv4=on,host=$gateway,net=${gateway%.*}.0/24,dhcpstart=$ip,${ipv6}hostname=$VM_NET_HOST"
@@ -348,7 +397,12 @@ configurePasst() {
   PASST_OPTS+=" -a $ip"
   PASST_OPTS+=" -g $gateway"
   PASST_OPTS+=" -n $VM_NET_MASK"
-  [ -n "$PASST_MTU" ] && PASST_OPTS+=" -m $PASST_MTU"
+
+  local passt_mtu="$GUEST_MTU"
+  [[ "$passt_mtu" == "0" ]] && passt_mtu="1500"
+
+  # Pass an explicit MTU to passt.
+  PASST_OPTS+=" -m $passt_mtu"
 
   local forward=""
   forward=$(getUserPorts)
@@ -480,7 +534,7 @@ configureNAT() {
     fi
   fi
 
-  local ip base gateway exclude
+  local ip base exclude
   base=$(cut -d. -f3,4 <<< "$IP")
 
   if [[ "$IP" != "172.30."* ]]; then
@@ -491,21 +545,26 @@ configureNAT() {
 
   [ -n "$VM_NET_IP" ] && ip="$VM_NET_IP"
 
-  if [[ "$ip" != *".1" ]]; then
-    gateway="${ip%.*}.1"
-  else
-    gateway="${ip%.*}.2"
+  local last="${ip##*.}"
+
+  if [[ ! "$last" =~ ^[0-9]+$ ]] || (( last < 2 || last > 254 )); then
+    ip="${ip%.*}.4"
   fi
 
+  local gateway="${ip%.*}.1"
   local subnet="${ip%.*}.0/24"
   local broadcast="${ip%.*}.255"
 
   # Create a bridge with a static IP for the VM guest
-  { ip link add dev "$VM_NET_BRIDGE" type bridge ; rc=$?; } || :
+  { ip link add dev "$VM_NET_BRIDGE" type bridge; rc=$?; } || :
 
   if (( rc != 0 )); then
     enabled "$ROOTLESS" && ! enabled "$DEBUG" && return 1
     warn "failed to create bridge. $ADD_ERR --cap-add NET_ADMIN" && return 1
+  fi
+
+  if [[ "$GUEST_MTU" != "0" ]]; then
+    setMTU "$VM_NET_BRIDGE" "$GUEST_MTU"
   fi
 
   if ! ip address add "$gateway/24" broadcast "$broadcast" dev "$VM_NET_BRIDGE"; then
@@ -523,10 +582,8 @@ configureNAT() {
     warn "$tuntap" && return 1
   fi
 
-  if [[ "$MTU" != "0" && "$MTU" != "1500" ]]; then
-    if ! ip link set dev "$VM_NET_TAP" mtu "$MTU"; then
-      warn "failed to set MTU size to $MTU."
-    fi
+  if [[ "$GUEST_MTU" != "0" ]]; then
+    setMTU "$VM_NET_TAP" "$GUEST_MTU"
   fi
 
   if ! ip link set dev "$VM_NET_TAP" address "$GATEWAY_MAC"; then
@@ -540,6 +597,11 @@ configureNAT() {
 
   if ! ip link set dev "$VM_NET_TAP" master "$VM_NET_BRIDGE"; then
     warn "failed to set master bridge!" && return 1
+  fi
+
+  # Use the lowest effective guest-facing MTU, without mutating the parent/uplink MTU.
+  if [[ "$GUEST_MTU" != "0" ]]; then
+    GUEST_MTU=$(minMTU "$GUEST_MTU" "$(getMTU "$VM_NET_BRIDGE")" "$(getMTU "$VM_NET_TAP")")
   fi
 
   # Flush existing tables
@@ -556,34 +618,83 @@ configureNAT() {
   fi
 
   # NAT traffic from bridge subnet to Docker uplink
-  if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -s "$subnet" ! -d "$subnet" -m comment --comment "remove" -j MASQUERADE > /dev/null 2>&1; then
+  if ! iptables -t nat -A POSTROUTING \
+    -o "$VM_NET_DEV" \
+    -s "$subnet" \
+    ! -d "$subnet" \
+    -m comment --comment "remove" \
+    -j MASQUERADE > /dev/null 2>&1; then
     enabled "$ROOTLESS" && ! enabled "$DEBUG" && return 1
-    if ! iptables -t nat -A POSTROUTING -o "$VM_NET_DEV" -s "$subnet" ! -d "$subnet" -m comment --comment "remove" -j MASQUERADE; then
+    if ! iptables -t nat -A POSTROUTING \
+      -o "$VM_NET_DEV" \
+      -s "$subnet" \
+      ! -d "$subnet" \
+      -m comment --comment "remove" \
+      -j MASQUERADE; then
       warn "$tables" && return 1
     fi
   fi
 
   # shellcheck disable=SC2086
-  if ! iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p tcp${exclude} -m comment --comment "remove" -j DNAT --to "$ip"; then
+  if ! iptables -t nat -A PREROUTING \
+    -i "$VM_NET_DEV" \
+    -d "$IP" \
+    -p tcp${exclude} \
+    -m comment --comment "remove" \
+    -j DNAT --to "$ip"; then
     warn "failed to configure IP tables!" && return 1
   fi
 
-  if ! iptables -t nat -A PREROUTING -i "$VM_NET_DEV" -d "$IP" -p udp -m comment --comment "remove" -j DNAT --to "$ip"; then
+  if ! iptables -t nat -A PREROUTING \
+    -i "$VM_NET_DEV" \
+    -d "$IP" \
+    -p udp \
+    -m comment --comment "remove" \
+    -j DNAT --to "$ip"; then
     warn "failed to configure IP tables!" && return 1
   fi
 
   if (( KERNEL > 4 )); then
     # Hack for guest VMs complaining about "bad udp checksums in 5 packets"
-    iptables -A POSTROUTING -t mangle -p udp --dport bootpc -m comment --comment "remove" -j CHECKSUM --checksum-fill > /dev/null 2>&1 || true
+    iptables -t mangle -A POSTROUTING \
+      -s "$subnet" \
+      -p udp \
+      --dport bootpc \
+      -m comment --comment "remove" \
+      -j CHECKSUM --checksum-fill > /dev/null 2>&1 || true
   fi
 
+  # Clamp TCP MSS to avoid subtle MTU blackholes when the outer path has a smaller MTU.
+  iptables -t mangle -A FORWARD \
+    -s "$subnet" \
+    -p tcp \
+    --tcp-flags SYN,RST SYN \
+    -m comment --comment "remove" \
+    -j TCPMSS --clamp-mss-to-pmtu > /dev/null 2>&1 || true
+
+  iptables -t mangle -A FORWARD \
+    -d "$ip" \
+    -p tcp \
+    --tcp-flags SYN,RST SYN \
+    -m comment --comment "remove" \
+    -j TCPMSS --clamp-mss-to-pmtu > /dev/null 2>&1 || true
+
   # Allow forwarding from bridge -> dev
-  if ! iptables -A FORWARD -i "$VM_NET_BRIDGE" -o "$VM_NET_DEV" -m comment --comment "remove" -j ACCEPT; then
+  if ! iptables -A FORWARD \
+    -i "$VM_NET_BRIDGE" \
+    -o "$VM_NET_DEV" \
+    -m comment --comment "remove" \
+    -j ACCEPT; then
     warn "failed to configure IP tables!" && return 1
   fi
 
   # Allow return traffic
-  if ! iptables -A FORWARD -i "$VM_NET_DEV" -o "$VM_NET_BRIDGE" -m conntrack --ctstate RELATED,ESTABLISHED -m comment --comment "remove" -j ACCEPT; then
+  if ! iptables -A FORWARD \
+    -i "$VM_NET_DEV" \
+    -o "$VM_NET_BRIDGE" \
+    -m conntrack --ctstate RELATED,ESTABLISHED \
+    -m comment --comment "remove" \
+    -j ACCEPT; then
     warn "failed to configure IP tables!" && return 1
   fi
 
@@ -754,18 +865,29 @@ getInfo() {
   fi
 
   local mtu=""
+  local mtu_custom="N"
 
   if [ -f "/sys/class/net/$VM_NET_DEV/mtu" ]; then
     mtu=$(< "/sys/class/net/$VM_NET_DEV/mtu")
   fi
 
+  [ -n "$MTU" ] && mtu_custom="Y"
   [ -z "$MTU" ] && MTU="$mtu"
   [ -z "$MTU" ] && MTU="0"
 
+  GUEST_MTU="$MTU"
+
   if [[ "${ADAPTER,,}" != "virtio-net-pci" ]]; then
-    if [[ "$MTU" != "0" ]] && [ "$MTU" -lt "1500" ]; then
-      warn "MTU size is $MTU, but cannot be set for $ADAPTER adapters!" && MTU="0"
+    if [[ "$GUEST_MTU" != "0" && "$GUEST_MTU" -lt "1500" ]]; then
+      warn "MTU size is $GUEST_MTU, but cannot be advertised for $ADAPTER adapters; networking may break on paths below 1500 MTU."
+      GUEST_MTU="0"
     fi
+  fi
+
+  # Automatically propagate smaller-than-standard MTUs, but do not automatically
+  # advertise jumbo frames unless the user explicitly requested MTU.
+  if [[ "$GUEST_MTU" != "0" && "$GUEST_MTU" -gt "1500" ]] && ! enabled "$mtu_custom"; then
+    GUEST_MTU="1500"
   fi
 
   if [ -z "$VM_NET_MAC" ]; then
@@ -901,8 +1023,8 @@ fi
 
 NET_OPTS+=" -device $ADAPTER,id=net0,netdev=hostnet0,romfile=,mac=$VM_NET_MAC"
 
-if [[ "${ADAPTER,,}" == "virtio-net-pci" && "$MTU" != "0" && "$MTU" != "1500" ]]; then
-  NET_OPTS+=",host_mtu=$MTU"
+if [[ "${ADAPTER,,}" == "virtio-net-pci" && "$GUEST_MTU" != "0" && "$GUEST_MTU" != "1500" ]]; then
+  NET_OPTS+=",host_mtu=$GUEST_MTU"
 fi
 
 return 0
