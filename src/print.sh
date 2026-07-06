@@ -87,7 +87,7 @@ readGuestPort() {
 
 readGuestIp() {
 
-  ip=$(readJsonField '.data.data.ip.data[] | select((.name=="eth0") and has("ip")).ip') || return 1
+  ip=$(readJsonField '.data.data.ip.data[] | select(has("ip")) | .ip | select(test("^[0-9]+\\."))' | head -n 1) || return 1
   [ -z "$ip" ] && return 1
 
   return 0
