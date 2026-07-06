@@ -614,19 +614,22 @@ addDevice () {
   # Only detect and apply sector sizes for partitions, not whole disks
   # Whole disk passthrough with explicit sector sizes causes DSM not to recognize the disk
   if [[ "$dev_type" == "part" ]]; then
-    local result logical physical
+    local result=""
+    local logical=""
+    local physical=""
+
     result=$(fdisk -l "$DISK_DEV" 2>/dev/null | grep -m 1 -o "(logical/physical): .*" | cut -c 21- || true)
 
     if [ -n "$result" ]; then
       logical="${result%% *}"
       physical=$(echo "$result" | grep -m 1 -o "/ .*" | cut -c 3- || true)
       physical="${physical%% *}"
+    fi
 
-      if [ -n "$logical" ] && [ -n "$physical" ] && [[ "$physical" != "512" ]]; then
-        sectors=",logical_block_size=$logical,physical_block_size=$physical"
-      fi
-    else
+    if [ -z "$logical" ] || [ -z "$physical" ]; then
       warn "Failed to determine the sector size for $DISK_DEV"
+    elif [[ "$physical" != "512" ]]; then
+      sectors=",logical_block_size=$logical,physical_block_size=$physical"
     fi
   fi
 
@@ -644,6 +647,11 @@ if ! enabled "$DISK_DISABLE"; then
   msg="Initializing disks..."
   html "$msg"
   enabled "$DEBUG" && echo "$msg"
+fi
+
+if [[ "${DISK_IO,,}" == "native" && "${DISK_CACHE,,}" != "none" && "${DISK_CACHE,,}" != "directsync" ]]; then
+  warn "DISK_IO=native requires direct I/O caching, using DISK_IO=threads with DISK_CACHE=$DISK_CACHE."
+  DISK_IO="threads"
 fi
 
 case "${DISK_TYPE,,}" in
