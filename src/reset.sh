@@ -247,7 +247,6 @@ FOOTER2="<a href='$SUPPORT'>$SUPPORT</a>"
 SOCKETS=1
 CPU=$(cpu)
 SYS=$(uname -r)
-HOST=$(hostname -s)
 KERNEL=$(echo "$SYS" | cut -b 1)
 MINOR=$(echo "$SYS" | cut -d '.' -f2)
 ARCH=$(dpkg --print-architecture)
