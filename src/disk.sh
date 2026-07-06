@@ -692,6 +692,11 @@ case "${DISK_TYPE,,}" in
   * ) error "Invalid DISK_TYPE specified, value \"$DISK_TYPE\" is not recognized!" && exit 80 ;;
 esac
 
+if [[ "$DISK_FLAGS" =~ [[:space:]] ]]; then
+  error "Invalid DISK_FLAGS value '$DISK_FLAGS', spaces are not allowed."
+  exit 78
+fi
+
 if [ -z "$ALLOCATE" ]; then
   ALLOCATE="N"
 fi
