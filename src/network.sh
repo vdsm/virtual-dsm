@@ -503,6 +503,50 @@ getSlirp() {
   return 0
 }
 
+getPasst() {
+
+  local args=""
+  local list=""
+  local port=""
+  local num=""
+  local tcp=""
+  local udp=""
+
+  list=$(getUserPorts)
+
+  for port in ${list//,/ }; do
+
+    [ -z "$port" ] && continue
+
+    if [[ "$port" == *"/udp" ]]; then
+
+      num="${port%/udp}"
+      [ -n "$num" ] && udp+="$num,"
+
+    elif [[ "$port" == *"/tcp" ]]; then
+
+      num="${port%/tcp}"
+      [ -n "$num" ] && tcp+="$num,"
+
+    else
+
+      tcp+="$port,"
+      udp+="$port,"
+
+    fi
+
+  done
+
+  tcp="${tcp%,}"
+  udp="${udp%,}"
+
+  [ -n "$tcp" ] && args+=" -t %${DEV}/$tcp"
+  [ -n "$udp" ] && args+=" -u %${DEV}/$udp"
+
+  echo "$args"
+  return 0
+}
+
 # ######################################
 #  Network mode setup
 # ######################################
@@ -661,15 +705,8 @@ configurePasst() {
   PASST_OPTS+=" -m $passt_mtu"
 
   local forward=""
-  forward=$(getUserPorts)
-  forward="${forward///tcp}"
-  forward="${forward///udp}"
-
-  if [ -n "$forward" ]; then
-    forward="%${DEV}/$forward"
-    PASST_OPTS+=" -t $forward"
-    PASST_OPTS+=" -u $forward"
-  fi
+  forward=$(getPasst)
+  [ -n "$forward" ] && PASST_OPTS+="$forward"
 
   PASST_OPTS+=" -H $HOST"
   PASST_OPTS+=" -M $GATEWAY_MAC"
