@@ -55,8 +55,9 @@ ext2fmt() {
 }
 
 getSize() {
+
   local DISK_FILE="$1"
-  local DISK_EXT DISK_FMT
+  local DISK_EXT DISK_FMT size
 
   DISK_EXT=$(echo "${DISK_FILE//*./}" | sed 's/^.*\.//')
   DISK_FMT=$(ext2fmt "$DISK_EXT")
@@ -65,11 +66,19 @@ getSize() {
     raw)
       stat -c%s "$DISK_FILE"
       ;;
+
     qcow2)
-      qemu-img info "$DISK_FILE" -f "$DISK_FMT" | grep '^virtual size: ' | sed 's/.*(\(.*\) bytes)/\1/'
+      size=$(qemu-img info --output=json -f "$DISK_FMT" "$DISK_FILE" | jq -r '."virtual-size" // empty')
+      if [[ ! "$size" =~ ^[0-9]+$ ]]; then
+        error "Failed to determine virtual size of $DISK_FILE"
+        exit 78
+      fi
+      echo "$size"
       ;;
+
     *)
-      error "Unrecognized disk format: $DISK_FMT" && exit 78
+      error "Unrecognized disk format: $DISK_FMT"
+      exit 78
       ;;
   esac
 }
