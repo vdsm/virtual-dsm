@@ -42,7 +42,6 @@ ADAPTER=$(strip "$ADAPTER")
 NETWORK=$(strip "$NETWORK")
 HOST_PORTS=$(strip "$HOST_PORTS")
 USER_PORTS=$(strip "$USER_PORTS")
-CHECK_PORT=$(strip "$CHECK_PORT")
 
 ADD_ERR="Please add the following setting to your container:"
 
