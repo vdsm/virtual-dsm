@@ -583,6 +583,7 @@ addDisk () {
       GB=$(formatBytes "$FREE")
       LEFT=$(formatBytes "$LEFT")
       CUR_SIZE=$(formatBytes "$CUR_SIZE")
+      
       msg="The virtual size of the ${DISK_DESC,,} is $CUR_SIZE"
 
       if [ -n "$USED" ] && [[ "$USED" != "0" ]]; then
