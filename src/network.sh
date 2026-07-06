@@ -799,6 +799,11 @@ configureNAT() {
   local gateway="${ip%.*}.1"
   subnet=$(networkCIDR "$ip") || return 1
 
+  if ip route show "$subnet" 2>/dev/null | grep -q .; then
+    error "VM subnet $subnet conflicts with an existing route inside the container."
+    return 1
+  fi
+
   createBridge "$gateway" || return 1
   createTap "$tuntap" || return 1
 
