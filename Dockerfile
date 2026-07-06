@@ -25,6 +25,7 @@ RUN <<EOF
     unzip \
     nginx \
     procps \
+    ipcalc \
     ethtool \
     python3 \
     python3-pip \
