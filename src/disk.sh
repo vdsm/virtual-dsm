@@ -8,7 +8,7 @@ set -Eeuo pipefail
 : "${DISK_TYPE:=""}"              # Device type to be used, "sata", "nvme", "blk" or "scsi"
 : "${DISK_FLAGS:=""}"             # Specifies the options for use with the qcow2 disk format
 : "${DISK_CACHE:="none"}"         # Caching mode, can be set to 'writeback' for better performance
-: "${DISK_DISCARD:="on"}"         # Controls whether unmap (TRIM) commands are passed to the host.
+: "${DISK_DISCARD:="unmap"}"      # Controls whether unmap (TRIM) commands are passed to the host.
 : "${DISK_ROTATION:="1"}"         # Rotation rate, set to 1 for SSD storage and increase for HDD
 
 # Sanitize all variables
@@ -662,6 +662,18 @@ if [[ "${DISK_IO,,}" == "native" && "${DISK_CACHE,,}" != "none" && "${DISK_CACHE
   warn "DISK_IO=native requires direct I/O caching, using DISK_IO=threads with DISK_CACHE=$DISK_CACHE."
   DISK_IO="threads"
 fi
+
+case "${DISK_DISCARD,,}" in
+  "y" | "yes" | "true" | "1" | "on" | "unmap" )
+    DISK_DISCARD="unmap" ;;
+
+  "n" | "no" | "false" | "0" | "off" | "ignore" )
+    DISK_DISCARD="ignore" ;;
+
+  * )
+    warn "Invalid DISK_DISCARD value '$DISK_DISCARD', using 'unmap'."
+    DISK_DISCARD="unmap" ;;
+esac
 
 case "${DISK_TYPE,,}" in
   "ide" | "sata" | "nvme" | "usb" | "scsi" | "blk" | "auto" | "none" ) ;;
