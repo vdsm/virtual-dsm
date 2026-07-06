@@ -38,15 +38,9 @@ fmt2ext() {
   local DISK_FMT="$1"
 
   case "${DISK_FMT,,}" in
-    qcow2)
-      echo "qcow2"
-      ;;
-    raw)
-      echo "img"
-      ;;
-    *)
-      error "Unrecognized disk format: $DISK_FMT" && exit 78
-      ;;
+    qcow2) echo "qcow2" ;;
+    raw) echo "img" ;;
+    *) error "Unrecognized disk format: $DISK_FMT" && exit 78 ;;
   esac
 }
 
@@ -54,15 +48,9 @@ ext2fmt() {
   local DISK_EXT="$1"
 
   case "${DISK_EXT,,}" in
-    qcow2)
-      echo "qcow2"
-      ;;
-    img)
-      echo "raw"
-      ;;
-    *)
-      error "Unrecognized file extension: .$DISK_EXT" && exit 78
-      ;;
+    qcow2) echo "qcow2" ;;
+    img) echo "raw" ;;
+    *) error "Unrecognized file extension: .$DISK_EXT" && exit 78 ;;
   esac
 }
 
@@ -118,7 +106,7 @@ allocateRaw() {
 
   fallocate -l "$DATA_SIZE" "$DISK_FILE" &>/dev/null && return 0
   fallocate -l -x "$DATA_SIZE" "$DISK_FILE" && return 0
-  truncate -s "$DATA_SIZE" "$DISK_FILE"
+  truncate -s "$DATA_SIZE" "$DISK_FILE" || return 1
 
   return 0
 }
@@ -260,7 +248,7 @@ resizeDisk() {
   local FS="$5"
   local CUR_SIZE DATA_SIZE DIR SPACE GB
 
-  CUR_SIZE=$(getSize "$DISK_FILE")
+  CUR_SIZE=$(getSize "$DISK_FILE") || exit 71
   DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
   local REQ=$(( DATA_SIZE - CUR_SIZE ))
   (( REQ < 1 )) && error "Shrinking disks is not supported yet, please increase ${DISK_DESC^^}_SIZE." && exit 71
@@ -328,7 +316,7 @@ convertDisk() {
     local CUR_SIZE SPACE GB
 
     # Check free diskspace
-    CUR_SIZE=$(getSize "$SOURCE_FILE")
+    CUR_SIZE=$(getSize "$SOURCE_FILE") || exit 79
     SPACE=$(df --output=avail -B 1 "$DIR" | tail -n 1)
 
     if (( CUR_SIZE > SPACE )); then
@@ -371,8 +359,17 @@ convertDisk() {
     fi
   fi
 
-  rm -f "$SOURCE_FILE"
-  mv "$TMP_FILE" "$DST_FILE"
+  if ! rm -f "$SOURCE_FILE"; then
+    rm -f "$TMP_FILE"
+    error "Failed to remove old $DISK_DESC image $SOURCE_FILE."
+    exit 79
+  fi
+
+  if ! mv "$TMP_FILE" "$DST_FILE"; then
+    rm -f "$TMP_FILE"
+    error "Failed to move converted $DISK_DESC image to $DST_FILE."
+    exit 79
+  fi
 
   if isCow "$FS"; then
     FA=$(lsattr "$DST_FILE")
@@ -538,7 +535,7 @@ addDisk () {
 
   if [ -s "$DISK_FILE" ]; then
 
-    CUR_SIZE=$(getSize "$DISK_FILE")
+    CUR_SIZE=$(getSize "$DISK_FILE") || exit 71
 
     if (( DATA_SIZE > CUR_SIZE )); then
 
@@ -563,7 +560,7 @@ addDisk () {
 
   if [ -f "$DISK_FILE" ] && disabled "$ALLOCATE"; then
 
-    CUR_SIZE=$(getSize "$DISK_FILE")
+    CUR_SIZE=$(getSize "$DISK_FILE") || exit 73
     USED=$(du -sB 1 "$DISK_FILE" | cut -f1)
     FREE=$(df --output=avail -B 1 "$DIR" | tail -n 1)
     LEFT=$(( CUR_SIZE - USED - FREE ))
