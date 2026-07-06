@@ -1118,7 +1118,7 @@ getInfo() {
     [ -s "$file" ] && MAC=$(<"$file")
     MAC="${MAC//[![:print:]]/}"
     if [ -z "$MAC" ]; then
-      # Generate Synology-style MAC address based on a stable container identifier when possible.
+      # Generate a Synology-style MAC address based on a stable container identifier when possible.
       MAC=$(echo "$container" | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:11:32:\3:\4:\5/')
       echo "${MAC^^}" > "$file"
       ! setOwner "$file" && error "Failed to set the owner for \"$file\" !"
@@ -1129,7 +1129,7 @@ getInfo() {
   MAC="${MAC//-/:}"
 
   if [[ ${#MAC} == 12 ]]; then
-    m="$MAC"
+    local m="$MAC"
     MAC="${m:0:2}:${m:2:2}:${m:4:2}:${m:6:2}:${m:8:2}:${m:10:2}"
   fi
 
