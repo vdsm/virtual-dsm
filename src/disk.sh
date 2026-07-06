@@ -38,15 +38,9 @@ fmt2ext() {
   local DISK_FMT="$1"
 
   case "${DISK_FMT,,}" in
-    qcow2)
-      echo "qcow2"
-      ;;
-    raw)
-      echo "img"
-      ;;
-    *)
-      error "Unrecognized disk format: $DISK_FMT" && exit 78
-      ;;
+    qcow2) echo "qcow2" ;;
+    raw) echo "img" ;;
+    *) error "Unrecognized disk format: $DISK_FMT" && exit 78 ;;
   esac
 }
 
@@ -54,15 +48,9 @@ ext2fmt() {
   local DISK_EXT="$1"
 
   case "${DISK_EXT,,}" in
-    qcow2)
-      echo "qcow2"
-      ;;
-    img)
-      echo "raw"
-      ;;
-    *)
-      error "Unrecognized file extension: .$DISK_EXT" && exit 78
-      ;;
+    qcow2) echo "qcow2" ;;
+    img) echo "raw" ;;
+    *) error "Unrecognized file extension: .$DISK_EXT" && exit 78 ;;
   esac
 }
 
