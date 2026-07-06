@@ -69,33 +69,6 @@ isUserMode() {
   esac
 }
 
-guestIP() {
-
-  local ip="$1"
-  local min="${2:-2}"
-  local last="${ip##*.}"
-
-  if [[ ! "$last" =~ ^[0-9]+$ ]] || (( last < min || last > 254 )); then
-    ip="${ip%.*}.$min"
-  fi
-
-  echo "$ip"
-  return 0
-}
-
-natGuestIP() {
-
-  local ip="$1"
-
-  if [[ "$ip" != "172.30."* ]]; then
-    ip="172.30.$(cut -d. -f3,4 <<< "$ip")"
-  else
-    ip="172.31.$(cut -d. -f3,4 <<< "$ip")"
-  fi
-
-  guestIP "$ip" 2
-}
-
 maskToCIDR() {
 
   local mask="$1"
@@ -263,6 +236,66 @@ disableIPv6() {
   return 0
 }
 
+guestIP() {
+
+  local ip="$1"
+  local min="${2:-2}"
+  local last="${ip##*.}"
+
+  if [[ ! "$last" =~ ^[0-9]+$ ]] || (( last < min || last > 254 )); then
+    ip="${ip%.*}.$min"
+  fi
+
+  echo "$ip"
+  return 0
+}
+
+natGuestIP() {
+
+  local ip="$1"
+  local third=""
+  local fourth=""
+  local start=""
+  local second=""
+  local guest=""
+  local subnet=""
+
+  third=$(cut -d. -f3 <<< "$ip")
+  fourth=$(cut -d. -f4 <<< "$ip")
+
+  if [[ "$ip" == "172.30."* ]]; then
+    start="31"
+  else
+    start="30"
+  fi
+
+  guest=$(guestIP "172.$start.$third.$fourth" 2)
+  fourth="${guest##*.}"
+
+  for (( second=start; second<=254; second++ )); do
+    guest="172.$second.$third.$fourth"
+    subnet=$(networkCIDR "$guest") || return 1
+
+    if ! ip route show "$subnet" 2>/dev/null | grep -q .; then
+      echo "$guest"
+      return 0
+    fi
+  done
+
+  for (( second=30; second<start; second++ )); do
+    guest="172.$second.$third.$fourth"
+    subnet=$(networkCIDR "$guest") || return 1
+
+    if ! ip route show "$subnet" 2>/dev/null | grep -q .; then
+      echo "$guest"
+      return 0
+    fi
+  done
+
+  error "No available VM subnet found in 172.30.$third.0/$PREFIX through 172.254.$third.0/$PREFIX."
+  return 1
+}
+
 # ######################################
 #  DNS / port helpers
 # ######################################
@@ -276,6 +309,7 @@ configureDNS() {
   local mask="$5"
   local gateway="$6"
   local arguments="$DNSMASQ_OPTS"
+  local rc
 
   if ! echo "$gateway" > /run/shm/qemu.gw; then
     error "Failed to write gateway file."
@@ -401,7 +435,7 @@ getUserPorts() {
 
       if [[ "$num" == "$port" ]]; then
         num=""
-        if [[ "$port" != "$WEB_PORT" ]]; then
+        if [[ "$port" != "${WEB_PORT:-}" ]]; then
           warn "Could not assign port $port to \"USER_PORTS\" because it is already in \"HOST_PORTS\"!"
         fi
       fi
@@ -452,6 +486,9 @@ getSlirp() {
 # ######################################
 
 configureDHCP() {
+
+  local msg=""
+  local rc
 
   enabled "$DEBUG" && echo "Configuring MACVTAP networking..."
 
@@ -537,13 +574,13 @@ configureSlirp() {
   [ -n "$IP" ] && ip="$IP"
 
   ip=$(guestIP "$ip" 4)
+
   local gateway="${ip%.*}.1"
+  local subnet=""
+  subnet=$(networkCIDR "$ip") || return 1
 
   local ipv6="ipv6=off,"
   [ -n "$IP6" ] && ipv6="ipv6=on,"
-
-  local subnet=""
-  subnet=$(networkCIDR "$ip") || return 1
 
   NET_OPTS="-netdev user,id=hostnet0,ipv4=on,host=$gateway,net=$subnet,dhcpstart=$ip,${ipv6}hostname=$HOST"
 
@@ -844,6 +881,7 @@ configureTables() {
 configureNAT() {
 
   local tuntap="TUN device is missing. $ADD_ERR --device /dev/net/tun"
+  local rc
 
   enabled "$DEBUG" && echo "Configuring NAT networking..."
 
@@ -917,8 +955,10 @@ configureNAT() {
 # ######################################
 
 clearTables() {
+
   local table="" line rules
   local rule_tag="remove"
+  local re="--comment[[:space:]]+\"?$rule_tag\"?([[:space:]]|\$)"
 
   # Choose between iptables or nftables
   if command -v iptables-nft >/dev/null 2>&1 && iptables-nft -V >/dev/null 2>&1; then
@@ -942,7 +982,7 @@ clearTables() {
       \*raw)    table="raw" ;;
     esac
     if [[ "$line" == -A* ]]; then
-      if [[ "$line" == *"--comment $rule_tag"* || "$line" == *"--comment \"$rule_tag\""* ]]; then
+      if [[ "$line" =~ $re ]]; then
         read -ra args <<< "${line/-A /-D }"
         iptables -t "$table" "${args[@]}" &> /dev/null || :
       fi
