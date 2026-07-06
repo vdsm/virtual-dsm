@@ -680,10 +680,22 @@ if [[ ! "$DISK_ROTATION" =~ ^[0-9]+$ ]]; then
   DISK_ROTATION="1"
 fi
 
+DISK_FMT="${DISK_FMT,,}"
+
+case "$DISK_FMT" in
+  "raw" | "qcow2" ) ;;
+  * ) error "Invalid DISK_FMT specified, value \"$DISK_FMT\" is not recognized!" && exit 78 ;;
+esac
+
 case "${DISK_TYPE,,}" in
-  "ide" | "sata" | "nvme" | "usb" | "scsi" | "blk" | "auto" | "none" ) ;;
+  "ide" | "sata" | "nvme" | "usb" | "scsi" | "blk" | "virtio-blk" | "virtio-scsi" | "auto" | "none" ) ;;
   * ) error "Invalid DISK_TYPE specified, value \"$DISK_TYPE\" is not recognized!" && exit 80 ;;
 esac
+
+if [[ "$DISK_FLAGS" =~ [[:space:]] ]]; then
+  error "Invalid DISK_FLAGS value '$DISK_FLAGS', spaces are not allowed."
+  exit 78
+fi
 
 if [ -z "$ALLOCATE" ]; then
   ALLOCATE="N"
