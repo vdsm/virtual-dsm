@@ -18,11 +18,15 @@ WSD_PID="$QEMU_DIR/websocketd.pid"
 prepareWebFiles() {
   cp -r /var/www/* "$QEMU_DIR"
   rm -f "$WSD_PID" "$WEB_PID"
+
+  return 0
 }
 
 configureWebPorts() {
   sed -i "s/listen 5000 default_server;/listen $WEB_PORT default_server;/g" /etc/nginx/sites-enabled/web.conf
   sed -i "s/proxy_pass http:\/\/127.0.0.1:8004\/;/proxy_pass http:\/\/127.0.0.1:$WSD_PORT\/;/g" /etc/nginx/sites-enabled/web.conf
+
+  return 0
 }
 
 configureIpv6Listen() {
@@ -31,6 +35,8 @@ configureIpv6Listen() {
   if [ -f /proc/net/if_inet6 ] && [[ "$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6 2>/dev/null)" != "1" ]] && [ -n "$(ifconfig -a | grep inet6)" ]; then
     sed -i "s/listen $WEB_PORT default_server;/listen [::]:$WEB_PORT default_server ipv6only=off;/g" /etc/nginx/sites-enabled/web.conf
   fi
+
+  return 0
 }
 
 configureWebServer() {
@@ -40,6 +46,8 @@ configureWebServer() {
 
   configureWebPorts
   configureIpv6Listen
+
+  return 0
 }
 
 startWebServer() {
