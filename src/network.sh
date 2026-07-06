@@ -64,6 +64,65 @@ isUserMode() {
   esac
 }
 
+guestIP() {
+
+  local ip="$1"
+  local min="${2:-2}"
+  local last="${ip##*.}"
+
+  if [[ ! "$last" =~ ^[0-9]+$ ]] || (( last < min || last > 254 )); then
+    ip="${ip%.*}.$min"
+  fi
+
+  echo "$ip"
+  return 0
+}
+
+natGuestIP() {
+
+  local ip="$1"
+
+  if [[ "$ip" != "172.30."* ]]; then
+    ip="172.30.$(cut -d. -f3,4 <<< "$ip")"
+  else
+    ip="172.31.$(cut -d. -f3,4 <<< "$ip")"
+  fi
+
+  guestIP "$ip" 2
+}
+
+maskToCIDR() {
+
+  local mask="$1"
+  local prefix=""
+
+  prefix=$(ipcalc -p 0.0.0.0 "$mask" | awk -F= '/^PREFIX=/ { print $2 }')
+
+  if [[ ! "$prefix" =~ ^[0-9]+$ ]] || (( prefix < 1 || prefix > 30 )); then
+    error "Invalid VM_NET_MASK: '$mask'"
+    return 1
+  fi
+
+  echo "$prefix"
+  return 0
+}
+
+networkCIDR() {
+
+  local ip="$1"
+  local network=""
+
+  network=$(ipcalc -n "$ip" "$VM_NET_MASK" | awk -F= '/^NETWORK=/ { print $2 }')
+
+  if [ -z "$network" ]; then
+    error "Failed to calculate network address from IP '$ip' and netmask '$VM_NET_MASK'."
+    return 1
+  fi
+
+  echo "$network/$VM_NET_PREFIX"
+  return 0
+}
+
 getMTU() {
 
   local dev="$1"
@@ -394,14 +453,17 @@ configureSlirp() {
 
   local ip="$IP"
   [ -n "$VM_NET_IP" ] && ip="$VM_NET_IP"
-  local base="${ip%.*}."
-  [ "${ip/$base/}" -lt "4" ] && ip="${ip%.*}.4"
+
+  ip=$(guestIP "$ip" 4)
+
   local gateway="${ip%.*}.1"
+  local subnet=""
+  subnet=$(networkCIDR "$ip") || return 1
 
   local ipv6="ipv6=off,"
   [ -n "$IP6" ] && ipv6="ipv6=on,"
 
-  NET_OPTS="-netdev user,id=hostnet0,ipv4=on,host=$gateway,net=${gateway%.*}.0/24,dhcpstart=$ip,${ipv6}hostname=$VM_NET_HOST"
+  NET_OPTS="-netdev user,id=hostnet0,ipv4=on,host=$gateway,net=$subnet,dhcpstart=$ip,${ipv6}hostname=$VM_NET_HOST"
 
   local forward=""
   forward=$(getSlirp "$ip")
@@ -441,12 +503,9 @@ configurePasst() {
   local ip="$IP"
   [ -n "$VM_NET_IP" ] && ip="$VM_NET_IP"
 
-  local gateway=""
-  if [[ "$ip" != *".1" ]]; then
-    gateway="${ip%.*}.1"
-  else
-    gateway="${ip%.*}.2"
-  fi
+  ip=$(guestIP "$ip" 2)
+
+  local gateway="${ip%.*}.1"
 
   # passt configuration:
   [ -z "$IP6" ] && PASST_OPTS+=" -4"
@@ -535,7 +594,6 @@ configurePasst() {
 createBridge() {
 
   local gateway="$1"
-  local broadcast="$2"
   local rc
 
   # Create a bridge with a static IP for the VM guest
@@ -550,7 +608,7 @@ createBridge() {
     setMTU "$VM_NET_BRIDGE" "$GUEST_MTU"
   fi
 
-  if ! ip address add "$gateway/24" broadcast "$broadcast" dev "$VM_NET_BRIDGE"; then
+  if ! ip address add "$gateway/$VM_NET_PREFIX" dev "$VM_NET_BRIDGE"; then
     warn "failed to add IP address pool!" && return 1
   fi
 
@@ -730,28 +788,18 @@ configureNAT() {
     fi
   fi
 
-  local ip base exclude
-  base=$(cut -d. -f3,4 <<< "$IP")
+  local ip exclude subnet
 
-  if [[ "$IP" != "172.30."* ]]; then
-    ip="172.30.$base"
+  if [ -n "$VM_NET_IP" ]; then
+    ip=$(guestIP "$VM_NET_IP" 2)
   else
-    ip="172.31.$base"
-  fi
-
-  [ -n "$VM_NET_IP" ] && ip="$VM_NET_IP"
-
-  local last="${ip##*.}"
-
-  if [[ ! "$last" =~ ^[0-9]+$ ]] || (( last < 2 || last > 254 )); then
-    ip="${ip%.*}.4"
+    ip=$(natGuestIP "$IP")
   fi
 
   local gateway="${ip%.*}.1"
-  local subnet="${ip%.*}.0/24"
-  local broadcast="${ip%.*}.255"
+  subnet=$(networkCIDR "$ip") || return 1
 
-  createBridge "$gateway" "$broadcast" || return 1
+  createBridge "$gateway" || return 1
   createTap "$tuntap" || return 1
 
   # Use the lowest effective guest-facing MTU, without mutating the parent/uplink MTU.
@@ -912,6 +960,8 @@ getInfo() {
     error "$ADD_ERR -e \"VM_NET_DEV=NAME\" to specify another interface name." && exit 26
   fi
 
+  VM_NET_PREFIX=$(maskToCIDR "$VM_NET_MASK") || exit 28
+
   GATEWAY=$(ip route list dev "$VM_NET_DEV" | awk ' /^default/ {print $3}' | head -n 1)
   { IP=$(ip address show dev "$VM_NET_DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/ | head -n 1); } 2>/dev/null || :
   [ -z "$IP" ] && ! enabled "$DHCP" && error "Could not determine container IPv4 address!" && exit 26
@@ -1019,7 +1069,7 @@ getInfo() {
   GATEWAY_MAC=$(echo "$VM_NET_MAC" | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:\1:\2:\3:\4:\5/')
 
   if enabled "$DEBUG"; then
-    line="Host: $HOST  IP: $IP  Gateway: $GATEWAY  Interface: $VM_NET_DEV  MAC: $VM_NET_MAC  MTU: $mtu"
+    line="Host: $HOST  IP: $IP  Gateway: $GATEWAY  Interface: $VM_NET_DEV  MAC: $VM_NET_MAC  MTU: $mtu  Mask: $VM_NET_MASK/$VM_NET_PREFIX"
     [[ "$MTU" != "0" && "$MTU" != "$mtu" ]] && line+=" ($MTU)"
     info "$line"
     if [ -f /etc/resolv.conf ]; then
