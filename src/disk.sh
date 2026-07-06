@@ -649,6 +649,11 @@ if ! enabled "$DISK_DISABLE"; then
   enabled "$DEBUG" && echo "$msg"
 fi
 
+if [[ "${DISK_IO,,}" == "native" && "${DISK_CACHE,,}" != "none" && "${DISK_CACHE,,}" != "directsync" ]]; then
+  warn "DISK_IO=native requires direct I/O caching, using DISK_IO=threads with DISK_CACHE=$DISK_CACHE."
+  DISK_IO="threads"
+fi
+
 case "${DISK_TYPE,,}" in
   "ide" | "sata" | "nvme" | "usb" | "scsi" | "blk" | "auto" | "none" ) ;;
   * ) error "Invalid DISK_TYPE specified, value \"$DISK_TYPE\" is not recognized!" && exit 80 ;;
