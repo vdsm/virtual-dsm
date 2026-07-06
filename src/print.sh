@@ -95,6 +95,8 @@ readGuestIp() {
 
 writeDsmLocation() {
   echo "$ip:$port" > "$file"
+
+  return 0
 }
 
 pollGuestLocation() {
@@ -137,6 +139,8 @@ writeDhcpPage() {
 
   echo "$html" > "$page"
   echo "$body" > "$msgs"
+
+  return 0
 }
 
 buildStaticMessage() {
@@ -152,6 +156,8 @@ buildStaticMessage() {
   else
     msg="http://$ip:$port"
   fi
+
+  return 0
 }
 
 printLoginMessage() {
@@ -160,6 +166,8 @@ printLoginMessage() {
   info " You can now login to DSM at $msg"
   info "-----------------------------------------------------------"
   echo "" >&2
+
+  return 0
 }
 
 pollGuestLocation
