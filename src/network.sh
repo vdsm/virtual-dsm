@@ -1029,24 +1029,37 @@ checkOS() {
   return 0
 }
 
-getInfo() {
-
-  detectInterface
+validateInterface() {
 
   if [ ! -d "/sys/class/net/$DEV" ]; then
     error "Network interface '$DEV' does not exist inside the container!"
-    error "$ADD_ERR -e \"DEV=NAME\" to specify another interface name." && exit 26
+    error "$ADD_ERR -e \"DEV=NAME\" to specify another interface name."
+    exit 26
   fi
+
+  return 0
+}
+
+validateMask() {
 
   PREFIX=$(maskToCIDR "$MASK") || exit 28
 
-  detectAddresses
+  return 0
+}
+
+validateAddresses() {
 
   # DHCP/macvtap mode can work without a detectable container IPv4 address,
   # because the guest receives its address directly from the external LAN.
-  [ -z "$UPLINK" ] && ! enabled "$DHCP" && error "Could not determine container IPv4 address!" && exit 26
+  if [ -z "$UPLINK" ] && ! enabled "$DHCP"; then
+    error "Could not determine container IPv4 address!"
+    exit 26
+  fi
 
-  detectAdapter
+  return 0
+}
+
+validateAdapter() {
 
   if [[ -n "$BUS" && "${BUS,,}" != "n/a" && "${BUS,,}" != "tap" ]]; then
     enabled "$DEBUG" && info "Detected NIC: ${NIC:-unknown}  BUS: $BUS"
@@ -1058,13 +1071,13 @@ getInfo() {
 
     checkOS
 
-    if [[ "${nic,,}" == "ipvlan" ]]; then
+    if [[ "${NIC,,}" == "ipvlan" ]]; then
       error "This container does not support IPVLAN networking when DHCP=Y."
       exit 29
     fi
 
-    if [[ "${nic,,}" != "macvlan" ]]; then
-      enabled "$DEBUG" && info "Detected NIC: $nic"
+    if [[ "${NIC,,}" != "macvlan" ]]; then
+      enabled "$DEBUG" && info "Detected NIC: ${NIC:-unknown}"
       error "The container needs to be in a MACVLAN network when DHCP=Y."
       exit 29
     fi
@@ -1076,7 +1089,7 @@ getInfo() {
 
       BNF="/proc/sys/net/bridge/bridge-nf-call-iptables"
 
-      if [[ -r "$BNF" ]] && [[ "$(cat "$BNF")" != "0" ]]; then
+      if [[ -r "$BNF" ]] && [[ "$(<"$BNF")" != "0" ]]; then
         warn "external LAN clients may not be able to reach this container, because net.bridge.bridge-nf-call-iptables=1."
         warn "you can fix this issue by running 'sysctl -w net.bridge.bridge-nf-call-iptables=0' on the host system."
       fi
@@ -1090,6 +1103,11 @@ getInfo() {
     fi
 
   fi
+
+  return 0
+}
+
+configureMTU() {
 
   local mtu=""
   local mtu_custom="N"
@@ -1110,13 +1128,21 @@ getInfo() {
     GUEST_MTU="1500"
   fi
 
+  return 0
+}
+
+configureMAC() {
+
   local container=""
+  local file=""
+
   container=$(containerID)
 
   if [ -z "$MAC" ]; then
-    local file="$STORAGE/dsm.mac"
+    file="$STORAGE/dsm.mac"
     [ -s "$file" ] && MAC=$(<"$file")
     MAC="${MAC//[![:print:]]/}"
+
     if [ -z "$MAC" ]; then
       # Generate a Synology-style MAC address based on a stable container identifier when possible.
       MAC=$(echo "$container" | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:11:32:\3:\4:\5/')
@@ -1134,26 +1160,56 @@ getInfo() {
   fi
 
   if [[ ${#MAC} != 17 ]]; then
-    error "Invalid MAC address: '$MAC', should be 12 or 17 digits long!" && exit 28
+    error "Invalid MAC address: '$MAC', should be 12 or 17 digits long!"
+    exit 28
   fi
 
   # Keep the guest-facing gateway MAC stable across runs, otherwise Windows guests
   # may detect a new network every boot.
   GATEWAY_MAC=$(gatewayMAC "$MAC")
 
-  if enabled "$DEBUG"; then
-    line="Host: $container  IP: $UPLINK  Gateway: $GATEWAY  Interface: $DEV  MAC: $MAC  MTU: $mtu  Mask: $MASK/$PREFIX"
-    [[ "$MTU" != "0" && "$MTU" != "$mtu" ]] && line+=" ($MTU)"
-    info "$line"
-    if [ -f /etc/resolv.conf ]; then
-      nameservers=$(grep '^nameserver ' /etc/resolv.conf | sed 's/^nameserver //' | paste -sd ',' | sed 's/,/, /g')
-      [ -n "$nameservers" ] && info "Nameservers: $nameservers"
-    fi
-    echo
+  return 0
+}
+
+printNetworkDebug() {
+
+  local line=""
+  local host=""
+  local nameservers=""
+
+  enabled "$DEBUG" || return 0
+
+  host=$(containerID)
+
+  line="Host: $host  IP: $UPLINK  Gateway: $GATEWAY  Interface: $DEV  MAC: $MAC  MTU: $MTU  Mask: $MASK/$PREFIX"
+  info "$line"
+
+  if [ -f /etc/resolv.conf ]; then
+    nameservers=$(grep '^nameserver ' /etc/resolv.conf | sed 's/^nameserver //' | paste -sd ',' | sed 's/,/, /g')
+    [ -n "$nameservers" ] && info "Nameservers: $nameservers"
   fi
 
-  echo "$UPLINK" > "$QEMU_DIR"/qemu.ip
-  echo "$nic" > "$QEMU_DIR"/qemu.nic
+  echo
+  return 0
+}
+
+prepareNetwork() {
+
+  detectInterface
+  validateInterface
+
+  validateMask
+
+  detectAddresses
+  validateAddresses
+
+  detectAdapter
+  validateAdapter
+
+  configureMTU
+  configureMAC
+
+  printNetworkDebug
 
   return 0
 }
@@ -1171,7 +1227,11 @@ msg="Initializing network..."
 html "$msg"
 enabled "$DEBUG" && echo "$msg"
 
-getInfo
+prepareNetwork
+
+echo "$UPLINK" > "$QEMU_DIR"/qemu.ip
+echo "$NIC" > "$QEMU_DIR"/qemu.nic
+
 cleanUp
 
 if [[ "$UPLINK" == "172.17."* ]]; then
