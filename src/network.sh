@@ -69,38 +69,6 @@ isUserMode() {
   esac
 }
 
-maskToCIDR() {
-
-  local mask="$1"
-  local prefix=""
-
-  prefix=$(ipcalc -p 0.0.0.0 "$mask" | awk -F= '/^PREFIX=/ { print $2 }')
-
-  if [[ ! "$prefix" =~ ^[0-9]+$ ]] || (( prefix < 1 || prefix > 30 )); then
-    error "Invalid MASK: '$mask'"
-    return 1
-  fi
-
-  echo "$prefix"
-  return 0
-}
-
-networkCIDR() {
-
-  local ip="$1"
-  local network=""
-
-  network=$(ipcalc -n "$ip" "$MASK" | awk -F= '/^NETWORK=/ { print $2 }')
-
-  if [ -z "$network" ]; then
-    error "Failed to calculate network address from IP '$ip' and netmask '$MASK'."
-    return 1
-  fi
-
-  echo "$network/$PREFIX"
-  return 0
-}
-
 getMTU() {
 
   local dev="$1"
@@ -151,6 +119,52 @@ gatewayMAC() {
   local mac="$1"
 
   echo "$mac" | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:\1:\2:\3:\4:\5/'
+}
+
+maskToCIDR() {
+
+  local mask="$1"
+  local prefix=""
+
+  prefix=$(ipcalc -n -b "0.0.0.0/$mask" 2>/dev/null | awk '
+    /^Netmask:/ {
+      for (i = 1; i <= NF; i++) {
+        if ($i == "=") {
+          print $(i + 1)
+          exit
+        }
+      }
+    }
+  ')
+
+  if [[ ! "$prefix" =~ ^[0-9]+$ ]] || (( prefix < 1 || prefix > 30 )); then
+    error "Invalid MASK: '$mask'"
+    return 1
+  fi
+
+  echo "$prefix"
+  return 0
+}
+
+networkCIDR() {
+
+  local ip="$1"
+  local network=""
+
+  network=$(ipcalc -n -b "$ip/$MASK" 2>/dev/null | awk '
+    /^Network:/ {
+      print $2
+      exit
+    }
+  ')
+
+  if [[ ! "$network" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]+$ ]]; then
+    error "Failed to calculate network address from IP '$ip' and netmask '$MASK'."
+    return 1
+  fi
+
+  echo "$network"
+  return 0
 }
 
 detectInterface() {
