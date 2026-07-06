@@ -205,11 +205,12 @@ fi
 MSG="Preparing system partition..."
 info "Install: $MSG" && html "$MSG"
 
-BOOT=$(find "$TMP" -name "*.bin.zip")
-[ ! -s "$BOOT" ] && error "The PAT file contains no boot image." && exit 67
+BOOT=$(find "$TMP" -name "*.bin.zip" -print -quit)
+[ -z "$BOOT" ] && error "The PAT file contains no boot image." && exit 67
+[ ! -s "$BOOT" ] && error "The PAT boot image archive is empty." && exit 67
 
-BOOT=$(echo "$BOOT" | head -c -5)
-unzip -q -o "$BOOT".zip -d "$TMP"
+unzip -q -o "$BOOT" -d "$TMP"
+BOOT="${BOOT%.zip}"
 
 SYSTEM="$STORAGE/$BASE.system.img"
 rm -f "$SYSTEM"
