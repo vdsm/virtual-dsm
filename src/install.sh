@@ -282,8 +282,9 @@ mv "$HDA.tgz" "$HDA.txz"
 [ -d "$PKG" ] && mv "$PKG/" "$MOUNT/.SynoUpgradePackages/"
 rm -f "$MOUNT/.SynoUpgradePackages/ActiveInsight-"*
 
+INDEX_DB="$MOUNT/usr/syno/synoman/indexdb"
+
 if [ -s "$IDB.txz" ]; then
-  INDEX_DB="$MOUNT/usr/syno/synoman/indexdb"
   mkdir -p "$INDEX_DB"
 fi
 
