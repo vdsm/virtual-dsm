@@ -675,6 +675,11 @@ case "${DISK_DISCARD,,}" in
     DISK_DISCARD="unmap" ;;
 esac
 
+if [[ ! "$DISK_ROTATION" =~ ^[0-9]+$ ]]; then
+  warn "Invalid DISK_ROTATION value '$DISK_ROTATION', using 1."
+  DISK_ROTATION="1"
+fi
+
 case "${DISK_TYPE,,}" in
   "ide" | "sata" | "nvme" | "usb" | "scsi" | "blk" | "auto" | "none" ) ;;
   * ) error "Invalid DISK_TYPE specified, value \"$DISK_TYPE\" is not recognized!" && exit 80 ;;
