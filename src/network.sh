@@ -14,7 +14,7 @@ set -Eeuo pipefail
 : "${MTU:="${VM_NET_MTU:-}"}"
 : "${TAP:="${VM_NET_TAP:-dsm}"}"
 : "${MAC:="${VM_NET_MAC:-${MAC:-}}"}"
-: "${HOST:="${VM_NET_HOST:-VirtualDSM}"}"
+: "${HOST:="${VM_NET_HOST:-$APP}"}"
 : "${BRIDGE:="${VM_NET_BRIDGE:-docker}"}"
 : "${MASK:="${VM_NET_MASK:-255.255.255.0}"}"
 
@@ -1149,6 +1149,20 @@ validateMask() {
   return 0
 }
 
+validateHost() {
+
+  HOST="${HOST//[^A-Za-z0-9-]/-}"
+  HOST=$(echo "$HOST" | sed 's/^-*//;s/-*$//;s/--*/-/g')
+
+  if [ -z "$HOST" ]; then
+    HOST="$APP"
+    HOST="${HOST//[^A-Za-z0-9-]/-}"
+    HOST=$(echo "$HOST" | sed 's/^-*//;s/-*$//;s/--*/-/g')
+  fi
+
+  return 0
+}
+
 validateAddresses() {
 
   # DHCP/macvtap mode can work without a detectable container IPv4 address,
@@ -1372,6 +1386,7 @@ prepareNetwork() {
   validateInterface
 
   validateMask
+  validateHost
 
   detectAddresses
   validateAddresses
