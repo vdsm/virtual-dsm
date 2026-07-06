@@ -85,7 +85,7 @@ configureSerialPorts() {
         -chardev socket,id=charchannel0,host=127.0.0.1,port=$CHR_PORT,reconnect=10 \
         -device virtserialport,bus=virtio-serial0.0,nr=1,chardev=charchannel0,id=channel0,name=vchannel"
 
-        return 0
+  return 0
 }
 
 validateHostMac
