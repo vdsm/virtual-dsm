@@ -180,6 +180,56 @@ gatewayMAC() {
   echo "$mac" | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:\1:\2:\3:\4:\5/'
 }
 
+detectInterface() {
+
+  if [ -n "$DEV" ]; then
+    return 0
+  fi
+
+  # Give Kubernetes priority over the default interface
+  [ -d "/sys/class/net/net0" ] && DEV="net0"
+  [ -d "/sys/class/net/net1" ] && DEV="net1"
+  [ -d "/sys/class/net/net2" ] && DEV="net2"
+  [ -d "/sys/class/net/net3" ] && DEV="net3"
+
+  # Automatically detect the default network interface
+  [ -z "$DEV" ] && DEV=$(awk '$2 == 00000000 { print $1; exit }' /proc/net/route)
+  [ -z "$DEV" ] && DEV="eth0"
+
+  return 0
+}
+
+detectAddresses() {
+
+  GATEWAY=$(ip route list dev "$DEV" | awk ' /^default/ {print $3}' | head -n 1)
+  { UPLINK=$(ip address show dev "$DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/ | head -n 1); } 2>/dev/null || :
+
+  IP6=""
+
+  if [ -f /proc/net/if_inet6 ] && [[ "$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6 2>/dev/null)" != "1" ]]; then
+    { IP6=$(ip -6 addr show dev "$DEV" scope global up); rc=$?; } 2>/dev/null || :
+    (( rc != 0 )) && IP6=""
+    [ -n "$IP6" ] && IP6=$(echo "$IP6" | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d' | head -n 1)
+  fi
+
+  return 0
+}
+
+detectAdapter() {
+
+  local result=""
+
+  NIC=""
+  BUS=""
+
+  result=$(ethtool -i "$DEV" 2>/dev/null || :)
+
+  NIC=$(grep -m 1 -i 'driver:' <<< "$result" | awk '{print $2}')
+  BUS=$(grep -m 1 -i 'bus-info:' <<< "$result" | awk '{print $2}')
+
+  return 0
+}
+
 containerID() {
 
   local id=""
@@ -981,16 +1031,7 @@ checkOS() {
 
 getInfo() {
 
-  if [ -z "$DEV" ]; then
-    # Give Kubernetes priority over the default interface
-    [ -d "/sys/class/net/net0" ] && DEV="net0"
-    [ -d "/sys/class/net/net1" ] && DEV="net1"
-    [ -d "/sys/class/net/net2" ] && DEV="net2"
-    [ -d "/sys/class/net/net3" ] && DEV="net3"
-    # Automatically detect the default network interface
-    [ -z "$DEV" ] && DEV=$(awk '$2 == 00000000 { print $1; exit }' /proc/net/route)
-    [ -z "$DEV" ] && DEV="eth0"
-  fi
+  detectInterface
 
   if [ ! -d "/sys/class/net/$DEV" ]; then
     error "Network interface '$DEV' does not exist inside the container!"
@@ -999,29 +1040,16 @@ getInfo() {
 
   PREFIX=$(maskToCIDR "$MASK") || exit 28
 
-  GATEWAY=$(ip route list dev "$DEV" | awk ' /^default/ {print $3}' | head -n 1)
-  { UPLINK=$(ip address show dev "$DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/ | head -n 1); } 2>/dev/null || :
+  detectAddresses
 
   # DHCP/macvtap mode can work without a detectable container IPv4 address,
   # because the guest receives its address directly from the external LAN.
   [ -z "$UPLINK" ] && ! enabled "$DHCP" && error "Could not determine container IPv4 address!" && exit 26
 
-  IP6=""
-  # shellcheck disable=SC2143
-  if [ -f /proc/net/if_inet6 ] && [[ "$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6 2>/dev/null)" != "1" ]]; then
-    { IP6=$(ip -6 addr show dev "$DEV" scope global up); rc=$?; } 2>/dev/null || :
-    (( rc != 0 )) && IP6=""
-    [ -n "$IP6" ] && IP6=$(echo "$IP6" | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d' | head -n 1)
-  fi
+  detectAdapter
 
-  local nic="" bus="" result=""
-  result=$(ethtool -i "$DEV" 2>/dev/null || :)
-
-  nic=$(grep -m 1 -i 'driver:' <<< "$result" | awk '{print $2}')
-  bus=$(grep -m 1 -i 'bus-info:' <<< "$result" | awk '{print $2}')
-
-  if [[ -n "$bus" && "${bus,,}" != "n/a" && "${bus,,}" != "tap" ]]; then
-    enabled "$DEBUG" && info "Detected NIC: ${nic:-unknown}  BUS: $bus"
+  if [[ -n "$BUS" && "${BUS,,}" != "n/a" && "${BUS,,}" != "tap" ]]; then
+    enabled "$DEBUG" && info "Detected NIC: ${NIC:-unknown}  BUS: $BUS"
     error "This container does not support host mode networking!"
     exit 29
   fi
