@@ -119,6 +119,8 @@ allocateRaw() {
   fallocate -l "$DATA_SIZE" "$DISK_FILE" &>/dev/null && return 0
   fallocate -l -x "$DATA_SIZE" "$DISK_FILE" && return 0
   truncate -s "$DATA_SIZE" "$DISK_FILE"
+
+  return 0
 }
 
 getDiskOptions() {

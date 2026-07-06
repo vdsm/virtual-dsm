@@ -34,6 +34,8 @@ checkConfiguredMemory() {
       fi
     fi
   fi
+
+  return 0
 }
 
 configureHalfMemory() {
@@ -50,6 +52,8 @@ configureHalfMemory() {
   else
     RAM_SIZE="max"
   fi
+
+  return 0
 }
 
 configureMaxMemory() {
@@ -77,6 +81,8 @@ configureMaxMemory() {
   RAM_SIZE="${wanted}M"
 
   info "Allocated $wanted MB of RAM for the virtual machine."
+
+  return 0
 }
 
 checkMinimumMemory() {
@@ -89,6 +95,8 @@ checkMinimumMemory() {
     error "Not enough memory available, there is only $wanted MB left!"
     exit 16
   fi
+
+  return 0
 }
 
 checkConfiguredMemory

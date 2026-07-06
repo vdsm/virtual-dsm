@@ -15,6 +15,8 @@ selectClocksource() {
   CLOCKSOURCE="tsc"
   [[ "${ARCH,,}" == "arm64" ]] && CLOCKSOURCE="arch_sys_counter"
   CLOCK="/sys/devices/system/clocksource/clocksource0/current_clocksource"
+
+  return 0
 }
 
 checkClocksource() {
@@ -35,6 +37,8 @@ checkClocksource() {
     "hpet" ) warn "unsupported clock source ﻿detected﻿: '$result'. Please﻿ ﻿set host clock source to '$CLOCKSOURCE'." ;;
     *) warn "unexpected clock source ﻿detected﻿: '$result'. Please﻿ ﻿set host clock source to '$CLOCKSOURCE'." ;;
   esac
+
+  return 0
 }
 
 checkSse42() {
@@ -42,6 +46,8 @@ checkSse42() {
     error "Your CPU does not have the SSE4 instruction set that Virtual DSM requires!"
     ! enabled "$DEBUG" && exit 88
   fi
+
+  return 0
 }
 
 configureKvmCpuModel() {
@@ -53,6 +59,8 @@ configureKvmCpuModel() {
     CPU_MODEL="host"
     CPU_FEATURES+=",migratable=no"
   fi
+
+  return 0
 }
 
 appendKvmInvtscFeature() {
@@ -74,12 +82,16 @@ appendKvmInvtscFeature() {
     fi
 
   fi
+
+  return 0
 }
 
 configureKvm() {
   configureKvmCpuModel
   checkSse42
   appendKvmInvtscFeature
+
+  return 0
 }
 
 configureTcgCpuModel() {
@@ -94,6 +106,8 @@ configureTcgCpuModel() {
   else
     CPU_MODEL="qemu64"
   fi
+
+  return 0
 }
 
 configureTcg() {
@@ -107,6 +121,8 @@ configureTcg() {
 
   configureTcgCpuModel
   CPU_FEATURES+=",+ssse3,+sse4.1,+sse4.2"
+
+  return 0
 }
 
 extractHostCpuArgument() {
@@ -136,6 +152,8 @@ extractHostCpuArgument() {
     fi
 
   fi
+
+  return 0
 }
 
 composeCpuFlags() {
@@ -153,6 +171,8 @@ composeCpuFlags() {
       CPU_FLAGS="$CPU_MODEL,$CPU_FEATURES,$CPU_FLAGS"
     fi
   fi
+
+  return 0
 }
 
 configureHostCpuName() {
@@ -171,6 +191,8 @@ configureHostCpuName() {
       HOST_CPU+=" $ARCH"
     fi
   fi
+
+  return 0
 }
 
 selectClocksource

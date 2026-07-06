@@ -32,6 +32,8 @@ validateHostMac() {
   if [[ ${#HOST_MAC} != 17 ]]; then
     error "Invalid HOST_MAC address: '$HOST_MAC', should be 12 or 17 digits long!" && exit 28
   fi
+
+  return 0
 }
 
 buildHostArguments() {
@@ -44,6 +46,8 @@ buildHostArguments() {
   [ -n "$HOST_MODEL" ] && HOST_ARGS+=("-model=$HOST_MODEL")
   [ -n "$HOST_SERIAL" ] && HOST_ARGS+=("-hostsn=$HOST_SERIAL")
   [ -n "$GUEST_SERIAL" ] && HOST_ARGS+=("-guestsn=$GUEST_SERIAL")
+
+  return 0
 }
 
 startHostBinary() {
@@ -80,6 +84,8 @@ configureSerialPorts() {
         -device virtio-serial-pci,id=virtio-serial0,bus=pcie.0,addr=0x3 \
         -chardev socket,id=charchannel0,host=127.0.0.1,port=$CHR_PORT,reconnect=10 \
         -device virtserialport,bus=virtio-serial0.0,nr=1,chardev=charchannel0,id=channel0,name=vchannel"
+
+        return 0
 }
 
 validateHostMac
