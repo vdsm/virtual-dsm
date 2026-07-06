@@ -615,13 +615,14 @@ addDevice () {
   # Whole disk passthrough with explicit sector sizes causes DSM not to recognize the disk
   if [[ "$dev_type" == "part" ]]; then
     local result logical physical
-    result=$(fdisk -l "$DISK_DEV" | grep -m 1 -o "(logical/physical): .*" | cut -c 21-)
-    logical="${result%% *}"
-    physical=$(echo "$result" | grep -m 1 -o "/ .*" | cut -c 3-)
-    physical="${physical%% *}"
+    result=$(fdisk -l "$DISK_DEV" 2>/dev/null | grep -m 1 -o "(logical/physical): .*" | cut -c 21- || true)
 
-    if [ -n "$physical" ]; then
-      if [[ "$physical" != "512" ]]; then
+    if [ -n "$result" ]; then
+      logical="${result%% *}"
+      physical=$(echo "$result" | grep -m 1 -o "/ .*" | cut -c 3- || true)
+      physical="${physical%% *}"
+
+      if [ -n "$logical" ] && [ -n "$physical" ] && [[ "$physical" != "512" ]]; then
         sectors=",logical_block_size=$logical,physical_block_size=$physical"
       fi
     else
