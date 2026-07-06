@@ -414,11 +414,19 @@ configureDNS() {
 getHostPorts() {
 
   local list="${HOST_PORTS// /},"
+  local ports=""
+  local port=""
+
+  for port in ${list//,/ }; do
+    port="${port%/tcp}"
+    port="${port%/udp}"
+    [ -n "$port" ] && ports+="$port,"
+  done
 
   # Remove duplicates
-  list=$(echo "${list//,,/,}," | awk 'BEGIN{RS=ORS=","} !seen[$0]++' | sed 's/,*$//g')
+  ports=$(echo "${ports//,,/,}," | awk 'BEGIN{RS=ORS=","} !seen[$0]++' | sed 's/,*$//g')
 
-  echo "$list"
+  echo "$ports"
   return 0
 }
 
