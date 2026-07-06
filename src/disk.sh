@@ -688,7 +688,7 @@ case "$DISK_FMT" in
 esac
 
 case "${DISK_TYPE,,}" in
-  "ide" | "sata" | "nvme" | "usb" | "scsi" | "blk" | "auto" | "none" ) ;;
+  "ide" | "sata" | "nvme" | "usb" | "scsi" | "blk" | "virtio-blk" | "virtio-scsi" | "auto" | "none" ) ;;
   * ) error "Invalid DISK_TYPE specified, value \"$DISK_TYPE\" is not recognized!" && exit 80 ;;
 esac
 
