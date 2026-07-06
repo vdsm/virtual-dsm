@@ -567,6 +567,7 @@ addDisk () {
     USED=$(du -sB 1 "$DISK_FILE" | cut -f1)
     FREE=$(df --output=avail -B 1 "$DIR" | tail -n 1)
     LEFT=$(( CUR_SIZE - USED - FREE ))
+    (( LEFT < 0 )) && LEFT=0
 
     if (( LEFT > 0 )); then
 
