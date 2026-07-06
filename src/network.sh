@@ -414,11 +414,19 @@ configureDNS() {
 getHostPorts() {
 
   local list="${HOST_PORTS// /},"
+  local ports=""
+  local port=""
+
+  for port in ${list//,/ }; do
+    port="${port%/tcp}"
+    port="${port%/udp}"
+    [ -n "$port" ] && ports+="$port,"
+  done
 
   # Remove duplicates
-  list=$(echo "${list//,,/,}," | awk 'BEGIN{RS=ORS=","} !seen[$0]++' | sed 's/,*$//g')
+  ports=$(echo "${ports//,,/,}," | awk 'BEGIN{RS=ORS=","} !seen[$0]++' | sed 's/,*$//g')
 
-  echo "$list"
+  echo "$ports"
   return 0
 }
 
@@ -492,6 +500,50 @@ getSlirp() {
   done
 
   echo "$args" | sed 's/,*$//g'
+  return 0
+}
+
+getPasst() {
+
+  local args=""
+  local list=""
+  local port=""
+  local num=""
+  local tcp=""
+  local udp=""
+
+  list=$(getUserPorts)
+
+  for port in ${list//,/ }; do
+
+    [ -z "$port" ] && continue
+
+    if [[ "$port" == *"/udp" ]]; then
+
+      num="${port%/udp}"
+      [ -n "$num" ] && udp+="$num,"
+
+    elif [[ "$port" == *"/tcp" ]]; then
+
+      num="${port%/tcp}"
+      [ -n "$num" ] && tcp+="$num,"
+
+    else
+
+      tcp+="$port,"
+      udp+="$port,"
+
+    fi
+
+  done
+
+  tcp="${tcp%,}"
+  udp="${udp%,}"
+
+  [ -n "$tcp" ] && args+=" -t %${DEV}/$tcp"
+  [ -n "$udp" ] && args+=" -u %${DEV}/$udp"
+
+  echo "$args"
   return 0
 }
 
@@ -653,15 +705,8 @@ configurePasst() {
   PASST_OPTS+=" -m $passt_mtu"
 
   local forward=""
-  forward=$(getUserPorts)
-  forward="${forward///tcp}"
-  forward="${forward///udp}"
-
-  if [ -n "$forward" ]; then
-    forward="%${DEV}/$forward"
-    PASST_OPTS+=" -t $forward"
-    PASST_OPTS+=" -u $forward"
-  fi
+  forward=$(getPasst)
+  [ -n "$forward" ] && PASST_OPTS+="$forward"
 
   PASST_OPTS+=" -H $HOST"
   PASST_OPTS+=" -M $GATEWAY_MAC"
