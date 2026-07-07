@@ -27,10 +27,15 @@ curl_err="Failed to connect to guest: curl error"
 jq_err="Failed to parse response from guest: jq error"
 
 exitIfShuttingDown() {
+
   [ -f "$shutdown" ] && exit 1
+
+  return 0
 }
 
 queryGuest() {
+
+  local rc
 
   { json=$(curl -m 20 -sk "$url"); rc=$?; } || :
 
@@ -48,8 +53,9 @@ readJsonField() {
 
   local query="$1"
   local result
+  local rc
 
-  { result=$(echo "$json" | jq -r "$query"); rc=$?; } || :
+  { result=$(jq -r "$query" <<< "$json"); rc=$?; } || :
 
   if (( rc != 0 )); then
     error "$jq_err $rc ( $json )"
@@ -62,14 +68,23 @@ readJsonField() {
   fi
 
   printf '%s\n' "$result"
+  return 0
 }
 
 readGuestStatus() {
 
+  local result msg rc
+
   result=$(readJsonField '.status') || return 1
 
   if [[ "$result" != "success" ]]; then
-    { msg=$(echo "$json" | jq -r '.message'); rc=$?; } || :
+    { msg=$(jq -r '.message // empty' <<< "$json"); rc=$?; } || :
+
+    if (( rc != 0 )); then
+      error "$jq_err $rc ( $json )"
+      return 1
+    fi
+
     error "Guest replied $result: $msg"
     return 1
   fi
@@ -87,26 +102,14 @@ readGuestPort() {
 
 readGuestIp() {
 
-  ip=$(readJsonField '
-    first(
-      .data.data.ip.data[] |
-      select(.name=="eth0" and has("ip")) |
-      .ip |
-      select(test("^[0-9]+\\."))
-    ) // first(
-      .data.data.ip.data[] |
-      select(has("ip")) |
-      .ip |
-      select(test("^[0-9]+\\."))
-    )
-  ') || return 1
-
+  ip=$(readJsonField '.data.data.ip.data[] | select(.name=="eth0" and has("ip")) | .ip | select(test("^[0-9]+\\."))') || return 1
   [ -z "$ip" ] && return 1
 
   return 0
 }
 
 writeDsmLocation() {
+
   echo "$ip:$port" > "$file"
 
   return 0
@@ -132,6 +135,8 @@ pollGuestLocation() {
     writeDsmLocation
 
   done
+
+  return 0
 }
 
 writeDhcpPage() {
@@ -174,6 +179,7 @@ buildStaticMessage() {
 }
 
 printLoginMessage() {
+
   echo "" >&2
   info "-----------------------------------------------------------"
   info " You can now login to DSM at $msg"
