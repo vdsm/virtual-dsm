@@ -75,6 +75,8 @@ waitForPort() {
     cnt=$((cnt + 1))
     (( cnt > 50 )) && error "Failed to connect to qemu-host.." && exit "$exit_code"
   done
+
+  return 0
 }
 
 configureSerialPorts() {
