@@ -76,9 +76,9 @@ forceKillQemu() {
   local pid=""
   local display
 
-  ! readQemuPid "$QEMU_PID" pid && return 0
+  ! readQemuPid pid && return 0
   ! isAlive "$pid" && return 0
-  
+
   display=$(displayReason "$reason")
   error "Forcefully terminating $(app), reason: $display..."
   { disown "$pid" || :; kill -9 -- "$pid" || :; } 2>/dev/null
@@ -148,8 +148,11 @@ sendGuestShutdown() {
 
 normalizeTimeout() {
 
-  term_grace=3      # seconds before loop ends to send SIGTERM
-  cleanup_grace=3   # seconds reserved after the loop for cleanup
+  local term_grace=3      # seconds before loop ends to send SIGTERM
+  local cleanup_grace=3   # seconds reserved after the loop for cleanup
+  local elapsed
+  local timeout_left
+  local min
 
   TIMEOUT=$(strip "$TIMEOUT")
   if [[ ! "$TIMEOUT" =~ ^[0-9]+$ ]]; then
@@ -167,7 +170,6 @@ normalizeTimeout() {
   elapsed=$((SECONDS - start))
   timeout_left=$((TIMEOUT - elapsed))
 
-  local min
   min=$((term_grace + cleanup_grace + 1))
   (( timeout_left < min )) && timeout_left=$min
 
