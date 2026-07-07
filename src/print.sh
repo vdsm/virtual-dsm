@@ -27,7 +27,9 @@ curl_err="Failed to connect to guest: curl error"
 jq_err="Failed to parse response from guest: jq error"
 
 exitIfShuttingDown() {
+
   [ -f "$shutdown" ] && exit 1
+
 }
 
 queryGuest() {
@@ -74,7 +76,13 @@ readGuestStatus() {
   result=$(readJsonField '.status') || return 1
 
   if [[ "$result" != "success" ]]; then
-    { msg=$(jq -r '.message' <<< "$json"); rc=$?; } || :
+    { msg=$(jq -r '.message // empty' <<< "$json"); rc=$?; } || :
+
+    if (( rc != 0 )); then
+      error "$jq_err $rc ( $json )"
+      return 1
+    fi
+
     error "Guest replied $result: $msg"
     return 1
   fi
@@ -99,6 +107,7 @@ readGuestIp() {
 }
 
 writeDsmLocation() {
+
   echo "$ip:$port" > "$file"
 
   return 0
@@ -166,6 +175,7 @@ buildStaticMessage() {
 }
 
 printLoginMessage() {
+
   echo "" >&2
   info "-----------------------------------------------------------"
   info " You can now login to DSM at $msg"
