@@ -62,6 +62,8 @@ startHostBinary() {
     ./host.bin "${HOST_ARGS[@]}" >/dev/null &
     echo "$!" > "$HOST_PID"
   fi
+
+  return 0
 }
 
 waitForPort() {
@@ -75,6 +77,8 @@ waitForPort() {
     cnt=$((cnt + 1))
     (( cnt > 50 )) && error "Failed to connect to qemu-host.." && exit "$exit_code"
   done
+
+  return 0
 }
 
 configureSerialPorts() {
