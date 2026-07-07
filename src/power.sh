@@ -15,6 +15,7 @@ API_HOST="127.0.0.1:$COM_PORT"
 QEMU_END="$QEMU_DIR/qemu.end"
 
 _trap() {
+
   local func="$1"; shift
   local sig
   TRAP_PID=$BASHPID
@@ -26,11 +27,8 @@ _trap() {
   return 0
 }
 
-app() {
-  echo "$APP" && return 0
-}
-
 signalCode() {
+
   local sig="$1"
 
   case "$sig" in
@@ -46,6 +44,7 @@ signalCode() {
 }
 
 displayReason() {
+
   local reason="$1"
 
   case "$reason" in
@@ -61,49 +60,47 @@ displayReason() {
 }
 
 readQemuPid() {
-  local file="$1"
-  local __var="$2"
-  local pid=""
 
-  [ -s "$file" ] || return 1
-  read -r pid <"$file" || return 1
-  [ -n "$pid" ] || return 1
+  local -n _pid="$1"
 
-  printf -v "$__var" '%s' "$pid"
-  return 0
-}
-
-forceKillQemu() {
-  local reason="$1"
-  local pid=""
-  local display
-
-  if readQemuPid "$QEMU_PID" pid; then
-    if isAlive "$pid"; then
-      display=$(displayReason "$reason")
-      error "Forcefully terminating $(app), reason: $display..."
-      { disown "$pid" || :; kill -9 -- "$pid" || :; } 2>/dev/null
-    fi
+  if [ ! -s "$QEMU_PID" ] || ! read -r _pid <"$QEMU_PID"; then
+    return 1
   fi
 
   return 0
 }
 
+forceKillQemu() {
+
+  local reason="$1"
+  local pid=""
+  local display
+
+  ! readQemuPid "$QEMU_PID" pid && return 0
+  ! isAlive "$pid" && return 0
+  
+  display=$(displayReason "$reason")
+  error "Forcefully terminating $(app), reason: $display..."
+  { disown "$pid" || :; kill -9 -- "$pid" || :; } 2>/dev/null
+
+  return 0
+}
+
 cleanupHelpers() {
+
   local pids=( "${HOST_PID:-}" "${WSD_PID:-}" \
                "${WEB_PID:-}" "${PASST_PID:-}" "${DNSMASQ_PID:-}" )
 
   mKill "${pids[@]}"
   fKill "print.sh"
-  closeNetwork
 
+  closeNetwork
   return 0
 }
 
 finish() {
 
   local reason=$1
-
   touch "$QEMU_END"
 
   forceKillQemu "$reason"
@@ -114,10 +111,12 @@ finish() {
   fi
 
   (( reason != 1 )) && echo && echo "❯ Shutdown completed!"
+
   exit "$reason"
 }
 
 sendGuestShutdown() {
+
   local pid="$1"
   local response
   local url
@@ -138,6 +137,7 @@ sendGuestShutdown() {
 
     response="${response#*message\"\: \"}"
     [ -z "$response" ] && response="second signal"
+
     echo && error "Forcefully terminating because of: ${response%%\"*}"
     kill -15 -- "$pid" 2>/dev/null || :
 
@@ -147,7 +147,6 @@ sendGuestShutdown() {
 }
 
 normalizeTimeout() {
-  local min
 
   term_grace=3      # seconds before loop ends to send SIGTERM
   cleanup_grace=3   # seconds reserved after the loop for cleanup
@@ -168,6 +167,7 @@ normalizeTimeout() {
   elapsed=$((SECONDS - start))
   timeout_left=$((TIMEOUT - elapsed))
 
+  local min
   min=$((term_grace + cleanup_grace + 1))
   (( timeout_left < min )) && timeout_left=$min
 
@@ -178,9 +178,10 @@ normalizeTimeout() {
 }
 
 waitForShutdown() {
+
   local cnt=0
-  local name="$1"
-  local pid="$2"
+  local pid="$1"
+  local name="$APP"
   local slp
 
   while (( cnt <= wait_until )); do
@@ -214,10 +215,6 @@ graceful_shutdown() {
   local sig="$1"
   local pid=""
   local code=0
-  local name
-  local term_grace cleanup_grace
-  local sigterm_at=0 wait_until=0 elapsed timeout_left
-  local start
 
   [[ $BASHPID != "$TRAP_PID" ]] && return
 
@@ -233,7 +230,7 @@ graceful_shutdown() {
   touch "$QEMU_END"
   echo && info "Received $1 signal, sending shutdown command..."
 
-  if ! readQemuPid "$QEMU_PID" pid; then
+  if ! readQemuPid pid; then
     warn "QEMU PID file ($QEMU_PID) does not exist?"
     finish "$code"
   fi
@@ -244,10 +241,8 @@ graceful_shutdown() {
   fi
 
   sendGuestShutdown "$pid"
-
-  name="$(app)"
   normalizeTimeout
-  waitForShutdown "$name" "$pid"
+  waitForShutdown "$pid"
 
   finish "$code"
 }

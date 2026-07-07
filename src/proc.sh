@@ -12,6 +12,7 @@ CPU_FLAGS=$(strip "$CPU_FLAGS")
 CPU_MODEL=$(strip "$CPU_MODEL")
 
 selectClocksource() {
+
   CLOCKSOURCE="tsc"
   [[ "${ARCH,,}" == "arm64" ]] && CLOCKSOURCE="arch_sys_counter"
   CLOCK="/sys/devices/system/clocksource/clocksource0/current_clocksource"
@@ -20,6 +21,7 @@ selectClocksource() {
 }
 
 checkClocksource() {
+
   local result
 
   if [ ! -f "$CLOCK" ]; then
@@ -42,6 +44,7 @@ checkClocksource() {
 }
 
 checkSse42() {
+
   if ! grep -qw "sse4_2" <<< "$flags"; then
     error "Your CPU does not have the SSE4 instruction set that Virtual DSM requires!"
     ! enabled "$DEBUG" && exit 88
@@ -64,6 +67,7 @@ configureKvmCpuModel() {
 }
 
 appendKvmInvtscFeature() {
+
   if grep -qw "svm" <<< "$flags"; then
 
     # AMD processor
@@ -87,6 +91,7 @@ appendKvmInvtscFeature() {
 }
 
 configureKvm() {
+
   configureKvmCpuModel
   checkSse42
   appendKvmInvtscFeature
