@@ -48,8 +48,9 @@ readJsonField() {
 
   local query="$1"
   local result
+  local rc
 
-  { result=$(echo "$json" | jq -r "$query"); rc=$?; } || :
+  { result=$(jq -r "$query" <<< "$json"); rc=$?; } || :
 
   if (( rc != 0 )); then
     error "$jq_err $rc ( $json )"
@@ -87,20 +88,7 @@ readGuestPort() {
 
 readGuestIp() {
 
-  ip=$(readJsonField '
-    first(
-      .data.data.ip.data[] |
-      select(.name=="eth0" and has("ip")) |
-      .ip |
-      select(test("^[0-9]+\\."))
-    ) // first(
-      .data.data.ip.data[] |
-      select(has("ip")) |
-      .ip |
-      select(test("^[0-9]+\\."))
-    )
-  ') || return 1
-
+  ip=$(readJsonField '.data.data.ip.data[] | select(.name=="eth0" and has("ip")) | .ip | select(test("^[0-9]+\\."))') || return 1
   [ -z "$ip" ] && return 1
 
   return 0
