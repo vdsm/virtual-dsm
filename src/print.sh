@@ -30,6 +30,7 @@ exitIfShuttingDown() {
 
   [ -f "$shutdown" ] && exit 1
 
+  return 0
 }
 
 queryGuest() {
@@ -67,6 +68,7 @@ readJsonField() {
   fi
 
   printf '%s\n' "$result"
+  return 0
 }
 
 readGuestStatus() {
@@ -133,6 +135,8 @@ pollGuestLocation() {
     writeDsmLocation
 
   done
+
+  return 0
 }
 
 writeDhcpPage() {
