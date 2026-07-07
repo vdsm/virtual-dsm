@@ -62,6 +62,8 @@ startHostBinary() {
     ./host.bin "${HOST_ARGS[@]}" >/dev/null &
     echo "$!" > "$HOST_PID"
   fi
+
+  return 0
 }
 
 waitForPort() {
