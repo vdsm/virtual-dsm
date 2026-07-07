@@ -32,6 +32,8 @@ exitIfShuttingDown() {
 
 queryGuest() {
 
+  local rc
+
   { json=$(curl -m 20 -sk "$url"); rc=$?; } || :
 
   exitIfShuttingDown
@@ -67,10 +69,12 @@ readJsonField() {
 
 readGuestStatus() {
 
+  local result msg rc
+
   result=$(readJsonField '.status') || return 1
 
   if [[ "$result" != "success" ]]; then
-    { msg=$(echo "$json" | jq -r '.message'); rc=$?; } || :
+    { msg=$(jq -r '.message' <<< "$json"); rc=$?; } || :
     error "Guest replied $result: $msg"
     return 1
   fi
