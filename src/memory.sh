@@ -8,6 +8,7 @@ RAM_AVAIL=$(free -b | grep -m 1 Mem: | awk '{print $7}')
 AVAIL_MEM=$(formatBytes "$RAM_AVAIL")
 
 checkConfiguredMemory() {
+
   local wanted msg
 
   if disabled "$RAM_CHECK" || [[ "${RAM_SIZE,,}" == "max" || "${RAM_SIZE,,}" == "half" ]]; then
@@ -39,6 +40,7 @@ checkConfiguredMemory() {
 }
 
 configureHalfMemory() {
+
   local wanted
 
   if [[ "${RAM_SIZE,,}" != "half" ]]; then
@@ -57,6 +59,7 @@ configureHalfMemory() {
 }
 
 configureMaxMemory() {
+
   local wanted
 
   if [[ "${RAM_SIZE,,}" != "max" ]]; then
@@ -86,6 +89,7 @@ configureMaxMemory() {
 }
 
 checkMinimumMemory() {
+
   local wanted
 
   wanted=$(numfmt --from=iec "$RAM_SIZE")
