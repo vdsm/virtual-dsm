@@ -2,11 +2,15 @@
 
 This page lists all the environment variables that can be used to configure the container.
 
-## 💿 Image
+## 💽 Virtual DSM
 
 | Variable | Default | Description |
 |---|---|---|
-| `BOOT` | `alpine` | Image to boot, for example `alpine`, `ubuntu`, `debian`, or a direct URL to an ISO/image file. |
+| `URL` |  | URL or local path of the DSM `.pat` installation file. When unset, the default Virtual DSM image is downloaded automatically. |
+| `HOST_MAC` |  | MAC address reported to DSM. |
+| `HOST_MODEL` |  | Synology host device model reported to DSM. |
+| `HOST_SERIAL` |  | Synology host serial number reported to DSM. |
+| `GUEST_SERIAL` |  | Synology guest serial number reported to DSM. |
 
 ## 🧠 CPU and Memory
 
@@ -15,41 +19,16 @@ This page lists all the environment variables that can be used to configure the 
 | `CPU_CORES` | `2` | Number of CPU cores assigned to the VM. Can also be set to `max` or `half`. |
 | `CPU_MODEL` | `host` | QEMU CPU model to use. |
 | `CPU_FLAGS` |  | Additional QEMU CPU flags. |
+| `HOST_CPU` |  | CPU name reported to DSM. Automatically selected when unset. |
 | `KVM` | `Y` | Enables KVM hardware acceleration. Set to `N` to disable. |
-| `VMX` | `N` | Exposes Intel VMX virtualization extensions to the guest. |
-| `HV` | `Y` | Enables Hyper-V enlightenments for Windows. |
 | `RAM_SIZE` | `2G` | Amount of RAM assigned to the VM, for example `2G`, `4G`, `max`, or `half`. |
 | `RAM_CHECK` | `Y` | Checks whether enough host memory is available before starting the VM. |
-
-## ⚙️ System
-
-| Variable | Default | Description |
-|---|---|---|
-| `MACHINE` | `q35` | QEMU machine type. |
-| `UUID` |  | QEMU VM UUID. |
-| `HPET` | `off` | Enables or disables the QEMU HPET timer. |
-| `VMPORT` | `off` | Enables or disables the QEMU VMware port. |
-| `SM_BIOS` |  | Additional SMBIOS arguments passed to QEMU. |
-| `ARGUMENTS` |  | Additional raw QEMU arguments appended to the generated command line. |
-
-## 🚀 Boot
-
-| Variable | Default | Description |
-|---|---|---|
-| `BOOT_MODE` | `uefi` | Boot mode, for example `uefi`, `secure` or `legacy`. |
-| `BOOT_INDEX` | `9` | Boot priority index for the boot media. |
-| `BIOS` |  | Custom BIOS/firmware file. Setting this enables custom boot mode. |
-| `TPM` | `N` | Enables TPM support. |
-| `SMM` | `N` | Enables SMM/secure-machine support. |
-| `LOGO` | `Y` | Enables the custom boot logo. |
-| `CLEAR` | `N` | Clears the firmware/NVRAM variables on the next boot. |
-| `USB` | `qemu-xhci,id=xhci,p2=7,p3=7` | QEMU USB controller setting. Set to a `no*` value to disable. |
 
 ## 💾 Storage
 
 | Variable | Default | Description |
 |---|---|---|
-| `DISK_SIZE` | `64G` | Size of the main data disk. |
+| `DISK_SIZE` | `256G` | Size of the main data disk. |
 | `DISK_FMT` | `raw` | Disk image format, usually `raw` or `qcow2`. |
 | `DISK_TYPE` | `scsi` | Disk controller/device type, such as `sata`, `scsi`, `nvme`, or `blk`. |
 | `DISK_CACHE` | `none` | QEMU disk cache mode, for example `none` or `writeback`. |
@@ -68,11 +47,11 @@ This page lists all the environment variables that can be used to configure the 
 | `DHCP` | `N` | Enables DHCP/macvtap mode so the VM receives an address from the external LAN. |
 | `IP` |  | Guest IP address override. |
 | `MAC` |  | Guest network adapter MAC address. |
-| `HOST` | `QEMU` | Hostname assigned to the VM. |
+| `HOST` | `Virtual DSM` | Hostname assigned to the VM. |
 | `DEV` | `eth0` | Host/container network interface to use. |
 | `MTU` |  | Network MTU to use for the guest interface. |
 | `MASK` | `255.255.255.0` | IPv4 netmask. |
-| `TAP` | `qemu` | TAP/macvtap interface name. |
+| `TAP` | `dsm` | TAP/macvtap interface name. |
 | `BRIDGE` | `docker` | Bridge name used for NAT networking. |
 | `ADAPTER` | `virtio-net-pci` | QEMU network adapter model. |
 | `HOST_PORTS` |  | Ports reserved for services running on the host/container side. |
@@ -87,44 +66,18 @@ This page lists all the environment variables that can be used to configure the 
 
 | Variable | Default | Description |
 |---|---|---|
-| `DISPLAY` | `web` | Display backend. Common values are `web`, `vnc`, `disabled`, or `none`. |
-| `VGA` | `virtio` | QEMU video adapter model. |
-| `GPU` | `N` | Enables Intel iGPU acceleration. Experimental. |
+| `DISPLAY` | `none` | Display backend. Common values are `web`, `vnc`, `disabled`, or `none`. |
+| `VGA` | `none` | QEMU video adapter model. |
+| `GPU` | `N` | Enables Intel iGPU acceleration. |
 | `RENDERNODE` | `/dev/dri/renderD128` | Render node used for GPU acceleration. |
-
-## 🌍 Web UI
-
-| Variable | Default | Description |
-|---|---|---|
-| `WEB` | `Y` | Enables or disables the web interface. |
-| `WEB_PORT` | `8006` | Port for the web interface. |
-| `VNC_PORT` | `5900` | Port for the VNC server. |
-| `WSS_PORT` | `5700` | WebSocket port used by QEMU/noVNC. |
-| `WSD_PORT` | `8004` | Internal websocketd port. |
-| `PROTECT` | `N` | Enables password protection for the web interface. |
-
-## 🎈 Memory Ballooning
-
-| Variable | Default | Description |
-|---|---|---|
-| `BALLOONING` | `N` | Enables dynamic memory ballooning. |
-| `BALLOONING_DEBUG` | `N` | Enables debug output for the ballooning monitor. |
-| `BALLOONING_MIN_MEM` | `33%` | Minimum memory target for the balloon device. |
-| `BALLOONING_RAM_THRESHOLD` | `80.0` | Target host RAM usage percentage. |
-| `BALLOONING_RAM_THRESHOLD_HARD` | `90.0` | Host RAM usage percentage where ballooning becomes more aggressive. |
-| `BALLOONING_PSI_PRESSURE` | `10.0` | PSI memory pressure level where ballooning starts reacting more aggressively. |
-| `BALLOONING_PSI_PRESSURE_MAX` | `50.0` | PSI memory pressure level where ballooning reaches its strongest response. |
-| `BALLOONING_HYSTERESIS` | `128M` | Minimum memory change before the balloon target is updated. |
-| `BALLOONING_KP` | `0.5` | Proportional gain for the ballooning controller. |
-| `BALLOONING_KI` | `0.05` | Integral gain for the ballooning controller. |
-| `BALLOONING_INTERVAL` | `5` | Polling interval in seconds. |
 
 ## 🔌 Shutdown
 
 | Variable | Default | Description |
 |---|---|---|
-| `SHUTDOWN` | `Y` | Enables graceful ACPI shutdown. |
-| `TIMEOUT` | `13` | Timeout used while waiting for the VM to shut down. |
+| `SHUTDOWN` | `Y` | Enables graceful shutdown. |
+| `TIMEOUT` | `115` | Timeout used while waiting for DSM to shut down. |
+| `API_TIMEOUT` | `90` | Timeout used for  shutdown API call. |
 
 ## 🐞 Debugging
 
@@ -132,5 +85,7 @@ This page lists all the environment variables that can be used to configure the 
 |---|---|---|
 | `DEBUG` | `N` | Enables verbose debug output. |
 | `TRACE` | `N` | Enables shell command tracing. |
-| `SERIAL` | `mon:stdio` | QEMU serial device setting. |
-| `MONITOR` | `unix:$QEMU_DIR/monitor.sock,server,wait=off,nodelay` | QEMU monitor device setting. |
+| `COM_PORT` | `2210` | Internal communication port used by the DSM host helper. |
+| `CHR_PORT` | `12345` | Internal character device port used by the DSM host helper. |
+| `HOST_DEBUG` | `N` | Enables debug output for the host helper. |
+| `ARGUMENTS` |  | Additional raw QEMU arguments appended to the generated command line. |
