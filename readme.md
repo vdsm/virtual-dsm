@@ -22,7 +22,7 @@ Virtual DSM in a Docker container.
 - Near-native performance with KVM acceleration
 - Customizable CPU, memory, and storage allocation
 - Supports multiple disks and physical disk passthrough
-- Supports bridge, user-mode, macvlan, and macvtap networking
+- Supports NAT, user-mode, macvlan, and macvtap networking
 
 ## Usage  🐳
 
