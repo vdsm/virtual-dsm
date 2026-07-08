@@ -9,7 +9,7 @@ refresh() {
   [ ! -f "$path" ] && return 0
   [ ! -s "$path" ] && return 0
 
-  msg=$(< "$path")
+  msg=$(< "$path") || return 0
   msg="${msg%$'\n'}"
 
   [ -z "$msg" ] && return 0
