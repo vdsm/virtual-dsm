@@ -188,8 +188,8 @@ setOwner() {
   [ ! -f "$file" ] && return 1
 
   dir=$(dirname -- "$file")
-  uid=$(stat -c '%u' "$dir")
-  gid=$(stat -c '%g' "$dir")
+  uid=$(stat -c '%u' "$dir") || return 1
+  gid=$(stat -c '%g' "$dir") || return 1
 
   ! chown "$uid:$gid" "$file" && return 1
 
@@ -204,8 +204,8 @@ makeDir() {
   ! mkdir -p "$path" && return 1
 
   dir=$(dirname -- "$path")
-  uid=$(stat -c '%u' "$dir")
-  gid=$(stat -c '%g' "$dir")
+  uid=$(stat -c '%u' "$dir") || return 1
+  gid=$(stat -c '%g' "$dir") || return 1
 
   ! chown "$uid:$gid" "$path" && return 1
 
@@ -247,8 +247,8 @@ html() {
   HTML="${HTML/\[4\]/$footer}"
   HTML="${HTML/\[5\]/$FOOTER2}"
 
-  echo "$HTML" > "$PAGE"
-  echo "$body" > "$INFO"
+  echo "$HTML" > "$PAGE" || return 1
+  echo "$body" > "$INFO" || return 1
 
   return 0
 }
