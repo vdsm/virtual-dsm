@@ -179,6 +179,22 @@ normalizeSize() {
   return 0
 }
 
+
+baseDir() {
+
+  local path="${1%/}"
+
+  [[ -z "$path" || "$path" == "/" ]] && {
+    echo "/"
+    return 0
+  }
+
+  path="${path#/}"
+  path="${path%%/*}"
+
+  echo "/$path"
+  return 0
+}
 createDisk() {
 
   local DISK_FILE="$1"
@@ -186,7 +202,7 @@ createDisk() {
   local DISK_DESC="$3"
   local DISK_FMT="$4"
   local FS="$5"
-  local DATA_SIZE DIR SPACE GB FA
+  local DATA_SIZE DIR BASE_DIR SPACE GB FA
 
   rm -f "$DISK_FILE"
 
@@ -196,11 +212,16 @@ createDisk() {
 
     # Check free diskspace
     DIR=$(dirname "$DISK_FILE")
-    SPACE=$(df --output=avail -B 1 "$DIR" | tail -n 1)
+    BASE_DIR=$(baseDir "$DIR")
+
+    if ! SPACE=$(df --output=avail -B 1 "$DIR" | tail -n 1); then
+      error "Failed to check free space in $BASE_DIR."
+      exit 76
+    fi
 
     if (( DATA_SIZE > SPACE )); then
       GB=$(formatBytes "$SPACE")
-      error "Not enough free space to create a $DISK_DESC of ${DISK_SPACE/G/ GB} in $DIR, it has only $GB available..."
+      error "Not enough free space to create a $DISK_DESC of ${DISK_SPACE/G/ GB} in $BASE_DIR, it has only $GB available..."
       error "Please specify a smaller ${DISK_DESC^^}_SIZE or disable preallocation by setting ALLOCATE=N." && exit 76
     fi
 
@@ -255,7 +276,7 @@ resizeDisk() {
   local DISK_DESC="$3"
   local DISK_FMT="$4"
   local FS="$5"
-  local CUR_SIZE DATA_SIZE DIR SPACE GB
+  local CUR_SIZE DATA_SIZE DIR BASE_DIR SPACE GB
 
   CUR_SIZE=$(getSize "$DISK_FILE") || exit 71
   DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
@@ -266,11 +287,16 @@ resizeDisk() {
 
     # Check free diskspace
     DIR=$(dirname "$DISK_FILE")
-    SPACE=$(df --output=avail -B 1 "$DIR" | tail -n 1)
+    BASE_DIR=$(baseDir "$DIR")
+
+    if ! SPACE=$(df --output=avail -B 1 "$DIR" | tail -n 1); then
+      error "Failed to check free space in $BASE_DIR."
+      exit 76
+    fi
 
     if (( REQ > SPACE )); then
       GB=$(formatBytes "$SPACE")
-      error "Not enough free space to resize $DISK_DESC to ${DISK_SPACE/G/ GB} in $DIR, it has only $GB available.."
+      error "Not enough free space to resize $DISK_DESC to ${DISK_SPACE/G/ GB} in $BASE_DIR, it has only $GB available.."
       error "Please specify a smaller ${DISK_DESC^^}_SIZE or disable preallocation by setting ALLOCATE=N." && exit 74
     fi
 
@@ -317,8 +343,9 @@ convertDisk() {
   local TMP_FILE="$DISK_BASE.tmp"
   rm -f "$TMP_FILE"
 
-  local DIR FA
+  local DIR BASE_DIR FA
   DIR=$(dirname "$TMP_FILE")
+  BASE_DIR=$(baseDir "$DIR")
 
   if ! disabled "$ALLOCATE"; then
 
@@ -326,11 +353,15 @@ convertDisk() {
 
     # Check free diskspace
     CUR_SIZE=$(getSize "$SOURCE_FILE") || exit 79
-    SPACE=$(df --output=avail -B 1 "$DIR" | tail -n 1)
+
+    if ! SPACE=$(df --output=avail -B 1 "$DIR" | tail -n 1); then
+      error "Failed to check free space in $BASE_DIR."
+      exit 76
+    fi
 
     if (( CUR_SIZE > SPACE )); then
       GB=$(formatBytes "$SPACE")
-      error "Not enough free space to convert $DISK_DESC to $DST_FMT in $DIR, it has only $GB available..."
+      error "Not enough free space to convert $DISK_DESC to $DST_FMT in $BASE_DIR, it has only $GB available..."
       error "Please free up some disk space or disable preallocation by setting ALLOCATE=N." && exit 76
     fi
 
@@ -353,13 +384,18 @@ convertDisk() {
   # shellcheck disable=SC2086
   if ! qemu-img convert -f "$SOURCE_FMT" $CONV_FLAGS -o "$DISK_PARAM" -O "$DST_FMT" -- "$SOURCE_FILE" "$TMP_FILE"; then
     rm -f "$TMP_FILE"
-    error "Failed to convert $DISK_STYLE $DISK_DESC image to $DST_FMT format in $DIR, is there enough space available?" && exit 79
+    error "Failed to convert $DISK_STYLE $DISK_DESC image to $DST_FMT format in $BASE_DIR, is there enough space available?" && exit 79
   fi
 
   if [[ "$DST_FMT" == "raw" ]]; then
     if ! disabled "$ALLOCATE"; then
+
       # Work around qemu-img bug
-      CUR_SIZE=$(stat -c%s "$TMP_FILE")
+      if ! CUR_SIZE=$(stat -c%s "$TMP_FILE"); then
+        error "Failed to determine converted image size: $TMP_FILE"
+        exit 79
+      fi
+
       if ! fallocate -l "$CUR_SIZE" "$TMP_FILE" &>/dev/null; then
         if ! fallocate -l -x "$CUR_SIZE" "$TMP_FILE"; then
           error "Failed to allocate $CUR_SIZE bytes for $DISK_DESC image $TMP_FILE"
@@ -399,21 +435,22 @@ checkFS () {
   local FS="$1"
   local DISK_FILE="$2"
   local DISK_DESC="$3"
-  local DIR FA
+  local DIR BASE_DIR FA
 
   DIR=$(dirname "$DISK_FILE")
+  BASE_DIR=$(baseDir "$DIR")
   [ ! -d "$DIR" ] && return 0
 
   if [[ "${FS,,}" == "overlay"* && "${ENGINE,,}" == "docker" ]]; then
-    warn "the filesystem of $DIR is OverlayFS, this usually means it was binded to an invalid path!"
+    warn "the filesystem of $BASE_DIR is OverlayFS, this usually means it was binded to an invalid path!"
   fi
 
   if [[ "${FS,,}" == "fuse"* ]]; then
-    warn "the filesystem of $DIR is FUSE, this extra layer will negatively affect performance!"
+    warn "the filesystem of $BASE_DIR is FUSE, this extra layer will negatively affect performance!"
   fi
 
   if ! supportsDirect "$FS"; then
-    warn "the filesystem of $DIR is $FS, which does not support O_DIRECT mode, adjusting settings..."
+    warn "the filesystem of $BASE_DIR is $FS, which does not support O_DIRECT mode, adjusting settings..."
   fi
 
   if isCow "$FS"; then
@@ -486,7 +523,7 @@ finishDisks () {
 
   case "${DISK_TYPE,,}" in
     "blk" | "scsi" | "virtio-blk" | "virtio-scsi" )
-      DISK_OPTS+=" -object iothread,id=io2" ;;
+      [[ "$DISK_OPTS" != *" -object iothread,id=io2"* ]] && DISK_OPTS+=" -object iothread,id=io2" ;;
   esac
 
   if ! enabled "$DISK_DISABLE"; then
@@ -577,8 +614,9 @@ addDisk () {
 
     if (( LEFT > 0 )); then
 
-      local GB
+      local GB BASE_DIR
       GB=$(formatBytes "$FREE")
+      BASE_DIR=$(baseDir "$DIR")
       LEFT=$(formatBytes "$LEFT")
       CUR_SIZE=$(formatBytes "$CUR_SIZE")
       msg="The virtual size of the ${DISK_DESC,,} is $CUR_SIZE"
@@ -588,8 +626,8 @@ addDisk () {
         msg+=" (of which $USED is used)"
       fi
 
-      info "$msg, but there is only $GB of free space remaining in $DIR now."
-      info "Please consider making at least $LEFT more space available in $DIR for future expansions."
+      info "$msg, but there is only $GB of free space remaining in $BASE_DIR now."
+      info "Please consider making at least $LEFT more space available in $BASE_DIR for future expansions."
 
     fi
 
@@ -598,6 +636,7 @@ addDisk () {
   if [ -f "$DISK_FILE" ]; then
     if ! setOwner "$DISK_FILE"; then
       error "Failed to set the owner for \"$DISK_FILE\" !"
+      exit 77
     fi
   fi
 
