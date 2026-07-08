@@ -47,7 +47,7 @@ This page lists all the environment variables that can be used to configure the 
 | `DHCP` | `N` | Enables DHCP/macvtap mode so the VM receives an address from the external LAN. |
 | `IP` |  | Guest IP address override. |
 | `MAC` |  | Guest network adapter MAC address. |
-| `HOST` | `Virtual DSM` | Hostname assigned to the VM. |
+| `HOST` | `VirtualDSM` | Hostname assigned to the VM. |
 | `DEV` | `eth0` | Host/container network interface to use. |
 | `MTU` |  | Network MTU to use for the guest interface. |
 | `MASK` | `255.255.255.0` | IPv4 netmask. |
