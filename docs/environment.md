@@ -66,7 +66,7 @@ This page lists all the environment variables that can be used to configure the 
 
 | Variable | Default | Description |
 |---|---|---|
-| `DISPLAY` | `none` | Display backend. Common values are `web`, `vnc`, `disabled`, or `none`. |
+| `DISPLAY` | `none` | QEMU display backend. Common values are `vnc`, `disabled`, or `none`. |
 | `VGA` | `none` | QEMU video adapter model. |
 | `GPU` | `N` | Enables Intel iGPU acceleration. |
 | `RENDERNODE` | `/dev/dri/renderD128` | Render node used for GPU acceleration. |
@@ -77,7 +77,7 @@ This page lists all the environment variables that can be used to configure the 
 |---|---|---|
 | `SHUTDOWN` | `Y` | Enables graceful shutdown. |
 | `TIMEOUT` | `115` | Timeout used while waiting for DSM to shut down. |
-| `API_TIMEOUT` | `90` | Timeout used for  shutdown API call. |
+| `API_TIMEOUT` | `90` | Timeout used for the shutdown API call. |
 
 ## 🐞 Debugging
 
