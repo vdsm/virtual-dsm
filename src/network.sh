@@ -655,7 +655,10 @@ configureSlirp() {
   [ -n "$forward" ] && NET_OPTS+=",$forward"
 
   if enabled "${DNSMASQ_DISABLE:-}"; then
-    echo "$gateway" > /run/shm/qemu.gw || warn "Failed to write gateway file."
+    if ! echo "$gateway" > /run/shm/qemu.gw; then
+      error "Failed to write gateway file."
+      return 1
+    fi
   else
     if [ ! -f /etc/resolv.dnsmasq ] && ! cp /etc/resolv.conf /etc/resolv.dnsmasq; then
       error "Failed to backup /etc/resolv.conf."
@@ -1262,8 +1265,16 @@ configureMAC() {
     if [ -z "$MAC" ]; then
       # Generate a Synology-style MAC address based on a stable container identifier when possible.
       MAC=$(echo "$container" | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:11:32:\3:\4:\5/')
-      echo "${MAC^^}" > "$file"
-      ! setOwner "$file" && error "Failed to set the owner for \"$file\" !"
+
+      if ! echo "${MAC^^}" > "$file"; then
+        error "Failed to write MAC address to \"$file\" !"
+        exit 28
+      fi
+
+      if ! setOwner "$file"; then
+        error "Failed to set the owner for \"$file\" !"
+        exit 28
+      fi
     fi
   fi
 
@@ -1437,8 +1448,15 @@ enabled "$DEBUG" && echo "$msg"
 
 prepareNetwork
 
-echo "$UPLINK" > "$QEMU_DIR"/qemu.ip
-echo "$NIC" > "$QEMU_DIR"/qemu.nic
+if ! echo "$UPLINK" > "$QEMU_DIR"/qemu.ip; then
+  error "Failed to write QEMU IP file!"
+  exit 24
+fi
+
+if ! echo "$NIC" > "$QEMU_DIR"/qemu.nic; then
+  error "Failed to write QEMU NIC file!"
+  exit 24
+fi
 
 cleanUp
 
