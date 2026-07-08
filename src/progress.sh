@@ -27,12 +27,12 @@ do
   if [ ! -s "$path" ] && [ ! -d "$path" ]; then
     bytes="0"
   else
-    bytes=$(du -sb "$path" | cut -f1)
+    bytes=$(du -sb "$path" 2>/dev/null | cut -f1) || bytes="0"
   fi
   
   if (( bytes > 4096 )); then
     if [ -z "$total" ] || [[ "$total" == "0" ]] || [ "$bytes" -gt "$total" ]; then
-      size=$(numfmt --to=iec --suffix=B "$bytes" | sed -r 's/([A-Z])/ \1/')
+      size=$(numfmt --to=iec --suffix=B "$bytes" | sed -r 's/([A-Z])/ \1/') || size="${bytes} bytes"
     else
       size="$(echo "$bytes" "$total" | awk '{printf "%.1f", $1 * 100 / $2}')"
       size="$size%"
