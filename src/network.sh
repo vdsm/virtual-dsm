@@ -960,11 +960,10 @@ configureTables() {
     warn "$tables_err" && return 1
   fi
 
-  # Allow return traffic
+  # Allow forwarding from dev -> bridge
   if ! iptables -A FORWARD \
     -i "$DEV" \
     -o "$BRIDGE" \
-    -m conntrack --ctstate RELATED,ESTABLISHED \
     -m comment --comment "$rule_tag" \
     -j ACCEPT; then
     warn "$tables_err" && return 1
@@ -1395,7 +1394,7 @@ showHostInfo() {
   [[ "$nameservers" == "127.0.0.1"* ]] && nameservers=""
 
   echo
-  
+
   if (( ${#nameservers} <= 40 )); then
     [ -n "$nameservers" ] && line+="  |  DNS: $nameservers"
     echo "$line"
