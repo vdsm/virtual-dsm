@@ -1249,6 +1249,15 @@ validateHost() {
   return 0
 }
 
+validateHostPorts() {
+
+  if isNAT && [[ "${HOST_PORTS,,}" == *"/udp"* ]]; then
+    warn "UDP ports in \"HOST_PORTS\" are not yet implemented for NAT networking."
+  fi
+
+  return 0
+}
+
 validateAddresses() {
 
   # DHCP/macvtap mode can work without a detectable container IPv4 address,
@@ -1501,6 +1510,7 @@ prepareNetwork() {
 
   validateMask
   validateHost
+  validateHostPorts
 
   detectAddresses
   validateAddresses
