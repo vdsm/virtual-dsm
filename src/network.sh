@@ -1049,60 +1049,90 @@ configureNAT() {
 }
 
 # ######################################
-#  Cleanup
+#  IP Tables
 # ######################################
 
-selectTables() {
+setTables() {
 
-  local backend=""
+  local mode="$1"
+  local path=""
 
-  # Prefer the legacy backend when available, but fall back to nftables
-  # on systems where the legacy backend is unavailable.
-  if command -v iptables-legacy >/dev/null 2>&1 && iptables-legacy -V >/dev/null 2>&1; then
-    backend="legacy"
-  elif command -v iptables-nft >/dev/null 2>&1 && iptables-nft -V >/dev/null 2>&1; then
-    backend="nft"
-  else
-    return 1
-  fi
+  path=$(command -v "iptables-$mode" 2>/dev/null || true)
+  [ -z "$path" ] && return 1
 
-  if ! update-alternatives --set iptables "$(command -v "iptables-$backend")" > /dev/null 2>&1; then
-    return 1
-  fi
+  update-alternatives --set iptables "$path" > /dev/null 2>&1
+}
+
+testTables() {
+
+  # Test actual ruleset access instead of only checking the binary version.
+  iptables -w -t nat -S > /dev/null 2>&1 || return 1
+  iptables-save -t nat > /dev/null 2>&1 || return 1
 
   return 0
 }
 
+selectTables() {
+
+  local mode=""
+  local modes=()
+
+  # Prefer nftables for Podman namespaces, but retain legacy first for Docker.
+  if [[ "${ENGINE,,}" == "podman" ]]; then
+    modes=( "nft" "legacy" )
+  else
+    modes=( "legacy" "nft" )
+  fi
+
+  for mode in "${modes[@]}"; do
+
+    command -v "iptables-$mode" > /dev/null 2>&1 || continue
+    setTables "$mode" && testTables && return 0
+
+  done
+
+  return 1
+}
+
 clearTables() {
 
-  local table="" line rules
+  local table=""
+  local line=""
+  local rules=""
+  local args=()
   local rule_tag="remove"
   local re="--comment[[:space:]]+\"?$rule_tag\"?([[:space:]]|\$)"
 
   selectTables || return 1
 
-  # Store the current iptables ruleset
-  ! rules=$(iptables-save 2> /dev/null) && return 0
+  # Store the current iptables ruleset.
+  ! rules=$(iptables-save 2> /dev/null) && return 1
   [ -z "$rules" ] && return 0
 
-  # Delete every rule tagged with our unique identifier, leaving all other rules intact.
+  # Delete every rule tagged with our unique identifier,
+  # leaving all other rules intact.
   while IFS= read -r line; do
+
     case "$line" in
-      \*nat)    table="nat" ;;
-      \*filter) table="filter" ;;
-      \*mangle) table="mangle" ;;
-      \*raw)    table="raw" ;;
+      \*nat ) table="nat" ;;
+      \*filter ) table="filter" ;;
+      \*mangle ) table="mangle" ;;
+      \*raw ) table="raw" ;;
     esac
-    if [[ "$line" == -A* ]]; then
-      if [[ "$line" =~ $re ]]; then
-        read -ra args <<< "${line/-A /-D }"
-        iptables -t "$table" "${args[@]}" &> /dev/null || :
-      fi
+
+    if [[ "$line" == -A* ]] && [[ "$line" =~ $re ]]; then
+      read -ra args <<< "${line/-A /-D }"
+      iptables -t "$table" "${args[@]}" > /dev/null 2>&1 || :
     fi
+
   done <<< "$rules"
 
   return 0
 }
+
+# ######################################
+#  Cleanup
+# ######################################
 
 closeBridge() {
 
