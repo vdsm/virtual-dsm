@@ -1099,7 +1099,7 @@ clearTables() {
   local table=""
   local line=""
   local rules=""
-  local args=()
+  local failed="N"
   local rule_tag="remove"
   local re="--comment[[:space:]]+\"?$rule_tag\"?([[:space:]]|\$)"
 
@@ -1121,12 +1121,18 @@ clearTables() {
     esac
 
     if [[ "$line" == -A* ]] && [[ "$line" =~ $re ]]; then
-      read -ra args <<< "${line/-A /-D }"
-      iptables -t "$table" "${args[@]}" > /dev/null 2>&1 || :
+      line="${line/-A /-D }"
+
+      # Parse the quoting produced by iptables-save before deleting the rule.
+      if ! printf '%s\n' "$line" |
+        xargs -r iptables -t "$table" > /dev/null 2>&1; then
+        failed="Y"
+      fi
     fi
 
   done <<< "$rules"
 
+  enabled "$failed" && return 1
   return 0
 }
 
