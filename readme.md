@@ -148,37 +148,6 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
     CPU_CORES: "4"
   ```
 
-### How do I verify that KVM is available?
-
-First, make sure your platform and container runtime meet the [requirements](#requirements-️) listed above.
-
-On a Linux host, install `cpu-checker` and run:
-
-```bash
-sudo apt install cpu-checker
-sudo kvm-ok
-```
-
-A working configuration should report:
-
-```text
-KVM acceleration can be used
-```
-
-You can also verify that the KVM device exists:
-
-```bash
-ls -l /dev/kvm
-```
-
-If KVM is unavailable, check whether:
-
-- Hardware virtualization (`Intel VT-x` or `AMD-V`) is enabled in your BIOS or UEFI.
-- Nested virtualization is enabled when the host itself is a virtual machine.
-- Your VPS or cloud provider supports nested virtualization.
-
-If `kvm-ok` succeeds but the container still reports that KVM is unavailable, you can temporarily add `privileged: true` to your Compose file to rule out a permission or device-access issue.
-
 ### How do I assign an individual IP address to the container?
 
   By default, the container uses bridge networking, which shares the IP address with the host. 
@@ -272,6 +241,37 @@ No. For a complete overview of all supported settings, see the [environment vari
 ### What are the differences compared to the standard DSM?
 
   There are only two minor differences: the Virtual Machine Manager package is not available, and Surveillance Station will not include any free licenses.
+
+### How do I verify that KVM is available?
+
+  First, make sure your platform and container runtime meet the [requirements](#requirements-️) listed above.
+
+  On a Linux host, install `cpu-checker` and run:
+
+  ```bash
+  sudo apt install cpu-checker
+  sudo kvm-ok
+  ```
+
+  A working configuration should report:
+
+  ```text
+  KVM acceleration can be used
+  ```
+
+  You can also verify that the KVM device exists:
+
+  ```bash
+  ls -l /dev/kvm
+  ```
+
+  If KVM is unavailable, check whether:
+
+  - Hardware virtualization (`Intel VT-x` or `AMD-V`) is enabled in your BIOS or UEFI.
+  - Nested virtualization is enabled when the host itself is a virtual machine.
+  - Your VPS or cloud provider supports nested virtualization.
+
+  If `kvm-ok` succeeds but the container still reports that KVM is unavailable, you can temporarily add `privileged: true` to your Compose file to rule out a permission or device-access issue.
 
 ### Is this project legal?
 
