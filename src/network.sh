@@ -1620,10 +1620,8 @@ else
 
   showGuestInfo
 
-  if [[ "${NETWORK,,}" == "passt" || "${NETWORK,,}" == "slirp" ]]; then
-    if [ -z "$USER_PORTS" ]; then
-      info "Notice: because user-mode networking is active, when you need to forward custom ports to DSM, add them to the \"USER_PORTS\" variable."
-    fi
+  if isUserMode && [ -z "$USER_PORTS" ]; then
+    info "Notice: because user-mode networking is active, when you need to forward custom ports to DSM, add them to the \"USER_PORTS\" variable."
   fi
 
 fi
