@@ -964,22 +964,10 @@ configureTables() {
     warn "$tables_err" && return 1
   fi
 
-  # Allow newly DNATed connections to the guest
+  # Allow forwarding from dev -> guest
   if ! iptables -A FORWARD \
     -i "$DEV" \
     -o "$BRIDGE" \
-    -d "$ip" \
-    -m conntrack --ctstate NEW --ctstatus DNAT \
-    -m comment --comment "$rule_tag" \
-    -j ACCEPT; then
-    warn "$tables_err" && return 1
-  fi
-
-  # Allow return and related traffic
-  if ! iptables -A FORWARD \
-    -i "$DEV" \
-    -o "$BRIDGE" \
-    -m conntrack --ctstate RELATED,ESTABLISHED \
     -m comment --comment "$rule_tag" \
     -j ACCEPT; then
     warn "$tables_err" && return 1
