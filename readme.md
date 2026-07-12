@@ -66,12 +66,13 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
 ## Requirements ⚙️
 
- - A Linux host with KVM support, or Docker Desktop / Podman on Windows 11 with nested virtualization enabled.
- - At least 2 GB of RAM available.
- - At least 32 GB of free disk space.
+- Docker or Podman on a Linux host with KVM support.
+- Docker Desktop or Podman (Desktop) on Windows 11 with nested virtualization enabled.
+- At least 2 GB of available RAM.
+- At least 32 GB of free disk space.
 
 > [!NOTE]
-> Docker Desktop on macOS and Windows 10 do not currently provide the required KVM support for this image.
+> Docker Desktop on Linux, macOS, and Windows 10 does not currently provide KVM access to containers and is therefore not supported.
 
 ## FAQ 💬
 
@@ -146,34 +147,6 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
     RAM_SIZE: "4G"
     CPU_CORES: "4"
   ```
-
-### How do I verify if my system supports KVM?
-
-  First check if your software is compatible using this chart:
-
-  | **Product**  | **Linux** | **Win11** | **Win10** | **macOS** |
-  |---|---|---|---|---|
-  | Docker CLI        | ✅   | ✅       | ❌        | ❌ |
-  | Docker Desktop    | ❌   | ✅       | ❌        | ❌ | 
-  | Podman CLI        | ✅   | ✅       | ❌        | ❌ | 
-  | Podman Desktop    | ✅   | ✅       | ❌        | ❌ | 
-
-  After that you can run the following commands in Linux to check your system:
-
-  ```bash
-  sudo apt install cpu-checker
-  sudo kvm-ok
-  ```
-
-  If you receive an error from `kvm-ok` indicating that KVM cannot be used, please check whether:
-
-  - the virtualization extensions (`Intel VT-x` or `AMD SVM`) are enabled in your BIOS.
-
-  - you enabled "nested virtualization" if you are running the container inside a virtual machine.
-
-  - you are not using a cloud provider, as most of them do not allow nested virtualization for their VPSs.
-
-  If you did not receive any error from `kvm-ok` but the container still complains about a missing KVM device, it could help to add `privileged: true` to your compose file (or `sudo` to your `docker` command) to rule out any permission issue.
 
 ### How do I assign an individual IP address to the container?
 
@@ -263,11 +236,42 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
 ### Are these all available options?
 
-No. For a complete overview of all supported settings, see the [environment variables](docs/environment.md) page.
+  No. For a complete overview of all supported settings, see the [environment variables](docs/environment.md) page.
 
 ### What are the differences compared to the standard DSM?
 
   There are only two minor differences: the Virtual Machine Manager package is not available, and Surveillance Station will not include any free licenses.
+
+### How do I verify that KVM is available?
+
+  First, make sure your platform and container runtime meet the [requirements](#requirements-️) listed above.
+
+  On a Linux host, install `cpu-checker` and run:
+
+  ```bash
+  sudo apt install cpu-checker
+  sudo kvm-ok
+  ```
+
+  A working configuration should report:
+
+  ```text
+  KVM acceleration can be used
+  ```
+
+  You can also verify that the KVM device exists:
+
+  ```bash
+  ls -l /dev/kvm
+  ```
+
+  If KVM is unavailable, check whether:
+
+  - Hardware virtualization (`Intel VT-x` or `AMD-V`) is enabled in your BIOS or UEFI.
+  - Nested virtualization is enabled when the host itself is a virtual machine.
+  - Your VPS or cloud provider supports nested virtualization.
+
+  If `kvm-ok` succeeds but the container still reports that KVM is unavailable, you can temporarily add `privileged: true` to your Compose file to rule out a permission or device-access issue.
 
 ### Is this project legal?
 
