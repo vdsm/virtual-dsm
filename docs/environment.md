@@ -23,8 +23,8 @@ An empty default means the variable is unset and its value is determined automat
 | `CPU_FLAGS` |  | Additional QEMU CPU flags. |
 | `HOST_CPU` |  | CPU name reported to DSM. Selected automatically when unset. |
 | `KVM` | `Y` | Enables KVM hardware acceleration. |
-| `RAM_SIZE` | `2G` | Amount of RAM assigned to Virtual DSM, such as `2G`, `4G`, `half`, or `max`. |
-| `RAM_CHECK` | `Y` | Checks whether enough host memory is available before starting Virtual DSM. |
+| `RAM_SIZE` | `2G` | Amount of RAM assigned to DSM, such as `2G`, `4G`, `half`, or `max`. |
+| `RAM_CHECK` | `Y` | Checks whether enough host memory is available before starting DSM. |
 
 ## 💾 Storage
 
@@ -46,8 +46,8 @@ An empty default means the variable is unset and its value is determined automat
 | Variable | Default | Description |
 |---|---|---|
 | `NETWORK` |  | Network mode, such as `nat`, `passt`, `slirp`, or `N` to disable networking. |
-| `DHCP` | `N` | Enables macvtap networking so Virtual DSM receives an address from the external LAN through DHCP. |
-| `HOST` | `VirtualDSM` | Hostname assigned to the guest. |
+| `DHCP` | `N` | Enables macvtap networking so  DSM receives an address from the external LAN through DHCP. |
+| `HOST` | `VirtualDSM` | Hostname assigned to DSM. |
 | `IP` |  | Overrides the automatically selected guest IPv4 address. |
 | `MAC` |  | Guest network adapter MAC address. |
 | `ADAPTER` | `virtio-net-pci` | QEMU network adapter model. |
@@ -57,7 +57,7 @@ An empty default means the variable is unset and its value is determined automat
 | `TAP` | `dsm` | TAP or macvtap interface name. |
 | `BRIDGE` | `docker` | Bridge name used for NAT networking. |
 | `HOST_PORTS` |  | Ports excluded from guest forwarding. |
-| `USER_PORTS` |  | Additional ports to forward to Virtual DSM when using user-mode networking. |
+| `USER_PORTS` |  | Additional ports to forward to DSM when using user-mode networking. |
 | `DNSMASQ_OPTS` |  | Additional options passed to dnsmasq. |
 | `DNSMASQ_DEBUG` | `N` | Enables dnsmasq debug output. |
 | `DNSMASQ_DISABLE` | `N` | Disables the internal dnsmasq resolver. |
@@ -78,7 +78,7 @@ An empty default means the variable is unset and its value is determined automat
 | Variable | Default | Description |
 |---|---|---|
 | `SHUTDOWN` | `Y` | Enables graceful shutdown. |
-| `TIMEOUT` | `115` | Maximum time, in seconds, to wait before forcing Virtual DSM to stop. |
+| `TIMEOUT` | `115` | Maximum time, in seconds, to wait before forcing DSM to stop. |
 | `API_TIMEOUT` | `90` | Maximum time, in seconds, to wait for the shutdown API call. |
 
 ## 🐞 Debugging
