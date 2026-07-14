@@ -23,14 +23,14 @@ An empty default means the variable is unset and its value is determined automat
 | `CPU_FLAGS` |  | Additional QEMU CPU flags. |
 | `HOST_CPU` |  | CPU name reported to DSM. Selected automatically when unset. |
 | `KVM` | `Y` | Enables KVM hardware acceleration. |
-| `RAM_SIZE` | `2G` | Amount of RAM assigned to the VM, such as `2G`, `4G`, `half`, or `max`. |
+| `RAM_SIZE` | `2G` | Amount of RAM assigned to Virtual DSM, such as `2G`, `4G`, `half`, or `max`. |
 | `RAM_CHECK` | `Y` | Checks whether enough host memory is available before starting the VM. |
 
 ## 💾 Storage
 
 | Variable | Default | Description |
 |---|---|---|
-| `DISK_SIZE` | `256G` | Size of the primary VM disk. |
+| `DISK_SIZE` | `256G` | Size of the main data disk. |
 | `DISK_FMT` | `raw` | Disk image format: `raw` or `qcow2`. |
 | `DISK_TYPE` | `scsi` | Disk device type, such as `sata`, `scsi`, `nvme`, or `blk`. |
 | `DISK_CACHE` | `none` | Disk cache mode, such as `none` or `writeback`. |
@@ -38,15 +38,15 @@ An empty default means the variable is unset and its value is determined automat
 | `DISK_DISCARD` | `unmap` | Discard/TRIM mode for the primary disk. |
 | `DISK_ROTATION` | `1` | Rotation rate reported to the guest. Use `1` to identify the disk as an SSD. |
 | `DISK_FLAGS` |  | Additional options used when creating `qcow2` disks. |
-| `ALLOCATE` | `N` | Preallocates space for the primary disk. |
-| `STORAGE` | `/storage` | Storage directory used for disks, firmware variables, and downloads. |
+| `ALLOCATE` | `N` | Preallocates space for the data disks. |
+| `STORAGE` | `/storage` | Storage directory used for disks, settings, and downloads. |
 
 ## 🌐 Networking
 
 | Variable | Default | Description |
 |---|---|---|
 | `NETWORK` |  | Network mode, such as `nat`, `passt`, `slirp`, or `N` to disable networking. |
-| `DHCP` | `N` | Enables macvtap networking so the VM receives an address from the external LAN through DHCP. |
+| `DHCP` | `N` | Enables macvtap networking so Virtual DSM receives an address from the external LAN through DHCP. |
 | `HOST` | `VirtualDSM` | Hostname assigned to the guest. |
 | `IP` |  | Overrides the automatically selected guest IPv4 address. |
 | `MAC` |  | Guest network adapter MAC address. |
@@ -57,7 +57,7 @@ An empty default means the variable is unset and its value is determined automat
 | `TAP` | `dsm` | TAP or macvtap interface name. |
 | `BRIDGE` | `docker` | Bridge name used for NAT networking. |
 | `HOST_PORTS` |  | Ports excluded from guest forwarding. |
-| `USER_PORTS` |  | Additional ports to forward to the VM when using user-mode networking. |
+| `USER_PORTS` |  | Additional ports to forward to Virtual DSM when using user-mode networking. |
 | `DNSMASQ_OPTS` |  | Additional options passed to dnsmasq. |
 | `DNSMASQ_DEBUG` | `N` | Enables dnsmasq debug output. |
 | `DNSMASQ_DISABLE` | `N` | Disables the internal dnsmasq resolver. |
@@ -78,7 +78,7 @@ An empty default means the variable is unset and its value is determined automat
 | Variable | Default | Description |
 |---|---|---|
 | `SHUTDOWN` | `Y` | Enables graceful shutdown. |
-| `TIMEOUT` | `115` | Maximum time, in seconds, to wait before forcing the VM to stop. |
+| `TIMEOUT` | `115` | Maximum time, in seconds, to wait before forcing Virtual DSM to stop. |
 | `API_TIMEOUT` | `90` | Maximum time, in seconds, to wait for the shutdown API call. |
 
 ## 🐞 Debugging
