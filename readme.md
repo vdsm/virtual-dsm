@@ -238,10 +238,6 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
   No. For a complete overview of all supported settings, see the [environment variables](docs/environment.md) page.
 
-### What are the differences compared to the standard DSM?
-
-  There are only two minor differences: the Virtual Machine Manager package is not available, and Surveillance Station will not include any free licenses.
-
 ### How do I verify that KVM is available?
 
   First, make sure your platform and container runtime meet the [requirements](#requirements-️) listed above.
@@ -272,6 +268,10 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
   - Your VPS or cloud provider supports nested virtualization.
 
   If `kvm-ok` succeeds but the container still reports that KVM is unavailable, you can temporarily add `privileged: true` to your Compose file to rule out a permission or device-access issue.
+
+### What are the differences compared to the standard DSM?
+
+  There are only two minor differences: the Virtual Machine Manager package is not available, and Surveillance Station will not include any free licenses.
 
 ### Is this project legal?
 
