@@ -59,7 +59,7 @@ startWebServer() {
 
   return 0
 }
- 
+
 startWebsocketServer() {
 
   local log="/var/log/websocketd.log"
