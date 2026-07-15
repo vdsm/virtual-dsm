@@ -139,11 +139,67 @@ checkFilesystem() {
   return 0
 }
 
+finiteMemoryLimit() {
+
+  local limit="$1"
+  local sentinel="4611686018427387904"
+  local i=0
+  local left=""
+  local right=""
+
+  [[ "$limit" =~ ^[0-9]+$ ]] || return 1
+
+  (( ${#limit} < ${#sentinel} )) && return 0
+  (( ${#limit} > ${#sentinel} )) && return 1
+
+  for (( i=0; i<${#sentinel}; i++ )); do
+    left="${limit:i:1}"
+    right="${sentinel:i:1}"
+
+    (( left < right )) && return 0
+    (( left > right )) && return 1
+  done
+
+  return 1
+}
+
+getMemoryInfo() {
+
+  local host_total=""
+  local host_avail=""
+  local limit=""
+  local current=""
+  local available=""
+
+  host_total=$(free -b | awk '/^Mem:/ {print $2; exit}')
+  host_avail=$(free -b | awk '/^Mem:/ {print $7; exit}')
+
+  RAM_TOTAL="$host_total"
+  RAM_AVAIL="$host_avail"
+
+  if [ -r /sys/fs/cgroup/memory.max ] && [ -r /sys/fs/cgroup/memory.current ]; then
+    limit=$(< /sys/fs/cgroup/memory.max)
+    current=$(< /sys/fs/cgroup/memory.current)
+  elif [ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ] && [ -r /sys/fs/cgroup/memory/memory.usage_in_bytes ]; then
+    limit=$(< /sys/fs/cgroup/memory/memory.limit_in_bytes)
+    current=$(< /sys/fs/cgroup/memory/memory.usage_in_bytes)
+  fi
+
+  if finiteMemoryLimit "$limit" && [[ "$current" =~ ^[0-9]+$ ]]; then
+    (( limit < RAM_TOTAL )) && RAM_TOTAL="$limit"
+
+    available=$(( limit - current ))
+    (( available < 0 )) && available=0
+    (( available < RAM_AVAIL )) && RAM_AVAIL="$available"
+  fi
+
+  return 0
+}
+
 normalizeRamSize() {
 
-  # Read memory
-  RAM_AVAIL=$(free -b | grep -m 1 Mem: | awk '{print $7}')
-  RAM_TOTAL=$(free -b | grep -m 1 Mem: | awk '{print $2}')
+  # Read host and container memory limits.
+  getMemoryInfo
 
   RAM_SPARE=500000000
   RAM_MINIMUM=136314880
