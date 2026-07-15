@@ -634,7 +634,6 @@ addDisk () {
   if [ -f "$DISK_FILE" ]; then
     if ! setOwner "$DISK_FILE"; then
       error "Failed to set the owner for \"$DISK_FILE\" !"
-      exit 77
     fi
   fi
 
