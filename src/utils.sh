@@ -30,16 +30,22 @@ strip() {
 
 enabled() {
 
-  case "$(strip "${1:-}")" in
-    Y|y|YES|Yes|yes|TRUE|True|true|1|ON|On|on) return 0 ;;
+  local value
+  value=$(strip "${1:-}")
+
+  case "${value,,}" in
+    y|yes|true|1|on|enable|enabled) return 0 ;;
     *) return 1 ;;
   esac
 }
 
 disabled() {
 
-  case "$(strip "${1:-}")" in
-    N|n|NO|No|no|FALSE|False|false|0|OFF|Off|off) return 0 ;;
+  local value
+  value=$(strip "${1:-}")
+
+  case "${value,,}" in
+    n|no|none|false|0|off|disable|disabled) return 0 ;;
     *) return 1 ;;
   esac
 }
