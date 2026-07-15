@@ -248,14 +248,13 @@ writeFile() {
   local txt="$1"
   local path="$2"
 
-  if ! printf '%s\n' "$txt" >"$path"; then
+  if ! printf '%s\n' "$txt" > "$path"; then
     error "Failed to write file \"$path\" !"
     return 1
   fi
 
   if ! setOwner "$path"; then
-    error "Failed to set the owner for \"$path\" !"
-    return 1
+    warn "failed to set the owner for \"$path\"."
   fi
 
   return 0
