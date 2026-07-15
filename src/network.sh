@@ -870,6 +870,47 @@ createTap() {
   return 0
 }
 
+configureUserTables() {
+
+  local ip="$1"
+  local rule_tag="$2"
+  local tables_err="$3"
+  local list=""
+  local port=""
+  local proto=""
+  local num=""
+
+  list=$(getUserPorts)
+
+  for port in ${list//,/ }; do
+
+    proto="tcp"
+    num="$port"
+
+    if [[ "$port" == *"/udp" ]]; then
+      proto="udp"
+      num="${port%/udp}"
+    elif [[ "$port" == *"/tcp" ]]; then
+      num="${port%/tcp}"
+    fi
+
+    [ -z "$num" ] && continue
+
+    if ! iptables -t nat -A PREROUTING \
+      -p "$proto" \
+      --dport "$num" \
+      -m addrtype --dst-type LOCAL \
+      -m comment --comment "$rule_tag" \
+      -j DNAT --to "$ip:$num"; then
+      warn "$tables_err"
+      return 1
+    fi
+
+  done
+
+  return 0
+}
+
 configureTables() {
 
   local ip="$1"
@@ -910,6 +951,9 @@ configureTables() {
       warn "$tables" && return 1
     fi
   fi
+
+  # Forward USER_PORTS explicitly from the container to the VM.
+  configureUserTables "$ip" "$rule_tag" "$tables_err" || return 1
 
   # shellcheck disable=SC2086
   if ! iptables -t nat -A PREROUTING \
