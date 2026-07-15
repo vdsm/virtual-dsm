@@ -1495,22 +1495,26 @@ configureMAC() {
   container=$(containerID)
 
   if [ -z "$MAC" ]; then
+
     file="$STORAGE/dsm.mac"
-    [ -s "$file" ] && MAC=$(<"$file")
-    MAC="${MAC//[![:print:]]/}"
+
+    if [ -s "$file" ]; then
+      if ! MAC=$(readFile "$file"); then
+        error "Failed to read MAC address from \"$file\" !"
+        exit 28
+      fi
+    fi
 
     if [ -z "$MAC" ]; then
+
       # Generate a Synology-style MAC address based on a stable container identifier when possible.
       MAC=$(echo "$container" | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:11:32:\3:\4:\5/')
 
-      if ! echo "${MAC^^}" > "$file"; then
+      if ! writeFile "${MAC^^}" "$file"; then
         error "Failed to write MAC address to \"$file\" !"
         exit 28
       fi
 
-      if ! setOwner "$file"; then
-        error "Failed to set the owner for \"$file\" !"
-      fi
     fi
   fi
 
