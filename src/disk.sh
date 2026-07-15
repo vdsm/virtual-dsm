@@ -27,11 +27,11 @@ SYSTEM="$STORAGE/$BASE.system.img"
 [ ! -s "$SYSTEM" ] && error "Virtual DSM system-image does not exist ($SYSTEM)" && exit 82
 
 if ! setOwner "$BOOT"; then
-  error "Failed to set the owner for \"$BOOT\" !"
+  warn "failed to set the owner for \"$BOOT\" !"
 fi
 
 if ! setOwner "$SYSTEM"; then
-  error "Failed to set the owner for \"$SYSTEM\" !"
+  warn "failed to set the owner for \"$SYSTEM\" !"
 fi
 
 fmt2ext() {
@@ -633,7 +633,7 @@ addDisk () {
 
   if [ -f "$DISK_FILE" ]; then
     if ! setOwner "$DISK_FILE"; then
-      error "Failed to set the owner for \"$DISK_FILE\" !"
+      warn "failed to set the owner for \"$DISK_FILE\" !"
     fi
   fi
 
