@@ -17,8 +17,8 @@ WSD_PID="$QEMU_DIR/websocketd.pid"
 
 prepareWebFiles() {
 
-  cp -r /var/www/* "$QEMU_DIR"
-  rm -f "$WSD_PID" "$WEB_PID"
+  cp -r /var/www/* "$QEMU_DIR" || return 1
+  rm -f "$WSD_PID" "$WEB_PID" || return 1
 
   return 0
 }
@@ -84,7 +84,7 @@ startWebsocketServer() {
   return 0
 }
 
-prepareWebFiles
+prepareWebFiles || return 1
 
 html "Starting $APP for $ENGINE..."
 
