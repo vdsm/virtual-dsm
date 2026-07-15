@@ -55,9 +55,11 @@ configureWebServer() {
 startWebServer() {
 
   # Start webserver
-  nginx -e stderr
-}
+  nginx -e stderr || return 1
 
+  return 0
+}
+ 
 startWebsocketServer() {
 
   local log="/var/log/websocketd.log"
