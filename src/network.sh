@@ -142,8 +142,8 @@ maskToCIDR() {
     }
   ')
 
-  if [[ ! "$prefix" =~ ^[0-9]+$ ]] || (( prefix < 1 || prefix > 24 )); then
-    error "Invalid MASK: '$mask' (supported range: /1 through /24)"
+  if [[ ! "$prefix" =~ ^[0-9]+$ ]] || (( prefix < 0 || prefix > 32 )); then
+    error "Invalid MASK: '$mask'"
     return 1
   fi
 
@@ -1371,6 +1371,11 @@ validateInterface() {
 validateMask() {
 
   PREFIX=$(maskToCIDR "$MASK") || exit 28
+
+  if (( PREFIX < 1 || PREFIX > 24 )); then
+    error "Unsupported MASK: '$MASK' (supported range: /1 through /24)"
+    exit 28
+  fi
 
   return 0
 }
