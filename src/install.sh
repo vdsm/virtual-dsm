@@ -126,13 +126,6 @@ SPACE=$(df --output=avail -B 1 "$STORAGE" | tail -n 1)
 SPACE_GB=$(formatBytes "$SPACE")
 (( MIN_SPACE > SPACE )) && error "Not enough free space for installation in $STORAGE, have $SPACE_GB available but need at least 14 GB." && exit 94
 
-# Check if output is to interactive TTY
-if [ -t 1 ]; then
-  PROGRESS="--progress=bar:noscroll"
-else
-  PROGRESS="--progress=dot:giga"
-fi
-
 if [[ "$URL" == "file://"* ]]; then
   MSG="Copying DSM"
   ERR="Failed to copy ${URL:7}"
@@ -160,17 +153,29 @@ else
 
   SIZE=0
   REASON=""
+  PROGRESS=()
+  DOTBYTES=2097152
   LOG=$(mktemp)
 
   [[ "${URL,,}" == *"_72806.pat" ]] && SIZE=361010261
   [[ "${URL,,}" == *"_69057.pat" ]] && SIZE=363837333
   [[ "${URL,,}" == *"_42218.pat" ]] && SIZE=379637760
 
+  # Check if output is to interactive TTY or redirected to docker log
+  if [ -t 1 ]; then
+    PROGRESS=( --progress=bar:noscroll )
+  else
+    if (( SIZE > 0 )); then
+      DOTBYTES=$(( (SIZE + 199) / 200 ))
+    fi
+    PROGRESS=( --progress=dot --execute "dotbytes=$DOTBYTES" )
+  fi
+
   /run/progress.sh "$PAT" "$SIZE" "$MSG ([P])..." &
 
   {
     LC_ALL=C wget "$URL" -O "$PAT" --no-verbose --no-check-certificate \
-      --timeout=30 --no-http-keep-alive --show-progress "$PROGRESS" \
+      --timeout=30 --no-http-keep-alive --show-progress "${PROGRESS[@]}" \
       --output-file="$LOG"
     rc=$?
   } || :
