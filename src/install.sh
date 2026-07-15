@@ -252,7 +252,7 @@ if ! touch "$SYSTEM"; then
   error "Could not create file $SYSTEM for the system disk." && exit 98
 fi
 
-! setOwner "$SYSTEM" && error "Failed to set the owner for \"$SYSTEM\" !"
+! setOwner "$SYSTEM" && warn "failed to set the owner for \"$SYSTEM\" !"
 
 if [[ "${FS,,}" == "btrfs" ]]; then
   { chattr +C "$SYSTEM"; } || :
@@ -327,7 +327,7 @@ fakeroot -- bash -c "set -Eeu;\
 
 rm -rf "$MOUNT"
 echo "$BASE" > "$STORAGE/dsm.ver"
-! setOwner "$STORAGE/dsm.ver" && error "Failed to set the owner for \"$STORAGE/dsm.ver\" !"
+! setOwner "$STORAGE/dsm.ver" && warn "failed to set the owner for \"$STORAGE/dsm.ver\" !"
 
 if [[ "$URL" == "file://$STORAGE/$BASE.pat" ]]; then
   rm -f "$PAT"
@@ -336,11 +336,11 @@ else
 fi
 
 if [ -f "$STORAGE/$BASE.pat" ]; then
-  ! setOwner "$STORAGE/$BASE.pat" && error "Failed to set the owner for \"$STORAGE/$BASE.pat\" !"
+  ! setOwner "$STORAGE/$BASE.pat" && warn "failed to set the owner for \"$STORAGE/$BASE.pat\" !"
 fi
 
 mv -f "$BOOT" "$STORAGE/$BASE.boot.img"
-! setOwner "$STORAGE/$BASE.boot.img" && error "Failed to set the owner for \"$STORAGE/$BASE.boot.img\" !"
+! setOwner "$STORAGE/$BASE.boot.img" && warn "failed to set the owner for \"$STORAGE/$BASE.boot.img\" !"
 
 rm -rf "$TMP"
 

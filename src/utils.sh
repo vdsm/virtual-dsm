@@ -224,10 +224,16 @@ makeDir() {
   ! mkdir -p "$path" && return 1
 
   dir=$(dirname -- "$path")
-  uid=$(stat -c '%u' "$dir") || return 1
-  gid=$(stat -c '%g' "$dir") || return 1
 
-  ! chown "$uid:$gid" "$path" && return 1
+  if ! uid=$(stat -c '%u' "$dir") || ! gid=$(stat -c '%g' "$dir"); then
+    warn "failed to determine the owner for \"$path\"."
+    return 0
+  fi
+
+  if ! chown "$uid:$gid" "$path"; then
+    warn "failed to set the owner for \"$path\"."
+    return 0
+  fi
 
   return 0
 }
