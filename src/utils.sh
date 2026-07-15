@@ -8,6 +8,7 @@ error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: ${1:-}" "\E[0m\n" >&2; }
 warn () { printf "%b%s%b" "\E[1;31m❯ " "Warning: ${1:-}" "\E[0m\n" >&2; }
 
 strip() {
+
   local value="${1:-}"
 
   # Remove surrounding whitespace
@@ -28,6 +29,7 @@ strip() {
 }
 
 enabled() {
+
   case "$(strip "${1:-}")" in
     Y|y|YES|Yes|yes|TRUE|True|true|1|ON|On|on) return 0 ;;
     *) return 1 ;;
@@ -35,6 +37,7 @@ enabled() {
 }
 
 disabled() {
+
   case "$(strip "${1:-}")" in
     N|n|NO|No|no|FALSE|False|false|0|OFF|Off|off) return 0 ;;
     *) return 1 ;;
@@ -42,10 +45,16 @@ disabled() {
 }
 
 formatBytes() {
+
   local result
-  result=$(numfmt --to=iec --suffix=B "$1" | sed -r 's/([A-Z])/ \1/' | sed 's/ B/ bytes/g;')
+
+  if ! result=$(numfmt --to=iec --suffix=B "$1" | sed -r 's/([A-Z])/ \1/' | sed 's/ B/ bytes/g;'); then
+    return 1
+  fi
+
   local unit="${result//[0-9. ]}"
   result="${result//[a-zA-Z ]/}"
+
   if [[ "${2:-}" == "up" ]]; then
     if [[ "$result" == *"."* ]]; then
       result="${result%%.*}"
@@ -56,11 +65,13 @@ formatBytes() {
       result="${result%%.*}"
     fi
   fi
+
   echo "$result $unit"
   return 0
 }
 
 isAlive() {
+
   local pid="$1"
   [ -z "$pid" ] && return 1
 
@@ -72,6 +83,7 @@ isAlive() {
 }
 
 waitPid() {
+
   local i=0
   local pid="$1"
   local timeout="${2:-10}"
@@ -86,6 +98,7 @@ waitPid() {
 }
 
 waitPidFile() {
+
   local i=0
   local pid=""
   local file="$1"
@@ -106,6 +119,7 @@ waitPidFile() {
 }
 
 pKill() {
+
   local pid="$1"
   local timeout="${2:-10}"
 
@@ -119,6 +133,7 @@ pKill() {
 }
 
 fWait() {
+
   local i=0
   local name="$1"
   local timeout="${2:-10}"
@@ -138,6 +153,7 @@ fWait() {
 }
 
 fKill() {
+
   local name="$1"
   local timeout="${2:-10}"
 
@@ -150,6 +166,7 @@ fKill() {
 }
 
 sKill() {
+
   local pid=""
   local file="$1"
 
@@ -165,6 +182,7 @@ sKill() {
 }
 
 mKill() {
+
   local timeout=10
   local files=("$@")
 
@@ -182,6 +200,7 @@ mKill() {
 }
 
 setOwner() {
+
   local file="$1"
   local dir uid gid
 
@@ -197,6 +216,7 @@ setOwner() {
 }
 
 makeDir() {
+
   local path="$1"
   local dir uid gid
 
@@ -212,17 +232,110 @@ makeDir() {
   return 0
 }
 
+stateFile() {
+
+  local name="$1"
+  local prefix="${2:-$PROCESS}"
+
+  [[ "$name" == */* ]] && printf '%s\n' "$name" && return 0
+
+  printf '%s/%s.%s\n' "$STORAGE" "$prefix" "$name"
+  return 0
+}
+
+writeFile() {
+
+  local txt="$1"
+  local path="$2"
+
+  if ! printf '%s\n' "$txt" >"$path"; then
+    error "Failed to write file \"$path\" !"
+    return 1
+  fi
+
+  if ! setOwner "$path"; then
+    error "Failed to set the owner for \"$path\" !"
+    return 1
+  fi
+
+  return 0
+}
+
+readFile() {
+
+  local path="$1"
+  local value
+
+  [ -s "$path" ] || return 0
+
+  value=$(<"$path") || return 1
+  value="${value//[![:print:]]/}"
+
+  printf '%s\n' "$value"
+  return 0
+}
+
+writeState() {
+
+  local name="$1"
+  local value="$2"
+  local prefix="${3:-$PROCESS}"
+  local path
+
+  [ -z "$value" ] && return 0
+
+  path=$(stateFile "$name" "$prefix") || return 1
+  writeFile "$value" "$path"
+
+  return $?
+}
+
+readState() {
+
+  local name="$1"
+  local prefix="${2:-$PROCESS}"
+  local path
+
+  path=$(stateFile "$name" "$prefix") || return 1
+  readFile "$path"
+
+  return $?
+}
+
+restoreState() {
+
+  local var="$1"
+  local name="$2"
+  local force="${3:-N}"
+  local prefix="${4:-$PROCESS}"
+  local value
+
+  if ! enabled "$force"; then
+    [ -z "${!var:-}" ] || return 0
+  fi
+
+  value=$(readState "$name" "$prefix") || return 1
+  [ -n "$value" ] || return 0
+
+  printf -v "$var" '%s' "$value" || return 1
+  return 0
+}
+
 escape () {
+
   local s
   s=${1//&/\&amp;}
   s=${s//</\&lt;}
   s=${s//>/\&gt;}
   s=${s//'"'/\&quot;}
+
   printf -- %s "$s"
+
   return 0
 }
 
 html() {
+
   local title
   local body
   local script
@@ -254,6 +367,7 @@ html() {
 }
 
 cpu() {
+
   local ret
   local cpu=""
 
@@ -307,6 +421,7 @@ hasDisk() {
 }
 
 getCountry() {
+
   local url=$1
   local query=$2
   local rc json result
@@ -345,6 +460,7 @@ setCountry() {
 }
 
 addPackage() {
+
   local pkg=$1
   local desc=$2
 
@@ -361,8 +477,8 @@ addPackage() {
     sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debian.sources
   fi
 
-  DEBIAN_FRONTEND=noninteractive apt-get -qq update
-  DEBIAN_FRONTEND=noninteractive apt-get -qq --no-install-recommends -y install "$pkg" > /dev/null
+  DEBIAN_FRONTEND=noninteractive apt-get -qq update || return 1
+  DEBIAN_FRONTEND=noninteractive apt-get -qq --no-install-recommends -y install "$pkg" > /dev/null || return 1
 
   return 0
 }
