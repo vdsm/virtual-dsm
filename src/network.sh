@@ -142,8 +142,8 @@ maskToCIDR() {
     }
   ')
 
-  if [[ ! "$prefix" =~ ^[0-9]+$ ]] || (( prefix < 1 || prefix > 30 )); then
-    error "Invalid MASK: '$mask'"
+  if [[ ! "$prefix" =~ ^[0-9]+$ ]] || (( prefix < 1 || prefix > 24 )); then
+    error "Invalid MASK: '$mask' (supported range: /1 through /24)"
     return 1
   fi
 
@@ -491,7 +491,7 @@ getUserPorts() {
     for hostport in ${exclude//,/ }; do
 
       if [[ "$num/$proto" == "$hostport" ]]; then
-  
+
         num=""
 
         if [[ "$hostport" != "${WEB_PORT:-}/tcp" ]]; then
@@ -813,14 +813,16 @@ configurePasst() {
 createBridge() {
 
   local gateway="$1"
-  local rc
+  local rc msg=""
 
   # Create a bridge with a static IP for the VM guest
-  { ip link add dev "$BRIDGE" type bridge; rc=$?; } || :
+  { msg=$(ip link add dev "$BRIDGE" type bridge 2>&1); rc=$?; } || :
 
   if (( rc != 0 )); then
     enabled "$ROOTLESS" && ! enabled "$DEBUG" && return 1
-    warn "failed to create bridge. $ADD_ERR --cap-add NET_ADMIN" && return 1
+    [ -n "$msg" ] && echo "$msg" >&2
+    warn "failed to create bridge. $ADD_ERR --cap-add NET_ADMIN"
+    return 1
   fi
 
   if [[ "$GUEST_MTU" != "0" ]]; then
@@ -845,11 +847,16 @@ createBridge() {
 createTap() {
 
   local tuntap="$1"
+  local rc msg=""
 
   # Set tap to the bridge created
-  if ! ip tuntap add dev "$TAP" mode tap; then
+  { msg=$(ip tuntap add dev "$TAP" mode tap 2>&1); rc=$?; } || :
+
+  if (( rc != 0 )); then
     enabled "$ROOTLESS" && ! enabled "$DEBUG" && return 1
-    warn "$tuntap" && return 1
+    [ -n "$msg" ] && echo "$msg" >&2
+    warn "$tuntap"
+    return 1
   fi
 
   if [[ "$GUEST_MTU" != "0" ]]; then
@@ -1074,15 +1081,21 @@ configureTables() {
 configureNAT() {
 
   local tuntap="TUN device is missing. $ADD_ERR --device /dev/net/tun"
+  local msg=""
   local rc ip subnet forwarding=""
 
   enabled "$DEBUG" && echo "Configuring NAT networking..."
 
   # Create the necessary file structure for /dev/net/tun
   if [ ! -c /dev/net/tun ]; then
-    [ ! -d /dev/net ] && mkdir -m 755 /dev/net
-    if mknod /dev/net/tun c 10 200; then
+    [ ! -d /dev/net ] && mkdir -m 755 /dev/net > /dev/null 2>&1 || :
+
+    { msg=$(mknod /dev/net/tun c 10 200 2>&1); rc=$?; } || :
+
+    if (( rc == 0 )); then
       chmod 666 /dev/net/tun
+    elif ! enabled "$ROOTLESS" || enabled "$DEBUG"; then
+      [ -n "$msg" ] && echo "$msg" >&2
     fi
   fi
 
@@ -1287,7 +1300,7 @@ closeInterfaces() {
 
 closeWeb() {
 
-  local pids=( "$WEB_PID" "$WSD_PID" )
+  local pids=( "${WEB_PID:-}" "${WSD_PID:-}" )
   mKill "${pids[@]}"
 
   return 0
@@ -1309,6 +1322,13 @@ closeNetwork() {
 cleanUp() {
 
   closeInterfaces
+
+  # Restore the original resolver before removing its backup.
+  if [ -f /etc/resolv.dnsmasq ]; then
+    if ! cat /etc/resolv.dnsmasq > /etc/resolv.conf; then
+      warn "failed to restore /etc/resolv.conf."
+    fi
+  fi
 
   # Clean up old files
   rm -f "$PASST_PID" "$PASST_SOCKET"
