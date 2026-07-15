@@ -1323,13 +1323,6 @@ cleanUp() {
 
   closeInterfaces
 
-  # Restore the original resolver before removing its backup.
-  if [ -f /etc/resolv.dnsmasq ]; then
-    if ! cat /etc/resolv.dnsmasq > /etc/resolv.conf; then
-      warn "failed to restore /etc/resolv.conf."
-    fi
-  fi
-
   # Clean up old files
   rm -f "$PASST_PID" "$PASST_SOCKET"
   rm -f "$DNSMASQ_PID" /etc/resolv.dnsmasq
