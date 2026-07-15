@@ -221,11 +221,7 @@ makeDir() {
   local dir uid gid
 
   [ -d "$path" ] && return 0
-
-  if ! mkdir -p "$path"; then
-    error "Failed to create directory \"$path\" !"
-    return 1
-  fi
+  ! mkdir -p "$path" && return 1
 
   dir=$(dirname -- "$path")
 
@@ -236,6 +232,7 @@ makeDir() {
 
   if ! chown "$uid:$gid" "$path"; then
     warn "failed to set the owner for \"$path\"."
+    return 0
   fi
 
   return 0
