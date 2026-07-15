@@ -17,7 +17,7 @@ DIR=$(find / -maxdepth 1 -type d -iname "$FN" -print -quit)
 [ ! -d "$DIR" ] && DIR=$(find "$STORAGE" -maxdepth 1 -type d -iname "$FN" -print -quit)
 
 if [ -d "$DIR" ]; then
-  BASE="DSM_VirtualDSM" && URL="file://$DIR" 
+  BASE="DSM_VirtualDSM" && URL="file://$DIR"
   if [[ ! -s "$STORAGE/$BASE.boot.img" || ! -s "$STORAGE/$BASE.system.img" ]]; then
     error "The bind $DIR maps to a file that does not exist!" && exit 65
   fi
@@ -25,7 +25,7 @@ fi
 
 FILE=$(find / -maxdepth 1 -type f -iname "$FN" -print -quit)
 [ ! -s "$FILE" ] && FILE=$(find "$STORAGE" -maxdepth 1 -type f -iname "$FN" -print -quit)
-[ -s "$FILE" ] && BASE="DSM_VirtualDSM" && URL="file://$FILE" 
+[ -s "$FILE" ] && BASE="DSM_VirtualDSM" && URL="file://$FILE"
 
 URL=$(strip "$URL")
 
@@ -36,7 +36,7 @@ if [ -n "$URL" ] && [ ! -s "$FILE" ] && [ ! -d "$DIR" ]; then
     printf -v BASE '%b' "${BASE//%/\\x}"
     BASE="${BASE//[!A-Za-z0-9._-]/_}"
   fi
-  if [[ "${URL,,}" != "http"* && "${URL,,}" != "file:"* ]] ; then
+  if [[ "${URL,,}" != "http"* && "${URL,,}" != "file:"* ]]; then
     [ ! -s "$STORAGE/$BASE.pat" ] && error "Invalid URL:  $URL" && exit 65
     URL="file://$STORAGE/$BASE.pat"
   fi
@@ -159,20 +159,44 @@ if [[ "$URL" == "file://"* ]]; then
 else
 
   SIZE=0
+  REASON=""
+  LOG=$(mktemp)
+
   [[ "${URL,,}" == *"_72806.pat" ]] && SIZE=361010261
   [[ "${URL,,}" == *"_69057.pat" ]] && SIZE=363837333
   [[ "${URL,,}" == *"_42218.pat" ]] && SIZE=379637760
 
   /run/progress.sh "$PAT" "$SIZE" "$MSG ([P])..." &
 
-  { wget "$URL" -O "$PAT" -q --no-check-certificate --timeout=10 --no-http-keep-alive --show-progress "$PROGRESS"; rc=$?; } || :
+  {
+    LC_ALL=C wget "$URL" -O "$PAT" --no-verbose --no-check-certificate \
+      --timeout=30 --no-http-keep-alive --show-progress "$PROGRESS" \
+      --output-file="$LOG"
+    rc=$?
+  } || :
 
   fKill "progress.sh"
 
-  (( rc == 3 )) && error "$ERR , cannot write file (disk full?)" && exit 69
-  (( rc == 4 )) && error "$ERR , network failure!" && exit 69
-  (( rc == 8 )) && error "$ERR , server issued an error response!" && exit 69
-  (( rc != 0 )) && error "$ERR , reason: $rc" && exit 69
+  if (( rc != 0 )); then
+    REASON=$(sed -n \
+      -e 's/^wget: //p' \
+      -e 's/^[0-9-]\{10\} [0-9:]\{8\} ERROR //p' \
+      "$LOG" | tail -n 1)
+  fi
+
+  rm -f "$LOG"
+
+  if (( rc == 3 )); then
+    error "$ERR because the file could not be written (disk full?)."
+    exit 69
+  elif (( rc != 0 )); then
+    if [ -n "$REASON" ]; then
+      error "$ERR: ${REASON%.}."
+    else
+      error "$ERR with exit status $rc."
+    fi
+    exit 69
+  fi
 
 fi
 
@@ -249,14 +273,15 @@ fi
 
 PART="$TMP/partition.fdisk"
 
-{       echo "label: dos"
-        echo "label-id: 0x6f9ee2e9"
-        echo "device: $SYSTEM"
-        echo "unit: sectors"
-        echo "sector-size: 512"
-        echo ""
-        echo "${SYSTEM}1 : start=        2048, size=    16777216, type=83"
-        echo "${SYSTEM}2 : start=    16779264, size=     4194304, type=82"
+{
+  echo "label: dos"
+  echo "label-id: 0x6f9ee2e9"
+  echo "device: $SYSTEM"
+  echo "unit: sectors"
+  echo "sector-size: 512"
+  echo ""
+  echo "${SYSTEM}1 : start=        2048, size=    16777216, type=83"
+  echo "${SYSTEM}2 : start=    16779264, size=     4194304, type=82"
 } > "$PART"
 
 sfdisk -q "$SYSTEM" < "$PART"
