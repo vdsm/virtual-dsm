@@ -10,16 +10,17 @@ app() {
 }
 
 checkConfiguredMemory() {
-  local wanted msg
 
   if disabled "$RAM_CHECK" || [[ "${RAM_SIZE,,}" == "max" || "${RAM_SIZE,,}" == "half" ]]; then
     return 0
   fi
 
+  local wanted msg avail_mem
   wanted=$(numfmt --from=iec "$RAM_SIZE")
+  avail_mem=$(formatBytes "$RAM_AVAIL")
 
   if (( (wanted + RAM_SPARE) > RAM_AVAIL )); then
-    msg="Your configured RAM_SIZE of ${RAM_SIZE/G/ GB} is too high for the $AVAIL_MEM of free memory available,"
+    msg="Your configured RAM_SIZE of ${RAM_SIZE/G/ GB} is too high for the $avail_mem of free memory available,"
     if [[ "${FS,,}" == "zfs" ]]; then
       info "$msg but since ZFS is active this will be ignored."
     else
@@ -28,7 +29,7 @@ checkConfiguredMemory() {
     fi
   else
     if (( (wanted + (RAM_SPARE * 3)) > RAM_AVAIL )); then
-      msg="your configured RAM_SIZE of ${RAM_SIZE/G/ GB} is very close to the $AVAIL_MEM of free memory available,"
+      msg="your configured RAM_SIZE of ${RAM_SIZE/G/ GB} is very close to the $avail_mem of free memory available,"
       if [[ "${FS,,}" == "zfs" ]]; then
         info "$msg but since ZFS is active this will be ignored."
       else
@@ -102,7 +103,6 @@ checkMinimumMemory() {
 }
 
 getMemoryInfo
-AVAIL_MEM=$(formatBytes "$RAM_AVAIL")
 
 checkConfiguredMemory
 configureHalfMemory
