@@ -882,18 +882,38 @@ createTap() {
   return 0
 }
 
+showRules() {
+
+  local table="$1"
+  local chain="$2"
+  local label="$3"
+  local rules=""
+
+  rules=$(iptables -t "$table" -S "$chain" 2>/dev/null |
+    awk '$1 == "-A"' || true)
+
+  [ -n "$rules" ] || return 0
+
+  printf "Existing %s rules:\n\n%s\n\n" "$label" "$rules"
+  return 0
+}
+
 checkExistingTables() {
 
+  local msg=""
   local rules=""
   local conflicts=""
 
-  rules=$(iptables -t nat -S PREROUTING 2>/dev/null || true)
+  rules=$(iptables -t nat -S PREROUTING 2>/dev/null |
+    awk '$1 == "-A"' || true)
+
   conflicts=$(grep -E -- \
     '^-A PREROUTING .*(-j DNAT|-j REDIRECT)( |$)' \
     <<< "$rules" || true)
 
   if [ -n "$conflicts" ]; then
-    local msg="existing NAT rules may take precedence over VM port forwarding"
+    msg="your existing NAT rules may take precedence over VM port forwarding"
+
     if enabled "$DEBUG"; then
       warn "${msg}."
     else
@@ -901,17 +921,16 @@ checkExistingTables() {
     fi
   fi
 
-  if enabled "$DEBUG" && [ -n "$rules" ]; then
-    printf "Existing NAT PREROUTING rules:\n\n%s\n\n" "$rules"
-  fi
+  rules=$(iptables -t filter -S FORWARD 2>/dev/null |
+    awk '$1 == "-A"' || true)
 
-  rules=$(iptables -t filter -S FORWARD 2>/dev/null || true)
   conflicts=$(grep -E -- \
     '^-A FORWARD .*(-j DROP|-j REJECT)( |$)' \
     <<< "$rules" || true)
 
   if [ -n "$conflicts" ]; then
-    local msg="existing firewall rules may block traffic forwarded to or from the VM"
+    msg="your existing firewall rules may block traffic forwarded to or from the VM"
+
     if enabled "$DEBUG"; then
       warn "${msg}."
     else
@@ -919,30 +938,12 @@ checkExistingTables() {
     fi
   fi
 
-  if enabled "$DEBUG" && [ -n "$rules" ]; then
-    printf "Existing filter FORWARD rules:\n\n%s\n\n" "$rules"
-  fi
-
   if enabled "$DEBUG"; then
-
-    rules=$(iptables -t nat -S POSTROUTING 2>/dev/null || true)
-
-    if [ -n "$rules" ]; then
-      printf "Existing NAT POSTROUTING rules:\n\n%s\n\n" "$rules"
-    fi
-
-    rules=$(iptables -t mangle -S FORWARD 2>/dev/null || true)
-
-    if [ -n "$rules" ]; then
-      printf "Existing mangle FORWARD rules:\n\n%s\n\n" "$rules"
-    fi
-
-    rules=$(iptables -t mangle -S POSTROUTING 2>/dev/null || true)
-
-    if [ -n "$rules" ]; then
-      printf "Existing mangle POSTROUTING rules:\n\n%s\n\n" "$rules"
-    fi
-
+    showRules nat PREROUTING "NAT PREROUTING"
+    showRules filter FORWARD "filter FORWARD"
+    showRules nat POSTROUTING "NAT POSTROUTING"
+    showRules mangle FORWARD "mangle FORWARD"
+    showRules mangle POSTROUTING "mangle POSTROUTING"
   fi
 
   return 0
