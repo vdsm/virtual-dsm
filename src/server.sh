@@ -16,6 +16,7 @@ WEB_PID="/run/nginx.pid"
 WSD_PID="$QEMU_DIR/websocketd.pid"
 
 prepareWebFiles() {
+
   cp -r /var/www/* "$QEMU_DIR"
   rm -f "$WSD_PID" "$WEB_PID"
 
@@ -23,6 +24,7 @@ prepareWebFiles() {
 }
 
 configureWebPorts() {
+
   sed -i "s/listen 5000 default_server;/listen $WEB_PORT default_server;/g" /etc/nginx/sites-enabled/web.conf
   sed -i "s/proxy_pass http:\/\/127.0.0.1:8004\/;/proxy_pass http:\/\/127.0.0.1:$WSD_PORT\/;/g" /etc/nginx/sites-enabled/web.conf
 
@@ -58,19 +60,39 @@ startWebServer() {
 
 startWebsocketServer() {
 
+  local log="/var/log/websocketd.log"
+  rm -f "$log"
+
   # Start websocket server
-  websocketd --address 127.0.0.1 --port="$WSD_PORT" /run/socket.sh >/var/log/websocketd.log &
-  echo "$!" > "$WSD_PID"
+  websocketd --address 127.0.0.1 --port="$WSD_PORT" /run/socket.sh > "$log" 2>&1 &
+  local pid=$!
+
+  if ! echo "$pid" > "$WSD_PID"; then
+    kill "$pid" 2>/dev/null || :
+    return 1
+  fi
+
+  sleep 0.1
+
+  if ! isAlive "$pid"; then
+    rm -f "$WSD_PID"
+    [ -s "$log" ] && cat "$log" >&2
+    error "Failed to start websocket server!"
+    return 1
+  fi
+
+  return 0
 }
 
 prepareWebFiles
 
 html "Starting $APP for $ENGINE..."
 
-if ! disabled "${WEB:-}"; then
-  configureWebServer
-  startWebServer
-  startWebsocketServer
-fi
+disabled "${WEB:-}" && return 0
+
+configureWebServer || return 1
+
+startWebServer || return 1
+startWebsocketServer || return 1
 
 return 0
