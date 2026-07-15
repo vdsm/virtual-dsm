@@ -221,13 +221,22 @@ makeDir() {
   local dir uid gid
 
   [ -d "$path" ] && return 0
-  ! mkdir -p "$path" && return 1
+
+  if ! mkdir -p "$path"; then
+    error "Failed to create directory \"$path\" !"
+    return 1
+  fi
 
   dir=$(dirname -- "$path")
-  uid=$(stat -c '%u' "$dir") || return 1
-  gid=$(stat -c '%g' "$dir") || return 1
 
-  ! chown "$uid:$gid" "$path" && return 1
+  if ! uid=$(stat -c '%u' "$dir") || ! gid=$(stat -c '%g' "$dir"); then
+    warn "failed to determine the owner for \"$path\"."
+    return 0
+  fi
+
+  if ! chown "$uid:$gid" "$path"; then
+    warn "failed to set the owner for \"$path\"."
+  fi
 
   return 0
 }
