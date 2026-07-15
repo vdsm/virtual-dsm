@@ -86,15 +86,15 @@ startWebsocketServer() {
   return 0
 }
 
-prepareWebFiles || return 1
+prepareWebFiles
 
 html "Starting $APP for $ENGINE..."
 
 disabled "${WEB:-}" && return 0
 
-configureWebServer || return 1
+configureWebServer
 
-startWebServer || return 1
-startWebsocketServer || return 1
+startWebServer
+startWebsocketServer
 
 return 0
