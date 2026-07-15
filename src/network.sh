@@ -1510,7 +1510,6 @@ configureMAC() {
 
       if ! setOwner "$file"; then
         error "Failed to set the owner for \"$file\" !"
-        exit 28
       fi
     fi
   fi
