@@ -1594,17 +1594,6 @@ closeNetwork() {
   return 0
 }
 
-cleanUp() {
-
-  closeInterfaces
-
-  # Clean up old files
-  rm -f "$PASST_PID" "$PASST_SOCKET"
-  rm -f "$DNSMASQ_PID" /etc/resolv.dnsmasq
-
-  return 0
-}
-
 # ######################################
 #  Detection
 # ######################################
@@ -1646,8 +1635,8 @@ validateMask() {
 
   PREFIX=$(maskToCIDR "$MASK") || exit 28
 
-  if (( PREFIX < 1 || PREFIX > 24 )); then
-    error "Unsupported MASK: '$MASK' (supported range: /1 through /24)"
+  if ! enabled "$DHCP" && (( PREFIX < 16 || PREFIX > 24 )); then
+    error "Unsupported MASK: '$MASK' (supported range: /16 through /24)"
     exit 28
   fi
 
@@ -1917,7 +1906,7 @@ showGuestInfo() {
   return 0
 }
 
-prepareNetwork() {
+initializeNetwork() {
 
   detectInterface
   validateInterface
@@ -1937,6 +1926,20 @@ prepareNetwork() {
 
   showHostInfo
 
+  if ! echo "$UPLINK" > "$QEMU_DIR"/qemu.ip; then
+    error "Failed to write QEMU IP file!" && return 1
+  fi
+
+  if ! echo "$NIC" > "$QEMU_DIR"/qemu.nic; then
+    error "Failed to write QEMU NIC file!" && return 1
+  fi
+
+  closeInterfaces
+
+  # Clean up old files
+  rm -f "$PASST_PID" "$PASST_SOCKET"
+  rm -f "$DNSMASQ_PID" /etc/resolv.dnsmasq
+
   return 0
 }
 
@@ -1953,19 +1956,7 @@ msg="Initializing network..."
 html "$msg"
 enabled "$DEBUG" && echo "$msg"
 
-prepareNetwork
-
-if ! echo "$UPLINK" > "$QEMU_DIR"/qemu.ip; then
-  error "Failed to write QEMU IP file!"
-  exit 24
-fi
-
-if ! echo "$NIC" > "$QEMU_DIR"/qemu.nic; then
-  error "Failed to write QEMU NIC file!"
-  exit 24
-fi
-
-cleanUp
+initializeNetwork
 
 if [[ "$UPLINK" == "172.17."* ]]; then
   warn "your container IP starts with 172.17.* which will cause conflicts when you install the Container Manager package inside DSM!"
