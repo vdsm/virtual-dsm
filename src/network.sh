@@ -856,12 +856,7 @@ configurePasst() {
     if (( rc != 0 )); then
       [ -f "$log" ] && [ -s "$log" ] && cat "$log"
       warn "failed to start passt ($rc), falling back to slirp networking!"
-
-      if configureSlirp; then
-        return 0
-      fi
-
-      return 1
+      configureSlirp && return 0 || return 1
     fi
 
   fi
