@@ -13,8 +13,8 @@ set -Eeuo pipefail
 : "${DEV:="${VM_NET_DEV:-}"}"
 : "${MTU:="${VM_NET_MTU:-}"}"
 : "${TAP:="${VM_NET_TAP:-dsm}"}"
-: "${MAC:="${VM_NET_MAC:-${MAC:-}}"}"
 : "${HOST:="${VM_NET_HOST:-$APP}"}"
+: "${MAC:="${VM_NET_MAC:-${MAC:-}}"}"
 : "${BRIDGE:="${VM_NET_BRIDGE:-docker}"}"
 : "${MASK:="${VM_NET_MASK:-255.255.255.0}"}"
 
@@ -1926,12 +1926,8 @@ initializeNetwork() {
 
   showHostInfo
 
-  if ! echo "$UPLINK" > "$QEMU_DIR"/qemu.ip; then
-    error "Failed to write QEMU IP file!" && return 1
-  fi
-
-  if ! echo "$NIC" > "$QEMU_DIR"/qemu.nic; then
-    error "Failed to write QEMU NIC file!" && return 1
+  if [[ "$UPLINK" == "172.17."* ]]; then
+    warn "your container IP starts with 172.17.* which will cause conflicts when you install the Container Manager package inside DSM!"
   fi
 
   closeInterfaces
@@ -1957,10 +1953,6 @@ html "$msg"
 enabled "$DEBUG" && echo "$msg"
 
 initializeNetwork
-
-if [[ "$UPLINK" == "172.17."* ]]; then
-  warn "your container IP starts with 172.17.* which will cause conflicts when you install the Container Manager package inside DSM!"
-fi
 
 MSG="Booting DSM instance..."
 html "$MSG"
@@ -2039,6 +2031,16 @@ if [[ "$GUEST_MTU" != "0" && "$GUEST_MTU" != "1500" ]]; then
   elif [[ "$GUEST_MTU" -lt "1500" ]]; then
     warn "MTU size is $GUEST_MTU, but cannot be advertised for $ADAPTER adapters; networking may break on paths below 1500 MTU."
   fi
+fi
+
+if ! echo "$UPLINK" > "$QEMU_DIR"/qemu.ip; then
+  error "Failed to write QEMU IP file!"
+  exit 24
+fi
+
+if ! echo "$NIC" > "$QEMU_DIR"/qemu.nic; then
+  error "Failed to write QEMU NIC file!"
+  exit 24
 fi
 
 return 0
