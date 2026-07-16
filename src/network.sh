@@ -970,7 +970,6 @@ hasTable() {
 getTablesBackend() {
 
   local version=""
-
   version=$(iptables --version 2>/dev/null || true)
 
   case "$version" in
