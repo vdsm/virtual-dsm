@@ -451,7 +451,6 @@ convertDisk() {
   fi
 
   msg="Conversion of $diskDesc"
-  html "$msg completed..."
   info "$msg to $destinationFmt completed successfully!"
 
   return 0
@@ -557,10 +556,6 @@ finishDisks () {
     "blk" | "scsi" | "virtio-blk" | "virtio-scsi" )
       [[ "$DISK_OPTS" != *" -object iothread,id=io2"* ]] && DISK_OPTS+=" -object iothread,id=io2" ;;
   esac
-
-  if ! enabled "$DISK_DISABLE"; then
-    html "Initialized disks successfully..."
-  fi
 
   return 0
 }
