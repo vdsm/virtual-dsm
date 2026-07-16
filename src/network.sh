@@ -233,8 +233,19 @@ detectAdapter() {
 
   result=$(ethtool -i "$DEV" 2>/dev/null || :)
 
-  NIC=$(grep -m 1 -i 'driver:' <<< "$result" | awk '{print $2}')
-  BUS=$(grep -m 1 -i 'bus-info:' <<< "$result" | awk '{print $2}')
+  NIC=$(awk -F':[[:space:]]*' '
+    tolower($1) == "driver" {
+      print $2
+      exit
+    }
+  ' <<< "$result")
+
+  BUS=$(awk -F':[[:space:]]*' '
+    tolower($1) == "bus-info" {
+      print $2
+      exit
+    }
+  ' <<< "$result")
 
   return 0
 }
