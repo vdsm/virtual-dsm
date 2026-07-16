@@ -725,7 +725,6 @@ addDevice () {
 
 if ! enabled "$DISK_DISABLE"; then
   msg="Initializing disks..."
-  html "$msg"
   enabled "$DEBUG" && echo "$msg"
 fi
 
@@ -784,8 +783,7 @@ DISK_OPTS+=$(createDevice "$BOOT" "$DISK_TYPE" "1" "0xa" "raw" "$DISK_IO" "$DISK
 DISK_OPTS+=$(createDevice "$SYSTEM" "$DISK_TYPE" "2" "0xb" "raw" "$DISK_IO" "$DISK_CACHE" "" "")
 
 if enabled "$DISK_DISABLE"; then
-  finishDisks
-  return 0
+  finishDisks && return 0
 fi
 
 DISK1_FILE="$STORAGE/${DISK_NAME}"
