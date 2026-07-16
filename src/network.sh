@@ -1395,11 +1395,13 @@ configureTables() {
       fi
 
       if ! clearTables; then
+
         alternate_dirty="Y"
 
         if ! enabled "$ROOTLESS" || enabled "$DEBUG"; then
           warn "failed to clean up the partial $alternate IP tables configuration!"
         fi
+
       fi
 
     else
@@ -1408,6 +1410,7 @@ configureTables() {
 
       # Only mark the alternate backend dirty when it was accessible but cleanup failed.
       if (( rc == 1 )); then
+
         alternate_dirty="Y"
 
         if ! enabled "$ROOTLESS" || enabled "$DEBUG"; then
@@ -1415,6 +1418,7 @@ configureTables() {
         fi
 
       elif (( rc != 2 )); then
+
         alternate_dirty="Y"
 
         if ! enabled "$ROOTLESS" || enabled "$DEBUG"; then
@@ -1426,7 +1430,6 @@ configureTables() {
       fi
 
     fi
-
   fi
 
   # Restore the preferred backend after the alternate attempt failed.
