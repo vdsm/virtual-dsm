@@ -35,58 +35,58 @@ if ! setOwner "$SYSTEM"; then
 fi
 
 fmt2ext() {
-  local DISK_FMT="$1"
+  local diskFmt="$1"
 
-  case "${DISK_FMT,,}" in
+  case "${diskFmt,,}" in
     qcow2) echo "qcow2" ;;
     raw) echo "img" ;;
-    *) error "Unrecognized disk format: $DISK_FMT" && exit 78 ;;
+    *) error "Unrecognized disk format: $diskFmt" && exit 78 ;;
   esac
 }
 
 ext2fmt() {
-  local DISK_EXT="$1"
+  local diskExt="$1"
 
-  case "${DISK_EXT,,}" in
+  case "${diskExt,,}" in
     qcow2) echo "qcow2" ;;
     img) echo "raw" ;;
-    *) error "Unrecognized file extension: .$DISK_EXT" && exit 78 ;;
+    *) error "Unrecognized file extension: .$diskExt" && exit 78 ;;
   esac
 }
 
 getSize() {
 
-  local DISK_FILE="$1"
-  local DISK_EXT DISK_FMT size
+  local diskFile="$1"
+  local diskExt diskFmt size
 
-  DISK_EXT=$(echo "${DISK_FILE//*./}" | sed 's/^.*\.//')
-  DISK_FMT=$(ext2fmt "$DISK_EXT")
+  diskExt=$(echo "${diskFile//*./}" | sed 's/^.*\.//')
+  diskFmt=$(ext2fmt "$diskExt")
 
-  case "${DISK_FMT,,}" in
+  case "${diskFmt,,}" in
     raw)
-      stat -c%s "$DISK_FILE"
+      stat -c%s "$diskFile"
       ;;
 
     qcow2)
-      size=$(qemu-img info --output=json -f "$DISK_FMT" "$DISK_FILE" | jq -r '."virtual-size" // empty')
+      size=$(qemu-img info --output=json -f "$diskFmt" "$diskFile" | jq -r '."virtual-size" // empty')
       if [[ ! "$size" =~ ^[0-9]+$ ]]; then
-        error "Failed to determine virtual size of $DISK_FILE"
+        error "Failed to determine virtual size of $diskFile"
         exit 78
       fi
       echo "$size"
       ;;
 
     *)
-      error "Unrecognized disk format: $DISK_FMT"
+      error "Unrecognized disk format: $diskFmt"
       exit 78
       ;;
   esac
 }
 
 isCow() {
-  local FS="$1"
+  local fs="$1"
 
-  if [[ "${FS,,}" == "btrfs" ]]; then
+  if [[ "${fs,,}" == "btrfs" ]]; then
     return 0
   fi
 
@@ -94,91 +94,103 @@ isCow() {
 }
 
 supportsDirect() {
-  local FS="$1"
+  local fs="$1"
 
-  if [[ "${FS,,}" == "ecryptfs" || "${FS,,}" == "tmpfs" ]]; then
+  if [[ "${fs,,}" == "ecryptfs" || "${fs,,}" == "tmpfs" ]]; then
     return 1
   fi
 
   return 0
 }
 
+validDiskType() {
+
+  case "${1,,}" in
+    "ide" | "sata" | "nvme" | "usb" | "scsi" | "blk" | \
+    "virtio-blk" | "virtio-scsi" | "auto" | "none" )
+      return 0
+      ;;
+  esac
+
+  return 1
+}
+
 allocateRaw() {
 
-  local DISK_FILE="$1"
-  local DATA_SIZE="$2"
+  local diskFile="$1"
+  local dataSize="$2"
 
   if disabled "$ALLOCATE"; then
-    truncate -s "$DATA_SIZE" "$DISK_FILE"
+    truncate -s "$dataSize" "$diskFile"
     return $?
   fi
 
-  fallocate -l "$DATA_SIZE" "$DISK_FILE" &>/dev/null && return 0
-  fallocate -l -x "$DATA_SIZE" "$DISK_FILE" && return 0
-  truncate -s "$DATA_SIZE" "$DISK_FILE" || return 1
+  fallocate -l "$dataSize" "$diskFile" &>/dev/null && return 0
+  fallocate -l -x "$dataSize" "$diskFile" && return 0
+  truncate -s "$dataSize" "$diskFile" || return 1
 
   return 0
 }
 
 getDiskOptions() {
 
-  local FS="$1"
-  local DISK_FMT="$2"
-  local DISK_PARAM="$DISK_ALLOC"
+  local fs="$1"
+  local diskFmt="$2"
+  local diskParam="$DISK_ALLOC"
 
-  isCow "$FS" && DISK_PARAM+=",nocow=on"
+  isCow "$fs" && diskParam+=",nocow=on"
 
-  if [[ "${DISK_FMT,,}" != "raw" ]]; then
-    [ -n "$DISK_FLAGS" ] && DISK_PARAM+=",$DISK_FLAGS"
+  if [[ "${diskFmt,,}" != "raw" ]]; then
+    [ -n "$DISK_FLAGS" ] && diskParam+=",$DISK_FLAGS"
   fi
 
-  echo "$DISK_PARAM"
+  echo "$diskParam"
   return 0
 }
 
 normalizeSize() {
 
-  local DISK_SPACE="$1"
-  local DISK_DESC="$2"
-  local DIR="$3"
-  local SPACE FREE GB DATA_SIZE
+  local diskSpace="$1"
+  local diskDesc="$2"
+  local dir="$3"
 
-  if [[ "${DISK_SPACE,,}" == "max" || "${DISK_SPACE,,}" == "half" ]]; then
+  local gb free space
+  local dataSize spare=1073741824
 
-    local SPARE=1073741824
-    FREE=$(df --output=avail -B 1 "$DIR" | tail -n 1)
+  if [[ "${diskSpace,,}" == "max" || "${diskSpace,,}" == "half" ]]; then
 
-    if [[ "${DISK_SPACE,,}" == "max" ]]; then
-      FREE=$(( FREE - SPARE ))
+    free=$(df --output=avail -B 1 "$dir" | tail -n 1)
+
+    if [[ "${diskSpace,,}" == "max" ]]; then
+      free=$(( free - spare ))
     else
-      FREE=$(( FREE / 2 ))
+      free=$(( free / 2 ))
     fi
 
-    (( FREE < SPARE )) && FREE="$SPARE"
-    GB=$(( FREE / 1073741825 ))
-    DISK_SPACE="${GB}G"
+    (( free < spare )) && free="$spare"
+    gb=$(( free / 1073741825 ))
+    diskSpace="${gb}G"
 
   fi
 
-  SPACE="${DISK_SPACE// /}"
-  [ -z "$SPACE" ] && SPACE="256G"
-  [ -z "${SPACE//[0-9. ]}" ] && SPACE="${SPACE}G"
-  SPACE=$(echo "${SPACE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
+  space="${diskSpace// /}"
+  [ -z "$space" ] && space="256G"
+  [ -z "${space//[0-9. ]}" ] && space="${space}G"
+  space=$(echo "${space^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
 
-  if ! numfmt --from=iec "$SPACE" &>/dev/null; then
-    error "Invalid value for ${DISK_DESC^^}_SIZE: $DISK_SPACE" && exit 73
+  if ! numfmt --from=iec "$space" &>/dev/null; then
+    error "Invalid value for ${diskDesc^^}_SIZE: $diskSpace" && exit 73
   fi
 
-  DATA_SIZE=$(numfmt --from=iec "$SPACE")
+  dataSize=$(numfmt --from=iec "$space")
 
-  if (( DATA_SIZE < 6442450944 )); then
-    error "Please increase the ${DISK_DESC^^}_SIZE variable to at least 6 GB." && exit 73
+  if (( dataSize < 6442450944 )); then
+    error "Please increase the ${diskDesc^^}_SIZE variable to at least 6 GB." && exit 73
   fi
 
-  echo "$SPACE"
+  echo "$space"
   return 0
 }
-
 
 baseDir() {
 
@@ -195,74 +207,95 @@ baseDir() {
   echo "/$path"
   return 0
 }
+
+freeSpace() {
+
+  local path="$1"
+
+  local base
+  base=$(baseDir "$path")
+
+  if ! available=$(df --output=avail -B 1 "$path" | tail -n 1); then
+    error "Failed to check free space in $base."
+    exit 76
+  fi
+
+  if [[ ! "$available" =~ ^[0-9]+$ ]]; then
+    error "Failed to check free space in $base."
+    exit 76
+  fi
+
+  return 0
+}
+
 createDisk() {
 
-  local DISK_FILE="$1"
-  local DISK_SPACE="$2"
-  local DISK_DESC="$3"
-  local DISK_FMT="$4"
-  local FS="$5"
-  local DATA_SIZE DIR BASE_DIR SPACE GB FA
+  local diskFile="$1"
+  local diskSpace="$2"
+  local diskDesc="$3"
+  local diskFmt="$4"
+  local fs="$5"
 
-  rm -f "$DISK_FILE"
+  local gb dir base
+  local attributes available
 
-  DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
+  rm -f "$diskFile"
+
+  local dataSize
+  dataSize=$(numfmt --from=iec "$diskSpace")
 
   if ! disabled "$ALLOCATE"; then
 
     # Check free diskspace
-    DIR=$(dirname "$DISK_FILE")
-    BASE_DIR=$(baseDir "$DIR")
+    dir=$(dirname "$diskFile")
+    base=$(baseDir "$dir")
 
-    if ! SPACE=$(df --output=avail -B 1 "$DIR" | tail -n 1); then
-      error "Failed to check free space in $BASE_DIR."
-      exit 76
-    fi
+    freeSpace "$dir"
 
-    if (( DATA_SIZE > SPACE )); then
-      GB=$(formatBytes "$SPACE")
-      error "Not enough free space to create a $DISK_DESC of ${DISK_SPACE/G/ GB} in $BASE_DIR, it has only $GB available..."
-      error "Please specify a smaller ${DISK_DESC^^}_SIZE or disable preallocation by setting ALLOCATE=N." && exit 76
+    if (( dataSize > available )); then
+      gb=$(formatBytes "$available")
+      error "Not enough free space to create a $diskDesc of ${diskSpace/G/ GB} in $base, it has only $gb available..."
+      error "Please specify a smaller ${diskDesc^^}_SIZE or disable preallocation by setting ALLOCATE=N." && exit 76
     fi
 
   fi
 
-  html "Creating a $DISK_DESC image..."
-  info "Creating a ${DISK_SPACE/G/ GB} $DISK_STYLE $DISK_DESC image in $DISK_FMT format..."
+  html "Creating a $diskDesc image..."
+  info "Creating a ${diskSpace/G/ GB} $DISK_STYLE $diskDesc image in $diskFmt format..."
 
-  local FAIL="Could not create a $DISK_STYLE $DISK_FMT $DISK_DESC image of ${DISK_SPACE/G/ GB} ($DISK_FILE)"
+  local failure="Could not create a $DISK_STYLE $diskFmt $diskDesc image of ${diskSpace/G/ GB} ($diskFile)"
 
-  case "${DISK_FMT,,}" in
+  case "${diskFmt,,}" in
     raw)
 
-      if isCow "$FS"; then
-        if ! touch "$DISK_FILE"; then
-          error "$FAIL" && exit 77
+      if isCow "$fs"; then
+        if ! touch "$diskFile"; then
+          error "$failure" && exit 77
         fi
-        { chattr +C "$DISK_FILE"; } || :
+        { chattr +C "$diskFile"; } || :
       fi
 
-      if ! allocateRaw "$DISK_FILE" "$DATA_SIZE"; then
-        rm -f "$DISK_FILE"
-        error "$FAIL" && exit 77
+      if ! allocateRaw "$diskFile" "$dataSize"; then
+        rm -f "$diskFile"
+        error "$failure" && exit 77
       fi
       ;;
     qcow2)
 
-      local DISK_PARAM
-      DISK_PARAM=$(getDiskOptions "$FS" "$DISK_FMT")
+      local diskParam
+      diskParam=$(getDiskOptions "$fs" "$diskFmt")
 
-      if ! qemu-img create -f "$DISK_FMT" -o "$DISK_PARAM" -- "$DISK_FILE" "$DATA_SIZE" ; then
-        rm -f "$DISK_FILE"
-        error "$FAIL" && exit 70
+      if ! qemu-img create -f "$diskFmt" -o "$diskParam" -- "$diskFile" "$dataSize" ; then
+        rm -f "$diskFile"
+        error "$failure" && exit 70
       fi
       ;;
   esac
 
-  if isCow "$FS"; then
-    FA=$(lsattr "$DISK_FILE")
-    if [[ "$FA" != *"C"* ]]; then
-      error "Failed to disable COW for $DISK_DESC image $DISK_FILE on ${FS^^} filesystem (returned $FA)"
+  if isCow "$fs"; then
+    attributes=$(lsattr "$diskFile")
+    if [[ "$attributes" != *"C"* ]]; then
+      error "Failed to disable COW for $diskDesc image $diskFile on ${fs^^} filesystem (returned $attributes)"
     fi
   fi
 
@@ -271,54 +304,53 @@ createDisk() {
 
 resizeDisk() {
 
-  local DISK_FILE="$1"
-  local DISK_SPACE="$2"
-  local DISK_DESC="$3"
-  local DISK_FMT="$4"
-  local FS="$5"
-  local CUR_SIZE DATA_SIZE DIR BASE_DIR SPACE GB
+  local diskFile="$1"
+  local diskSpace="$2"
+  local diskDesc="$3"
+  local diskFmt="$4"
+  local fs="$5"
 
-  CUR_SIZE=$(getSize "$DISK_FILE") || exit 71
-  DATA_SIZE=$(numfmt --from=iec "$DISK_SPACE")
-  local REQ=$(( DATA_SIZE - CUR_SIZE ))
-  (( REQ < 1 )) && error "Shrinking disks is not supported yet, please increase ${DISK_DESC^^}_SIZE." && exit 71
+  local gb dir base dataSize
+  local available currentSize
+
+  currentSize=$(getSize "$diskFile") || exit 71
+  dataSize=$(numfmt --from=iec "$diskSpace")
+  local required=$(( dataSize - currentSize ))
+  (( required < 1 )) && error "Shrinking disks is not supported yet, please increase ${diskDesc^^}_SIZE." && exit 71
 
   if ! disabled "$ALLOCATE"; then
 
     # Check free diskspace
-    DIR=$(dirname "$DISK_FILE")
-    BASE_DIR=$(baseDir "$DIR")
+    dir=$(dirname "$diskFile")
+    base=$(baseDir "$dir")
 
-    if ! SPACE=$(df --output=avail -B 1 "$DIR" | tail -n 1); then
-      error "Failed to check free space in $BASE_DIR."
-      exit 76
-    fi
+    freeSpace "$dir"
 
-    if (( REQ > SPACE )); then
-      GB=$(formatBytes "$SPACE")
-      error "Not enough free space to resize $DISK_DESC to ${DISK_SPACE/G/ GB} in $BASE_DIR, it has only $GB available.."
-      error "Please specify a smaller ${DISK_DESC^^}_SIZE or disable preallocation by setting ALLOCATE=N." && exit 74
+    if (( required > available )); then
+      gb=$(formatBytes "$available")
+      error "Not enough free space to resize $diskDesc to ${diskSpace/G/ GB} in $base, it has only $gb available.."
+      error "Please specify a smaller ${diskDesc^^}_SIZE or disable preallocation by setting ALLOCATE=N." && exit 74
     fi
 
   fi
 
-  GB=$(formatBytes "$CUR_SIZE")
-  MSG="Resizing $DISK_DESC from $GB to ${DISK_SPACE/G/ GB}..."
+  gb=$(formatBytes "$currentSize")
+  MSG="Resizing $diskDesc from $gb to ${diskSpace/G/ GB}..."
   info "$MSG" && html "$MSG"
 
-  local FAIL="Could not resize the $DISK_STYLE $DISK_FMT $DISK_DESC image from ${GB} to ${DISK_SPACE/G/ GB} ($DISK_FILE)"
+  local failure="Could not resize the $DISK_STYLE $diskFmt $diskDesc image from ${gb} to ${diskSpace/G/ GB} ($diskFile)"
 
-  case "${DISK_FMT,,}" in
+  case "${diskFmt,,}" in
     raw)
 
-      if ! allocateRaw "$DISK_FILE" "$DATA_SIZE"; then
-        error "$FAIL" && exit 75
+      if ! allocateRaw "$diskFile" "$dataSize"; then
+        error "$failure" && exit 75
       fi
       ;;
     qcow2)
 
-      if ! qemu-img resize -f "$DISK_FMT" "--$DISK_ALLOC" "$DISK_FILE" "$DATA_SIZE" ; then
-        error "$FAIL" && exit 72
+      if ! qemu-img resize -f "$diskFmt" "--$DISK_ALLOC" "$diskFile" "$dataSize" ; then
+        error "$failure" && exit 72
       fi
 
       ;;
@@ -329,133 +361,132 @@ resizeDisk() {
 
 convertDisk() {
 
-  local SOURCE_FILE="$1"
-  local SOURCE_FMT="$2"
-  local DST_FILE="$3"
-  local DST_FMT="$4"
-  local DISK_BASE="$5"
-  local DISK_DESC="$6"
-  local FS="$7"
+  local sourceFile="$1"
+  local sourceFmt="$2"
+  local destinationFile="$3"
+  local destinationFmt="$4"
+  local diskBase="$5"
+  local diskDesc="$6"
+  local fs="$7"
+  local tmpFile="$diskBase.tmp"
 
-  [ -f "$DST_FILE" ] && error "Conversion failed, destination file $DST_FILE already exists?" && exit 79
-  [ ! -f "$SOURCE_FILE" ] && error "Conversion failed, source file $SOURCE_FILE does not exist?" && exit 79
+  local gb dir base attributes
+  local available currentSize
 
-  local TMP_FILE="$DISK_BASE.tmp"
-  rm -f "$TMP_FILE"
+  [ -f "$destinationFile" ] && error "Conversion failed, destination file $destinationFile already exists?" && exit 79
+  [ ! -f "$sourceFile" ] && error "Conversion failed, source file $sourceFile does not exist?" && exit 79
 
-  local DIR BASE_DIR FA
-  DIR=$(dirname "$TMP_FILE")
-  BASE_DIR=$(baseDir "$DIR")
+  rm -f "$tmpFile"
+
+  dir=$(dirname "$tmpFile")
+  base=$(baseDir "$dir")
 
   if ! disabled "$ALLOCATE"; then
 
-    local CUR_SIZE SPACE GB
-
     # Check free diskspace
-    CUR_SIZE=$(getSize "$SOURCE_FILE") || exit 79
+    currentSize=$(getSize "$sourceFile") || exit 79
 
-    if ! SPACE=$(df --output=avail -B 1 "$DIR" | tail -n 1); then
-      error "Failed to check free space in $BASE_DIR."
-      exit 76
-    fi
+    freeSpace "$dir"
 
-    if (( CUR_SIZE > SPACE )); then
-      GB=$(formatBytes "$SPACE")
-      error "Not enough free space to convert $DISK_DESC to $DST_FMT in $BASE_DIR, it has only $GB available..."
+    if (( currentSize > available )); then
+      gb=$(formatBytes "$available")
+      error "Not enough free space to convert $diskDesc to $destinationFmt in $base, it has only $gb available..."
       error "Please free up some disk space or disable preallocation by setting ALLOCATE=N." && exit 76
     fi
 
   fi
 
-  local msg="Converting $DISK_DESC to $DST_FMT"
+  local msg="Converting $diskDesc to $destinationFmt"
   html "$msg..."
   info "$msg, please wait until completed..."
 
-  local CONV_FLAGS="-p"
-  local DISK_PARAM
-  DISK_PARAM=$(getDiskOptions "$FS" "$DST_FMT")
+  local convertFlags="-p"
+  local diskParam
+  diskParam=$(getDiskOptions "$fs" "$destinationFmt")
 
-  if [[ "$DST_FMT" != "raw" ]]; then
+  if [[ "$destinationFmt" != "raw" ]]; then
     if disabled "$ALLOCATE"; then
-      CONV_FLAGS+=" -c"
+      convertFlags+=" -c"
     fi
   fi
 
   # shellcheck disable=SC2086
-  if ! qemu-img convert -f "$SOURCE_FMT" $CONV_FLAGS -o "$DISK_PARAM" -O "$DST_FMT" -- "$SOURCE_FILE" "$TMP_FILE"; then
-    rm -f "$TMP_FILE"
-    error "Failed to convert $DISK_STYLE $DISK_DESC image to $DST_FMT format in $BASE_DIR, is there enough space available?" && exit 79
+  if ! qemu-img convert -f "$sourceFmt" $convertFlags -o "$diskParam" -O "$destinationFmt" -- "$sourceFile" "$tmpFile"; then
+    rm -f "$tmpFile"
+    error "Failed to convert $DISK_STYLE $diskDesc image to $destinationFmt format in $base, is there enough space available?" && exit 79
   fi
 
-  if [[ "$DST_FMT" == "raw" ]]; then
+  if [[ "$destinationFmt" == "raw" ]]; then
     if ! disabled "$ALLOCATE"; then
 
       # Work around qemu-img bug
-      if ! CUR_SIZE=$(stat -c%s "$TMP_FILE"); then
-        error "Failed to determine converted image size: $TMP_FILE"
+      if ! currentSize=$(stat -c%s "$tmpFile"); then
+        error "Failed to determine converted image size: $tmpFile"
         exit 79
       fi
 
-      if ! fallocate -l "$CUR_SIZE" "$TMP_FILE" &>/dev/null; then
-        if ! fallocate -l -x "$CUR_SIZE" "$TMP_FILE"; then
-          error "Failed to allocate $CUR_SIZE bytes for $DISK_DESC image $TMP_FILE"
+      if ! fallocate -l "$currentSize" "$tmpFile" &>/dev/null; then
+        if ! fallocate -l -x "$currentSize" "$tmpFile"; then
+          error "Failed to allocate $currentSize bytes for $diskDesc image $tmpFile"
         fi
       fi
     fi
   fi
 
-  if ! mv "$TMP_FILE" "$DST_FILE"; then
-    error "Failed to move converted $DISK_DESC image to $DST_FILE."
+  if ! mv "$tmpFile" "$destinationFile"; then
+    error "Failed to move converted $diskDesc image to $destinationFile."
     exit 79
   fi
 
-  if ! rm -f "$SOURCE_FILE"; then
-    error "Failed to remove old $DISK_DESC image $SOURCE_FILE."
+  if ! rm -f "$sourceFile"; then
+    error "Failed to remove old $diskDesc image $sourceFile."
     exit 79
   fi
 
-  if isCow "$FS"; then
-    FA=$(lsattr "$DST_FILE")
-    if [[ "$FA" != *"C"* ]]; then
-      error "Failed to disable COW for $DISK_DESC image $DST_FILE on ${FS^^} filesystem (returned $FA)"
+  if isCow "$fs"; then
+    attributes=$(lsattr "$destinationFile")
+    if [[ "$attributes" != *"C"* ]]; then
+      error "Failed to disable COW for $diskDesc image $destinationFile on ${fs^^} filesystem (returned $attributes)"
     fi
   fi
 
-  msg="Conversion of $DISK_DESC"
+  msg="Conversion of $diskDesc"
   html "$msg completed..."
-  info "$msg to $DST_FMT completed successfully!"
+  info "$msg to $destinationFmt completed successfully!"
 
   return 0
 }
 
 checkFS () {
 
-  local FS="$1"
-  local DISK_FILE="$2"
-  local DISK_DESC="$3"
-  local DIR BASE_DIR FA
+  local fs="$1"
+  local diskFile="$2"
+  local diskDesc="$3"
 
-  DIR=$(dirname "$DISK_FILE")
-  BASE_DIR=$(baseDir "$DIR")
-  [ ! -d "$DIR" ] && return 0
+  local dir base
+  local attributes
 
-  if [[ "${FS,,}" == "overlay"* && "${ENGINE,,}" == "docker" ]]; then
-    warn "the filesystem of $BASE_DIR is OverlayFS, this usually means it was binded to an invalid path!"
+  dir=$(dirname "$diskFile")
+  base=$(baseDir "$dir")
+  [ ! -d "$dir" ] && return 0
+
+  if [[ "${fs,,}" == "overlay"* && "${ENGINE,,}" == "docker" ]]; then
+    warn "the filesystem of $base is OverlayFS, this usually means it was binded to an invalid path!"
   fi
 
-  if [[ "${FS,,}" == "fuse"* ]]; then
-    warn "the filesystem of $BASE_DIR is FUSE, this extra layer will negatively affect performance!"
+  if [[ "${fs,,}" == "fuse"* ]]; then
+    warn "the filesystem of $base is FUSE, this extra layer will negatively affect performance!"
   fi
 
-  if ! supportsDirect "$FS"; then
-    warn "the filesystem of $BASE_DIR is $FS, which does not support O_DIRECT mode, adjusting settings..."
+  if ! supportsDirect "$fs"; then
+    warn "the filesystem of $base is $fs, which does not support O_DIRECT mode, adjusting settings..."
   fi
 
-  if isCow "$FS"; then
-    if [ -f "$DISK_FILE" ]; then
-      FA=$(lsattr "$DISK_FILE")
-      if [[ "$FA" != *"C"* ]]; then
-        warn "COW (copy on write) is not disabled for $DISK_DESC image file $DISK_FILE, this is recommended on ${FS^^} filesystems!"
+  if isCow "$fs"; then
+    if [ -f "$diskFile" ]; then
+      attributes=$(lsattr "$diskFile")
+      if [[ "$attributes" != *"C"* ]]; then
+        warn "COW (copy on write) is not disabled for $diskDesc image file $diskFile, this is recommended on ${fs^^} filesystems!"
       fi
     fi
   fi
@@ -465,51 +496,54 @@ checkFS () {
 
 createDevice () {
 
-  local DISK_FILE="$1"
-  local DISK_TYPE="$2"
-  local DISK_INDEX="$3"
-  local DISK_ADDRESS="$4"
-  local DISK_FMT="$5"
-  local DISK_IO="$6"
-  local DISK_CACHE="$7"
-  local DISK_SERIAL="$8"
-  local DISK_SECTORS="$9"
-  local DISK_ID="data$DISK_INDEX"
+  local diskFile="$1"
+  local diskType="$2"
+  local diskIndex="$3"
+  local diskAddress="$4"
+  local diskFmt="$5"
+  local diskIo="$6"
+  local diskCache="$7"
+  local diskSerial="$8"
+  local diskSectors="$9"
+  local bus="${PCI_BUS:-pcie.0}"
 
-  local index=""
-  [ -n "$DISK_INDEX" ] && index=",bootindex=$DISK_INDEX"
-  local result=" -drive file=$DISK_FILE,id=$DISK_ID,format=$DISK_FMT,cache=$DISK_CACHE,aio=$DISK_IO,discard=$DISK_DISCARD,detect-zeroes=on"
+  [[ -z "${PCI_BUS:-}" && ( "${MACHINE,,}" == pc || "${MACHINE,,}" == pc-i440fx* ) ]] && bus="pci.0"
 
-  case "${DISK_TYPE,,}" in
+  local bootIndex=""
+  local diskId="data$diskIndex"
+  [ -n "$diskIndex" ] && bootIndex=",bootindex=$diskIndex"
+  local result=" -drive file=$diskFile,id=$diskId,format=$diskFmt,cache=$diskCache,aio=$diskIo,discard=$DISK_DISCARD,detect-zeroes=on"
+
+  case "${diskType,,}" in
     "none" ) ;;
     "auto" )
       echo "$result"
       ;;
     "usb" )
       result+=",if=none \
-      -device usb-storage,drive=${DISK_ID}${index}${DISK_SERIAL}${DISK_SECTORS}"
+      -device usb-storage,drive=${diskId}${bootIndex}${diskSerial}${diskSectors}"
       echo "$result"
       ;;
     "nvme" )
       result+=",if=none \
-      -device nvme,drive=${DISK_ID}${index},serial=deadbeaf${DISK_INDEX}${DISK_SERIAL}${DISK_SECTORS}"
+      -device nvme,drive=${diskId}${bootIndex},serial=deadbeaf${diskIndex}${diskSerial}${diskSectors}"
       echo "$result"
       ;;
     "ide" | "sata" )
       result+=",if=none \
-      -device ich9-ahci,id=ahci${DISK_INDEX},addr=$DISK_ADDRESS \
-      -device ide-hd,drive=${DISK_ID},bus=ahci$DISK_INDEX.0,rotation_rate=$DISK_ROTATION${index}${DISK_SERIAL}${DISK_SECTORS}"
+      -device ich9-ahci,id=ahci${diskIndex},addr=$diskAddress \
+      -device ide-hd,drive=${diskId},bus=ahci$diskIndex.0,rotation_rate=$DISK_ROTATION${bootIndex}${diskSerial}${diskSectors}"
       echo "$result"
       ;;
     "blk" | "virtio-blk" )
       result+=",if=none \
-      -device virtio-blk-pci,drive=${DISK_ID},bus=pcie.0,addr=$DISK_ADDRESS,iothread=io2${index}${DISK_SERIAL}${DISK_SECTORS}"
+      -device virtio-blk-pci,drive=${diskId},bus=$bus,addr=$diskAddress,iothread=io2${bootIndex}${diskSerial}${diskSectors}"
       echo "$result"
       ;;
     "scsi" | "virtio-scsi" )
       result+=",if=none \
-      -device virtio-scsi-pci,id=${DISK_ID}b,bus=pcie.0,addr=$DISK_ADDRESS,iothread=io2 \
-      -device scsi-hd,drive=${DISK_ID},bus=${DISK_ID}b.0,channel=0,scsi-id=0,lun=0,rotation_rate=$DISK_ROTATION${index}${DISK_SERIAL}${DISK_SECTORS}"
+      -device virtio-scsi-pci,id=${diskId}b,bus=$bus,addr=$diskAddress,iothread=io2,hotplug=off \
+      -device scsi-hd,drive=${diskId},bus=${diskId}b.0,channel=0,scsi-id=0,lun=0,rotation_rate=$DISK_ROTATION${bootIndex}${diskSerial}${diskSectors}"
       echo "$result"
       ;;
   esac
@@ -533,64 +567,69 @@ finishDisks () {
 
 addDisk () {
 
-  local DISK_BASE="$1"
-  local DISK_TYPE="$2"
-  local DISK_DESC="$3"
-  local DISK_SPACE="$4"
-  local DISK_INDEX="$5"
-  local DISK_ADDRESS="$6"
-  local DISK_FMT="$7"
-  local DISK_IO="$8"
-  local DISK_CACHE="$9"
-  local DISK_EXT DIR SPACE DATA_SIZE FS PREV_FMT PREV_EXT CUR_SIZE LEFT FREE USED
+  local diskBase="$1"
+  local diskType="$2"
+  local diskDesc="$3"
+  local diskSpace="$4"
+  local diskIndex="$5"
+  local diskAddress="$6"
+  local diskFmt="$7"
+  local diskIo="$8"
+  local diskCache="$9"
 
-  DISK_EXT=$(fmt2ext "$DISK_FMT")
-  local DISK_FILE="$DISK_BASE.$DISK_EXT"
+  local fs dir used space
+  local diskExt diskFile
+  local dataSize missing
+  local available currentSize
+  local previousExt previousFmt
 
-  DIR=$(dirname "$DISK_FILE")
-  [ ! -d "$DIR" ] && return 0
+  diskExt=$(fmt2ext "$diskFmt")
+  diskFile="$diskBase.$diskExt"
 
-  SPACE=$(normalizeSize "$DISK_SPACE" "$DISK_DESC" "$DIR")
-  DATA_SIZE=$(numfmt --from=iec "$SPACE")
+  dir=$(dirname "$diskFile")
+  [ ! -d "$dir" ] && return 0
 
-  FS=$(stat -f -c %T "$DIR")
-  checkFS "$FS" "$DISK_FILE" "$DISK_DESC" || exit $?
+  space=$(normalizeSize "$diskSpace" "$diskDesc" "$dir")
+  dataSize=$(numfmt --from=iec "$space")
 
-  if ! supportsDirect "$FS"; then
-    DISK_IO="threads"
-    DISK_CACHE="writeback"
+  fs=$(stat -f -c %T "$dir")
+  checkFS "$fs" "$diskFile" "$diskDesc" || exit $?
+
+  if ! supportsDirect "$fs"; then
+    diskIo="threads"
+    diskCache="writeback"
   fi
 
-  if [ ! -s "$DISK_FILE" ] ; then
+  if [ ! -s "$diskFile" ] ; then
 
-    if [[ "${DISK_FMT,,}" != "raw" ]]; then
-      PREV_FMT="raw"
+    if [[ "${diskFmt,,}" != "raw" ]]; then
+      previousFmt="raw"
     else
-      PREV_FMT="qcow2"
+      previousFmt="qcow2"
     fi
 
-    PREV_EXT=$(fmt2ext "$PREV_FMT")
+    previousExt=$(fmt2ext "$previousFmt")
 
-    if [ -s "$DISK_BASE.$PREV_EXT" ] ; then
-      convertDisk "$DISK_BASE.$PREV_EXT" "$PREV_FMT" "$DISK_FILE" "$DISK_FMT" "$DISK_BASE" "$DISK_DESC" "$FS" || exit $?
+    if [ -s "$diskBase.$previousExt" ] ; then
+      convertDisk "$diskBase.$previousExt" "$previousFmt" "$diskFile" "$diskFmt" "$diskBase" "$diskDesc" "$fs" || exit $?
     fi
 
   fi
 
-  if [ -s "$DISK_FILE" ]; then
+  if [ -s "$diskFile" ]; then
 
-    CUR_SIZE=$(getSize "$DISK_FILE") || exit 71
+    currentSize=$(getSize "$diskFile") || exit 71
 
-    if (( DATA_SIZE > CUR_SIZE )); then
+    if (( dataSize > currentSize )); then
 
-      resizeDisk "$DISK_FILE" "$SPACE" "$DISK_DESC" "$DISK_FMT" "$FS" || exit $?
+      resizeDisk "$diskFile" "$space" "$diskDesc" "$diskFmt" "$fs" || exit $?
 
     else
 
-      if (( DATA_SIZE < CUR_SIZE )); then
+      if (( dataSize < currentSize )); then
 
-        if [[ "${DISK_SPACE,,}" != "max" && "${DISK_SPACE,,}" != "half" ]]; then
-          info "You decreased the ${DISK_DESC^^}_SIZE variable to ${DISK_SPACE/G/ GB} but shrinking disks is not supported, will be ignored..."
+        if [[ "${diskSpace,,}" != "max" && "${diskSpace,,}" != "half" ]]; then
+          info "You decreased the ${diskDesc^^}_SIZE variable to ${diskSpace/G/ GB} but shrinking disks is not supported, will be ignored..."
         fi
 
       fi
@@ -598,72 +637,72 @@ addDisk () {
 
   else
 
-    createDisk "$DISK_FILE" "$SPACE" "$DISK_DESC" "$DISK_FMT" "$FS" || exit $?
+    createDisk "$diskFile" "$space" "$diskDesc" "$diskFmt" "$fs" || exit $?
 
   fi
 
-  if [ -f "$DISK_FILE" ] && disabled "$ALLOCATE"; then
+  if [ -f "$diskFile" ] && disabled "$ALLOCATE"; then
 
-    CUR_SIZE=$(getSize "$DISK_FILE") || exit 73
-    USED=$(du -sB 1 "$DISK_FILE" | cut -f1)
-    FREE=$(df --output=avail -B 1 "$DIR" | tail -n 1)
-    LEFT=$(( CUR_SIZE - USED - FREE ))
-    (( LEFT < 0 )) && LEFT=0
+    currentSize=$(getSize "$diskFile") || exit 73
+    used=$(du -sB 1 "$diskFile" | cut -f1)
+    available=$(df --output=avail -B 1 "$dir" | tail -n 1)
+    missing=$(( currentSize - used - available ))
+    (( missing < 0 )) && missing=0
 
-    if (( LEFT > 0 )); then
+    if (( missing > 0 )); then
 
-      local GB BASE_DIR
-      GB=$(formatBytes "$FREE")
-      BASE_DIR=$(baseDir "$DIR")
-      LEFT=$(formatBytes "$LEFT")
-      CUR_SIZE=$(formatBytes "$CUR_SIZE")
-      msg="The virtual size of the ${DISK_DESC,,} is $CUR_SIZE"
+      local gb base msg
 
-      if [ -n "$USED" ] && [[ "$USED" != "0" ]]; then
-        USED=$(formatBytes "$USED")
-        msg+=" (of which $USED is used)"
+      gb=$(formatBytes "$available")
+      base=$(baseDir "$dir")
+      missing=$(formatBytes "$missing")
+      currentSize=$(formatBytes "$currentSize")
+      msg="The virtual size of the ${diskDesc,,} is $currentSize"
+
+      if [ -n "$used" ] && [[ "$used" != "0" ]]; then
+        used=$(formatBytes "$used")
+        msg+=" (of which $used is used)"
       fi
 
-      info "$msg, but there is only $GB of free space remaining in $BASE_DIR now."
-      info "Please consider making at least $LEFT more space available in $BASE_DIR for future expansions."
+      info "$msg, but there is only $gb of free space remaining in $base now."
+      info "Please consider making at least $missing more space available in $base for future expansions."
 
-    fi
-
-  fi
-
-  if [ -f "$DISK_FILE" ]; then
-    if ! setOwner "$DISK_FILE"; then
-      warn "failed to set the owner for \"$DISK_FILE\" !"
     fi
   fi
 
-  DISK_OPTS+=$(createDevice "$DISK_FILE" "$DISK_TYPE" "$DISK_INDEX" "$DISK_ADDRESS" "$DISK_FMT" "$DISK_IO" "$DISK_CACHE" "" "")
+  if [ -f "$diskFile" ]; then
+    if ! setOwner "$diskFile"; then
+      warn "failed to set the owner for \"$diskFile\" !"
+    fi
+  fi
+
+  DISK_OPTS+=$(createDevice "$diskFile" "$diskType" "$diskIndex" "$diskAddress" "$diskFmt" "$diskIo" "$diskCache" "" "")
 
   return 0
 }
 
 addDevice () {
 
-  local DISK_DEV="$1"
-  local DISK_TYPE="$2"
-  local DISK_INDEX="$3"
-  local DISK_ADDRESS="$4"
-
-  [ -z "$DISK_DEV" ] && return 0
-  [ ! -b "$DISK_DEV" ] && error "Device $DISK_DEV cannot be found! Please add it to the 'devices' section of your compose file." && exit 55
+  local diskDev="$1"
+  local diskType="$2"
+  local diskIndex="$3"
+  local diskAddress="$4"
 
   local sectors=""
-  local dev_type=""
-  dev_type=$(lsblk -no TYPE "$DISK_DEV" 2>/dev/null | head -n1)
+  local devType
+  devType=$(lsblk -no TYPE "$diskDev" 2>/dev/null | head -n1)
 
-  # Only detect and apply sector sizes for partitions, not whole disks
-  # Whole disk passthrough with explicit sector sizes causes DSM not to recognize the disk
-  if [[ "$dev_type" == "part" ]]; then
-    local result=""
-    local logical=""
-    local physical=""
+  [ -z "$diskDev" ] && return 0
+  [ ! -b "$diskDev" ] && error "Device $diskDev cannot be found! Please add it to the 'devices' section of your compose file." && exit 55
 
-    result=$(fdisk -l "$DISK_DEV" 2>/dev/null | grep -m 1 -o "(logical/physical): .*" | cut -c 21- || true)
+  # Only detect and apply sector sizes for partitions, not whole disks.
+  # Whole disk passthrough with explicit sector sizes causes DSM not to recognize the disk.
+  if [[ "$devType" == "part" ]]; then
+
+    local result
+    local logical="" physical=""
+
+    result=$(fdisk -l "$diskDev" 2>/dev/null | grep -m 1 -o "(logical/physical): .*" | cut -c 21- || true)
 
     if [ -n "$result" ]; then
       logical="${result%% *}"
@@ -672,13 +711,14 @@ addDevice () {
     fi
 
     if [ -z "$logical" ] || [ -z "$physical" ]; then
-      warn "Failed to determine the sector size for $DISK_DEV"
+      warn "Failed to determine the sector size for $diskDev"
     elif [[ "$physical" != "512" ]]; then
       sectors=",logical_block_size=$logical,physical_block_size=$physical"
     fi
+
   fi
 
-  DISK_OPTS+=$(createDevice "$DISK_DEV" "$DISK_TYPE" "$DISK_INDEX" "$DISK_ADDRESS" "raw" "$DISK_IO" "$DISK_CACHE" "" "$sectors")
+  DISK_OPTS+=$(createDevice "$diskDev" "$diskType" "$diskIndex" "$diskAddress" "raw" "$DISK_IO" "$DISK_CACHE" "" "$sectors")
 
   return 0
 }
@@ -723,10 +763,10 @@ case "$DISK_FMT" in
   * ) error "Invalid DISK_FMT specified, value \"$DISK_FMT\" is not recognized!" && exit 78 ;;
 esac
 
-case "${DISK_TYPE,,}" in
-  "ide" | "sata" | "nvme" | "usb" | "scsi" | "blk" | "virtio-blk" | "virtio-scsi" | "auto" | "none" ) ;;
-  * ) error "Invalid DISK_TYPE specified, value \"$DISK_TYPE\" is not recognized!" && exit 80 ;;
-esac
+if ! validDiskType "$DISK_TYPE"; then
+  error "Invalid DISK_TYPE specified, value \"$DISK_TYPE\" is not recognized!"
+  exit 80
+fi
 
 if [[ "$DISK_FLAGS" =~ [[:space:]] ]]; then
   error "Invalid DISK_FLAGS value '$DISK_FLAGS', spaces are not allowed."
