@@ -98,41 +98,13 @@ cleanupHelpers() {
   return 0
 }
 
-cleanupConsole() {
-
-  local rc=$?
-
-  trap - EXIT
-
-  if [ -n "${CONSOLE_PID:-}" ]; then
-    kill -- "$CONSOLE_PID" 2>/dev/null || :
-    wait "$CONSOLE_PID" 2>/dev/null || :
-  fi
-
-  if [ -n "${TTY_STATE:-}" ] && [ -c /dev/tty ]; then
-    stty "$TTY_STATE" </dev/tty 2>/dev/null || :
-  fi
-
-  rm -f -- "$CONSOLE_SOCKET" || :
-
-  return "$rc"
-}
-
 startConsole() {
 
   local cnt=0
 
-  TTY_STATE=""
   CONSOLE_PID=""
 
   rm -f -- "$CONSOLE_SOCKET"
-
-  if ! TTY_STATE=$(stty -g </dev/tty); then
-    error "Failed to read terminal settings!"
-    return 1
-  fi
-
-  trap cleanupConsole EXIT
 
   if ! stty -icanon -echo isig -ixon min 1 time 0 </dev/tty; then
     error "Failed to configure DSM console terminal!"
@@ -140,7 +112,6 @@ startConsole() {
   fi
 
   (
-    trap - EXIT
     trap '' INT QUIT
     exec nc -lU "$CONSOLE_SOCKET" </dev/tty >/dev/tty
   ) &
