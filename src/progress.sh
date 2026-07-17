@@ -37,7 +37,12 @@ printPercentProgress() {
   local percent="$1"
 
   while (( next_percent <= percent && next_percent <= 100 )); do
-    printf '%s%% ' "$next_percent"
+    if [[ "$printed" == "Y" ]]; then
+      printf ' → %s%%' "$next_percent"
+    else
+      printf '%s%%' "$next_percent"
+    fi
+
     printed="Y"
     next_percent=$((next_percent + 10))
   done
@@ -51,10 +56,20 @@ printSizeProgress() {
   local size
 
   while (( bytes >= next_bytes )); do
-    size=$(numfmt --to=iec --suffix=B "$next_bytes" | sed -r 's/([A-Z])/ \1/') || size="${next_bytes} bytes"
-    printf '%s ' "$size"
+    size=$(numfmt --to=iec-i --suffix=B "$next_bytes") ||
+      size="${next_bytes} bytes"
+
+    size="${size/.0MiB/MiB}"
+    size="${size/.0GiB/GiB}"
+
+    if [[ "$printed" == "Y" ]]; then
+      printf ' → %s' "$size"
+    else
+      printf '%s' "$size"
+    fi
+
     printed="Y"
-    next_bytes=$((next_bytes + 536870912))
+    next_bytes=$((next_bytes + 52428800))
   done
 
   return 0
@@ -76,7 +91,7 @@ output="${4:-}"
 
 printed="N"
 next_percent=10
-next_bytes=536870912
+next_bytes=52428800
 
 trap finishLogProgress EXIT
 
@@ -90,7 +105,11 @@ while true; do
 
   if (( bytes > 4096 )); then
     if [ -z "$total" ] || [[ "$total" == "0" ]] || (( bytes > total )); then
-      size=$(numfmt --to=iec --suffix=B "$bytes" | sed -r 's/([A-Z])/ \1/') || size="${bytes} bytes"
+      size=$(numfmt --to=iec-i --suffix=B "$bytes") ||
+        size="${bytes} bytes"
+
+      size="${size/.0MiB/MiB}"
+      size="${size/.0GiB/GiB}"
 
       if [[ "$output" == "log" ]]; then
         printSizeProgress "$bytes"
