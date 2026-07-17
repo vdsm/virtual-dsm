@@ -35,7 +35,7 @@ fi
 if [ ! -t 1 ] || [ ! -c /dev/tty ]; then
   "${cmd[@]}" ${ARGS:+ $ARGS} &
 else
-  "${cmd[@]}" ${ARGS:+ $ARGS} </dev/tty >/dev/tty &
+  "${cmd[@]}" ${ARGS:+ $ARGS} </dev/tty >/dev/tty 2>&1 &
 fi
 
 rc=0
