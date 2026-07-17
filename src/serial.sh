@@ -88,10 +88,7 @@ waitForPort() {
 
 configureSerialPorts() {
 
-  if enabled "${SHUTDOWN:-Y}" &&
-     [ -t 1 ] &&
-     [ -c /dev/tty ] &&
-     : 2>/dev/null </dev/tty >/dev/tty; then
+  if enabled "${SHUTDOWN:-Y}" && interactive; then
 
     CONSOLE_SOCKET="$QEMU_DIR/console.sock"
     MONITOR_SOCKET="$QEMU_DIR/monitor.sock"
