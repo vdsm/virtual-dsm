@@ -32,9 +32,12 @@ if ! enabled "$SHUTDOWN"; then
   exec "${cmd[@]}" ${ARGS:+ $ARGS}
 fi
 
-startConsole
-
-setsid -w "${cmd[@]}" ${ARGS:+ $ARGS} </dev/null &
+if ! interactive; then
+  "${cmd[@]}" ${ARGS:+ $ARGS} &
+else
+  startConsole
+  setsid -w "${cmd[@]}" ${ARGS:+ $ARGS} </dev/null &
+fi
 
 pid=$!
 rc=0
