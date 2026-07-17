@@ -88,7 +88,10 @@ waitForPort() {
 
 configureSerialPorts() {
 
-  if enabled "$SHUTDOWN"; then
+  if enabled "${SHUTDOWN:-Y}" &&
+     [ -t 1 ] &&
+     [ -c /dev/tty ] &&
+     : 2>/dev/null </dev/tty >/dev/tty; then
 
     CONSOLE_SOCKET="$QEMU_DIR/console.sock"
     MONITOR_SOCKET="$QEMU_DIR/monitor.sock"
@@ -96,21 +99,21 @@ configureSerialPorts() {
     SERIAL_OPTS="-chardev socket,id=console0,path=$CONSOLE_SOCKET,reconnect-ms=1000 \
           -serial chardev:console0 \
           -chardev socket,id=monitor0,path=$MONITOR_SOCKET,server=on,wait=off \
-          -mon chardev=monitor0,mode=readline \
-          -device virtio-serial-pci,id=virtio-serial0,bus=pcie.0,addr=0x3 \
-          -chardev socket,id=charchannel0,host=127.0.0.1,port=$CHR_PORT,reconnect=10 \
-          -device virtserialport,bus=virtio-serial0.0,nr=1,chardev=charchannel0,id=channel0,name=vchannel"
+          -mon chardev=monitor0,mode=readline"
 
   else
 
-    SERIAL_OPTS="-serial mon:stdio \
-          -device virtio-serial-pci,id=virtio-serial0,bus=pcie.0,addr=0x3 \
-          -chardev socket,id=charchannel0,host=127.0.0.1,port=$CHR_PORT,reconnect=10 \
-          -device virtserialport,bus=virtio-serial0.0,nr=1,chardev=charchannel0,id=channel0,name=vchannel"
+    SERIAL_OPTS="-serial mon:stdio"
 
   fi
 
+  SERIAL_OPTS+=" \
+        -device virtio-serial-pci,id=virtio-serial0,bus=pcie.0,addr=0x3 \
+        -chardev socket,id=charchannel0,host=127.0.0.1,port=$CHR_PORT,reconnect=10 \
+        -device virtserialport,bus=virtio-serial0.0,nr=1,chardev=charchannel0,id=channel0,name=vchannel"
+
   return 0
+
 }
 
 validateHostMac
