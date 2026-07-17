@@ -90,8 +90,10 @@ waitForPort() {
 
 configureSerialPorts() {
 
-  # Configure serial ports
-  SERIAL_OPTS="-serial mon:stdio \
+  SERIAL_OPTS="-chardev stdio,id=console0,signal=off \
+        -serial chardev:console0 \
+        -chardev socket,id=monitor0,path=$QEMU_DIR/monitor.sock,server=on,wait=off \
+        -mon chardev=monitor0,mode=readline \
         -device virtio-serial-pci,id=virtio-serial0,bus=pcie.0,addr=0x3 \
         -chardev socket,id=charchannel0,host=127.0.0.1,port=$CHR_PORT,reconnect=10 \
         -device virtserialport,bus=virtio-serial0.0,nr=1,chardev=charchannel0,id=channel0,name=vchannel"
