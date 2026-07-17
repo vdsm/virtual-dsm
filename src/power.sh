@@ -283,8 +283,7 @@ graceful_shutdown() {
 
     if (( code == 130 && SHUTDOWN_SIGNAL == code )); then
       SHUTDOWN_SKIP=1
-      echo && info "Received SIGINT again, skipping shutdown wait..."
-      return
+      echo && info "Received SIGINT again, forcing shutdown..."      return
     fi
 
     echo && info "Received $sig signal while already shutting down..."
