@@ -32,14 +32,17 @@ if ! enabled "$SHUTDOWN"; then
   exec "${cmd[@]}" ${ARGS:+ $ARGS}
 fi
 
-if [ ! -t 1 ] || [ ! -c /dev/tty ]; then
+if ! interactive; then
   "${cmd[@]}" ${ARGS:+ $ARGS} &
 else
-  "${cmd[@]}" ${ARGS:+ $ARGS} </dev/tty >/dev/tty &
+  startConsole
+  setsid -w "${cmd[@]}" ${ARGS:+ $ARGS} </dev/null &
 fi
 
+pid=$!
 rc=0
-wait $! || rc=$?
+
+wait "$pid" || rc=$?
 [ -f "$QEMU_END" ] && exit "$rc"
 
 sleep 1 & wait $!

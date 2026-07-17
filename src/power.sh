@@ -10,14 +10,18 @@ set -Eeuo pipefail
 API_CMD=6
 API_HOST="127.0.0.1:$COM_PORT"
 
-# Configure QEMU for graceful shutdown
+SHUTDOWN_SKIP=0
+SHUTDOWN_SIGNAL=0
 
 QEMU_END="$QEMU_DIR/qemu.end"
+CONSOLE_PID="$QEMU_DIR/console.pid"
+CONSOLE_SOCKET="$QEMU_DIR/console.sock"
 
 _trap() {
 
   local func="$1"; shift
   local sig
+
   TRAP_PID=$BASHPID
 
   for sig; do
@@ -88,13 +92,54 @@ forceKillQemu() {
 
 cleanupHelpers() {
 
-  local pids=( "${HOST_PID:-}" "${WSD_PID:-}" \
+  local pids=( "${HOST_PID:-}" "${WSD_PID:-}" "${CONSOLE_PID:-}" \
                "${WEB_PID:-}" "${PASST_PID:-}" "${DNSMASQ_PID:-}" )
 
   mKill "${pids[@]}"
   fKill "print.sh"
 
   closeNetwork
+  return 0
+}
+
+startConsole() {
+
+  local cnt=0
+  local pid=""
+
+  rm -f -- "$CONSOLE_SOCKET" "$CONSOLE_PID"
+
+  if ! stty -icanon -echo isig -ixon min 1 time 0 </dev/tty; then
+    error "Failed to configure serial console terminal!"
+    return 1
+  fi
+
+  (
+    trap '' INT QUIT
+    exec nc -lU "$CONSOLE_SOCKET" </dev/tty >/dev/tty
+  ) &
+
+  pid=$!
+  echo "$pid" > "$CONSOLE_PID"
+
+  while [ ! -S "$CONSOLE_SOCKET" ]; do
+
+    if ! isAlive "$pid"; then
+      rm -f -- "$CONSOLE_PID"
+      error "Serial console relay exited unexpectedly!"
+      return 1
+    fi
+
+    sleep 0.02
+    cnt=$((cnt + 1))
+
+    if (( cnt > 100 )); then
+      error "Failed to start serial console relay!"
+      return 1
+    fi
+
+  done
+
   return 0
 }
 
@@ -198,7 +243,7 @@ waitForShutdown() {
   local name="$APP"
   local slp
 
-  while (( cnt <= wait_until )); do
+  while (( cnt <= wait_until && SHUTDOWN_SKIP == 0 )); do
 
     sleep 1 &
     slp=$!
@@ -216,7 +261,7 @@ waitForShutdown() {
       info "Waiting for $name to shut down... ($cnt/$wait_until)"
     fi
 
-    wait "$slp"
+    wait "$slp" || :
     (( cnt++ ))
 
   done
@@ -235,21 +280,29 @@ graceful_shutdown() {
   code=$(signalCode "$sig")
 
   if [ -f "$QEMU_END" ]; then
-    echo && info "Received $1 signal while already shutting down..."
+
+    if (( code == 130 && SHUTDOWN_SIGNAL == code )); then
+      SHUTDOWN_SKIP=1
+      echo && info "Received SIGINT again, forcing shutdown..."      return
+    fi
+
+    echo && info "Received $sig signal while already shutting down..."
     return
   fi
 
   set +e
   start=$SECONDS
+  SHUTDOWN_SIGNAL=$code
+
   touch "$QEMU_END"
-  echo && info "Received $1 signal, sending shutdown command..."
+  echo && info "Received $sig signal, sending shutdown command..."
 
   if ! readQemuPid pid; then
     warn "QEMU PID file ($QEMU_PID) does not exist?"
     finish "$code"
   fi
 
-  if ! isAlive "$pid"; then
+  if [ -z "$pid" ] || ! isAlive "$pid"; then
     warn "QEMU process with PID $pid does not exist?"
     finish "$code"
   fi
@@ -263,6 +316,10 @@ graceful_shutdown() {
 
 ! enabled "$SHUTDOWN" && return 0
 [ -n "${QEMU_TIMEOUT:-}" ] && TIMEOUT="$QEMU_TIMEOUT"
+
+if interactive; then
+  _trap graceful_shutdown SIGINT
+fi
 
 _trap graceful_shutdown SIGTERM SIGHUP SIGABRT SIGQUIT
 
