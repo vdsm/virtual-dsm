@@ -45,9 +45,7 @@ checkClocksource() {
 
 checkSse42() {
 
-  local flags="$1"
-
-  if ! grep -qw "sse4_2" <<< "$flags"; then
+  if ! hasFlag "sse4_2"; then
     error "Your CPU does not have the SSE4 instruction set that Virtual DSM requires!"
     ! enabled "$DEBUG" && exit 88
   fi
@@ -96,12 +94,10 @@ configureKvmCpuModel() {
 
 appendKvmInvtscFeature() {
 
-  local flags="$1"
-
-  if grep -qw "svm" <<< "$flags"; then
+  if hasFlag "svm"; then
 
     # AMD processor
-    if grep -qw "tsc_scale" <<< "$flags"; then
+    if hasFlag "tsc_scale"; then
       CPU_FEATURES+=",+invtsc"
     fi
 
@@ -122,13 +118,9 @@ appendKvmInvtscFeature() {
 
 configureKvm() {
 
-  local flags
-
-  flags=$(sed -ne '/^flags/s/^.*: //p' /proc/cpuinfo)
-
   configureKvmCpuModel
-  checkSse42 "$flags"
-  appendKvmInvtscFeature "$flags"
+  checkSse42
+  appendKvmInvtscFeature
 
   return 0
 }
