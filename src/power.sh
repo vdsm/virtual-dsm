@@ -5,15 +5,14 @@ set -Eeuo pipefail
 : "${TIMEOUT:="115"}"       # QEMU termination timeout
 : "${API_TIMEOUT:="90"}"    # External API call timeout
 
-CONSOLE_PID="$QEMU_DIR/console.pid"
-CONSOLE_SOCKET="$QEMU_DIR/console.sock"
-
 # Configure QEMU for graceful shutdown
 
 API_CMD=6
 API_HOST="127.0.0.1:$COM_PORT"
 
 QEMU_END="$QEMU_DIR/qemu.end"
+CONSOLE_PID="$QEMU_DIR/console.pid"
+CONSOLE_SOCKET="$QEMU_DIR/console.sock"
 
 _trap() {
 
