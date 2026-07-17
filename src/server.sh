@@ -13,12 +13,13 @@ CHR_PORT=$(strip "$CHR_PORT")
 WSD_PORT=$(strip "$WSD_PORT")
 
 WEB_PID="/run/nginx.pid"
+WSD_LOG="/var/log/websocketd.log"
 WSD_PID="$QEMU_DIR/websocketd.pid"
 
 prepareWebFiles() {
 
   cp -r /var/www/* "$QEMU_DIR" || return 1
-  rm -f "$WSD_PID" "$WEB_PID" || return 1
+  rm -f "$WSD_PID" "$WEB_PID" "$WSD_LOG" || return 1
 
   return 0
 }
@@ -62,11 +63,13 @@ startWebServer() {
 
 startWebsocketServer() {
 
-  local log="/var/log/websocketd.log"
-  rm -f "$log"
-
   # Start websocket server
-  websocketd --address 127.0.0.1 --port="$WSD_PORT" /run/socket.sh > "$log" 2>&1 &
+  websocketd \
+    --address 127.0.0.1 \
+    --port="$WSD_PORT" \
+    /run/socket.sh \
+    >"$WSD_LOG" 2>&1 &
+
   local pid=$!
 
   if ! echo "$pid" > "$WSD_PID"; then
@@ -78,7 +81,7 @@ startWebsocketServer() {
 
   if ! isAlive "$pid"; then
     rm -f "$WSD_PID"
-    [ -s "$log" ] && cat "$log" >&2
+    [ -s "$WSD_LOG" ] && cat "$WSD_LOG" >&2
     error "Failed to start websocket server!"
     return 1
   fi
