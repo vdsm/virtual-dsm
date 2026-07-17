@@ -7,11 +7,6 @@ enabled "${TRACE:-}" && set -o functrace && trap 'echo "# $BASH_COMMAND" >&2' DE
 [ ! -f "/run/entry.sh" ] && error "Script must be run inside the container!" && exit 11
 [ "$(id -u)" -ne "0" ] && error "Script must be executed with root privileges." && exit 12
 
-# Keep stderr attached to the terminal when using the console relay.
-if enabled "${SHUTDOWN:-Y}" && interactive; then
-  exec 2>/dev/tty
-fi
-
 # Docker environment variables
 
 : "${TZ:=""}"              # System timezone
