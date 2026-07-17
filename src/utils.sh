@@ -31,9 +31,7 @@ isAmdCpu() {
 
 interactive() {
 
-  [ -t 1 ] &&
-    [ -c /dev/tty ] &&
-    : 2>/dev/null </dev/tty >/dev/tty
+  [ -t 0 ] && : 2>/dev/null </dev/tty >/dev/tty
 
 }
 
