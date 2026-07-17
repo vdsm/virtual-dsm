@@ -14,6 +14,13 @@ hasFlag() {
 
 }
 
+hasFeature() {
+
+  # Match a whitespace-delimited token in /proc/cpuinfo
+  grep -m1 '^Features[[:space:]]*:' /proc/cpuinfo | grep -Fqw -- "$1"
+
+}
+
 isAmdCpu() {
 
   local vendor
