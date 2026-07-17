@@ -1568,8 +1568,8 @@ closeInterfaces() {
   local pids=( "$PASST_PID" "$DNSMASQ_PID" )
   mKill "${pids[@]}"
 
-  exec 30<&- || true
-  exec 40<&- || true
+  exec 30<&- || :
+  exec 40<&- || :
 
   ip link set "$TAP" down promisc off &> /dev/null || :
   ip link delete "$TAP" &> /dev/null || :
