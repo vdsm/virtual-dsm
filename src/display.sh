@@ -15,7 +15,7 @@ RENDERNODE=$(strip "$RENDERNODE")
 
 CPU_VENDOR=$(lscpu | awk '/Vendor ID/{print $3}')
 
-if ! enabled "$GPU" || [[ "$CPU_VENDOR" != "GenuineIntel" || "$ARCH" != "amd64" ]]; then
+if ! enabled "$GPU" || isAmdCpu || [[ "$ARCH" != "amd64" ]]; then
 
   [[ "${DISPLAY,,}" == "none" ]] && VGA="none"
   DISPLAY_OPTS="-display $DISPLAY -vga $VGA"

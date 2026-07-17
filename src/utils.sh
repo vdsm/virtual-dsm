@@ -24,10 +24,9 @@ hasFeature() {
 isAmdCpu() {
 
   local vendor
-  vendor=$(lscpu | awk '/Vendor ID/{print $3}')
+  vendor=$(awk -F ': *' '/^vendor_id/{print $2; exit}' /proc/cpuinfo)
 
   [[ "$vendor" == "AuthenticAMD" ]]
-
 }
 
 interactive() {
