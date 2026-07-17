@@ -28,13 +28,13 @@ cmd=(qemu-system-x86_64)
 version=$("${cmd[@]}" --version | awk 'NR==1 { print $4 }')
 info "Booting $APP using QEMU v$version..." && echo
 
+if ! enabled "$SHUTDOWN"; then
+  exec "${cmd[@]}" ${ARGS:+ $ARGS}
+fi
+
 startConsole
 
-if ! enabled "$SHUTDOWN"; then
-  "${cmd[@]}" ${ARGS:+ $ARGS} </dev/null &
-else
-  setsid -w "${cmd[@]}" ${ARGS:+ $ARGS} </dev/null &
-fi
+setsid -w "${cmd[@]}" ${ARGS:+ $ARGS} </dev/null &
 
 pid=$!
 rc=0
