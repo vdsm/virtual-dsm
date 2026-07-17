@@ -111,7 +111,7 @@ startConsole() {
   rm -f -- "$CONSOLE_SOCKET" "$CONSOLE_PID"
 
   if ! stty -icanon -echo isig -ixon min 1 time 0 </dev/tty; then
-    error "Failed to configure DSM console terminal!"
+    error "Failed to configure serial console terminal!"
     return 1
   fi
 
@@ -127,7 +127,7 @@ startConsole() {
 
     if ! isAlive "$pid"; then
       rm -f -- "$CONSOLE_PID"
-      error "DSM console relay exited unexpectedly!"
+      error "Serial console relay exited unexpectedly!"
       return 1
     fi
 
@@ -135,7 +135,7 @@ startConsole() {
     cnt=$((cnt + 1))
 
     if (( cnt > 100 )); then
-      error "Failed to start DSM console relay!"
+      error "Failed to start serial console relay!"
       return 1
     fi
 
@@ -244,7 +244,7 @@ waitForShutdown() {
   local name="$APP"
   local slp
 
-  while (( cnt <= wait_until )); do
+  while (( cnt <= wait_until && SHUTDOWN_SKIP == 0 )); do
 
     sleep 1 &
     slp=$!
@@ -262,7 +262,7 @@ waitForShutdown() {
       info "Waiting for $name to shut down... ($cnt/$wait_until)"
     fi
 
-    wait "$slp"
+    wait "$slp" || :
     (( cnt++ ))
 
   done
@@ -281,21 +281,30 @@ graceful_shutdown() {
   code=$(signalCode "$sig")
 
   if [ -f "$QEMU_END" ]; then
-    echo && info "Received $1 signal while already shutting down..."
+
+    if (( code == 130 && SHUTDOWN_SIGNAL == code )); then
+      SHUTDOWN_SKIP=1
+      echo && info "Received SIGINT again, skipping shutdown wait..."
+      return
+    fi
+
+    echo && info "Received $sig signal while already shutting down..."
     return
   fi
 
   set +e
   start=$SECONDS
+  SHUTDOWN_SIGNAL=$code
+
   touch "$QEMU_END"
-  echo && info "Received $1 signal, sending shutdown command..."
+  echo && info "Received $sig signal, sending shutdown command..."
 
   if ! readQemuPid pid; then
     warn "QEMU PID file ($QEMU_PID) does not exist?"
     finish "$code"
   fi
 
-  if ! isAlive "$pid"; then
+  if [ -z "$pid" ] || ! isAlive "$pid"; then
     warn "QEMU process with PID $pid does not exist?"
     finish "$code"
   fi
