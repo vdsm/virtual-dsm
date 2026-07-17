@@ -105,7 +105,7 @@ cleanupConsole() {
   trap - EXIT
 
   if [ -n "${CONSOLE_PID:-}" ]; then
-    kill "$CONSOLE_PID" 2>/dev/null || :
+    kill -- "$CONSOLE_PID" 2>/dev/null || :
     wait "$CONSOLE_PID" 2>/dev/null || :
   fi
 
