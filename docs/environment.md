@@ -9,6 +9,7 @@ An empty default means the variable is unset and its value is determined automat
 | Variable | Default | Description |
 |---|---|---|
 | `URL` |  | URL or local path to the DSM `.pat` installation file. Downloads the default Virtual DSM image automatically when unset. |
+| `COUNTRY` |  | Country code used to select the Synology download mirror. Detected automatically when unset. |
 | `HOST_MAC` |  | MAC address reported to DSM. |
 | `HOST_MODEL` |  | Synology host model reported to DSM. |
 | `HOST_SERIAL` |  | Synology host serial number reported to DSM. |
@@ -73,6 +74,13 @@ An empty default means the variable is unset and its value is determined automat
 | `GPU` | `N` | Enables Intel iGPU acceleration. |
 | `RENDERNODE` | `/dev/dri/renderD128` | Render node used for GPU acceleration. |
 
+## ⚙️ System
+
+| Variable | Default | Description |
+|---|---|---|
+| `MACHINE` | `q35` | QEMU machine type. |
+| `ARGUMENTS` |  | Additional raw arguments appended to the QEMU command line. |
+
 ## 🔌 Shutdown
 
 | Variable | Default | Description |
@@ -90,4 +98,3 @@ An empty default means the variable is unset and its value is determined automat
 | `COM_PORT` | `2210` | Internal communication port used by the DSM host helper. |
 | `CHR_PORT` | `12345` | Internal character device port used by the DSM host helper. |
 | `HOST_DEBUG` | `N` | Enables debug output for the DSM host helper. |
-| `ARGUMENTS` |  | Additional raw arguments appended to the QEMU command line. |
