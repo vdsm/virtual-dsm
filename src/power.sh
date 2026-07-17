@@ -5,8 +5,8 @@ set -Eeuo pipefail
 : "${TIMEOUT:="115"}"       # QEMU termination timeout
 : "${API_TIMEOUT:="90"}"    # External API call timeout
 
-: "${CONSOLE_PID:="$QEMU_DIR/console.pid"}"
-: "${CONSOLE_SOCKET:="$QEMU_DIR/console.sock"}"
+CONSOLE_PID="$QEMU_DIR/console.pid"
+CONSOLE_SOCKET="$QEMU_DIR/console.sock"
 
 # Configure QEMU for graceful shutdown
 
@@ -90,7 +90,7 @@ forceKillQemu() {
 
 cleanupHelpers() {
 
-  local pids=( "${HOST_PID:-}" "${WSD_PID:-}" \
+  local pids=( "${HOST_PID:-}" "${WSD_PID:-}" "${CONSOLE_PID:-}" \
                "${WEB_PID:-}" "${PASST_PID:-}" "${DNSMASQ_PID:-}" )
 
   mKill "${pids[@]}"
@@ -103,10 +103,9 @@ cleanupHelpers() {
 startConsole() {
 
   local cnt=0
+  local pid=""
 
-  CONSOLE_PID=""
-
-  rm -f -- "$CONSOLE_SOCKET"
+  rm -f -- "$CONSOLE_SOCKET" "$CONSOLE_PID"
 
   if ! stty -icanon -echo isig -ixon min 1 time 0 </dev/tty; then
     error "Failed to configure DSM console terminal!"
@@ -118,11 +117,13 @@ startConsole() {
     exec nc -lU "$CONSOLE_SOCKET" </dev/tty >/dev/tty
   ) &
 
-  CONSOLE_PID=$!
+  pid=$!
+  echo "$pid" > "$CONSOLE_PID"
 
   while [ ! -S "$CONSOLE_SOCKET" ]; do
 
-    if ! kill -0 "$CONSOLE_PID" 2>/dev/null; then
+    if ! isAlive "$pid"; then
+      rm -f -- "$CONSOLE_PID"
       error "DSM console relay exited unexpectedly!"
       return 1
     fi
