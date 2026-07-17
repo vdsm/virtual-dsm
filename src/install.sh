@@ -154,28 +154,25 @@ else
   SIZE=0
   REASON=""
   PROGRESS=()
-  DOTBYTES=2097152
+  OUTPUT=""
   LOG=$(mktemp)
 
   [[ "${URL,,}" == *"_72806.pat" ]] && SIZE=361010261
   [[ "${URL,,}" == *"_69057.pat" ]] && SIZE=363837333
   [[ "${URL,,}" == *"_42218.pat" ]] && SIZE=379637760
 
-  # Check if output is to interactive TTY or redirected to docker log
+  # Use Wget's progress bar in a terminal and progress.sh in container logs.
   if [ -t 1 ]; then
-    PROGRESS=( --progress=bar:noscroll )
+    PROGRESS=( --show-progress --progress=bar:noscroll )
   else
-    if (( SIZE > 0 )); then
-      DOTBYTES=$(( (SIZE + 199) / 200 ))
-    fi
-    PROGRESS=( --progress=dot --execute "dotbytes=$DOTBYTES" )
+    OUTPUT="log"
   fi
 
-  /run/progress.sh "$PAT" "$SIZE" "$MSG ([P])..." &
+  /run/progress.sh "$PAT" "$SIZE" "$MSG ([P])..." "$OUTPUT" &
 
   {
     LC_ALL=C wget "$URL" -O "$PAT" --no-verbose --no-check-certificate \
-      --timeout=30 --no-http-keep-alive --show-progress "${PROGRESS[@]}" \
+      --timeout=30 --no-http-keep-alive "${PROGRESS[@]}" \
       --output-file="$LOG"
     rc=$?
   } || :
