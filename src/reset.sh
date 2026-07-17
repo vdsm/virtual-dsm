@@ -13,6 +13,7 @@ enabled "${TRACE:-}" && set -o functrace && trap 'echo "# $BASH_COMMAND" >&2' DE
 : "${KVM:="Y"}"            # KVM acceleration
 : "${DEBUG:="N"}"          # Disable debugging mode
 : "${COUNTRY:=""}"         # Country code for mirror
+: "${MACHINE:="q35"}"      # Machine type selection
 : "${ALLOCATE:=""}"        # Preallocate diskspace
 : "${ARGUMENTS:=""}"       # Extra QEMU parameters
 : "${CPU_CORES:="2"}"      # Amount of CPU cores
