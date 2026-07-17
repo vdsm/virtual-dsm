@@ -32,14 +32,16 @@ if ! enabled "$SHUTDOWN"; then
   exec "${cmd[@]}" ${ARGS:+ $ARGS}
 fi
 
-if [ ! -t 1 ] || [ ! -c /dev/tty ]; then
-  "${cmd[@]}" ${ARGS:+ $ARGS} &
+if [ ! -t 0 ] || [ ! -t 1 ] || [ ! -c /dev/tty ]; then
+  "${cmd[@]}" ${ARGS:+ $ARGS} </dev/null &
 else
-  "${cmd[@]}" ${ARGS:+ $ARGS} </dev/tty >/dev/tty &
+  script -qefc "exec ${cmd[0]}${ARGS:+ $ARGS}" /dev/null &
 fi
 
+pid=$!
 rc=0
-wait $! || rc=$?
+
+wait "$pid" || rc=$?
 [ -f "$QEMU_END" ] && exit "$rc"
 
 sleep 1 & wait $!
