@@ -353,7 +353,7 @@ checkKvm
 
 # Cleanup files
 rm -f "$QEMU_DIR"/dsm.url
-rm -f "$QEMU_DIR"/qemu.* "$QEMU_DIR"/*.pid "$QEMU_DIR"/*.sock
+rm -f "$QEMU_DIR"/{qemu.*,*.{pid,sock,pipe}}
 
 # Cleanup dirs
 rm -rf /tmp/dsm
