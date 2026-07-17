@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM qemux/qemu-host:2.06 AS builder
+FROM qemux/qemu-host:2.05 AS builder
 FROM debian:trixie-slim
 
 ARG TARGETARCH
