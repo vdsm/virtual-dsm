@@ -104,6 +104,7 @@ cleanupHelpers() {
 
 startConsole() {
 
+  local output="${1:-/dev/tty}"
   local cnt=0
   local pid=""
 
@@ -116,7 +117,7 @@ startConsole() {
 
   (
     trap '' INT QUIT
-    exec nc -lU "$CONSOLE_SOCKET" </dev/tty >/dev/tty
+    exec nc -lU "$CONSOLE_SOCKET" </dev/tty >"$output"
   ) &
 
   pid=$!
@@ -139,6 +140,13 @@ startConsole() {
     fi
 
   done
+
+  return 0
+}
+
+stopConsole() {
+
+  mKill "$CONSOLE_PID"
 
   return 0
 }
@@ -283,7 +291,8 @@ graceful_shutdown() {
 
     if (( code == 130 && SHUTDOWN_SIGNAL == code )); then
       SHUTDOWN_SKIP=1
-      echo && info "Received SIGINT again, forcing shutdown..."      return
+      echo && info "Received SIGINT again, forcing shutdown..."
+      return
     fi
 
     echo && info "Received $sig signal while already shutting down..."
