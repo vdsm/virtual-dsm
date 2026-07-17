@@ -15,6 +15,13 @@ interactive() {
 
 }
 
+hasFlag() {
+
+  # Match a whitespace-delimited token in /proc/cpuinfo
+  grep -m1 '^flags[[:space:]]*:' /proc/cpuinfo | grep -Fqw -- "$1"
+
+}
+
 strip() {
 
   local value="${1:-}"
