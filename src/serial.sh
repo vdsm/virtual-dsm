@@ -52,7 +52,7 @@ buildHostArguments() {
 
 startHostBinary() {
 
-  local pid=""
+  local pid
 
   if enabled "$HOST_DEBUG"; then
     set -x
