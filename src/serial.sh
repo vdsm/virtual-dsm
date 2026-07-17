@@ -52,11 +52,18 @@ buildHostArguments() {
 
 startHostBinary() {
 
+  local pid=""
+
   if enabled "$HOST_DEBUG"; then
-    set -x
-    ./host.bin "${HOST_ARGS[@]}" &
-    { set +x; } 2>/dev/null
-    echo "$!" > "$HOST_PID"
+
+    {
+      set -x
+      ./host.bin "${HOST_ARGS[@]}" &
+      pid=$!
+      { set +x; } 2>/dev/null
+    } 2>&1
+
+    echo "$pid" > "$HOST_PID"
     echo
   else
     ./host.bin "${HOST_ARGS[@]}" >/dev/null &
