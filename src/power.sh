@@ -4,13 +4,12 @@ set -Eeuo pipefail
 : "${SHUTDOWN:="Y"}"        # Graceful ACPI shutdown
 : "${TIMEOUT:="115"}"       # QEMU termination timeout
 : "${API_TIMEOUT:="90"}"    # External API call timeout
+: "${CONSOLE_SOCKET:="$QEMU_DIR/console.sock"}"
 
 # Configure QEMU for graceful shutdown
 
 API_CMD=6
 API_HOST="127.0.0.1:$COM_PORT"
-
-# Configure QEMU for graceful shutdown
 
 QEMU_END="$QEMU_DIR/qemu.end"
 
@@ -18,6 +17,7 @@ _trap() {
 
   local func="$1"; shift
   local sig
+
   TRAP_PID=$BASHPID
 
   for sig; do
@@ -95,6 +95,75 @@ cleanupHelpers() {
   fKill "print.sh"
 
   closeNetwork
+  return 0
+}
+
+cleanupConsole() {
+
+  local rc=$?
+
+  trap - EXIT
+
+  if [ -n "${CONSOLE_PID:-}" ]; then
+    kill "$CONSOLE_PID" 2>/dev/null || :
+    wait "$CONSOLE_PID" 2>/dev/null || :
+  fi
+
+  if [ -n "${TTY_STATE:-}" ] && [ -c /dev/tty ]; then
+    stty "$TTY_STATE" </dev/tty 2>/dev/null || :
+  fi
+
+  rm -f -- "$CONSOLE_SOCKET" || :
+
+  return "$rc"
+}
+
+startConsole() {
+
+  local cnt=0
+
+  TTY_STATE=""
+  CONSOLE_PID=""
+
+  rm -f -- "$CONSOLE_SOCKET"
+
+  if ! TTY_STATE=$(stty -g </dev/tty); then
+    error "Failed to read terminal settings!"
+    return 1
+  fi
+
+  trap cleanupConsole EXIT
+
+  if ! stty -icanon -echo isig -ixon min 1 time 0 </dev/tty; then
+    error "Failed to configure DSM console terminal!"
+    return 1
+  fi
+
+  (
+    trap - EXIT
+    trap '' INT QUIT
+    exec nc -lU "$CONSOLE_SOCKET" </dev/tty >/dev/tty
+  ) &
+
+  CONSOLE_PID=$!
+
+  while [ ! -S "$CONSOLE_SOCKET" ]; do
+
+    if ! kill -0 "$CONSOLE_PID" 2>/dev/null; then
+      error "DSM console relay exited unexpectedly!"
+      return 1
+    fi
+
+    sleep 0.02
+    cnt=$((cnt + 1))
+
+    if (( cnt > 100 )); then
+      error "Failed to start DSM console relay!"
+      return 1
+    fi
+
+  done
+
   return 0
 }
 
@@ -264,6 +333,10 @@ graceful_shutdown() {
 ! enabled "$SHUTDOWN" && return 0
 [ -n "${QEMU_TIMEOUT:-}" ] && TIMEOUT="$QEMU_TIMEOUT"
 
-_trap graceful_shutdown SIGINT SIGTERM SIGHUP SIGABRT SIGQUIT
+if interactive; then
+  _trap graceful_shutdown SIGINT
+fi
+
+_trap graceful_shutdown SIGTERM SIGHUP SIGABRT SIGQUIT
 
 return 0
