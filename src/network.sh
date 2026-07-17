@@ -1861,7 +1861,9 @@ showHostInfo() {
   [ ! -f "$file" ] && file="/etc/resolv.conf"
 
   if [ -f "$file" ]; then
-    nameservers=$(grep '^nameserver ' "$file" | sed 's/^nameserver //' | paste -sd ',' | sed 's/,/, /g')
+    nameservers=$(awk '$1 == "nameserver" { print $2 }' "$file" |
+      paste -sd ',' |
+      sed 's/,/, /g' || true)
   fi
 
   [ -z "$nameservers" ] && nameservers="(none)"
