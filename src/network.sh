@@ -444,7 +444,7 @@ configureDNS() {
 
     # Set MTU through DHCP option 26
     if [[ "$GUEST_MTU" != "0" && "$GUEST_MTU" != "1500" ]]; then
-      arguments+=" --dhcp-option=option:interface-mtu,$GUEST_MTU"
+      arguments+=" --dhcp-option=option:mtu,$GUEST_MTU"
     fi
 
   fi
