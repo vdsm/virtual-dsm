@@ -19,8 +19,9 @@ driver="/run/shm/qemu.nic"
 page="/run/shm/index.html"
 address="/run/shm/qemu.ip"
 shutdown="/run/shm/qemu.end"
+socket="/run/shm/qemu-host-api.sock"
 template="/var/www/index.html"
-url="http://127.0.0.1:2210/read?command=10"
+url="http://localhost/read?command=10"
 
 resp_err="Guest returned an invalid response:"
 curl_err="Failed to connect to guest: curl error"
@@ -37,7 +38,7 @@ queryGuest() {
 
   local rc
 
-  { json=$(curl -m 20 -sk "$url"); rc=$?; } || :
+  { json=$(curl --unix-socket "$socket" -m 20 -sk "$url"); rc=$?; } || :
 
   exitIfShuttingDown
 
