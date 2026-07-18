@@ -373,6 +373,18 @@ escape () {
   return 0
 }
 
+escapeXML() {
+
+  printf '%s' "$1" | sed \
+    -e 's/&/\&amp;/g' \
+    -e 's/</\&lt;/g' \
+    -e 's/>/\&gt;/g' \
+    -e 's/"/\&quot;/g' \
+    -e "s/'/\&apos;/g"
+
+  return 0
+}
+
 html() {
 
   local title
