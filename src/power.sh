@@ -8,7 +8,6 @@ set -Eeuo pipefail
 # Configure QEMU for graceful shutdown
 
 API_CMD=6
-API_HOST="127.0.0.1:$COM_PORT"
 
 SHUTDOWN_SKIP=0
 SHUTDOWN_SIGNAL=0
@@ -97,6 +96,8 @@ cleanupHelpers() {
 
   mKill "${pids[@]}"
   fKill "print.sh"
+
+  rm -f -- "$HOST_API_SOCKET" "$HOST_AGENT_SOCKET"
 
   closeNetwork
   return 0
@@ -191,8 +192,8 @@ sendGuestShutdown() {
 
   # Send shutdown command to guest agent via serial port
   API_TIMEOUT=$(strip "$API_TIMEOUT")
-  url="http://$API_HOST/read?command=$API_CMD&timeout=$API_TIMEOUT"
-  response=$(curl -sk -m "$(( API_TIMEOUT+2 ))" -S "$url" 2>&1)
+  url="http://localhost/read?command=$API_CMD&timeout=$API_TIMEOUT"
+  response=$(curl --unix-socket "$HOST_API_SOCKET" -sk -m "$(( API_TIMEOUT+2 ))" -S "$url" 2>&1)
 
   if [[ "$response" =~ "\"success\"" ]]; then
 
