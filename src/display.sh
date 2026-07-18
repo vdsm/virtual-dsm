@@ -6,10 +6,12 @@ set -Eeuo pipefail
 : "${GPU:="N"}"         # GPU passthrough
 : "${VGA:="virtio"}"    # VGA adaptor
 : "${DISPLAY:="none"}"  # Display type
+: "${LOSSY:="N"}"       # Lossy VNC compression
 : "${RENDERNODE:="/dev/dri/renderD128"}"  # Render node
 
 # Sanitize variables
 VGA=$(strip "$VGA")
+LOSSY=$(strip "$LOSSY")
 DISPLAY=$(strip "$DISPLAY")
 RENDERNODE=$(strip "$RENDERNODE")
 
@@ -18,7 +20,12 @@ CPU_VENDOR=$(lscpu | awk '/Vendor ID/{print $3}')
 if ! enabled "$GPU" || isAmdCpu || [[ "$ARCH" != "amd64" ]]; then
 
   [[ "${DISPLAY,,}" == "none" ]] && VGA="none"
-  DISPLAY_OPTS="-display $DISPLAY -vga $VGA"
+
+  if enabled "$LOSSY" && [[ "${DISPLAY,,}" == vnc=* ]]; then
+    DISPLAY+=",lossy=on"
+  fi
+
+  DISPLAY_OPTS="-display ${DISPLAY} -vga ${VGA}"
   return 0
 
 fi
@@ -27,7 +34,7 @@ msg="Configuring display drivers..."
 html "$msg"
 enabled "$DEBUG" && echo "$msg"
 
-DISPLAY_OPTS="-display egl-headless,rendernode=$RENDERNODE"
+DISPLAY_OPTS="-display egl-headless,rendernode=${RENDERNODE}"
 DISPLAY_OPTS+=" -vga $VGA"
 
 [ ! -d /dev/dri ] && mkdir -m 755 /dev/dri
@@ -49,7 +56,7 @@ if [ ! -c "$RENDERNODE" ]; then
 fi
 
 if [ ! -c "$RENDERNODE" ] || [ ! -r "$RENDERNODE" ] || [ ! -w "$RENDERNODE" ]; then
-  warn "render device '$RENDERNODE' is unavailable or inaccessible."
+  warn "render device '${RENDERNODE}' is unavailable or inaccessible."
 fi
 
 addPackage "xserver-xorg-video-intel" "Intel GPU drivers"
