@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 : "${SHUTDOWN:="Y"}"        # Graceful ACPI shutdown
-: "${TIMEOUT:="115"}"       # QEMU termination timeout
+: "${TIMEOUT:="105"}"       # QEMU termination timeout
 : "${API_TIMEOUT:="90"}"    # External API call timeout
 
 # Configure QEMU for graceful shutdown
