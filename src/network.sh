@@ -1136,6 +1136,19 @@ tableError() {
   return 1
 }
 
+showTableCleanupError() {
+
+  local command="$1"
+  local message="$2"
+
+  enabled "$DEBUG" || return 0
+
+  printf "Failed IP tables cleanup command:\n\n%s\n\n" "$command" >&2
+  [ -n "$message" ] && printf "%s\n\n" "$message" >&2
+
+  return 0
+}
+
 applyTables() {
 
   local ip="$1"
@@ -1259,21 +1272,28 @@ applyTables() {
 
 clearTables() {
 
-  local table="" line=""
-  local rules="" failed="N"
+  local table="" line="" chain=""
+  local rules="" remaining="" message=""
   local dnat_chain="QEMU_DNAT"
   local rule_tag="$dnat_chain"
-  local re="--comment[[:space:]]+\"?$rule_tag\"?([[:space:]]|\$)"
+  local own_rule="--comment[[:space:]]+\"?$rule_tag\"?([[:space:]]|\$)"
+  local remaining_rule="^:${dnat_chain}[[:space:]]|$own_rule"
 
   # Return 2 when the currently selected backend cannot be accessed.
-  # This lets configureTables() distinguish it from an actual rule-cleanup failure.
+  # This lets configureTables() distinguish it from an actual cleanup failure.
   if ! rules=$(iptables-save 2> /dev/null); then
+
+    if enabled "$DEBUG"; then
+      message=$(iptables-save 2>&1 > /dev/null || true)
+      showTableCleanupError "iptables-save" "$message"
+    fi
+
     return 2
   fi
 
   if [ -n "$rules" ]; then
 
-    # Delete every rule tagged with our unique identifier,
+    # Delete tagged rules outside the dedicated DNAT chain,
     # leaving all other rules intact.
     while IFS= read -r line; do
 
@@ -1284,34 +1304,68 @@ clearTables() {
         \*raw ) table="raw" ;;
       esac
 
-      if [[ "$line" == -A* ]] && [[ "$line" =~ $re ]]; then
+      if [[ "$line" == -A* ]] && [[ "$line" =~ $own_rule ]]; then
+
+        chain="${line#-A }"
+        chain="${chain%% *}"
+
+        # Rules inside this chain are removed together by the flush below.
+        if [[ "$table" == "nat" && "$chain" == "$dnat_chain" ]]; then
+          continue
+        fi
+
         line="${line/-A /-D }"
 
         # Parse the quoting produced by iptables-save before deleting the rule.
-        if ! printf '%s\n' "$line" |
-          xargs -r iptables -t "$table" > /dev/null 2>&1; then
-          failed="Y"
+        if ! message=$(
+          printf '%s\n' "$line" |
+            xargs -r iptables -t "$table" 2>&1
+        ); then
+          showTableCleanupError "iptables -t $table $line" "$message"
         fi
+
       fi
 
     done <<< "$rules"
 
   fi
 
-  # Remove the dedicated DNAT chain after deleting its rules and references.
+  # Remove the dedicated DNAT chain after deleting its references.
   if iptables -t nat -S "$dnat_chain" > /dev/null 2>&1; then
 
-    if ! iptables -t nat -F "$dnat_chain" > /dev/null 2>&1; then
-      failed="Y"
+    if ! message=$(iptables -t nat -F "$dnat_chain" 2>&1); then
+      showTableCleanupError "iptables -t nat -F $dnat_chain" "$message"
     fi
 
-    if ! iptables -t nat -X "$dnat_chain" > /dev/null 2>&1; then
-      failed="Y"
+    if ! message=$(iptables -t nat -X "$dnat_chain" 2>&1); then
+      showTableCleanupError "iptables -t nat -X $dnat_chain" "$message"
     fi
 
   fi
 
-  enabled "$failed" && return 1
+  # Base the result on the final ruleset instead of intermediate errors.
+  if ! rules=$(iptables-save 2> /dev/null); then
+
+    if enabled "$DEBUG"; then
+      message=$(iptables-save 2>&1 > /dev/null || true)
+      showTableCleanupError "iptables-save" "$message"
+    fi
+
+    return 1
+  fi
+
+  remaining=$(grep -E -- "$remaining_rule" <<< "$rules" || true)
+
+  if [ -n "$remaining" ]; then
+
+    if enabled "$DEBUG"; then
+      warn "IP tables cleanup left the following rules or chains behind:"
+      echo "$remaining" >&2
+    fi
+
+    return 1
+  fi
+
   return 0
 }
 
