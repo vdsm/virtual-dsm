@@ -1277,7 +1277,7 @@ clearTables() {
   local dnat_chain="QEMU_DNAT"
   local rule_tag="$dnat_chain"
   local own_rule="--comment[[:space:]]+\"?$rule_tag\"?([[:space:]]|\$)"
-  local remaining_rule="^:$dnat_chain[[:space:]]|$own_rule"
+  local remaining_rule="^:${dnat_chain}[[:space:]]|$own_rule"
 
   # Return 2 when the currently selected backend cannot be accessed.
   # This lets configureTables() distinguish it from an actual cleanup failure.
