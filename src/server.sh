@@ -1,15 +1,11 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-: "${COM_PORT:="2210"}"    # Comm port
 : "${WEB_PORT:="5000"}"    # Webserver port
-: "${CHR_PORT:="12345"}"   # Character port
 : "${WSD_PORT:="8004"}"    # Websockets port
 
 # Sanitize port variables
-COM_PORT=$(strip "$COM_PORT")
 WEB_PORT=$(strip "$WEB_PORT")
-CHR_PORT=$(strip "$CHR_PORT")
 WSD_PORT=$(strip "$WSD_PORT")
 
 WEB_PID="/run/nginx.pid"
