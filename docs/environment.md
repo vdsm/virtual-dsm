@@ -70,6 +70,7 @@ An empty default means the variable is unset and its value is determined automat
 | Variable | Default | Description |
 |---|---|---|
 | `DISPLAY` | `none` | Display backend, such as `vnc`, `disabled`, or `none`. |
+| `LOSSY` | `N` | Enables lossy VNC compression to reduce bandwidth usage. |
 | `VGA` | `none` | QEMU video adapter model. |
 | `GPU` | `N` | Enables Intel iGPU acceleration. |
 | `RENDERNODE` | `/dev/dri/renderD128` | Render node used for GPU acceleration. |
