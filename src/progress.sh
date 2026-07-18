@@ -11,8 +11,9 @@ escape() {
   s=${s//</\&lt;}
   s=${s//>/\&gt;}
   s=${s//'"'/\&quot;}
+  s=${s//"'"/\&#39;}
 
-  printf -- %s "$s"
+  printf '%s' "$s"
   return 0
 }
 
