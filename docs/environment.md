@@ -95,6 +95,4 @@ An empty default means the variable is unset and its value is determined automat
 |---|---|---|
 | `DEBUG` | `N` | Enables verbose debug output. |
 | `TRACE` | `N` | Enables shell command tracing. |
-| `COM_PORT` | `2210` | Internal communication port used by the DSM host helper. |
-| `CHR_PORT` | `12345` | Internal character device port used by the DSM host helper. |
 | `HOST_DEBUG` | `N` | Enables debug output for the DSM host helper. |
