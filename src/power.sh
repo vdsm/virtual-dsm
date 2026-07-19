@@ -222,7 +222,7 @@ normalizeTimeout() {
 
   TIMEOUT=$(strip "$TIMEOUT")
   if [[ ! "$TIMEOUT" =~ ^[0-9]+$ ]]; then
-    TIMEOUT=115
+    TIMEOUT=105
   fi
 
   if (( TIMEOUT >= 30 )); then
