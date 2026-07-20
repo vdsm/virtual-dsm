@@ -5,7 +5,9 @@ FROM debian:trixie-slim
 
 ARG TARGETARCH
 ARG TARGETPLATFORM
+
 ARG VERSION_ARG="0.0"
+ARG VERSION_CSTRUCT="4.7"
 ARG VERSION_PASST="2026_07_16"
 
 ARG DEBCONF_NOWARNINGS="yes"
@@ -55,7 +57,7 @@ RUN <<EOF
   apt-get clean
 
   # Install Python dependencies
-  pip3 install --no-cache-dir --break-system-packages --root-user-action=ignore dissect.cstruct
+  pip3 install --no-cache-dir --break-system-packages --root-user-action=ignore "dissect.cstruct==$VERSION_CSTRUCT"
 
   # Configure QEMU
   mkdir -p /etc/qemu
