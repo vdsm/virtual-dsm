@@ -24,7 +24,7 @@ getBytes() {
   local bytes
 
   if [ ! -s "$path" ] && [ ! -d "$path" ]; then
-    echo "0"
+    printf '0\n'
     return 0
   fi
 
@@ -34,7 +34,20 @@ getBytes() {
     bytes=$(du -sb -- "$path" 2>/dev/null | cut -f1) || bytes="0"
   fi
 
-  echo "$bytes"
+  printf '%s\n' "$bytes"
+  return 0
+}
+
+formatSize() {
+
+  local bytes="$1"
+  local size
+
+  size=$(numfmt --to=iec --suffix=B "$bytes" |
+    sed -r 's/([A-Z])/ \1/') ||
+    size="${bytes} bytes"
+
+  printf '%s' "$size"
   return 0
 }
 
@@ -56,17 +69,30 @@ printPercentProgress() {
   return 0
 }
 
+printCurrentSize() {
+
+  local bytes="$1"
+  local size
+
+  size=$(formatSize "$bytes")
+
+  if [[ "$printed" == "Y" ]]; then
+    printf ' → %s' "$size"
+  else
+    printf '%s' "$size"
+  fi
+
+  printed="Y"
+  return 0
+}
+
 printSizeProgress() {
 
   local bytes="$1"
   local size
 
   while (( bytes >= next_bytes )); do
-    size=$(numfmt --to=iec-i --suffix=B "$next_bytes") ||
-      size="${next_bytes} bytes"
-
-    size="${size/.0MiB/MiB}"
-    size="${size/.0GiB/GiB}"
+    size=$(formatSize "$next_bytes")
 
     if [[ "$printed" == "Y" ]]; then
       printf ' → %s' "$size"
@@ -94,19 +120,46 @@ path="$1"
 total="$2"
 body=$(escape "$3")
 output="${4:-}"
-step_bytes="${5:-52428800}"
+step_bytes="${5:-536870912}"
 mode="${6:-apparent}"
 
-if [[ ! "$step_bytes" =~ ^[1-9][0-9]*$ ]]; then
-  echo "Invalid progress interval: $step_bytes" >&2
+if [[ -n "$total" && ! "$total" =~ ^(0|[1-9][0-9]*)$ ]]; then
+  printf 'Invalid total size: %s\n' "$total" >&2
   exit 2
 fi
+
+if [[ ! "$step_bytes" =~ ^[1-9][0-9]*$ ]]; then
+  printf 'Invalid progress interval: %s\n' "$step_bytes" >&2
+  exit 2
+fi
+
+case "$mode" in
+  apparent | allocated ) ;;
+  * )
+    printf 'Invalid progress mode: %s\n' "$mode" >&2
+    exit 2
+    ;;
+esac
+
+case "$output" in
+  "" | log ) ;;
+  * )
+    printf 'Invalid progress output: %s\n' "$output" >&2
+    exit 2
+    ;;
+esac
 
 printed="N"
 next_percent=10
 next_bytes="$step_bytes"
+log_mode="percent"
+
+if [ -z "$total" ] || [[ "$total" == "0" ]]; then
+  log_mode="size"
+fi
 
 trap finishLogProgress EXIT
+trap 'exit 0' HUP INT QUIT TERM
 
 if [[ "$body" == *"..." ]]; then
   body="<p class=\"loading\">${body::-3}</p>"
@@ -117,29 +170,47 @@ while true; do
   bytes=$(getBytes "$path" "$mode")
 
   if (( bytes > 4096 )); then
-    if [ -z "$total" ] || [[ "$total" == "0" ]] || (( bytes > total )); then
-      size=$(numfmt --to=iec-i --suffix=B "$bytes") ||
-        size="${bytes} bytes"
 
-      size="${size/.0MiB/MiB}"
-      size="${size/.0GiB/GiB}"
+    write_html="Y"
+
+    if [ -z "$total" ] || [[ "$total" == "0" ]] || (( bytes > total )); then
+      size=$(formatSize "$bytes")
 
       if [[ "$output" == "log" ]]; then
-        printSizeProgress "$bytes"
+        if [[ "$log_mode" == "percent" ]]; then
+          printCurrentSize "$bytes"
+          next_bytes=$(((bytes / step_bytes + 1) * step_bytes))
+          log_mode="size"
+        else
+          printSizeProgress "$bytes"
+        fi
       fi
     else
+      # Truncate to one decimal so progress is never reported early.
       progress=$((bytes * 1000 / total))
       (( progress > 1000 )) && progress=1000
 
       percent=$((progress / 10))
-      printf -v size '%d.%d%%' "$((progress / 10))" "$((progress % 10))"
+
+      printf -v size '%d.%d%%' \
+        "$((progress / 10))" \
+        "$((progress % 10))"
 
       if [[ "$output" == "log" ]]; then
-        printPercentProgress "$percent"
+        if [[ "$log_mode" == "size" ]]; then
+          printSizeProgress "$bytes"
+        else
+          printPercentProgress "$percent"
+        fi
       fi
+
+      # Do not update the web viewer until at least 0.1% is reached.
+      (( progress == 0 )) && write_html="N"
     fi
 
-    [[ "$size" != "0.0%" ]] && echo "${body//(\[P\])/($size)}" > "$info"
+    if [[ "$write_html" == "Y" ]]; then
+      printf '%s\n' "${body//(\[P\])/($size)}" > "$info"
+    fi
   fi
 
   sleep 1 & wait $!
