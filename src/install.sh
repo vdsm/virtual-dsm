@@ -168,7 +168,7 @@ else
     OUTPUT="log"
   fi
 
-  /run/progress.sh "$PAT" "$SIZE" "$MSG ([P])..." "$OUTPUT" &
+  /run/progress.sh "$PAT" "$SIZE" "$MSG ([P])..." "$OUTPUT" 52428800 &
 
   {
     LC_ALL=C wget "$URL" -O "$PAT" --no-verbose --no-check-certificate \
