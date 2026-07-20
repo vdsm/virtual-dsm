@@ -20,6 +20,7 @@ escape() {
 getBytes() {
 
   local path="$1"
+  local mode="$2"
   local bytes
 
   if [ ! -s "$path" ] && [ ! -d "$path" ]; then
@@ -27,7 +28,11 @@ getBytes() {
     return 0
   fi
 
-  bytes=$(du -sb "$path" 2>/dev/null | cut -f1) || bytes="0"
+  if [[ "$mode" == "allocated" ]]; then
+    bytes=$(du -sB1 -- "$path" 2>/dev/null | cut -f1) || bytes="0"
+  else
+    bytes=$(du -sb -- "$path" 2>/dev/null | cut -f1) || bytes="0"
+  fi
 
   echo "$bytes"
   return 0
@@ -70,7 +75,7 @@ printSizeProgress() {
     fi
 
     printed="Y"
-    next_bytes=$((next_bytes + 52428800))
+    next_bytes=$((next_bytes + step_bytes))
   done
 
   return 0
@@ -89,10 +94,17 @@ path="$1"
 total="$2"
 body=$(escape "$3")
 output="${4:-}"
+step_bytes="${5:-52428800}"
+mode="${6:-apparent}"
+
+if [[ ! "$step_bytes" =~ ^[1-9][0-9]*$ ]]; then
+  echo "Invalid progress interval: $step_bytes" >&2
+  exit 2
+fi
 
 printed="N"
 next_percent=10
-next_bytes=52428800
+next_bytes="$step_bytes"
 
 trap finishLogProgress EXIT
 
@@ -102,7 +114,7 @@ fi
 
 while true; do
 
-  bytes=$(getBytes "$path")
+  bytes=$(getBytes "$path" "$mode")
 
   if (( bytes > 4096 )); then
     if [ -z "$total" ] || [[ "$total" == "0" ]] || (( bytes > total )); then
