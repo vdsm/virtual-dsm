@@ -116,8 +116,7 @@ waitQemuPid() {
 forceKillQemu() {
 
   local reason="$1"
-  local pid=""
-  local display
+  local pid="" display
 
   ! readQemuPid pid && return 0
   ! isAlive "$pid" && return 0
@@ -146,8 +145,7 @@ cleanupHelpers() {
 startConsole() {
 
   local output="${1:-/dev/tty}"
-  local cnt=0
-  local pid=""
+  local cnt=0 pid=""
 
   rm -f -- "$CONSOLE_SOCKET" "$CONSOLE_PID"
 
@@ -219,8 +217,7 @@ startQemu() {
 
 finish() {
 
-  local reason=$1
-  local failed=0
+  local reason=$1 failed=0
 
   if [ ! -f "$QEMU_END" ] && (( reason != 0 )); then
     failed=1
@@ -249,8 +246,7 @@ finish() {
 sendGuestShutdown() {
 
   local pid="$1"
-  local response
-  local url
+  local response url
 
   # Don't send the powerdown signal because vDSM ignores ACPI signals
   # nc -q 1 -w 1 -U "$QEMU_DIR/monitor.sock" &> /dev/null <<<'system_powerdown' || :
@@ -281,9 +277,7 @@ normalizeTimeout() {
 
   local term_grace=3      # seconds before loop ends to send SIGTERM
   local cleanup_grace=3   # seconds reserved after the loop for cleanup
-  local elapsed
-  local timeout_left
-  local min
+  local elapsed timeout_left
 
   TIMEOUT=$(strip "$TIMEOUT")
   if [[ ! "$TIMEOUT" =~ ^[0-9]+$ ]]; then
@@ -301,7 +295,7 @@ normalizeTimeout() {
   elapsed=$((SECONDS - start))
   timeout_left=$((TIMEOUT - elapsed))
 
-  min=$((term_grace + cleanup_grace + 1))
+  local min=$((term_grace + cleanup_grace + 1))
   (( timeout_left < min )) && timeout_left=$min
 
   wait_until=$((timeout_left - cleanup_grace))
@@ -315,12 +309,11 @@ waitForShutdown() {
   local cnt=0
   local pid="$1"
   local name="$APP"
-  local slp
 
   while (( cnt <= wait_until && SHUTDOWN_SKIP == 0 )); do
 
     sleep 1 &
-    slp=$!
+    local slp=$!
 
     # Stop waiting if the process has exited
     ! isAlive "$pid" && break
@@ -346,8 +339,7 @@ waitForShutdown() {
 graceful_shutdown() {
 
   local sig="$1"
-  local pid=""
-  local code=0
+  local pid="" code=0
 
   [[ $BASHPID != "$TRAP_PID" ]] && return
 
