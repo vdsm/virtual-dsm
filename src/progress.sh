@@ -75,7 +75,7 @@ printSizeProgress() {
     fi
 
     printed="Y"
-    next_bytes=$((next_bytes + 52428800))
+    next_bytes=$((next_bytes + step_bytes))
   done
 
   return 0
@@ -95,10 +95,16 @@ total="$2"
 body=$(escape "$3")
 output="${4:-}"
 mode="${5:-apparent}"
+step_bytes="${6:-52428800}"
+
+if [[ ! "$step_bytes" =~ ^[1-9][0-9]*$ ]]; then
+  echo "Invalid progress interval: $step_bytes" >&2
+  exit 2
+fi
 
 printed="N"
 next_percent=10
-next_bytes=52428800
+next_bytes="$step_bytes"
 
 trap finishLogProgress EXIT
 
