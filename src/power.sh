@@ -277,7 +277,6 @@ normalizeTimeout() {
 
   local term_grace=3      # seconds before loop ends to send SIGTERM
   local cleanup_grace=3   # seconds reserved after the loop for cleanup
-  local elapsed timeout_left
 
   TIMEOUT=$(strip "$TIMEOUT")
   if [[ ! "$TIMEOUT" =~ ^[0-9]+$ ]]; then
@@ -292,8 +291,8 @@ normalizeTimeout() {
     cleanup_grace=4
   fi
 
-  elapsed=$((SECONDS - start))
-  timeout_left=$((TIMEOUT - elapsed))
+  local elapsed=$((SECONDS - start))
+  local timeout_left=$((TIMEOUT - elapsed))
 
   local min=$((term_grace + cleanup_grace + 1))
   (( timeout_left < min )) && timeout_left=$min
