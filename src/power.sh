@@ -15,6 +15,7 @@ SHUTDOWN_SIGNAL=0
 QEMU_END="$QEMU_DIR/qemu.end"
 CONSOLE_PID="$QEMU_DIR/console.pid"
 CONSOLE_SOCKET="$QEMU_DIR/console.sock"
+QEMU_START_PID="$QEMU_DIR/qemu.start.pid"
 
 _trap() {
 
@@ -67,11 +68,48 @@ displayReason() {
 readQemuPid() {
 
   local -n _pid="$1"
+  local file
 
-  if [ ! -s "$QEMU_PID" ] || ! read -r _pid <"$QEMU_PID"; then
-    return 1
-  fi
+  for file in "$QEMU_START_PID" "$QEMU_PID"; do
+    if [ -s "$file" ] && read -r _pid < "$file"; then
+      return 0
+    fi
+  done
 
+  return 1
+}
+
+qemuPidFile() {
+
+  local -n _file="$1"
+
+  _file="$QEMU_PID"
+  [ -s "$QEMU_START_PID" ] && _file="$QEMU_START_PID"
+
+  return 0
+}
+
+waitQemuExit() {
+
+  local timeout="${1:-10}"
+  local file=""
+
+  qemuPidFile file
+  waitPidFile "$file" "$timeout"
+}
+
+waitQemuPid() {
+
+  local -n _pid="$1"
+  local cnt=0 value=""
+
+  while ! readQemuPid value; do
+    sleep 0.02
+    cnt=$((cnt + 1))
+    (( cnt >= 50 )) && return 1
+  done
+
+  _pid="$value"
   return 0
 }
 
@@ -154,6 +192,31 @@ stopConsole() {
   return 0
 }
 
+startQemu() {
+
+  rm -f -- "$QEMU_START_PID"
+
+  (
+    trap '' INT QUIT
+
+    # shellcheck disable=SC2016
+    exec setsid -f -w sh -c '
+      file=$1
+      shift
+
+      "$@" &
+      pid=$!
+      printf "%s\n" "$pid" > "$file" || exit 1
+
+      rc=0
+      wait "$pid" 2>/dev/null || rc=$?
+      exit "$rc"
+    ' sh "$QEMU_START_PID" "$@"
+  ) </dev/null &
+
+  return 0
+}
+
 finish() {
 
   local reason=$1
@@ -168,7 +231,7 @@ finish() {
   forceKillQemu "$reason"
   cleanupHelpers
 
-  if ! waitPidFile "$QEMU_PID" 10; then
+  if ! waitQemuExit 10; then
     warn "Timed out while waiting for $(app) to exit!"
   fi
 
@@ -263,7 +326,7 @@ waitForShutdown() {
     ! isAlive "$pid" && break
 
     # Workaround for stale/zombie QEMU pid file
-    [ ! -s "$QEMU_PID" ] && break
+    [ ! -s "$QEMU_START_PID" ] && [ ! -s "$QEMU_PID" ] && break
 
     if (( cnt == sigterm_at )); then
       info "${name^} is still running, sending SIGTERM... ($cnt/$wait_until)"
@@ -310,8 +373,10 @@ graceful_shutdown() {
   echo && info "Received $sig signal, sending shutdown command..."
 
   if ! readQemuPid pid; then
-    warn "QEMU PID file ($QEMU_PID) does not exist?"
-    finish "$code"
+    if ! interactive || ! waitQemuPid pid; then
+      warn "QEMU PID file does not exist?"
+      finish "$code"
+    fi
   fi
 
   if [ -z "$pid" ] || ! isAlive "$pid"; then
