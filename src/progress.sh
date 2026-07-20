@@ -20,6 +20,7 @@ escape() {
 getBytes() {
 
   local path="$1"
+  local mode="$2"
   local bytes
 
   if [ ! -s "$path" ] && [ ! -d "$path" ]; then
@@ -27,7 +28,11 @@ getBytes() {
     return 0
   fi
 
-  bytes=$(du -sb "$path" 2>/dev/null | cut -f1) || bytes="0"
+  if [[ "$mode" == "allocated" ]]; then
+    bytes=$(du -sB1 -- "$path" 2>/dev/null | cut -f1) || bytes="0"
+  else
+    bytes=$(du -sb -- "$path" 2>/dev/null | cut -f1) || bytes="0"
+  fi
 
   echo "$bytes"
   return 0
@@ -89,6 +94,7 @@ path="$1"
 total="$2"
 body=$(escape "$3")
 output="${4:-}"
+mode="${5:-apparent}"
 
 printed="N"
 next_percent=10
@@ -102,7 +108,7 @@ fi
 
 while true; do
 
-  bytes=$(getBytes "$path")
+  bytes=$(getBytes "$path" "$mode")
 
   if (( bytes > 4096 )); then
     if [ -z "$total" ] || [[ "$total" == "0" ]] || (( bytes > total )); then
