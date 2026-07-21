@@ -8,8 +8,8 @@ An empty default means the variable is unset and its value is determined automat
 
 | Variable | Default | Description |
 |---|---|---|
-| `URL` |  | URL or local path to the DSM `.pat` installation file. Downloads the default Virtual DSM image automatically when unset. |
-| `COUNTRY` |  | Country code used to select the Synology download mirror. Detected automatically when unset. |
+| `URL` |  | URL or local path to a custom `.pat` installation file. |
+| `COUNTRY` |  | Country code used to select the Synology download mirror. |
 | `HOST_MAC` |  | MAC address reported to DSM. |
 | `HOST_MODEL` |  | Synology host model reported to DSM. |
 | `HOST_SERIAL` |  | Synology host serial number reported to DSM. |
@@ -47,14 +47,14 @@ An empty default means the variable is unset and its value is determined automat
 | Variable | Default | Description |
 |---|---|---|
 | `NETWORK` |  | Network mode, such as `nat`, `user`, or `N` to disable networking. |
-| `DHCP` | `N` | Enables macvtap networking so  DSM receives an address from the external LAN through DHCP. |
-| `HOST` | `VirtualDSM` | Hostname assigned to DSM. |
+| `DHCP` | `N` | Enables macvtap networking so DSM receives a DHCP address. |
+| `HOST` |  | Hostname assigned to the machine on the network. |
 | `IP` |  | Overrides the automatically selected guest IPv4 address. |
 | `MAC` |  | Guest network adapter MAC address. |
 | `ADAPTER` | `virtio-net-pci` | QEMU network adapter model. |
 | `DEV` | `eth0` | Container network interface used as the uplink. |
 | `MTU` |  | MTU assigned to the guest network interface. |
-| `MASK` | `255.255.255.0` | IPv4 netmask. |
+| `MASK` | `255.255.255.0` | IPv4 netmask for guest network. |
 | `TAP` | `dsm` | TAP or macvtap interface name. |
 | `BRIDGE` | `docker` | Bridge name used for NAT networking. |
 | `HOST_PORTS` |  | Ports excluded from guest forwarding. |
