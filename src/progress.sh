@@ -21,7 +21,17 @@ getBytes() {
 
   local path="$1"
   local mode="$2"
-  local bytes
+  local bytes="0"
+
+  if [[ "$mode" == "counter" ]]; then
+    if [ -r "$path" ]; then
+      read -r bytes < "$path" || bytes="0"
+    fi
+
+    [[ "$bytes" =~ ^[0-9]+$ ]] || bytes="0"
+    printf '%s\n' "$bytes"
+    return 0
+  fi
 
   if [ ! -s "$path" ] && [ ! -d "$path" ]; then
     printf '0\n'
@@ -134,7 +144,7 @@ if [[ ! "$step_bytes" =~ ^[1-9][0-9]*$ ]]; then
 fi
 
 case "$mode" in
-  apparent | allocated ) ;;
+  apparent | allocated | counter ) ;;
   * )
     printf 'Invalid progress mode: %s\n' "$mode" >&2
     exit 2
