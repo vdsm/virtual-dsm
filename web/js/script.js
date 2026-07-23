@@ -1,15 +1,27 @@
+var timer;
 var request;
 var booting = false;
 var interval = 1000;
+
+function abortRequest() {
+
+    if (!request) {
+        return false;
+    }
+
+    request.onreadystatechange = null;
+    request.abort();
+    request = null;
+
+    return true;
+}
 
 function getInfo() {
 
     var url = "msg.html";
 
     try {
-        if (request) {
-            request.abort();
-        }
+        abortRequest();
 
         if (window.XMLHttpRequest) {
             request = new XMLHttpRequest();
@@ -56,7 +68,10 @@ function processInfo() {
             return true;
         }
 
-        var msg = request.responseText;
+        var response = request;
+        request = null;
+
+        var msg = response.responseText;
         if (msg == null || msg.length == 0) {
 
             if (booting) {
@@ -68,9 +83,9 @@ function processInfo() {
             return false;
         }
 
-        var notFound = (request.status == 404);
+        var notFound = (response.status == 404);
 
-        if (request.status == 200) {
+        if (response.status == 200) {
             if (msg.toLowerCase().indexOf("<html>") !== -1) {
                 notFound = true;
             } else {
@@ -88,7 +103,7 @@ function processInfo() {
             return true;
         }
 
-        setError("Error: Received statuscode " + request.status);
+        setError("Error: Received statuscode " + response.status);
         return false;
 
     } catch (e) {
@@ -157,7 +172,9 @@ function setError(text) {
 }
 
 function schedule() {
-    setTimeout(getInfo, interval);
+
+    clearTimeout(timer);
+    timer = setTimeout(getInfo, interval);
 }
 
 function reload() {
@@ -179,11 +196,27 @@ function connect() {
 
         switch (cmd) {
             case "s":
+
+                var aborted = abortRequest();
+
                 processMsg(msg);
+
+                if (aborted &&
+                    msg.toLowerCase().indexOf("href=") == -1) {
+                    schedule();
+                }
+
                 break;
+
             case "e":
+
+                if (abortRequest()) {
+                    schedule();
+                }
+
                 setError(msg);
                 break;
+
             default:
                 console.warn("Unknown event: " + cmd);
                 break;
