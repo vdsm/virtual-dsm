@@ -202,13 +202,15 @@ printed="N"
 next_percent=10
 next_bytes="$step_bytes"
 log_mode="percent"
+stopping="N"
 
 if [ -z "$total" ] || [[ "$total" == "0" ]]; then
   log_mode="size"
 fi
 
 trap finishProgress EXIT
-trap 'exit 0' HUP INT QUIT TERM
+trap 'exit 0' HUP INT QUIT
+trap 'stopping="Y"' TERM
 
 if [[ "$body" == *"..." ]]; then
   body="<p class=\"loading\">${body::-3}</p>"
@@ -282,5 +284,8 @@ while true; do
     fi
   fi
 
-  sleep 1 & wait $!
+  [[ "$stopping" == "Y" ]] && break
+
+  sleep 1 &
+  wait $! || :
 done
