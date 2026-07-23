@@ -300,6 +300,25 @@ writeFile() {
   return 0
 }
 
+writeAtomic() {
+
+  local path="$1"
+  local content="$2"
+  local tmp="${path}.${BASHPID}.tmp"
+
+  if ! printf '%s\n' "$content" > "$tmp"; then
+    rm -f -- "$tmp"
+    return 1
+  fi
+
+  if ! mv -f -- "$tmp" "$path"; then
+    rm -f -- "$tmp"
+    return 1
+  fi
+
+  return 0
+}
+
 readFile() {
 
   local path="$1"
@@ -411,8 +430,8 @@ html() {
   HTML="${HTML/\[4\]/$footer}"
   HTML="${HTML/\[5\]/$FOOTER2}"
 
-  echo "$HTML" > "$PAGE" || return 1
-  echo "$body" > "$INFO" || return 1
+  writeAtomic "$PAGE" "$HTML" || return 1
+  writeAtomic "$INFO" "$body" || return 1
 
   return 0
 }
