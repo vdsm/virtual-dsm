@@ -153,6 +153,16 @@ printSizeProgress() {
   return 0
 }
 
+stopProgress() {
+
+  if [ -z "$status_file" ]; then
+    exit 0
+  fi
+
+  stopping="Y"
+  return 0
+}
+
 finishProgress() {
 
   rm -f -- "$info_tmp"
@@ -210,7 +220,7 @@ fi
 
 trap finishProgress EXIT
 trap 'exit 0' HUP INT QUIT
-trap 'stopping="Y"' TERM
+trap stopProgress TERM
 
 if [[ "$body" == *"..." ]]; then
   body="<p class=\"loading\">${body::-3}</p>"
@@ -284,7 +294,7 @@ while true; do
     fi
   fi
 
-  [[ "$stopping" == "Y" ]] && break
+  [[ "${stopping:-}" == "Y" ]] && break
 
   sleep 1 &
   wait $! || :
