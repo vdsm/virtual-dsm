@@ -153,6 +153,16 @@ printSizeProgress() {
   return 0
 }
 
+stopProgress() {
+
+  if [ -z "$status_file" ]; then
+    exit 0
+  fi
+
+  stopping="Y"
+  return 0
+}
+
 finishProgress() {
 
   rm -f -- "$info_tmp"
@@ -202,13 +212,15 @@ printed="N"
 next_percent=10
 next_bytes="$step_bytes"
 log_mode="percent"
+stopping="N"
 
 if [ -z "$total" ] || [[ "$total" == "0" ]]; then
   log_mode="size"
 fi
 
 trap finishProgress EXIT
-trap 'exit 0' HUP INT QUIT TERM
+trap 'exit 0' HUP INT QUIT
+trap stopProgress TERM
 
 if [[ "$body" == *"..." ]]; then
   body="<p class=\"loading\">${body::-3}</p>"
@@ -216,6 +228,7 @@ fi
 
 while true; do
 
+  final_pass="${stopping:-}"
   bytes=$(getBytes "$path" "$mode")
   effective_total="$total"
 
@@ -282,5 +295,8 @@ while true; do
     fi
   fi
 
-  sleep 1 & wait $!
+  [[ "$final_pass" == "Y" ]] && break
+
+  sleep 1 &
+  wait $! || :
 done
