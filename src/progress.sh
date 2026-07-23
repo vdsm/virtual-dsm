@@ -228,6 +228,7 @@ fi
 
 while true; do
 
+  final_pass="${stopping:-}"
   bytes=$(getBytes "$path" "$mode")
   effective_total="$total"
 
@@ -294,7 +295,7 @@ while true; do
     fi
   fi
 
-  [[ "${stopping:-}" == "Y" ]] && break
+  [[ "$final_pass" == "Y" ]] && break
 
   sleep 1 &
   wait $! || :
