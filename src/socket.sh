@@ -3,6 +3,8 @@ set -Eeuo pipefail
 
 lastmsg=""
 path="/run/shm/msg.html"
+dir=$(dirname -- "$path")
+name=$(basename -- "$path")
 
 refresh() {
 
@@ -17,15 +19,26 @@ refresh() {
 
   lastmsg="$msg"
   echo "s: $msg"
+
   return 0
 }
 
 refresh
 
-inotifywait -m "$path" |
-  while read -r fp event fn; do
+inotifywait \
+  -m -q \
+  -e close_write,moved_to,delete \
+  --format '%e %f' \
+  "$dir" |
+  while read -r event file; do
+
+    [[ "$file" == "$name" ]] || continue
+
     case "${event,,}" in
-      "modify"* ) refresh ;;
-      "delete_self" ) echo "c: vnc" ;;
-    esac    
+      "delete"* )
+        echo "c: vnc" ;;
+      "close_write"* | "moved_to"* )
+        refresh ;;
+    esac
+
   done
