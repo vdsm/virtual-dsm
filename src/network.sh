@@ -258,7 +258,7 @@ containerID() {
     id=$(< /etc/machine-id)
   fi
 
-  if [ -z "$id" ] && [ -s /proc/sys/kernel/random/boot_id ]; then
+  if [ -z "$id" ] && [ -r /proc/sys/kernel/random/boot_id ]; then
     id=$(< /proc/sys/kernel/random/boot_id)
   fi
 
