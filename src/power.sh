@@ -92,7 +92,7 @@ qemuPidFile() {
 waitQemuExit() {
 
   local timeout="${1:-10}"
-  local file=""
+  local file
 
   qemuPidFile file
   waitPidFile "$file" "$timeout"
@@ -101,7 +101,7 @@ waitQemuExit() {
 waitQemuPid() {
 
   local -n _pid="$1"
-  local cnt=0 value=""
+  local cnt=0 value
 
   while ! readQemuPid value; do
     sleep 0.02
@@ -116,7 +116,7 @@ waitQemuPid() {
 forceKillQemu() {
 
   local reason="$1"
-  local pid="" display
+  local pid display
 
   ! readQemuPid pid && return 0
   ! isAlive "$pid" && return 0
@@ -145,7 +145,7 @@ cleanupHelpers() {
 startConsole() {
 
   local output="${1:-/dev/tty}"
-  local cnt=0 pid=""
+  local cnt=0
 
   rm -f -- "$CONSOLE_SOCKET" "$CONSOLE_PID"
 
@@ -159,7 +159,7 @@ startConsole() {
     exec nc -lU "$CONSOLE_SOCKET" </dev/tty >"$output"
   ) &
 
-  pid=$!
+  local pid="$!"
   echo "$pid" > "$CONSOLE_PID"
 
   while [ ! -S "$CONSOLE_SOCKET" ]; do
@@ -246,14 +246,14 @@ finish() {
 sendGuestShutdown() {
 
   local pid="$1"
-  local response url
+  local response
 
   # Don't send the powerdown signal because vDSM ignores ACPI signals
   # nc -q 1 -w 1 -U "$QEMU_DIR/monitor.sock" &> /dev/null <<<'system_powerdown' || :
 
   # Send shutdown command to guest agent via serial port
   API_TIMEOUT=$(strip "$API_TIMEOUT")
-  url="http://localhost/read?command=$API_CMD&timeout=$API_TIMEOUT"
+  local url="http://localhost/read?command=$API_CMD&timeout=$API_TIMEOUT"
   response=$(curl --unix-socket "$HOST_API_SOCKET" -sk -m "$(( API_TIMEOUT+2 ))" -S "$url" 2>&1)
 
   if [[ "$response" =~ "\"success\"" ]]; then
@@ -338,7 +338,7 @@ waitForShutdown() {
 graceful_shutdown() {
 
   local sig="$1"
-  local pid="" code=0
+  local pid code
 
   [[ $BASHPID != "$TRAP_PID" ]] && return
 
