@@ -9,6 +9,7 @@ cd /run
 . utils.sh      # Load functions
 
 info () { printf "%b%s%b" "\E[1;34m❯ \E[1;36m" "$1" "\E[0m\n" >&2; }
+warn () { printf "%b%s%b" "\E[1;33m❯ " "WARNING: $1" "\E[0m\n" >&2; }
 error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: $1" "\E[0m\n" >&2; }
 
 disabled "$NETWORK" && exit 0
@@ -140,6 +141,21 @@ pollGuestLocation() {
   return 0
 }
 
+checkAddressConflict() {
+
+  local guest_ip="${location%:*}"
+  local container_ip=""
+
+  [ -s "$address" ] && container_ip=$(<"$address")
+  [ -z "$container_ip" ] && return 0
+  [[ "$guest_ip" != "$container_ip" ]] && return 0
+
+  warn "DSM is using the same IP as the container, this will cause connectivity issues."
+  warn "change the container's macvlan IP or assign DSM a different address in your router."
+
+  return 0
+}
+
 writeDhcpPage() {
 
   local title body script html
@@ -196,6 +212,7 @@ exitIfShuttingDown
 location=$(<"$file")
 
 if enabled "$DHCP"; then
+  checkAddressConflict
   writeDhcpPage
 else
   buildStaticMessage
