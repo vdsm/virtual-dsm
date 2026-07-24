@@ -586,7 +586,11 @@ addDisk () {
   space=$(normalizeSize "$diskSpace" "$diskDesc" "$dir")
   dataSize=$(numfmt --from=iec "$space")
 
-  fs=$(stat -f -c %T "$dir")
+  if ! fs=$(stat -f -c %T "$dir"); then
+    error "Failed to determine filesystem type of \"$dir\" !"
+    return 1
+  fi
+
   checkFS "$fs" "$diskFile" "$diskDesc" || exit $?
 
   if ! supportsDirect "$fs"; then
@@ -594,7 +598,7 @@ addDisk () {
     diskCache="writeback"
   fi
 
-  if [ ! -s "$diskFile" ] ; then
+  if [ ! -f "$diskFile" ] || [ ! -s "$diskFile" ]; then
 
     if [[ "${diskFmt,,}" != "raw" ]]; then
       local previousFmt="raw"
@@ -604,13 +608,14 @@ addDisk () {
 
     previousExt=$(fmt2ext "$previousFmt")
 
-    if [ -s "$diskBase.$previousExt" ] ; then
+    if [ -f "$diskBase.$previousExt" ] &&
+      [ -s "$diskBase.$previousExt" ]; then
       convertDisk "$diskBase.$previousExt" "$previousFmt" "$diskFile" "$diskFmt" "$diskBase" "$diskDesc" "$fs" || exit $?
     fi
 
   fi
 
-  if [ -s "$diskFile" ]; then
+  if [ -f "$diskFile" ] && [ -s "$diskFile" ]; then
 
     currentSize=$(getSize "$diskFile") || exit 71
 
