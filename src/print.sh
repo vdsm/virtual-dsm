@@ -37,9 +37,7 @@ exitIfShuttingDown() {
 
 queryGuest() {
 
-  local rc
-
-  { json=$(curl --unix-socket "$socket" -m 20 -sk "$url"); rc=$?; } || :
+  { json=$(curl --unix-socket "$socket" -m 20 -sk "$url"); local rc=$?; } || :
 
   exitIfShuttingDown
 
@@ -55,9 +53,8 @@ readJsonField() {
 
   local query="$1"
   local result
-  local rc
 
-  { result=$(jq -r "$query" <<< "$json"); rc=$?; } || :
+  { result=$(jq -r "$query" <<< "$json"); local rc=$?; } || :
 
   if (( rc != 0 )); then
     error "$jq_err $rc ( $json )"
@@ -75,12 +72,12 @@ readJsonField() {
 
 readGuestStatus() {
 
-  local result msg rc
+  local result msg
 
   result=$(readJsonField '.status') || return 1
 
   if [[ "$result" != "success" ]]; then
-    { msg=$(jq -r '.message // empty' <<< "$json"); rc=$?; } || :
+    { msg=$(jq -r '.message // empty' <<< "$json"); local rc=$?; } || :
 
     if (( rc != 0 )); then
       error "$jq_err $rc ( $json )"
@@ -158,12 +155,12 @@ checkAddressConflict() {
 
 writeDhcpPage() {
 
-  local title body script html
+  local html
 
   msg="http://$location"
-  title="<title>Virtual DSM</title>"
-  body="The location of DSM is <a href='http://$location'>http://$location</a>"
-  script="<script>setTimeout(function(){ window.location.assign('http://$location'); }, 3000);</script>"
+  local title="<title>Virtual DSM</title>"
+  local body="The location of DSM is <a href='http://$location'>http://$location</a>"
+  local script="<script>setTimeout(function(){ window.location.assign('http://$location'); }, 3000);</script>"
 
   html=$(<"$template")
   html="${html/\[1\]/$title}"
@@ -180,11 +177,11 @@ writeDhcpPage() {
 
 buildStaticMessage() {
 
-  local nic ip port
+  local nic ip
 
   nic=$(<"$driver")
   ip=$(<"$address")
-  port="${location##*:}"
+  local port="${location##*:}"
 
   if [[ "${nic,,}" != "macvlan" ]]; then
     msg="port $port"

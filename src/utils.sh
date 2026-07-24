@@ -133,8 +133,7 @@ waitPid() {
 
 waitPidFile() {
 
-  local i=0
-  local pid=""
+  local i=0 pid
   local file="$1"
   local timeout="${2:-10}"
 
@@ -201,7 +200,7 @@ fKill() {
 
 sKill() {
 
-  local pid=""
+  local pid
   local file="$1"
 
   [ ! -s "$file" ] && return 0
@@ -381,8 +380,7 @@ restoreState() {
 
 escape () {
 
-  local s
-  s=${1//&/\&amp;}
+  local s=${1//&/\&amp;}
   s=${s//</\&lt;}
   s=${s//>/\&gt;}
   s=${s//'"'/\&quot;}
@@ -408,7 +406,7 @@ html() {
 
   local title
   local body
-  local script
+  local script="${2:-}"
   local footer
 
   title=$(escape "$APP")
@@ -419,8 +417,6 @@ html() {
   if [[ "$body" == *"..." ]]; then
     body="<p class=\"loading\">${body/.../}</p>"
   fi
-
-  [ -n "${2:-}" ] && script="$2" || script=""
 
   local HTML
   HTML=$(<"$TEMPLATE")
@@ -478,9 +474,9 @@ getCountry() {
 
   local url=$1
   local query=$2
-  local rc json result
+  local json result
 
-  { json=$(curl -m 5 -H "Accept: application/json" -sfk "$url"); rc=$?; } || :
+  { json=$(curl -m 5 -H "Accept: application/json" -sfk "$url"); local rc=$?; } || :
   (( rc != 0 )) && return 0
 
   { result=$(echo "$json" | jq -r "$query" 2> /dev/null); rc=$?; } || :
