@@ -258,7 +258,7 @@ containerID() {
     id=$(< /etc/machine-id)
   fi
 
-  if [ -z "$id" ] && [ -s /proc/sys/kernel/random/boot_id ]; then
+  if [ -z "$id" ] && [ -r /proc/sys/kernel/random/boot_id ]; then
     id=$(< /proc/sys/kernel/random/boot_id)
   fi
 
@@ -661,7 +661,7 @@ getPasst() {
 
 configureVTAP() {
 
-  local msg
+  local msg dev
 
   enabled "$DEBUG" && echo "Configuring MACVTAP networking..."
 
@@ -707,14 +707,34 @@ configureVTAP() {
   done
 
   local TAP_NR MAJOR MINOR
-  TAP_NR=$(</sys/class/net/"$TAP"/ifindex)
+
+  if ! dev=$(cat /sys/devices/virtual/net/"$TAP"/tap*/dev); then
+    error "Failed to determine device numbers for MACVTAP interface \"$TAP\" !"
+    return 1
+  fi
+
+  IFS=: read -r MAJOR MINOR <<< "$dev"
+
+  if [[ ! "$MAJOR" =~ ^[0-9]+$ || ! "$MINOR" =~ ^[0-9]+$ ]]; then
+    error "Failed to parse device numbers for MACVTAP interface \"$TAP\" !"
+    return 1
+  fi
+
+  if (( MAJOR < 1 )); then
+    error "Cannot find: sys/devices/virtual/net/$TAP"
+    return 1
+  fi
+
+  if ! TAP_NR=$(<"/sys/class/net/$TAP/ifindex"); then
+    error "Failed to determine interface index of MACVTAP interface \"$TAP\" !"
+    return 1
+  fi
 
   # Create dev file (there is no udev in container: need to be done manually)
   local TAP_PATH="/dev/tap${TAP_NR}"
-  IFS=: read -r MAJOR MINOR < <(cat /sys/devices/virtual/net/"$TAP"/tap*/dev)
-  (( MAJOR < 1)) && error "Cannot find: sys/devices/virtual/net/$TAP" && return 1
 
-  [[ ! -e "$TAP_PATH" && -e "/dev0/${TAP_PATH##*/}" ]] && ln -s "/dev0/${TAP_PATH##*/}" "$TAP_PATH"
+  [[ ! -e "$TAP_PATH" && -e "/dev0/${TAP_PATH##*/}" ]] &&
+    ln -s "/dev0/${TAP_PATH##*/}" "$TAP_PATH"
 
   if [[ ! -e "$TAP_PATH" ]]; then
     { mknod "$TAP_PATH" c "$MAJOR" "$MINOR"; rc=$?; } || :
