@@ -84,8 +84,7 @@ getMTU() {
 
 minMTU() {
 
-  local mtu=""
-  local min=""
+  local mtu min=""
 
   for mtu in "$@"; do
     [[ -z "$mtu" || "$mtu" == "0" ]] && continue
@@ -124,7 +123,7 @@ gatewayMAC() {
 maskToCIDR() {
 
   local mask="$1"
-  local prefix=""
+  local prefix
 
   if ! command -v ipcalc > /dev/null 2>&1; then
     error "Required command 'ipcalc' is not installed!"
@@ -154,7 +153,7 @@ maskToCIDR() {
 networkCIDR() {
 
   local ip="$1"
-  local network=""
+  local network
 
   network=$(ipcalc -n -b "$ip/$MASK" 2>/dev/null | awk '
     /^Network:/ {
@@ -215,8 +214,7 @@ detectAddresses() {
   IP6=""
 
   if [ -f /proc/net/if_inet6 ] && [[ "$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6 2>/dev/null)" != "1" ]]; then
-    local rc=0
-    { IP6=$(ip -6 addr show dev "$DEV" scope global up); rc=$?; } 2>/dev/null || :
+    { IP6=$(ip -6 addr show dev "$DEV" scope global up); local rc=$?; } 2>/dev/null || :
     (( rc != 0 )) && IP6=""
     [ -n "$IP6" ] && IP6=$(echo "$IP6" | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d' | head -n 1)
   fi
@@ -226,7 +224,7 @@ detectAddresses() {
 
 detectAdapter() {
 
-  local result=""
+  local result
 
   NIC=""
   BUS=""
@@ -252,7 +250,7 @@ detectAdapter() {
 
 containerID() {
 
-  local id=""
+  local id
 
   id=$(hostname -s 2>/dev/null || true)
 
@@ -286,7 +284,7 @@ disableIPv6() {
 subnetInUse() {
 
   local subnet="$1"
-  local broader="" narrower="" routes=""
+  local broader narrower routes
 
   if ! broader=$(ip -4 route show table all match "$subnet" 2>/dev/null); then
     error "Failed to inspect existing routes for subnet $subnet."
@@ -324,15 +322,14 @@ guestIP() {
 natGuestIP() {
 
   local ip="$1"
-  local start="" guest="" subnet=""
-  local second="" third="" rc=""
+  local guest subnet second third
 
   third=$(cut -d. -f3 <<< "$ip")
 
   if [[ "$ip" == "172.30."* ]]; then
-    start="31"
+    local start="31"
   else
-    start="30"
+    local start="30"
   fi
 
   for (( second=start; second<=254; second++ )); do
@@ -342,7 +339,7 @@ natGuestIP() {
     if subnetInUse "$subnet"; then
       continue
     else
-      rc=$?
+      local rc=$?
       (( rc == 1 )) || return 1
     fi
 
@@ -357,7 +354,7 @@ natGuestIP() {
     if subnetInUse "$subnet"; then
       continue
     else
-      rc=$?
+      local rc=$?
       (( rc == 1 )) || return 1
     fi
 
@@ -411,7 +408,7 @@ configureDNS() {
   local host="$4"
   local mask="$5"
   local gateway="$6"
-  local arguments="$DNSMASQ_OPTS" rc
+  local arguments="$DNSMASQ_OPTS"
 
   if ! echo "$gateway" > /run/shm/qemu.gw; then
     error "Failed to write gateway file."
@@ -478,7 +475,7 @@ configureDNS() {
   arguments=$(echo "$arguments" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
   enabled "$DEBUG" && printf "Dnsmasq arguments:\n\n%s\n\n" "${arguments// -/$'\n-'}"
 
-  { $DNSMASQ ${arguments:+ $arguments}; rc=$?; } || :
+  { $DNSMASQ ${arguments:+ $arguments}; local rc=$?; } || :
 
   if (( rc != 0 )); then
 
@@ -501,9 +498,9 @@ configureDNS() {
 
 getHostPorts() {
 
-  local port="" ports=""
-  local num="" mode="${1:-tcp}"
   local list="${HOST_PORTS// /},"
+  local port ports=""
+  local mode="${1:-tcp}"
 
   for port in ${list//,/ }; do
 
@@ -512,14 +509,14 @@ getHostPorts() {
     case "$mode" in
       "tcp" )
         [[ "$port" == *"/udp" ]] && continue
-        num="${port%/tcp}"
+        local num="${port%/tcp}"
         ;;
       "all" )
         if [[ "$port" == *"/udp" ]]; then
-          num="${port%/udp}"
+          local num="${port%/udp}"
           [ -n "$num" ] && ports+="$num/udp,"
         else
-          num="${port%/tcp}"
+          local num="${port%/tcp}"
           [ -n "$num" ] && ports+="$num/tcp,"
         fi
         continue
@@ -545,16 +542,15 @@ getUserPorts() {
   local defaults="22/tcp,5000/tcp,5001/tcp"
   local list="$defaults,${USER_PORTS// /},"
 
-  local num="" ports="" proto=""
-  local userport="" hostport=""
+  local ports=""
+  local userport hostport exclude
 
-  local exclude=""
   exclude=$(getHostPorts "all")
 
   for userport in ${list//,/ }; do
 
-    proto="tcp"
-    num="$userport"
+    local proto="tcp"
+    local num="$userport"
 
     if [[ "$userport" == *"/udp" ]]; then
       proto="udp"
@@ -593,7 +589,7 @@ getUserPorts() {
 getSlirp() {
 
   local ip="$1"
-  local args="" list=""
+  local args="" list
 
   list=$(getUserPorts)
 
@@ -617,8 +613,8 @@ getSlirp() {
 
 getPasst() {
 
-  local args="" list="" port=""
-  local num="" tcp="" udp=""
+  local list port
+  local tcp="" udp="" args=""
   local bind="$UPLINK"
 
   list=$(getUserPorts)
@@ -629,12 +625,12 @@ getPasst() {
 
     if [[ "$port" == *"/udp" ]]; then
 
-      num="${port%/udp}"
+      local num="${port%/udp}"
       [ -n "$num" ] && udp+="$num,"
 
     elif [[ "$port" == *"/tcp" ]]; then
 
-      num="${port%/tcp}"
+      local num="${port%/tcp}"
       [ -n "$num" ] && tcp+="$num,"
 
     else
@@ -665,8 +661,7 @@ getPasst() {
 
 configureVTAP() {
 
-  local msg=""
-  local rc
+  local msg
 
   enabled "$DEBUG" && echo "Configuring MACVTAP networking..."
 
@@ -678,7 +673,7 @@ configureVTAP() {
   fi
 
   # Create a macvtap network for the VM guest
-  { msg=$(ip link add link "$DEV" name "$TAP" address "$MAC" type macvtap mode bridge 2>&1); rc=$?; } || :
+  { msg=$(ip link add link "$DEV" name "$TAP" address "$MAC" type macvtap mode bridge 2>&1); local rc=$?; } || :
 
   case "$msg" in
     "RTNETLINK answers: File exists"* )
@@ -711,11 +706,11 @@ configureVTAP() {
     sleep 2
   done
 
-  local TAP_NR TAP_PATH MAJOR MINOR
+  local TAP_NR MAJOR MINOR
   TAP_NR=$(</sys/class/net/"$TAP"/ifindex)
-  TAP_PATH="/dev/tap${TAP_NR}"
 
   # Create dev file (there is no udev in container: need to be done manually)
+  local TAP_PATH="/dev/tap${TAP_NR}"
   IFS=: read -r MAJOR MINOR < <(cat /sys/devices/virtual/net/"$TAP"/tap*/dev)
   (( MAJOR < 1)) && error "Cannot find: sys/devices/virtual/net/$TAP" && return 1
 
@@ -753,7 +748,7 @@ configureSlirp() {
 
   ip=$(guestIP "$ip" 4)
   local gateway="${ip%.*}.1"
-  local subnet=""
+  local subnet
   subnet=$(networkCIDR "$ip") || return 1
 
   local ipv6="ipv6=off,"
@@ -761,7 +756,7 @@ configureSlirp() {
 
   NET_OPTS="-netdev user,id=hostnet0,ipv4=on,host=$gateway,net=$subnet,dhcpstart=$ip,${ipv6}hostname=$HOST"
 
-  local forward=""
+  local forward
   forward=$(getSlirp "$ip")
   [ -n "$forward" ] && NET_OPTS+=",$forward"
 
@@ -818,7 +813,7 @@ configurePasst() {
   # Pass an explicit MTU to passt.
   PASST_OPTS+=" -m $passt_mtu"
 
-  local forward=""
+  local forward
   forward=$(getPasst)
   [ -n "$forward" ] && PASST_OPTS+="$forward"
 
@@ -854,11 +849,10 @@ configurePasst() {
 
   if ! "$PASST" ${PASST_OPTS:+$PASST_OPTS} >/dev/null 2>&1; then
 
-    local rc=0
     rm -f "$log"
 
     PASST_OPTS="${PASST_OPTS/ -q/}"
-    { "$PASST" ${PASST_OPTS:+$PASST_OPTS}; rc=$?; } || :
+    { "$PASST" ${PASST_OPTS:+$PASST_OPTS}; local rc=$?; } || :
 
     if (( rc != 0 )); then
       [ -f "$log" ] && [ -s "$log" ] && cat "$log"
@@ -889,10 +883,10 @@ configurePasst() {
 createBridge() {
 
   local gateway="$1"
-  local rc msg=""
+  local msg
 
   # Create a bridge with a static IP for the VM guest
-  { msg=$(ip link add dev "$BRIDGE" type bridge 2>&1); rc=$?; } || :
+  { msg=$(ip link add dev "$BRIDGE" type bridge 2>&1); local rc=$?; } || :
 
   if (( rc != 0 )); then
     enabled "$ROOTLESS" && ! enabled "$DEBUG" && return 1
@@ -930,10 +924,10 @@ createBridge() {
 createTap() {
 
   local tuntap="$1"
-  local rc msg=""
+  local msg
 
   # Set tap to the bridge created
-  { msg=$(ip tuntap add dev "$TAP" mode tap 2>&1); rc=$?; } || :
+  { msg=$(ip tuntap add dev "$TAP" mode tap 2>&1); local rc=$?; } || :
 
   if (( rc != 0 )); then
     enabled "$ROOTLESS" && ! enabled "$DEBUG" && return 1
@@ -976,7 +970,7 @@ hasTable() {
 
 getTablesBackend() {
 
-  local version=""
+  local version
   version=$(iptables --version 2>/dev/null || true)
 
   case "$version" in
@@ -989,7 +983,7 @@ getTablesBackend() {
 setTables() {
 
   local mode="$1"
-  local path=""
+  local path
 
   path=$(command -v "iptables-$mode" 2>/dev/null || true)
   [ -z "$path" ] && return 1
@@ -1003,7 +997,7 @@ showRules() {
   local chain="$2"
   local label="$3"
   local rule_tag="$4"
-  local rules=""
+  local rules
   local own_rule="--comment[[:space:]]+\"?$rule_tag\"?([[:space:]]|\$)"
 
   enabled "$DEBUG" || return 0
@@ -1022,7 +1016,7 @@ showRules() {
 
 checkExistingTables() {
 
-  local msg="" rules="" conflicts=""
+  local rules conflicts
   local rule_tag="QEMU_DNAT"
   local own_rule="--comment[[:space:]]+\"?$rule_tag\"?([[:space:]]|\$)"
 
@@ -1040,7 +1034,7 @@ checkExistingTables() {
     <<< "$rules" || true)
 
   if [ -n "$conflicts" ]; then
-    msg="your existing NAT rules may take precedence over VM port forwarding"
+    local msg="your existing NAT rules may take precedence over VM port forwarding"
 
     if enabled "$DEBUG"; then
       warn "${msg}."
@@ -1060,7 +1054,7 @@ checkExistingTables() {
     <<< "$rules" || true)
 
   if [ -n "$conflicts" ]; then
-    msg="your existing firewall rules may block traffic forwarded to or from the VM"
+    local msg="your existing firewall rules may block traffic forwarded to or from the VM"
 
     if enabled "$DEBUG"; then
       warn "${msg}."
@@ -1088,13 +1082,13 @@ runTableRule() {
 
   local silent="$1"
   local result="$2"
-  local rc msg=""
+  local msg
 
   shift 2
 
   printf -v "$result" '%s' ""
 
-  { msg=$("$@" 2>&1); rc=$?; } || :
+  { msg=$("$@" 2>&1); local rc=$?; } || :
   (( rc == 0 )) && return 0
 
   printf -v "$result" '%s' "$msg"
@@ -1154,8 +1148,8 @@ applyTables() {
   local ip="$1"
   local subnet="$2"
   local silent="${3:-N}"
-  local exclude="" port=""
-  local table_error=""
+  local exclude port
+  local table_error
   local dnat_chain="QEMU_DNAT"
   local rule_tag="$dnat_chain"
 
@@ -1283,8 +1277,8 @@ applyTables() {
 
 clearTables() {
 
-  local table="" line="" chain=""
-  local rules="" remaining="" message=""
+  local line
+  local rules remaining message
   local dnat_chain="QEMU_DNAT"
   local rule_tag="$dnat_chain"
   local own_rule="--comment[[:space:]]+\"?$rule_tag\"?([[:space:]]|\$)"
@@ -1309,15 +1303,15 @@ clearTables() {
     while IFS= read -r line; do
 
       case "$line" in
-        \*nat ) table="nat" ;;
-        \*filter ) table="filter" ;;
-        \*mangle ) table="mangle" ;;
-        \*raw ) table="raw" ;;
+        \*nat ) local table="nat" ;;
+        \*filter ) local table="filter" ;;
+        \*mangle ) local table="mangle" ;;
+        \*raw ) local table="raw" ;;
       esac
 
       if [[ "$line" == -A* ]] && [[ "$line" =~ $own_rule ]]; then
 
-        chain="${line#-A }"
+        local chain="${line#-A }"
         chain="${chain%% *}"
 
         # Rules inside this chain are removed together by the flush below.
@@ -1383,7 +1377,7 @@ clearTables() {
 hasTaggedRules() {
 
   local save="$1"
-  local rules=""
+  local rules
   local dnat_chain="QEMU_DNAT"
   local rule_tag="$dnat_chain"
   local own_rule="--comment[[:space:]]+\"?$rule_tag\"?([[:space:]]|\$)"
@@ -1405,9 +1399,8 @@ configureTables() {
 
   local ip="$1"
   local subnet="$2"
-  local preferred=""
-  local alternate=""
-  local alternate_save=""
+  local preferred
+  local alternate_save
   local preferred_clean="N"
   local alternate_dirty="N"
 
@@ -1418,8 +1411,8 @@ configureTables() {
   }
 
   case "$preferred" in
-    "nft" ) alternate="legacy" ;;
-    "legacy" ) alternate="nft" ;;
+    "nft" ) local alternate="legacy" ;;
+    "legacy" ) local alternate="nft" ;;
     * )
       enabled "$ROOTLESS" && ! enabled "$DEBUG" && return 1
       warn "unsupported IP tables backend: $preferred"
@@ -1608,7 +1601,7 @@ configureTables() {
 configureNAT() {
 
   local tuntap="TUN device is missing. $ADD_ERR --device /dev/net/tun"
-  local rc ip subnet msg="" forwarding=""
+  local ip subnet forwarding=""
 
   enabled "$DEBUG" && echo "Configuring NAT networking..."
 
@@ -1616,7 +1609,8 @@ configureNAT() {
   if [ ! -c /dev/net/tun ]; then
     [ ! -d /dev/net ] && mkdir -m 755 /dev/net > /dev/null 2>&1 || :
 
-    { msg=$(mknod /dev/net/tun c 10 200 2>&1); rc=$?; } || :
+    local msg
+    { msg=$(mknod /dev/net/tun c 10 200 2>&1); local rc=$?; } || :
 
     if (( rc == 0 )); then
       chmod 666 /dev/net/tun
@@ -1635,7 +1629,7 @@ configureNAT() {
     forwarding=$(< /proc/sys/net/ipv4/ip_forward)
 
   if [[ "$forwarding" != "1" ]]; then
-    { sysctl -w net.ipv4.ip_forward=1 > /dev/null 2>&1; rc=$?; } || :
+    { sysctl -w net.ipv4.ip_forward=1 > /dev/null 2>&1; local rc=$?; } || :
 
     forwarding=""
     [ -r /proc/sys/net/ipv4/ip_forward ] &&
@@ -1661,7 +1655,7 @@ configureNAT() {
     error "VM subnet $subnet conflicts with an existing route inside the container."
     return 1
   else
-    rc=$?
+    local rc=$?
     (( rc == 1 )) || return 1
   fi
 
@@ -1678,7 +1672,7 @@ configureNAT() {
   NET_OPTS="-netdev tap,id=hostnet0,ifname=$TAP"
 
   if [ -c /dev/vhost-net ]; then
-    { exec 40>>/dev/vhost-net; rc=$?; } 2>/dev/null || :
+    { exec 40>>/dev/vhost-net; local rc=$?; } 2>/dev/null || :
     (( rc == 0 )) && NET_OPTS+=",vhost=on,vhostfd=40"
   fi
 
@@ -1740,7 +1734,7 @@ closeNetwork() {
 checkOS() {
 
   local iface="macvlan"
-  local os="" kernel=""
+  local os="" kernel
 
   kernel=$(uname -a)
 
@@ -1891,14 +1885,12 @@ configureMTU() {
 
 configureMAC() {
 
-  local container=""
-  local file=""
-
+  local container
   container=$(containerID)
 
   if [ -z "$MAC" ]; then
 
-    file="$STORAGE/dsm.mac"
+    local file="$STORAGE/dsm.mac"
 
     if [ -s "$file" ]; then
       if ! MAC=$(readFile "$file"); then
@@ -1941,7 +1933,7 @@ configureMAC() {
 
 showHostInfo() {
 
-  local mtu="" host="" uplink="" prefix=""
+  local mtu host uplink prefix
 
   prefix=$(ip -4 -o address show dev "$DEV" scope global 2>/dev/null |
     awk -v ip="$UPLINK" '
