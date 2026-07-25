@@ -171,6 +171,37 @@ networkCIDR() {
   return 0
 }
 
+upstreamIP() {
+
+  local subnet="$1"
+  local guest="$2"
+  local gateway="$3"
+  local broadcast candidate last
+
+  broadcast=$(ipcalc -n -b "$subnet" 2>/dev/null | awk '
+    /^Broadcast:/ {
+      print $2
+      exit
+    }
+  ')
+
+  if [[ ! "$broadcast" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+    return 1
+  fi
+
+  last="${broadcast##*.}"
+
+  for (( last--; last>=2; last-- )); do
+    candidate="${broadcast%.*}.$last"
+    [[ "$candidate" == "$guest" || "$candidate" == "$gateway" ]] && continue
+
+    echo "$candidate"
+    return 0
+  done
+
+  return 1
+}
+
 detectInterface() {
 
   if [ -n "$DEV" ]; then
@@ -206,9 +237,17 @@ formatAddress() {
   return 0
 }
 
+defaultGateway() {
+
+  ip -4 route list default dev "$1" 2>/dev/null |
+    awk '$1 == "default" { for (i = 1; i < NF; i++) if ($i == "via") { print $(i + 1); exit } }' || :
+
+  return 0
+}
+
 detectAddresses() {
 
-  GATEWAY=$(ip route list dev "$DEV" | awk ' /^default/ {print $3}' | head -n 1)
+  GATEWAY=$(defaultGateway "$DEV")
   { UPLINK=$(ip address show dev "$DEV" | grep inet | awk '/inet / { print $2 }' | cut -f1 -d/ | head -n 1); } 2>/dev/null || :
 
   IP6=""
@@ -408,6 +447,7 @@ configureDNS() {
   local host="$4"
   local mask="$5"
   local gateway="$6"
+  local upstream="${7:-}"
   local arguments="$DNSMASQ_OPTS"
 
   if ! echo "$gateway" > /run/shm/qemu.gw; then
@@ -455,6 +495,11 @@ configureDNS() {
 
   # Add DNS entry for container
   arguments+=" --address=/host.lan/$gateway"
+
+  # Add DNS entry for the upstream gateway.
+  if isNAT && [ -n "$upstream" ]; then
+    arguments+=" --address=/system.lan/$upstream"
+  fi
 
   # Avoid returning IPv6 records when the active network mode is IPv4-only.
   if isNAT || [ -z "$IP6" ]; then
@@ -614,8 +659,8 @@ getSlirp() {
 getPasst() {
 
   local list port
-  local tcp="" udp="" args=""
   local bind="$UPLINK"
+  local tcp="" udp="" args=""
 
   list=$(getUserPorts)
 
@@ -1618,10 +1663,46 @@ configureTables() {
   return 1
 }
 
+addUpstream() {
+
+  local upstream="$1"
+  local table_error
+  local rule_tag="QEMU_DNAT"
+
+  [ -n "$upstream" ] || return 1
+  [ -n "$GATEWAY" ] || return 1
+
+  if ! ip address add "$upstream/32" dev "$BRIDGE"; then
+    if ! enabled "$ROOTLESS" || enabled "$DEBUG"; then
+      warn "failed to add the system.lan address; access through that name will be unavailable."
+    fi
+    return 1
+  fi
+
+  if ! runTableRule "Y" table_error \
+    iptables -t nat -A PREROUTING \
+    -i "$BRIDGE" \
+    -d "$upstream" \
+    -m comment --comment "$rule_tag" \
+    -j DNAT --to-destination "$GATEWAY"; then
+
+    ip address del "$upstream/32" dev "$BRIDGE" > /dev/null 2>&1 || :
+
+    if ! enabled "$ROOTLESS" || enabled "$DEBUG"; then
+      [ -n "$table_error" ] && echo "$table_error" >&2
+      warn "failed to configure system.lan forwarding; access through that name will be unavailable."
+    fi
+
+    return 1
+  fi
+
+  return 0
+}
+
 configureNAT() {
 
   local tuntap="TUN device is missing. $ADD_ERR --device /dev/net/tun"
-  local ip subnet forwarding=""
+  local ip subnet upstream="" forwarding=""
 
   enabled "$DEBUG" && echo "Configuring NAT networking..."
 
@@ -1671,6 +1752,10 @@ configureNAT() {
   local gateway="${ip%.*}.1"
   subnet=$(networkCIDR "$ip") || return 1
 
+  if [ -n "$GATEWAY" ]; then
+    upstream=$(upstreamIP "$subnet" "$ip" "$gateway") || upstream=""
+  fi
+
   if subnetInUse "$subnet"; then
     error "VM subnet $subnet conflicts with an existing route inside the container."
     return 1
@@ -1689,6 +1774,10 @@ configureNAT() {
 
   configureTables "$ip" "$subnet" || return 1
 
+  if [ -n "$upstream" ] && ! addUpstream "$upstream"; then
+    upstream=""
+  fi
+
   NET_OPTS="-netdev tap,id=hostnet0,ifname=$TAP"
 
   if [ -c /dev/vhost-net ]; then
@@ -1698,7 +1787,7 @@ configureNAT() {
 
   NET_OPTS+=",script=no,downscript=no"
 
-  configureDNS "$BRIDGE" "$ip" "$MAC" "$HOST" "$MASK" "$gateway" || return 1
+  configureDNS "$BRIDGE" "$ip" "$MAC" "$HOST" "$MASK" "$gateway" "$upstream" || return 1
 
   IP="$ip"
   return 0
