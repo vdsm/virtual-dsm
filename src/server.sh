@@ -15,7 +15,7 @@ WSD_PID="$QEMU_DIR/websocketd.pid"
 prepareWebFiles() {
 
   cp -r /var/www/* "$QEMU_DIR" || return 1
-  rm -f "$WSD_PID" "$WEB_PID" "$WSD_LOG" || return 1
+  rm -f -- "$WSD_PID" "$WEB_PID" "$WSD_LOG" || return 1
 
   return 0
 }
@@ -60,11 +60,43 @@ configureWebServer() {
   return 0
 }
 
+stopWebServer() {
+
+  local pid
+
+  if [ -s "$WEB_PID" ] && read -r pid < "$WEB_PID" && [ -n "$pid" ]; then
+    pKill "$pid" 2
+
+    if isAlive "$pid"; then
+      kill -9 -- "$pid" 2>/dev/null || :
+    fi
+  fi
+
+  rm -f -- "$WEB_PID"
+  return 0
+}
+
 startWebServer() {
 
   # Start webserver
   nginx -e stderr || return 1
 
+  return 0
+}
+
+stopWebsocketServer() {
+
+  local pid
+
+  if [ -s "$WSD_PID" ] && read -r pid < "$WSD_PID" && [ -n "$pid" ]; then
+    pKill "$pid" 2
+
+    if isAlive "$pid"; then
+      kill -9 -- "$pid" 2>/dev/null || :
+    fi
+  fi
+
+  rm -f -- "$WSD_PID"
   return 0
 }
 
@@ -81,17 +113,23 @@ startWebsocketServer() {
 
   if ! echo "$pid" > "$WSD_PID"; then
     kill "$pid" 2>/dev/null || :
+    rm -f -- "$WSD_PID"
     return 1
   fi
 
-  sleep 0.1
+  local i
+  for (( i = 1; i <= 5; i++ )); do
 
-  if ! isAlive "$pid"; then
-    rm -f "$WSD_PID"
-    [ -s "$WSD_LOG" ] && cat "$WSD_LOG" >&2
-    error "Failed to start websocket server!"
-    return 1
-  fi
+    if ! isAlive "$pid"; then
+      rm -f -- "$WSD_PID"
+      [ -s "$WSD_LOG" ] && cat "$WSD_LOG" >&2
+      error "Failed to start websocket server!"
+      return 1
+    fi
+
+    sleep 0.1
+
+  done
 
   return 0
 }
@@ -104,7 +142,11 @@ disabled "${WEB:-}" && return 0
 
 configureWebServer
 
-startWebServer
-startWebsocketServer
+if startWebServer && startWebsocketServer; then
+  return 0
+fi
 
-return 0
+stopWebsocketServer || :
+stopWebServer || :
+
+return 1
