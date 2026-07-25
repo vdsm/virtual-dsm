@@ -15,7 +15,7 @@ file="/run/shm/dsm.url"
 address="/run/shm/qemu.ip"
 gateway="/run/shm/qemu.gw"
 
-[ ! -s  "$file" ] && echo "DSM has not enabled networking yet..." && exit 1
+[ ! -s  "$file" ] && echo "DSM has not enabled networking yet..." && exit 0
 
 location=$(<"$file")
 
