@@ -18,7 +18,12 @@ readPidFile() {
 
   _pid=$(<"$file")
 
-  [[ "$_pid" =~ ^[1-9][0-9]*$ ]]
+  if [[ ! "$_pid" =~ ^[1-9][0-9]*$ ]]; then
+    _pid=""
+    return 1
+  fi
+
+  return 0
 }
 
 hasFlag() {
