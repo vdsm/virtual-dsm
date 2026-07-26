@@ -64,7 +64,7 @@ stopWebServer() {
 
   local pid
 
-  if [ -s "$WEB_PID" ] && read -r pid < "$WEB_PID" && [ -n "$pid" ]; then
+  if readPidFile pid "$WEB_PID"; then
     pKill "$pid" 2
 
     if isAlive "$pid"; then
