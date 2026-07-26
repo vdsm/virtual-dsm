@@ -73,7 +73,7 @@ startHostBinary() {
     pid=$!
   fi
 
-  echo "$pid" > "$HOST_PID"
+  printf '%s\n' "$pid" > "$HOST_PID"
 
   return 0
 }
@@ -86,7 +86,7 @@ waitForSocket() {
 
   while [ ! -S "$socket" ]; do
 
-    if ! read -r pid < "$HOST_PID" || ! isAlive "$pid"; then
+    if ! readPidFile pid "$HOST_PID" || ! isAlive "$pid"; then
       error "qemu-host exited unexpectedly!"
       exit "$exit_code"
     fi
