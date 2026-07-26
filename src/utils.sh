@@ -7,6 +7,20 @@ info () { printf "%b%s%b" "\E[1;34m❯ \E[1;36m" "${1:-}" "\E[0m\n"; }
 error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: ${1:-}" "\E[0m\n" >&2; }
 warn () { printf "%b%s%b" "\E[1;31m❯ " "Warning: ${1:-}" "\E[0m\n" >&2; }
 
+readPidFile() {
+
+  local -n _pid="$1"
+  local file="$2"
+
+  _pid=""
+
+  [ -s "$file" ] || return 1
+
+  _pid=$(<"$file")
+
+  [[ "$_pid" =~ ^[1-9][0-9]*$ ]]
+}
+
 hasFlag() {
 
   # Match a whitespace-delimited token in /proc/cpuinfo
@@ -137,9 +151,7 @@ waitPidFile() {
   local file="$1"
   local timeout="${2:-10}"
 
-  [ ! -s "$file" ] && return 0
-  ! read -r pid <"$file" && return 0
-  [ -z "$pid" ] && return 0
+  ! readPidFile pid "$file" && return 0
 
   while [ -s "$file" ] && isAlive "$pid"; do
     sleep 0.2
@@ -203,9 +215,7 @@ sKill() {
   local pid
   local file="$1"
 
-  [ ! -s "$file" ] && return 0
-  ! read -r pid <"$file" && return 0
-  [ -z "$pid" ] && return 0
+  ! readPidFile pid "$file" && return 0
 
   if isAlive "$pid"; then
     { kill -15 -- "$pid" || :; } 2>/dev/null

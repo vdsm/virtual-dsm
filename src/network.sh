@@ -449,6 +449,7 @@ configureDNS() {
   local gateway="$6"
   local upstream="${7:-}"
   local arguments="$DNSMASQ_OPTS"
+  local pid
 
   if ! echo "$gateway" > /run/shm/qemu.gw; then
     error "Failed to write gateway file."
@@ -458,7 +459,10 @@ configureDNS() {
   enabled "${DNSMASQ_DISABLE:-}" && return 0
   enabled "$DEBUG" && echo "Starting dnsmasq daemon..."
 
-  [ -s "$DNSMASQ_PID" ] && pKill "$(<"$DNSMASQ_PID")"
+  if readPidFile pid "$DNSMASQ_PID"; then
+    pKill "$pid"
+  fi
+
   rm -f "$DNSMASQ_PID"
 
   if isNAT; then
