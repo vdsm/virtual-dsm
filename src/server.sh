@@ -88,7 +88,7 @@ stopWebsocketServer() {
 
   local pid
 
-  if [ -s "$WSD_PID" ] && read -r pid < "$WSD_PID" && [ -n "$pid" ]; then
+  if readPidFile pid "$WSD_PID"; then
     pKill "$pid" 2
 
     if isAlive "$pid"; then
