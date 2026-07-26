@@ -69,9 +69,11 @@ readQemuPid() {
 
   local -n _pid="$1"
   local file
+  local pid
 
   for file in "$QEMU_START_PID" "$QEMU_PID"; do
-    if [ -s "$file" ] && read -r _pid < "$file"; then
+    if readPidFile pid "$file"; then
+      _pid="$pid"
       return 0
     fi
   done
