@@ -67,18 +67,8 @@ displayReason() {
 
 readQemuPid() {
 
-  local -n _pid="$1"
-  local file
-  local pid
-
-  for file in "$QEMU_START_PID" "$QEMU_PID"; do
-    if readPidFile pid "$file"; then
-      _pid="$pid"
-      return 0
-    fi
-  done
-
-  return 1
+  readPidFile "$1" "$QEMU_START_PID" && return 0
+  readPidFile "$1" "$QEMU_PID"
 }
 
 qemuPidFile() {
@@ -102,16 +92,14 @@ waitQemuExit() {
 
 waitQemuPid() {
 
-  local -n _pid="$1"
-  local cnt=0 value
+  local cnt=0
 
-  while ! readQemuPid value; do
+  while ! readQemuPid "$1"; do
     sleep 0.02
     cnt=$((cnt + 1))
     (( cnt >= 50 )) && return 1
   done
 
-  _pid="$value"
   return 0
 }
 
