@@ -7,6 +7,7 @@ set -Eeuo pipefail
 : "${DISK_FMT:="raw"}"            # Disk file format, 'raw' by default for best performance
 : "${DISK_TYPE:=""}"              # Device type to be used, "sata", "nvme", "blk" or "scsi"
 : "${DISK_FLAGS:=""}"             # Specifies the options for use with the qcow2 disk format
+: "${DISK_OPTIONS:=""}"           # Specifies additional options for the QEMU disk device
 : "${DISK_CACHE:="none"}"         # Caching mode, can be set to 'writeback' for better performance
 : "${DISK_DISCARD:="unmap"}"      # Controls whether unmap (TRIM) commands are passed to the host.
 : "${DISK_ROTATION:="1"}"         # Rotation rate, set to 1 for SSD storage and increase for HDD
@@ -16,6 +17,7 @@ DISK_IO=$(strip "$DISK_IO")
 DISK_FMT=$(strip "$DISK_FMT")
 DISK_TYPE=$(strip "$DISK_TYPE")
 DISK_FLAGS=$(strip "$DISK_FLAGS")
+DISK_OPTIONS=$(strip "$DISK_OPTIONS")
 DISK_CACHE=$(strip "$DISK_CACHE")
 DISK_DISCARD=$(strip "$DISK_DISCARD")
 DISK_ROTATION=$(strip "$DISK_ROTATION")
@@ -508,6 +510,9 @@ createDevice () {
 
   [[ -z "${PCI_BUS:-}" && ( "${MACHINE,,}" == pc || "${MACHINE,,}" == pc-i440fx* ) ]] && bus="pci.0"
 
+  local options=""
+  [ -n "$DISK_OPTIONS" ] && options=",${DISK_OPTIONS#,}"
+
   local bootIndex=""
   local diskId="data$diskIndex"
   [ -n "$diskIndex" ] && bootIndex=",bootindex=$diskIndex"
@@ -520,28 +525,28 @@ createDevice () {
       ;;
     "usb" )
       result+=",if=none \
-      -device usb-storage,drive=${diskId}${bootIndex}${diskSerial}${diskSectors}"
+      -device usb-storage,drive=${diskId}${bootIndex}${diskSerial}${diskSectors}${options}"
       echo "$result"
       ;;
     "nvme" )
       result+=",if=none \
-      -device nvme,drive=${diskId}${bootIndex},serial=deadbeaf${diskIndex}${diskSerial}${diskSectors}"
+      -device nvme,drive=${diskId}${bootIndex},serial=deadbeaf${diskIndex}${diskSerial}${diskSectors}${options}"
       echo "$result"
       ;;
     "ide" | "sata" )
       result+=",if=none \
       -device ich9-ahci,id=ahci${diskIndex},addr=$diskAddress \
-      -device ide-hd,drive=${diskId},bus=ahci$diskIndex.0,rotation_rate=$DISK_ROTATION${bootIndex}${diskSerial}${diskSectors}"
+      -device ide-hd,drive=${diskId},bus=ahci$diskIndex.0,rotation_rate=$DISK_ROTATION${bootIndex}${diskSerial}${diskSectors}${options}"
       echo "$result"
       ;;
     "blk" | "virtio-blk" )
       result+=",if=none \
-      -device virtio-blk-pci,drive=${diskId},bus=$bus,addr=$diskAddress,iothread=io2${bootIndex}${diskSerial}${diskSectors}"
+      -device virtio-blk-pci,drive=${diskId},bus=$bus,addr=$diskAddress,iothread=io2${bootIndex}${diskSerial}${diskSectors}${options}"
       echo "$result"
       ;;
     "scsi" | "virtio-scsi" )
       result+=",if=none \
-      -device virtio-scsi-pci,id=${diskId}b,bus=$bus,addr=$diskAddress,iothread=io2,hotplug=off \
+      -device virtio-scsi-pci,id=${diskId}b,bus=$bus,addr=$diskAddress,iothread=io2,hotplug=off${options} \
       -device scsi-hd,drive=${diskId},bus=${diskId}b.0,channel=0,scsi-id=0,lun=0,rotation_rate=$DISK_ROTATION${bootIndex}${diskSerial}${diskSectors}"
       echo "$result"
       ;;
@@ -768,6 +773,11 @@ fi
 
 if [[ "$DISK_FLAGS" =~ [[:space:]] ]]; then
   error "Invalid DISK_FLAGS value '$DISK_FLAGS', spaces are not allowed."
+  exit 78
+fi
+
+if [[ "$DISK_OPTIONS" =~ [[:space:]] ]]; then
+  error "Invalid DISK_OPTIONS value '$DISK_OPTIONS', spaces are not allowed."
   exit 78
 fi
 
