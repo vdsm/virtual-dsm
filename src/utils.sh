@@ -10,13 +10,11 @@ warn () { printf "%b%s%b" "\E[1;31m❯ " "Warning: ${1:-}" "\E[0m\n" >&2; }
 readPidFile() {
 
   local -n _pid="$1"
-  local file="$2"
-
   _pid=""
 
-  [ -s "$file" ] || return 1
+  [ -s "$2" ] || return 1
 
-  _pid=$(<"$file")
+  _pid=$(<"$2")
 
   if [[ ! "$_pid" =~ ^[1-9][0-9]*$ ]]; then
     _pid=""
