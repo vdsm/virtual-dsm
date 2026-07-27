@@ -71,6 +71,13 @@ function processInfo() {
         var response = request;
         request = null;
 
+        var status = response.status;
+
+        if (status == 502 || status == 503 || status == 504) {
+            schedule();
+            return true;
+        }
+
         var msg = response.responseText;
         if (msg == null || msg.length == 0) {
 
@@ -83,9 +90,9 @@ function processInfo() {
             return false;
         }
 
-        var notFound = (response.status == 404);
+        var notFound = (status == 404);
 
-        if (response.status == 200) {
+        if (status == 200) {
             if (msg.toLowerCase().indexOf("<html>") !== -1) {
                 notFound = true;
             } else {
@@ -103,7 +110,7 @@ function processInfo() {
             return true;
         }
 
-        setError("Error: Received statuscode " + response.status);
+        setError("Error: Received statuscode " + status);
         return false;
 
     } catch (e) {
