@@ -546,8 +546,8 @@ createDevice () {
       ;;
     "scsi" | "virtio-scsi" )
       result+=",if=none \
-      -device virtio-scsi-pci,id=${diskId}b,bus=$bus,addr=$diskAddress,iothread=io2,hotplug=off${options} \
-      -device scsi-hd,drive=${diskId},bus=${diskId}b.0,channel=0,scsi-id=0,lun=0,rotation_rate=$DISK_ROTATION${bootIndex}${diskSerial}${diskSectors}"
+      -device virtio-scsi-pci,id=${diskId}b,bus=$bus,addr=$diskAddress,iothread=io2,hotplug=off \
+      -device scsi-hd,drive=${diskId},bus=${diskId}b.0,channel=0,scsi-id=0,lun=0,rotation_rate=$DISK_ROTATION${bootIndex}${diskSerial}${diskSectors}${options}"
       echo "$result"
       ;;
   esac
