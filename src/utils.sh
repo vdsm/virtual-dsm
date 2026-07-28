@@ -12,9 +12,10 @@ readPidFile() {
   local -n _pid="$1"
   _pid=""
 
-  [ -s "$2" ] || return 1
-
-  _pid=$(<"$2")
+  if ! _pid=$(cat -- "$2" 2>/dev/null); then
+    _pid=""
+    return 1
+  fi
 
   if [[ ! "$_pid" =~ ^[1-9][0-9]*$ ]]; then
     _pid=""
