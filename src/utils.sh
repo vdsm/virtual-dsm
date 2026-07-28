@@ -136,14 +136,13 @@ isAlive() {
 
 waitPid() {
 
-  local i=0
   local pid="$1"
   local timeout="${2:-10}"
+  local deadline=$((SECONDS + timeout))
 
   while [ -n "$pid" ] && isAlive "$pid"; do
+    (( SECONDS >= deadline )) && return 1
     sleep 0.2
-    i=$((i + 1))
-    (( i >= timeout * 5 )) && return 1
   done
 
   return 0
@@ -151,16 +150,16 @@ waitPid() {
 
 waitPidFile() {
 
-  local i=0 pid
+  local pid
   local file="$1"
   local timeout="${2:-10}"
+  local deadline=$((SECONDS + timeout))
 
   ! readPidFile pid "$file" && return 0
 
   while [ -s "$file" ] && isAlive "$pid"; do
+    (( SECONDS >= deadline )) && return 1
     sleep 0.2
-    i=$((i + 1))
-    (( i >= timeout * 5 )) && return 1
   done
 
   rm -f -- "$file"
@@ -183,19 +182,19 @@ pKill() {
 
 fWait() {
 
-  local i=0
   local name="$1"
   local timeout="${2:-10}"
+  local deadline=$((SECONDS + timeout))
 
   [ -z "$name" ] && return 0
 
   while pgrep -f -l "$name" >/dev/null; do
-    sleep 0.2
-    i=$((i + 1))
-    if (( i >= timeout * 5 )); then
+    if (( SECONDS >= deadline )); then
       warn "Timed out while waiting for process: $name"
       break
     fi
+
+    sleep 0.2
   done
 
   return 0

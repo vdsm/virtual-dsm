@@ -82,7 +82,8 @@ waitForSocket() {
 
   local socket="$1"
   local exit_code="$2"
-  local pid cnt=0
+  local timeout=5 pid
+  local deadline=$((SECONDS + timeout))
 
   while [ ! -S "$socket" ]; do
 
@@ -91,14 +92,12 @@ waitForSocket() {
       exit "$exit_code"
     fi
 
-    sleep 0.1
-    cnt=$((cnt + 1))
-
-    if (( cnt > 50 )); then
+    if (( SECONDS >= deadline )); then
       error "Failed to create qemu-host socket: $socket"
       exit "$exit_code"
     fi
 
+    sleep 0.1
   done
 
   return 0
