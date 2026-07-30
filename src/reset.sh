@@ -209,7 +209,7 @@ normalizeRamSize() {
     fi
 
     RAM_SIZE=$(echo "${RAM_SIZE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
-    ! numfmt --from=iec "$RAM_SIZE" &>/dev/null && error "Invalid RAM_SIZE: $RAM_SIZE" && exit 16
+    numfmt --from=iec "$RAM_SIZE" &>/dev/null || { error "Invalid RAM_SIZE: $RAM_SIZE" && exit 16; }
     wanted=$(numfmt --from=iec "$RAM_SIZE")
     [ "$wanted" -lt "$RAM_MINIMUM" ] && error "RAM_SIZE is too low: $RAM_SIZE" && exit 16
 
@@ -254,7 +254,7 @@ checkKvm() {
           fi
           if ! grep -qw "sse4_2" <<< "$flags"; then
             error "Your CPU does not have the SSE4 instruction set that Virtual DSM requires!"
-            ! enabled "$DEBUG" && exit 88
+            enabled "$DEBUG" || exit 88
           fi
         fi
       fi
@@ -275,7 +275,7 @@ checkKvm() {
             error "KVM acceleration is not available $KVM_ERR, this will cause the machine to run about 10 times slower."
             error "See the FAQ for possible causes, or disable acceleration by adding the \"KVM=N\" variable (not recommended)." ;;
         esac
-        ! enabled "$DEBUG" && exit 88
+        enabled "$DEBUG" || exit 88
       fi
     fi
 

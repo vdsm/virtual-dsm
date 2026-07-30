@@ -108,8 +108,8 @@ forceKillQemu() {
   local reason="$1"
   local pid display
 
-  ! readQemuPid pid && return 0
-  ! isAlive "$pid" && return 0
+  readQemuPid pid || return 0
+  isAlive "$pid" || return 0
 
   display=$(displayReason "$reason")
   error "Forcefully terminating $(app), reason: $display..."
@@ -305,7 +305,7 @@ waitForShutdown() {
     local slp=$!
 
     # Stop waiting if the process has exited
-    ! isAlive "$pid" && break
+    isAlive "$pid" || break
 
     # Workaround for stale/zombie QEMU pid file
     [ ! -s "$QEMU_START_PID" ] && [ ! -s "$QEMU_PID" ] && break
@@ -372,7 +372,7 @@ graceful_shutdown() {
   finish "$code"
 }
 
-! enabled "$SHUTDOWN" && return 0
+enabled "$SHUTDOWN" || return 0
 [ -n "${QEMU_TIMEOUT:-}" ] && TIMEOUT="$QEMU_TIMEOUT"
 
 if interactive; then
