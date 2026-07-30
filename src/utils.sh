@@ -155,7 +155,7 @@ waitPidFile() {
   local timeout="${2:-10}"
   local deadline=$((SECONDS + timeout))
 
-  ! readPidFile pid "$file" && return 0
+  readPidFile pid "$file" || return 0
 
   while [ -s "$file" ] && isAlive "$pid"; do
     (( SECONDS >= deadline )) && return 1
@@ -218,7 +218,7 @@ sKill() {
   local pid
   local file="$1"
 
-  ! readPidFile pid "$file" && return 0
+  readPidFile pid "$file" || return 0
 
   if isAlive "$pid"; then
     { kill -15 -- "$pid" || :; } 2>/dev/null
@@ -256,7 +256,7 @@ setOwner() {
   uid=$(stat -c '%u' "$dir") || return 1
   gid=$(stat -c '%g' "$dir") || return 1
 
-  ! chown "$uid:$gid" "$file" && return 1
+  chown "$uid:$gid" "$file" || return 1
 
   return 0
 }
@@ -267,7 +267,7 @@ makeDir() {
   local dir uid gid
 
   [ -d "$path" ] && return 0
-  ! mkdir -p "$path" && return 1
+  mkdir -p "$path" || return 1
 
   dir=$(dirname -- "$path")
 
