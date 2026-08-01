@@ -522,7 +522,7 @@ configureDNS() {
   arguments+=" --log-facility=$log"
 
   arguments=$(echo "$arguments" | sed 's/\t/ /g' | tr -s ' ' | sed 's/^ *//')
-  enabled "$DEBUG" && printf "Dnsmasq arguments:\n\n%s\n\n" "${arguments// -/$'\n-'}"
+  enabled "$DEBUG" && printf "Dnsmasq arguments:\n\n    %s\n\n" "${arguments// -/$'\n    -'}"
 
   { $DNSMASQ ${arguments:+ $arguments}; local rc=$?; } || :
 
