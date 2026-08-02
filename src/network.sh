@@ -413,28 +413,6 @@ kernelAtLeast() {
   (( KERNEL > major || (KERNEL == major && MINOR >= minor) ))
 }
 
-canBindToDevice() {
-
-  local dev="$1"
-  [ -n "$dev" ] || return 1
-
-  kernelAtLeast 5 7 || return 1
-  [ -d "/sys/class/net/$dev" ] || return 1
-  command -v python3 > /dev/null 2>&1 || return 0
-
-  python3 - "$dev" > /dev/null 2>&1 <<'PY'
-import socket
-import sys
-
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-    sock.setsockopt(
-        socket.SOL_SOCKET,
-        socket.SO_BINDTODEVICE,
-        sys.argv[1].encode() + b"\0",
-    )
-PY
-}
-
 # ######################################
 #  DNS / port helpers
 # ######################################
@@ -663,7 +641,6 @@ getSlirp() {
 getPasst() {
 
   local list port
-  local bind="$UPLINK"
   local tcp="" udp="" args=""
 
   list=$(getUserPorts)
@@ -693,12 +670,8 @@ getPasst() {
   tcp="${tcp%,}"
   udp="${udp%,}"
 
-  if canBindToDevice "$DEV"; then
-    bind="%$DEV"
-  fi
-
-  [ -n "$tcp" ] && args+=" -t $bind/$tcp"
-  [ -n "$udp" ] && args+=" -u $bind/$udp"
+  [ -n "$tcp" ] && args+=" -t $tcp"
+  [ -n "$udp" ] && args+=" -u $udp"
 
   echo "$args"
   return 0
