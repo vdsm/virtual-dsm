@@ -405,36 +405,6 @@ natGuestIP() {
   return 1
 }
 
-kernelAtLeast() {
-
-  local major="$1"
-  local minor="${2:-0}"
-
-  (( KERNEL > major || (KERNEL == major && MINOR >= minor) ))
-}
-
-canBindToDevice() {
-
-  local dev="$1"
-  [ -n "$dev" ] || return 1
-
-  kernelAtLeast 5 7 || return 1
-  [ -d "/sys/class/net/$dev" ] || return 1
-  command -v python3 > /dev/null 2>&1 || return 0
-
-  python3 - "$dev" > /dev/null 2>&1 <<'PY'
-import socket
-import sys
-
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-    sock.setsockopt(
-        socket.SOL_SOCKET,
-        socket.SO_BINDTODEVICE,
-        sys.argv[1].encode() + b"\0",
-    )
-PY
-}
-
 # ######################################
 #  DNS / port helpers
 # ######################################
@@ -545,11 +515,12 @@ configureDNS() {
   return 0
 }
 
-getHostPorts() {
+normalizePorts() {
 
-  local list="${HOST_PORTS// /},"
-  local port ports=""
-  local mode="${1:-tcp}"
+  local list="$1"
+  local mode="${2:-tcp}"
+  local port num
+  local ports=""
 
   for port in ${list//,/ }; do
 
@@ -558,31 +529,78 @@ getHostPorts() {
     case "$mode" in
       "tcp" )
         [[ "$port" == *"/udp" ]] && continue
-        local num="${port%/tcp}"
+        num="${port%/tcp}"
+        [ -n "$num" ] && ports+="$num,"
         ;;
       "all" )
         if [[ "$port" == *"/udp" ]]; then
-          local num="${port%/udp}"
+          num="${port%/udp}"
           [ -n "$num" ] && ports+="$num/udp,"
         else
-          local num="${port%/tcp}"
+          num="${port%/tcp}"
           [ -n "$num" ] && ports+="$num/tcp,"
         fi
-        continue
         ;;
       *)
         return 1
         ;;
     esac
 
-    [ -n "$num" ] && ports+="$num,"
-
   done
 
   # Remove duplicates
-  ports=$(echo "${ports//,,/,}," | awk 'BEGIN{RS=ORS=","} !seen[$0]++' | sed 's/,*$//g')
+  echo "${ports//,,/,}," | awk 'BEGIN{RS=ORS=","} !seen[$0]++' | sed 's/,*$//g'
 
-  echo "$ports"
+  return 0
+}
+
+getReservedPorts() {
+
+  local list=""
+  local mode="${1:-tcp}"
+
+  # Reserve the DNS port while the internal dnsmasq resolver is active.
+  if ! enabled "${DNSMASQ_DISABLE:-}" && ! isNAT; then
+    list+="53/tcp,53/udp,"
+  fi
+
+  # WEB_PORT and WSD_PORT are intentionally not reserved. In non-DHCP modes,
+  # closeWeb() releases both before NAT or user-mode forwarding is configured,
+  # allowing WEB_PORT (normally 5000) to be handed over to DSM.
+
+  normalizePorts "$list" "$mode"
+return $?
+}
+
+getCustomHostPorts() {
+
+  local mode="${1:-tcp}"
+  local reserved user port
+  local ports=""
+
+  reserved=$(getReservedPorts "all")
+  user=$(normalizePorts "$HOST_PORTS" "all")
+
+  for port in ${user//,/ }; do
+    [[ ",$reserved," == *",$port,"* ]] && continue
+    ports+="$port,"
+  done
+
+  normalizePorts "$ports" "$mode"
+  return 0
+}
+
+getHostPorts() {
+
+  local mode="${1:-tcp}"
+  local reserved custom
+
+  # Merge internal reservations with user-defined host ports without mutating HOST_PORTS.
+  # User entries already covered by an internal reservation are silently ignored.
+  reserved=$(getReservedPorts "all")
+  custom=$(getCustomHostPorts "all")
+  normalizePorts "$reserved,$custom" "$mode"
+
   return 0
 }
 
@@ -592,8 +610,9 @@ getUserPorts() {
   local list="$defaults,${USER_PORTS// /},"
 
   local ports=""
-  local userport hostport exclude
+  local userport hostport exclude reserved
 
+  reserved=$(getReservedPorts "all")
   exclude=$(getHostPorts "all")
 
   for userport in ${list//,/ }; do
@@ -615,7 +634,9 @@ getUserPorts() {
 
       if [[ "$num/$proto" == "$hostport" ]]; then
 
-        if [[ "$hostport" != "${WEB_PORT:-}/tcp" ]]; then
+        if [[ ",$reserved," == *",$hostport,"* ]]; then
+          warn "Could not assign port $hostport to \"USER_PORTS\" because it is reserved by the container!"
+        elif [[ "$hostport" != "${WEB_PORT:-}/tcp" ]]; then
           warn "Could not assign port $hostport to \"USER_PORTS\" because it is already in \"HOST_PORTS\"!"
         fi
 
@@ -663,7 +684,6 @@ getSlirp() {
 getPasst() {
 
   local list port
-  local bind="$UPLINK"
   local tcp="" udp="" args=""
 
   list=$(getUserPorts)
@@ -693,12 +713,8 @@ getPasst() {
   tcp="${tcp%,}"
   udp="${udp%,}"
 
-  if canBindToDevice "$DEV"; then
-    bind="%$DEV"
-  fi
-
-  [ -n "$tcp" ] && args+=" -t $bind/$tcp"
-  [ -n "$udp" ] && args+=" -u $bind/$udp"
+  [ -n "$tcp" ] && args+=" -t $tcp"
+  [ -n "$udp" ] && args+=" -u $udp"
 
   echo "$args"
   return 0
@@ -1905,7 +1921,10 @@ validateHost() {
 
 validateHostPorts() {
 
-  if isNAT && [[ "${HOST_PORTS,,}" == *"/udp"* ]]; then
+  local custom
+  custom=$(getCustomHostPorts "all")
+
+  if isNAT && [[ "$custom" == *"/udp"* ]]; then
     warn "UDP ports in \"HOST_PORTS\" are not yet implemented for NAT networking."
   fi
 
