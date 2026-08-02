@@ -405,14 +405,6 @@ natGuestIP() {
   return 1
 }
 
-kernelAtLeast() {
-
-  local major="$1"
-  local minor="${2:-0}"
-
-  (( KERNEL > major || (KERNEL == major && MINOR >= minor) ))
-}
-
 # ######################################
 #  DNS / port helpers
 # ######################################
@@ -523,11 +515,12 @@ configureDNS() {
   return 0
 }
 
-getHostPorts() {
+normalizePorts() {
 
-  local list="${HOST_PORTS// /},"
-  local port ports=""
-  local mode="${1:-tcp}"
+  local list="$1"
+  local mode="${2:-tcp}"
+  local port num
+  local ports=""
 
   for port in ${list//,/ }; do
 
@@ -536,31 +529,80 @@ getHostPorts() {
     case "$mode" in
       "tcp" )
         [[ "$port" == *"/udp" ]] && continue
-        local num="${port%/tcp}"
+        num="${port%/tcp}"
+        [ -n "$num" ] && ports+="$num,"
         ;;
       "all" )
         if [[ "$port" == *"/udp" ]]; then
-          local num="${port%/udp}"
+          num="${port%/udp}"
           [ -n "$num" ] && ports+="$num/udp,"
         else
-          local num="${port%/tcp}"
+          num="${port%/tcp}"
           [ -n "$num" ] && ports+="$num/tcp,"
         fi
-        continue
         ;;
       *)
         return 1
         ;;
     esac
 
-    [ -n "$num" ] && ports+="$num,"
-
   done
 
   # Remove duplicates
-  ports=$(echo "${ports//,,/,}," | awk 'BEGIN{RS=ORS=","} !seen[$0]++' | sed 's/,*$//g')
+  echo "${ports//,,/,}," | awk 'BEGIN{RS=ORS=","} !seen[$0]++' | sed 's/,*$//g'
 
-  echo "$ports"
+  return 0
+}
+
+getReservedPorts() {
+
+  local list=""
+  local mode="${1:-tcp}"
+
+  # Reserve the DNS port while the internal dnsmasq resolver is active.
+  if ! enabled "${DNSMASQ_DISABLE:-}"; then
+    list+="53/tcp,53/udp,"
+  fi
+
+  # Reserve every port used by the web server and its internal proxy route.
+  if ! disabled "${WEB:-}"; then
+    [ -n "${WEB_PORT:-}" ] && list+="$WEB_PORT/tcp,"
+    [ -n "${WSD_PORT:-}" ] && list+="$WSD_PORT/tcp,"
+  fi
+
+  normalizePorts "$list" "$mode"
+  return 0
+}
+
+getCustomHostPorts() {
+
+  local mode="${1:-tcp}"
+  local reserved user port
+  local ports=""
+
+  reserved=$(getReservedPorts "all")
+  user=$(normalizePorts "$HOST_PORTS" "all")
+
+  for port in ${user//,/ }; do
+    [[ ",$reserved," == *",$port,"* ]] && continue
+    ports+="$port,"
+  done
+
+  normalizePorts "$ports" "$mode"
+  return 0
+}
+
+getHostPorts() {
+
+  local mode="${1:-tcp}"
+  local reserved custom
+
+  # Merge internal reservations with user-defined host ports without mutating HOST_PORTS.
+  # User entries already covered by an internal reservation are silently ignored.
+  reserved=$(getReservedPorts "all")
+  custom=$(getCustomHostPorts "all")
+  normalizePorts "$reserved,$custom" "$mode"
+
   return 0
 }
 
@@ -570,8 +612,9 @@ getUserPorts() {
   local list="$defaults,${USER_PORTS// /},"
 
   local ports=""
-  local userport hostport exclude
+  local userport hostport exclude reserved
 
+  reserved=$(getReservedPorts "all")
   exclude=$(getHostPorts "all")
 
   for userport in ${list//,/ }; do
@@ -593,7 +636,11 @@ getUserPorts() {
 
       if [[ "$num/$proto" == "$hostport" ]]; then
 
-        if [[ "$hostport" != "${WEB_PORT:-}/tcp" ]]; then
+        if [[ ",$reserved," == *",$hostport,"* ]]; then
+          if [[ "$hostport" != "${WEB_PORT:-}/tcp" ]]; then
+            warn "Could not assign port $hostport to \"USER_PORTS\" because it is reserved by the container!"
+          fi
+        else
           warn "Could not assign port $hostport to \"USER_PORTS\" because it is already in \"HOST_PORTS\"!"
         fi
 
@@ -1878,7 +1925,10 @@ validateHost() {
 
 validateHostPorts() {
 
-  if isNAT && [[ "${HOST_PORTS,,}" == *"/udp"* ]]; then
+  local custom
+  custom=$(getCustomHostPorts "all")
+
+  if isNAT && [[ "$custom" == *"/udp"* ]]; then
     warn "UDP ports in \"HOST_PORTS\" are not yet implemented for NAT networking."
   fi
 
