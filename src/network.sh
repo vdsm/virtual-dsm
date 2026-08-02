@@ -564,11 +564,9 @@ getReservedPorts() {
     list+="53/tcp,53/udp,"
   fi
 
-  # Reserve every port used by the web server and its internal proxy route.
-  if ! disabled "${WEB:-}"; then
-    [ -n "${WEB_PORT:-}" ] && list+="$WEB_PORT/tcp,"
-    [ -n "${WSD_PORT:-}" ] && list+="$WSD_PORT/tcp,"
-  fi
+  # WEB_PORT and WSD_PORT are intentionally not reserved. In non-DHCP modes,
+  # closeWeb() releases both before NAT or user-mode forwarding is configured,
+  # allowing WEB_PORT (normally 5000) to be handed over to DSM.
 
   normalizePorts "$list" "$mode"
   return 0
@@ -637,10 +635,8 @@ getUserPorts() {
       if [[ "$num/$proto" == "$hostport" ]]; then
 
         if [[ ",$reserved," == *",$hostport,"* ]]; then
-          if [[ "$hostport" != "${WEB_PORT:-}/tcp" ]]; then
-            warn "Could not assign port $hostport to \"USER_PORTS\" because it is reserved by the container!"
-          fi
-        else
+          warn "Could not assign port $hostport to \"USER_PORTS\" because it is reserved by the container!"
+        elif [[ "$hostport" != "${WEB_PORT:-}/tcp" ]]; then
           warn "Could not assign port $hostport to \"USER_PORTS\" because it is already in \"HOST_PORTS\"!"
         fi
 
