@@ -43,6 +43,8 @@ detectRootless() {
 
   local uid_map
 
+  # A full identity UID map indicates a rootful container; any remapping is
+  # treated as rootless even though the process itself runs as UID 0.
   uid_map=$(awk '{$1=$1; print}' /proc/self/uid_map 2>/dev/null || true)
 
   if [[ "$uid_map" == "0 0 4294967295" ]]; then
@@ -66,6 +68,8 @@ checkPrivileged() {
   last_cap=$(cat /proc/sys/kernel/cap_last_cap)
 
   # Calculate the maximum capability value
+  # Compare the bounding set with every capability supported by this kernel;
+  # checking only a few known capabilities would misclassify newer kernels.
   local max_cap=$(((1 << (last_cap + 1)) - 1))
 
   if [ "$cap_bnd" -eq "$max_cap" ]; then
@@ -96,6 +100,8 @@ checkStorage() {
 
   # Check system
 
+  # Runtime sockets, pidfiles, and status files live in shared memory so they
+  # are fast, ephemeral, and visible to helper processes.
   QEMU_DIR="/run/shm"
 
   if [ ! -d "/dev/shm" ]; then
@@ -141,6 +147,8 @@ checkFilesystem() {
 finiteMemoryLimit() {
 
   local limit="$1"
+  # cgroup v1 commonly reports an enormous sentinel instead of an unlimited
+  # marker; compare as decimal text to avoid shell integer overflow.
   local sentinel="4611686018427387904"
   local i
 
@@ -179,6 +187,8 @@ getMemoryInfo() {
     current=$(< /sys/fs/cgroup/memory/memory.usage_in_bytes)
   fi
 
+  # Use the tighter of host availability and the container's remaining cgroup
+  # allowance so RAM sizing works in both limited and unlimited containers.
   if finiteMemoryLimit "$limit" && [[ "$current" =~ ^[0-9]+$ ]]; then
     (( limit < RAM_TOTAL )) && RAM_TOTAL="$limit"
 
@@ -204,6 +214,8 @@ normalizeRamSize() {
 
   if [[ "${RAM_SIZE,,}" != "max" && "${RAM_SIZE,,}" != "half" ]]; then
 
+    # Preserve the historical shorthand: small bare numbers mean GiB, while
+    # values of 130 or more are interpreted as MiB.
     if [ -z "${RAM_SIZE//[0-9. ]}" ]; then
       [ "${RAM_SIZE%%.*}" -lt "130" ] && RAM_SIZE="${RAM_SIZE}G" || RAM_SIZE="${RAM_SIZE}M"
     fi
@@ -231,6 +243,8 @@ checkKvm() {
   if disabled "$KVM"; then
     warn "KVM acceleration is disabled, this will cause the machine to run about 10 times slower!"
   else
+    # KVM accelerates only matching host and guest instruction sets; cross-
+    # architecture execution must fall back to software emulation.
     if [[ "${ARCH,,}" != "$TARGET" ]]; then
       KVM="N"
       warn "your CPU architecture is ${ARCH^^} and cannot provide KVM acceleration for ${PLATFORM^^} instructions, so the machine will run about 10 times slower."
@@ -344,6 +358,8 @@ echo
 
 checkKvm
 
+# Runtime state is intentionally discarded at each container start; persistent
+# machine and disk identity lives under STORAGE instead.
 # Cleanup files
 rm -f "$QEMU_DIR"/dsm.url
 rm -f "$QEMU_DIR"/{qemu.*,*.{pid,sock,pipe}}

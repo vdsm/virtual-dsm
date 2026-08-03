@@ -15,12 +15,16 @@ file="/run/shm/dsm.url"
 address="/run/shm/qemu.ip"
 gateway="/run/shm/qemu.gw"
 
+# dsm.url is written only after the guest agent reports both the DSM
+# address and its configured HTTP port.
 [ ! -s  "$file" ] && echo "DSM has not enabled networking yet..." && exit 0
 
 location=$(<"$file")
 
 if ! curl -m 20 -ILfSs "http://$location/" > /dev/null; then
 
+  # In DHCP mode the firewall must allow the container address; with port
+  # forwarding it must allow the internal gateway used to reach the guest.
   if enabled "$DHCP"; then
     ip=$(<"$address")
     echo "Failed to reach DSM at http://$location"

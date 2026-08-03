@@ -17,6 +17,8 @@ readPidFile() {
     return 1
   fi
 
+  # Reject empty, zero, or nonnumeric pidfiles so cleanup can never signal an
+  # unintended process group.
   if [[ ! "$_pid" =~ ^[1-9][0-9]*$ ]]; then
     _pid=""
     return 1
@@ -49,6 +51,8 @@ isAmdCpu() {
 
 interactive() {
 
+  # A TTY on stdin is insufficient when /dev/tty is unavailable; require both
+  # before enabling interactive console handling.
   [ -t 0 ] && : 2>/dev/null </dev/tty >/dev/tty
 
 }
@@ -252,6 +256,8 @@ setOwner() {
 
   [ ! -f "$file" ] && return 1
 
+  # Match generated files to the owner of their bind-mounted parent directory
+  # instead of assuming a fixed container or host UID.
   dir=$(dirname -- "$file")
   uid=$(stat -c '%u' "$dir") || return 1
   gid=$(stat -c '%g' "$dir") || return 1
@@ -316,6 +322,8 @@ writeAtomic() {
 
   local path="$1"
   local content="$2"
+  # Use a per-process temporary file and rename so readers see either the old
+  # complete value or the new complete value.
   local tmp="${path}.${BASHPID}.tmp"
 
   if ! printf '%s\n' "$content" > "$tmp"; then
@@ -380,6 +388,8 @@ restoreState() {
   local prefix="${4:-$PROCESS}"
   local value
 
+  # Persistent state fills only unset variables unless force is requested,
+  # preserving explicit environment overrides.
   if ! enabled "$force"; then
     [ -z "${!var:-}" ] || return 0
   fi
@@ -439,6 +449,8 @@ html() {
   HTML="${HTML/\[4\]/$footer}"
   HTML="${HTML/\[5\]/$FOOTER2}"
 
+  # Publish both the full page and websocket fragment atomically because nginx
+  # and websocketd may read them concurrently.
   writeAtomic "$PAGE" "$HTML" || return 1
   writeAtomic "$INFO" "$body" || return 1
 
@@ -512,6 +524,8 @@ setCountry() {
   [[ "${TZ,,}" == "asia/shanghai" ]] && COUNTRY="CN"
   [[ "${TZ,,}" == "asia/chongqing" ]] && COUNTRY="CN"
 
+  # Country detection is best-effort and tries independent services in order;
+  # failure leaves mirror selection at its global default.
   [ -z "$COUNTRY" ] && getCountry "https://api.ipapi.is" ".location.country_code"
   [ -z "$COUNTRY" ] && getCountry "https://ifconfig.co/json" ".country_iso"
   [ -z "$COUNTRY" ] && getCountry "https://api.ip2location.io" ".country_code"
@@ -536,6 +550,8 @@ addPackage() {
 
   [ -z "$COUNTRY" ] && setCountry
 
+  # Use a mainland mirror only for on-demand package installation, avoiding
+  # slow or inaccessible Debian endpoints in that region.
   if [[ "${COUNTRY^^}" == "CN" ]]; then
     sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debian.sources
   fi

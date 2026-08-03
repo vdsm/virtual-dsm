@@ -37,6 +37,8 @@ exitIfShuttingDown() {
 
 queryGuest() {
 
+  # Query DSM through the qemu-host sidecar rather than the guest network,
+  # which may not be configured yet.
   { json=$(curl --unix-socket "$socket" -m 20 -sk "$url"); local rc=$?; } || :
 
   exitIfShuttingDown
@@ -116,6 +118,8 @@ writeDsmLocation() {
 
 pollGuestLocation() {
 
+  # Keep polling until the guest reports a usable address, but stop promptly
+  # when container shutdown begins.
   while [ ! -s "$file" ]; do
 
     # Check if not shutting down
@@ -183,6 +187,8 @@ buildStaticMessage() {
   ip=$(<"$address")
   local port="${location##*:}"
 
+  # NAT and user-mode networking are reached through a forwarded host port;
+  # macvlan exposes DSM directly on the container-facing LAN address.
   if [[ "${nic,,}" != "macvlan" ]]; then
     msg="port $port"
   else

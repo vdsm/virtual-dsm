@@ -21,6 +21,8 @@ checkConfiguredMemory() {
 
   if (( (wanted + RAM_SPARE) > RAM_AVAIL )); then
     msg="Your configured RAM_SIZE of ${RAM_SIZE/G/ GB} is too high for the $avail_mem of free memory available,"
+    # ZFS ARC can release memory under pressure, so current free-memory checks
+    # are advisory rather than a reason to reduce the requested guest RAM.
     if [[ "${FS,,}" == "zfs" ]]; then
       info "$msg but since ZFS is active this will be ignored."
     else
@@ -48,6 +50,8 @@ configureHalfMemory() {
     return 0
   fi
 
+  # half uses half of currently available memory only when that still leaves
+  # the host reserve; otherwise it falls through to the max calculation.
   if (( (RAM_AVAIL / 2) > RAM_SPARE )); then
     wanted=$(( (RAM_AVAIL / 2) / 1048577 ))
     RAM_SIZE="${wanted}M"
@@ -66,6 +70,8 @@ configureMaxMemory() {
     return 0
   fi
 
+  # max normally leaves multiple reserve units for the container and host,
+  # but scales that margin down on memory-constrained systems.
   if (( RAM_AVAIL < (RAM_SPARE * 2) )); then
 
     wanted=$(( RAM_AVAIL / 2 ))

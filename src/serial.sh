@@ -42,6 +42,8 @@ validateHostMac() {
 
 buildHostArguments() {
 
+  # qemu-host is a sidecar that bridges DSM's proprietary serial agent to
+  # Unix sockets used by shutdown and post-boot discovery helpers.
   HOST_ARGS=()
   HOST_ARGS+=("-cpu=$CPU_CORES")
   HOST_ARGS+=("-cpu_arch=$HOST_CPU")
@@ -60,6 +62,8 @@ startHostBinary() {
 
   local pid
 
+  # Remove stale sockets and pid state before starting the sidecar; a Unix
+  # socket path cannot be rebound while an old filesystem entry remains.
   rm -f -- "$HOST_PID" "$HOST_API_SOCKET" "$HOST_AGENT_SOCKET" || return 1
 
   if enabled "$HOST_DEBUG"; then
@@ -85,6 +89,8 @@ waitForSocket() {
   local timeout=5 pid
   local deadline=$((SECONDS + timeout))
 
+  # Do not start QEMU until both sidecar sockets are ready; otherwise the
+  # VirtIO serial channel or API client may race initial creation.
   while [ ! -S "$socket" ]; do
 
     if ! readPidFile pid "$HOST_PID" || ! isAlive "$pid"; then
@@ -105,6 +111,8 @@ waitForSocket() {
 
 configureSerialPorts() {
 
+  # Managed interactive mode separates the console and QEMU monitor into
+  # reconnecting sockets; other runs keep the simple combined stdio monitor.
   if enabled "${SHUTDOWN:-Y}" && interactive; then
 
     CONSOLE_SOCKET="$QEMU_DIR/console.sock"

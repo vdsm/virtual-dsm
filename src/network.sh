@@ -371,6 +371,8 @@ natGuestIP() {
     local start="30"
   fi
 
+  # Scan adjacent 172.30/31 through 172.254 subnets to avoid Docker routes
+  # while retaining the original third octet and guest host number.
   for (( second=start; second<=254; second++ )); do
     guest=$(guestIP "172.$second.$third.0" 2)
     subnet=$(networkCIDR "$guest") || return 1
@@ -606,6 +608,8 @@ getHostPorts() {
 
 getUserPorts() {
 
+  # User-mode networking forwards DSM management and SSH ports by default;
+  # internal container reservations and HOST_PORTS are removed below.
   local defaults="22/tcp,5000/tcp,5001/tcp"
   local list="$defaults,${USER_PORTS// /},"
 
@@ -2241,6 +2245,8 @@ else
     if ! configureNAT; then
 
       closeInterfaces
+      # NAT setup failure is recoverable: tear down partial interfaces and
+      # continue with the default user-mode backend.
       NETWORK="user"
 
       if ! enabled "$ROOTLESS" || enabled "$DEBUG"; then
@@ -2288,6 +2294,8 @@ else
 
 fi
 
+# Suppress the adapter option ROM because firmware network boot is unused and
+# would otherwise alter boot order and startup timing.
 NET_OPTS+=" -device $ADAPTER,id=net0,netdev=hostnet0,romfile=,mac=$MAC"
 
 if [[ "$GUEST_MTU" != "0" && "$GUEST_MTU" != "1500" ]]; then
@@ -2298,6 +2306,8 @@ if [[ "$GUEST_MTU" != "0" && "$GUEST_MTU" != "1500" ]]; then
   fi
 fi
 
+# Publish the container address and detected driver for the healthcheck and
+# post-boot login-message helper.
 if ! echo "$UPLINK" > "$QEMU_DIR"/qemu.ip; then
   error "Failed to write QEMU IP file!"
   exit 24

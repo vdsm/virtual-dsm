@@ -6,6 +6,8 @@ DEV_OPTS=""
 
 configureProcessor() {
 
+  # Expose one thread per core in a single socket; DSM licensing and topology
+  # reporting are more predictable with this fixed layout.
   CPU_OPTS="-cpu $CPU_FLAGS"
   CPU_OPTS+=" -smp $CPU_CORES,sockets=1,dies=1,cores=$CPU_CORES,threads=1"
 
@@ -29,6 +31,8 @@ configureMonitor() {
 
 configureMachine() {
 
+  # Disable firmware and chipset features that Virtual DSM does not use and
+  # that can introduce extra devices or timing differences.
   MAC_OPTS="-machine type=$MACHINE,smm=off,usb=off"
   MAC_OPTS+=",vmport=off,dump-guest-core=off,hpet=off${KVM_OPTS}"
 
@@ -47,6 +51,8 @@ configureVirtioDevices() {
 buildArguments() {
 
   ARGS="$DEF_OPTS $CPU_OPTS $RAM_OPTS $MAC_OPTS $DISPLAY_OPTS $MON_OPTS $SERIAL_OPTS $NET_OPTS $DISK_OPTS $DEV_OPTS $ARGUMENTS"
+  # Collapse whitespace after optional argument groups are assembled so empty
+  # features cannot leave malformed spacing in the final QEMU command.
   ARGS=$(echo "$ARGS" | sed 's/\t/ /g' | tr -s ' ')
 
   return 0

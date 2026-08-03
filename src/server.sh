@@ -35,6 +35,8 @@ configureWebPorts() {
 
 configureIpv6Listen() {
 
+  # Use one dual-stack listener when IPv6 is active, avoiding separate IPv4
+  # and IPv6 sockets that can conflict on the same port.
   if [ -f /proc/net/if_inet6 ] && [[ "$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6 2>/dev/null)" != "1" ]]; then
 
     if ! sed -i \
@@ -67,6 +69,8 @@ stopWebServer() {
   if readPidFile pid "$WEB_PID"; then
     pKill "$pid" 2
 
+    # Escalate only after the normal termination grace period; stale nginx
+    # processes would otherwise keep the configured web port occupied.
     if isAlive "$pid"; then
       kill -9 -- "$pid" 2>/dev/null || :
     fi
@@ -117,6 +121,8 @@ startWebsocketServer() {
     return 1
   fi
 
+  # Keep the sidecar alive briefly before accepting startup as successful,
+  # surfacing immediate bind or script failures with its captured log.
   local i
   for (( i = 1; i <= 5; i++ )); do
 
