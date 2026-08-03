@@ -66,6 +66,8 @@ trimSpaces() {
 
 removeCpuArgument() {
 
+  # CPU configuration has dedicated variables. Remove raw -cpu arguments so
+  # option ordering cannot silently override the validated model and flags.
   local args=" ${ARGUMENTS:-} "
 
   while [[ "$args" =~ [[:space:]]-cpu([[:space:]][^[:space:]]+|=[^[:space:]]+)? ]]; do
@@ -94,6 +96,8 @@ configureKvmCpuModel() {
 
 appendKvmInvtscFeature() {
 
+  # invtsc is safe only when the active accelerator can scale the host TSC;
+  # AMD and Intel expose that capability through different host flags.
   if hasFlag "svm"; then
 
     # AMD processor
@@ -131,6 +135,8 @@ configureTcgCpuModel() {
     return 0
   fi
 
+  # TCG uses the broad max model on native x86, but qemu64 is the compatible
+  # cross-architecture fallback.
   if [[ "$ARCH" == "amd64" ]]; then
     CPU_MODEL="max"
     CPU_FEATURES+=",migratable=no"
@@ -158,6 +164,8 @@ configureTcg() {
 
 composeCpuFlags() {
 
+  # Compose one -cpu value in precedence order: model, required features,
+  # then user-provided overrides.
   CPU_FLAGS="${CPU_MODEL}${CPU_FEATURES:+,$CPU_FEATURES}${CPU_FLAGS:+,$CPU_FLAGS}"
 
   return 0
@@ -170,6 +178,8 @@ configureHostCpuName() {
   fi
 
   if [ -n "$HOST_CPU" ]; then
+    # qemu-host expects a comma-separated CPU description with empty family
+    # and suffix fields, not QEMU's -cpu syntax.
     HOST_CPU="${HOST_CPU%%,*},,"
   else
     HOST_CPU="QEMU, Virtual CPU,"

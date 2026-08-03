@@ -25,6 +25,8 @@ DISK_ROTATION=$(strip "$DISK_ROTATION")
 BOOT="$STORAGE/$BASE.boot.img"
 SYSTEM="$STORAGE/$BASE.system.img"
 
+# The boot and system images are installation artifacts, not optional data
+# disks, and must exist before any user storage is attached.
 [ ! -s "$BOOT" ] && error "Virtual DSM boot-image does not exist ($BOOT)" && exit 81
 [ ! -s "$SYSTEM" ] && error "Virtual DSM system-image does not exist ($SYSTEM)" && exit 82
 
@@ -127,6 +129,8 @@ allocateRaw() {
     return $?
   fi
 
+  # Prefer real allocation, retry with zero-range allocation where supported,
+  # and fall back to a sparse file when the host filesystem rejects both.
   fallocate -l "$dataSize" "$diskFile" &>/dev/null && return 0
   fallocate -l -x "$dataSize" "$diskFile" && return 0
   truncate -s "$dataSize" "$diskFile" || return 1
@@ -159,6 +163,8 @@ normalizeSize() {
   local free dataSize
   local spare=1073741824
 
+  # Dynamic sizes are resolved once from current free space. max reserves one
+  # GiB for host metadata and container activity; half uses half the space.
   if [[ "${diskSpace,,}" == "max" || "${diskSpace,,}" == "half" ]]; then
 
     free=$(df --output=avail -B 1 "$dir" | tail -n 1)
@@ -421,6 +427,8 @@ convertDisk() {
   if [[ "$destinationFmt" == "raw" ]]; then
     if ! disabled "$ALLOCATE"; then
 
+      # qemu-img may leave converted raw output sparse despite requested
+      # preallocation, so allocate its final length explicitly afterward.
       # Work around qemu-img bug
       if ! currentSize=$(stat -c%s "$tmpFile"); then
         error "Failed to determine converted image size: $tmpFile"
@@ -435,6 +443,8 @@ convertDisk() {
     fi
   fi
 
+  # Publish the converted image before deleting the original so a failed
+  # conversion or rename never destroys the only usable disk.
   if ! mv "$tmpFile" "$destinationFile"; then
     error "Failed to move converted $diskDesc image to $destinationFile."
     exit 79
@@ -479,6 +489,8 @@ checkFS () {
     warn "the filesystem of $base is FUSE, this extra layer will negatively affect performance!"
   fi
 
+  # Filesystems without O_DIRECT support require threaded I/O and writeback
+  # caching; native AIO with cache=none would fail at runtime.
   if ! supportsDirect "$fs"; then
     warn "the filesystem of $base is $fs, which does not support O_DIRECT mode, adjusting settings..."
   fi
@@ -508,6 +520,8 @@ createDevice () {
   local diskSectors="$9"
   local bus="${PCI_BUS:-pcie.0}"
 
+  # q35 uses pcie.0, while legacy pc/i440fx machines expose their devices on
+  # pci.0 unless the caller supplied an explicit bus.
   [[ -z "${PCI_BUS:-}" && ( "${MACHINE,,}" == pc || "${MACHINE,,}" == pc-i440fx* ) ]] && bus="pci.0"
 
   local options=""
@@ -559,6 +573,8 @@ finishDisks () {
 
   case "${DISK_TYPE,,}" in
     "blk" | "scsi" | "virtio-blk" | "virtio-scsi" )
+      # VirtIO block and SCSI devices share one dedicated I/O thread, which
+      # must be declared exactly once regardless of disk count.
       [[ "$DISK_OPTS" != *" -object iothread,id=io2"* ]] && DISK_OPTS+=" -object iothread,id=io2" ;;
   esac
 
@@ -613,6 +629,8 @@ addDisk () {
 
     previousExt=$(fmt2ext "$previousFmt")
 
+    # Treat a disk in the other supported format as the same logical disk and
+    # convert it automatically instead of creating an empty replacement.
     if [ -f "$diskBase.$previousExt" ] &&
       [ -s "$diskBase.$previousExt" ]; then
       convertDisk "$diskBase.$previousExt" "$previousFmt" "$diskFile" "$diskFmt" "$diskBase" "$diskDesc" "$fs" || exit $?
@@ -645,6 +663,8 @@ addDisk () {
 
   fi
 
+  # Sparse disks can promise more guest capacity than the host can currently
+  # satisfy, so report the future shortfall without blocking startup.
   if [ -f "$diskFile" ] && disabled "$ALLOCATE"; then
 
     currentSize=$(getSize "$diskFile") || exit 73
@@ -699,6 +719,8 @@ addDevice () {
   [ -z "$diskDev" ] && return 0
   [ ! -b "$diskDev" ] && error "Device $diskDev cannot be found! Please add it to the 'devices' section of your compose file." && exit 55
 
+  # DSM may reject whole-disk passthrough when QEMU is given explicit sector
+  # geometry; partitions need it to preserve non-512-byte host geometry.
   # Only detect and apply sector sizes for partitions, not whole disks.
   # Whole disk passthrough with explicit sector sizes causes DSM not to recognize the disk.
   if [[ "$devType" == "part" ]]; then
@@ -793,6 +815,8 @@ else
   DISK_ALLOC="preallocation=falloc"
 fi
 
+# Reserve the first two boot indexes and PCI addresses for the managed boot
+# and system images; user disks begin at index 3.
 DISK_OPTS+=$(createDevice "$BOOT" "$DISK_TYPE" "1" "0xa" "raw" "$DISK_IO" "$DISK_CACHE" "" "")
 DISK_OPTS+=$(createDevice "$SYSTEM" "$DISK_TYPE" "2" "0xb" "raw" "$DISK_IO" "$DISK_CACHE" "" "")
 
@@ -832,6 +856,8 @@ DISK_DEVICES=( "$DEVICE" "$DEVICE2" "$DEVICE3" "$DEVICE4" )
 DISK_INDEXES=( "3" "4" "5" "6" )
 DISK_ADDRESSES=( "0xc" "0xd" "0xe" "0xf" )
 
+# A passed-through block device takes precedence over the image-file slot
+# with the same number.
 for i in "${!DISK_FILES[@]}"; do
 
   if [ -n "${DISK_DEVICES[i]}" ]; then

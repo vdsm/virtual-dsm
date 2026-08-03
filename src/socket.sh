@@ -18,6 +18,8 @@ refresh() {
   [[ "$msg" == "$lastmsg" ]] && return 0
 
   lastmsg="$msg"
+  # websocketd clients interpret s: as a status update and c: as a command;
+  # suppress unchanged status to avoid redundant browser work.
   echo "s: $msg"
 
   return 0
@@ -37,6 +39,8 @@ inotifywait \
     case "${event,,}" in
       "delete"* )
         echo "c: vnc" ;;
+      # moved_to covers the atomic replacement used by html()/writeAtomic(),
+      # while close_write handles direct writers.
       "close_write"* | "moved_to"* )
         refresh ;;
     esac

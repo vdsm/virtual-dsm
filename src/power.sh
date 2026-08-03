@@ -67,6 +67,8 @@ displayReason() {
 
 readQemuPid() {
 
+  # Interactive startup uses a wrapper-created PID file before QEMU writes its
+  # own pidfile, so accept either during startup and shutdown races.
   readPidFile "$1" "$QEMU_START_PID" && return 0
   readPidFile "$1" "$QEMU_PID"
 }
@@ -184,6 +186,8 @@ startQemu() {
 
   rm -f -- "$QEMU_START_PID"
 
+  # Launch QEMU in a separate session while recording the real child PID;
+  # setsid's wrapper PID is not suitable for guest shutdown or forced cleanup.
   (
     trap '' INT QUIT
 
@@ -238,6 +242,8 @@ sendGuestShutdown() {
   local pid="$1"
   local response
 
+  # Virtual DSM ignores ACPI powerdown, so graceful shutdown must go through
+  # the qemu-host guest API exposed on the Unix socket.
   # Don't send the powerdown signal because vDSM ignores ACPI signals
   # nc -q 1 -w 1 -U "$QEMU_DIR/monitor.sock" &> /dev/null <<<'system_powerdown' || :
 
@@ -265,6 +271,8 @@ sendGuestShutdown() {
 
 normalizeTimeout() {
 
+  # Divide the remaining timeout into guest wait, SIGTERM grace, and final
+  # cleanup instead of allowing the API call to consume the entire budget.
   local term_grace=3      # seconds before loop ends to send SIGTERM
   local cleanup_grace=3   # seconds reserved after the loop for cleanup
 
@@ -307,6 +315,8 @@ waitForShutdown() {
     # Stop waiting if the process has exited
     isAlive "$pid" || break
 
+    # The process state is authoritative, but disappearance of both pidfiles
+    # also ends the wait when a wrapper exits before process reaping completes.
     # Workaround for stale/zombie QEMU pid file
     [ ! -s "$QEMU_START_PID" ] && [ ! -s "$QEMU_PID" ] && break
 
@@ -336,6 +346,8 @@ graceful_shutdown() {
 
   if [ -f "$QEMU_END" ]; then
 
+    # A second Ctrl-C is the explicit user request to skip the remaining
+    # graceful-shutdown wait and proceed to forced cleanup.
     if (( code == 130 && SHUTDOWN_SIGNAL == code )); then
       SHUTDOWN_SKIP=1
       echo && info "Received SIGINT again, forcing shutdown..."

@@ -3,6 +3,8 @@ set -Eeuo pipefail
 
 : "${URL:=""}"    # URL of the PAT file to be downloaded.
 
+# Persist the exact PAT base name so future starts reopen the matching boot,
+# system, and cached installation files.
 if [ -f "$STORAGE/dsm.ver" ]; then
   BASE=$(<"$STORAGE/dsm.ver")
   BASE="${BASE//[![:print:]]/}"
@@ -16,6 +18,8 @@ FN="boot.pat"
 DIR=$(find / -maxdepth 1 -type d -iname "$FN" -print -quit)
 [ ! -d "$DIR" ] && DIR=$(find "$STORAGE" -maxdepth 1 -type d -iname "$FN" -print -quit)
 
+# A boot.pat directory bind represents already extracted boot and system
+# images and therefore takes precedence over PAT file or URL discovery.
 if [ -d "$DIR" ]; then
   BASE="DSM_VirtualDSM" && URL="file://$DIR"
   if [[ ! -s "$STORAGE/$BASE.boot.img" || ! -s "$STORAGE/$BASE.system.img" ]]; then
@@ -29,6 +33,8 @@ FILE=$(find / -maxdepth 1 -type f -iname "$FN" -print -quit)
 
 URL=$(strip "$URL")
 
+# Derive a filesystem-safe identity from the URL only when no local boot.pat
+# source was supplied; preserve an existing system image identity if present.
 if [ -n "$URL" ] && [ ! -s "$FILE" ] && [ ! -d "$DIR" ]; then
   BASE=$(basename "$URL" .pat)
   if [ ! -s "$STORAGE/$BASE.system.img" ]; then
@@ -42,6 +48,8 @@ if [ -n "$URL" ] && [ ! -s "$FILE" ] && [ ! -d "$DIR" ]; then
   fi
 fi
 
+# A complete matching image pair is the installation marker; the cached PAT
+# itself is optional after installation.
 if [[ -s "$STORAGE/$BASE.boot.img" && -s "$STORAGE/$BASE.system.img" ]]; then
   return 0  # Previous installation found
 fi
@@ -55,6 +63,8 @@ DL_GLOBAL="https://global.synologydownload.com/download/DSM"
 [[ "${URL,,}" == *"cndl.synology"* ]] && DL="$DL_CHINA"
 [[ "${URL,,}" == *"global.synology"* ]] && DL="$DL_GLOBAL"
 
+# Honor an explicitly selected Synology mirror first, otherwise choose the
+# China or global endpoint from the detected country.
 if [ -z "$DL" ]; then
   [ -z "$COUNTRY" ] && setCountry
   [ -z "$COUNTRY" ] && info "Warning: could not detect country to select mirror!"
@@ -98,6 +108,8 @@ if [[ "${FS,,}" == "fat"* || "${FS,,}" == "vfat"* || "${FS,,}" == "msdos"* ]]; t
   error "Unable to install on $FS filesystems, please use a different filesystem for /storage." && exit 61
 fi
 
+# Extract beside storage on Unix filesystems to avoid container-space limits;
+# use /tmp for filesystems that cannot safely host the installer workspace.
 if [[ "${FS,,}" != "exfat"* && "${FS,,}" != "ntfs"* && "${FS,,}" != "unknown"* ]]; then
   TMP="$STORAGE/tmp"
   rm -rf "$TMP"
@@ -206,6 +218,8 @@ fi
 
 SIZE=$(stat -c%s "$PAT")
 
+# Full Virtual DSM PAT files are substantially larger than update packs;
+# reject undersized inputs before attempting destructive image preparation.
 if ((SIZE<250000000)); then
   error "The specified PAT file is probably an update pack as it's too small." && exit 62
 fi
@@ -213,6 +227,8 @@ fi
 MSG="Extracting installation image..."
 info "Install: $MSG" && html "$MSG"
 
+# Newer PAT files are normal tar archives; older encrypted/proprietary forms
+# require the bundled extractor as a compatibility fallback.
 if { tar tf "$PAT"; } >/dev/null 2>&1; then
 
   tar xpf "$PAT" -C "$TMP/."
@@ -231,6 +247,8 @@ fi
 MSG="Preparing system partition..."
 info "Install: $MSG" && html "$MSG"
 
+# The PAT boot archive becomes the persistent QEMU boot disk after its
+# companion system partition has been assembled.
 BOOT=$(find "$TMP" -name "*.bin.zip" -print -quit)
 [ -z "$BOOT" ] && error "The PAT file contains no boot image." && exit 67
 [ ! -s "$BOOT" ] && error "The PAT boot image archive is empty." && exit 67
@@ -273,6 +291,8 @@ if ! fallocate -l "$SYSTEM_SIZE" "$SYSTEM" &>/dev/null; then
   fi
 fi
 
+# Recreate Synology's expected DOS partition layout inside the fixed 10 GiB
+# system image before populating the ext4 root partition.
 PART="$TMP/partition.fdisk"
 
 {
@@ -320,6 +340,8 @@ OFFSET="1048576"    # 2048 * 512
 NUMBLOCKS="2097152" # (16777216 * 512) / 4096
 MSG="Installing system partition..."
 
+# Build the ext4 filesystem directly from the extracted tree under fakeroot,
+# preserving archive ownership without mounting a loop device.
 fakeroot -- bash -c "set -Eeu;\
   [ -s $HDP.txz ] && tar xpfJ $HDP.txz --absolute-names -C $MOUNT/;\
   [ -s $IDB.txz ] && tar xpfJ $IDB.txz --absolute-names -C $INDEX_DB/;\
@@ -331,6 +353,8 @@ rm -rf "$MOUNT"
 echo "$BASE" > "$STORAGE/dsm.ver"
 setOwner "$STORAGE/dsm.ver" || warn "failed to set the owner for \"$STORAGE/dsm.ver\" !"
 
+# Do not keep a second copy when the source PAT already lives in storage;
+# downloaded or externally mounted sources are cached for later reuse.
 if [[ "$URL" == "file://$STORAGE/$BASE.pat" ]]; then
   rm -f "$PAT"
 else

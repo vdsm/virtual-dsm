@@ -22,6 +22,8 @@ writeInfo() {
 
   local content="$1"
 
+  # Replace the web status atomically so websocket readers never observe a
+  # partially written HTML fragment.
   if ! printf '%s\n' "$content" > "$info_tmp"; then
     rm -f -- "$info_tmp"
     return 1
@@ -220,6 +222,8 @@ fi
 
 trap finishProgress EXIT
 trap 'exit 0' HUP INT QUIT
+# SIGTERM requests one final measurement and web update rather than
+# terminating between progress samples.
 trap stopProgress TERM
 
 if [[ "$body" == *"..." ]]; then
@@ -232,6 +236,8 @@ while true; do
   bytes=$(getBytes "$path" "$mode")
   effective_total="$total"
 
+  # An external downloader may provide authoritative completed and total byte
+  # counters; use them instead of filesystem size when available.
   if [ -n "$status_file" ] && status=$(getStatus "$status_file"); then
     read -r status_bytes status_total <<< "$status"
     bytes="$status_bytes"
@@ -268,6 +274,8 @@ while true; do
         fi
       fi
     else
+      # Floor the percentage rather than rounding so displayed completion
+      # never gets ahead of bytes actually written.
       # Truncate to one decimal so progress is never reported early.
       progress=$((bytes * 1000 / effective_total))
       (( progress > 1000 )) && progress=1000

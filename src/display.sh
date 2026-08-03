@@ -17,8 +17,12 @@ RENDERNODE=$(strip "$RENDERNODE")
 
 CPU_VENDOR=$(lscpu | awk '/Vendor ID/{print $3}')
 
+# The accelerated Intel render-node path is restricted to x86 Intel hosts;
+# other platforms retain the normal QEMU display backend.
 if ! enabled "$GPU" || isAmdCpu || [[ "$ARCH" != "amd64" ]]; then
 
+  # A disabled frontend also removes the emulated VGA device to keep the guest
+  # hardware layout headless.
   [[ "${DISPLAY,,}" == "none" ]] && VGA="none"
 
   if enabled "$LOSSY" && [[ "${DISPLAY,,}" == vnc=* ]]; then
@@ -40,6 +44,8 @@ DISPLAY_OPTS+=" -vga $VGA"
 [ ! -d /dev/dri ] && mkdir -m 755 /dev/dri
 
 # Extract the card number from the render node
+# Linux renderD128 corresponds to card0; derive both device minors because
+# container device bindings may expose only the render node.
 CARD_NUMBER=$(echo "$RENDERNODE" | grep -oP '(?<=renderD)\d+')
 CARD_DEVICE="/dev/dri/card$((CARD_NUMBER - 128))"
 
@@ -59,6 +65,8 @@ if [ ! -c "$RENDERNODE" ] || [ ! -r "$RENDERNODE" ] || [ ! -w "$RENDERNODE" ]; t
   warn "render device '${RENDERNODE}' is unavailable or inaccessible."
 fi
 
+# Install acceleration packages lazily so non-GPU deployments keep the base
+# image small and do not require OpenGL modules.
 addPackage "xserver-xorg-video-intel" "Intel GPU drivers"
 addPackage "qemu-system-modules-opengl" "OpenGL module"
 
