@@ -344,7 +344,7 @@ graceful_shutdown() {
 
   code=$(signalCode "$sig")
 
-  if [ -n "${SHUTDOWN_SIGNAL:-}" ]; then
+  if (( SHUTDOWN_SIGNAL != 0 )); then
 
     # A second Ctrl-C is the explicit user request to skip the remaining
     # graceful-shutdown wait and proceed to forced cleanup.
