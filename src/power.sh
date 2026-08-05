@@ -344,7 +344,7 @@ graceful_shutdown() {
 
   code=$(signalCode "$sig")
 
-  if [ -f "$QEMU_END" ]; then
+  if [ -n "${SHUTDOWN_SIGNAL:-}" ]; then
 
     # A second Ctrl-C is the explicit user request to skip the remaining
     # graceful-shutdown wait and proceed to forced cleanup.
@@ -358,11 +358,13 @@ graceful_shutdown() {
     return
   fi
 
-  set +e
   start=$SECONDS
   SHUTDOWN_SIGNAL=$code
 
-  touch "$QEMU_END"
+  # Shutdown handlers must continue through missing processes and failed cleanup
+  # commands instead of being aborted by errexit.
+  set +e
+
   echo && info "Received $sig signal, sending shutdown command..."
 
   if ! readQemuPid pid; then
