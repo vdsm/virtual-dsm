@@ -364,6 +364,7 @@ graceful_shutdown() {
   # Shutdown handlers must continue through missing processes and failed cleanup
   # commands instead of being aborted by errexit.
   set +e
+  touch "$QEMU_END"
 
   echo && info "Received $sig signal, sending shutdown command..."
 
