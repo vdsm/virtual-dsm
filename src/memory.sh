@@ -4,10 +4,8 @@ set -Eeuo pipefail
 msg="Checking memory..."
 enabled "$DEBUG" && echo "$msg"
 
-app() {
-  echo "Virtual DSM"
-  return 0
-}
+RAM_WARNING=""
+RAM_ALLOCATION=""
 
 checkConfiguredMemory() {
 
@@ -15,70 +13,85 @@ checkConfiguredMemory() {
     return 0
   fi
 
-  local wanted msg avail_mem
+  local wanted avail_mem
   wanted=$(numfmt --from=iec "$RAM_SIZE")
   avail_mem=$(formatBytes "$RAM_AVAIL")
 
   if (( (wanted + RAM_SPARE) > RAM_AVAIL )); then
-    msg="Your configured RAM_SIZE of ${RAM_SIZE/G/ GB} is too high for the $avail_mem of free memory available,"
-    # ZFS ARC can release memory under pressure, so current free-memory checks
-    # are advisory rather than a reason to reduce the requested guest RAM.
+
+    local msg="Your configured RAM_SIZE of ${RAM_SIZE/G/ GB} is too high for the $avail_mem of free memory available,"
+
+    # ZFS ARC can release cached memory under pressure, so this free-memory
+    # heuristic remains informational instead of rewriting RAM_SIZE.
     if [[ "${FS,,}" == "zfs" ]]; then
+
       info "$msg but since ZFS is active this will be ignored."
+
     else
+
       RAM_SIZE="max"
-      warn "$msg it will automatically be adjusted to a lower amount."
+      RAM_WARNING="$msg it will automatically be adjusted to a lower amount."
+
     fi
+
   else
+
     if (( (wanted + (RAM_SPARE * 3)) > RAM_AVAIL )); then
-      msg="your configured RAM_SIZE of ${RAM_SIZE/G/ GB} is very close to the $avail_mem of free memory available,"
+
+      local msg="your configured RAM_SIZE of ${RAM_SIZE/G/ GB} is very close to the $avail_mem of free memory available,"
+
       if [[ "${FS,,}" == "zfs" ]]; then
         info "$msg but since ZFS is active this will be ignored."
       else
         warn "$msg please consider a lower amount."
       fi
+
     fi
+
   fi
 
   return 0
 }
 
 configureHalfMemory() {
-  local wanted
 
   if [[ "${RAM_SIZE,,}" != "half" ]]; then
     return 0
   fi
 
-  # half uses half of currently available memory only when that still leaves
-  # the host reserve; otherwise it falls through to the max calculation.
   if (( (RAM_AVAIL / 2) > RAM_SPARE )); then
-    wanted=$(( (RAM_AVAIL / 2) / 1048577 ))
-    RAM_SIZE="${wanted}M"
-    info "Allocated $wanted MB of RAM for $(app)."
+
+    local wanted=$(( RAM_AVAIL / 2 ))
+
+    # Divide by one byte more than a MiB to round down
+    local target=$(( wanted / 1048577 ))
+    RAM_SIZE="${target}M"
+    RAM_ALLOCATION="$wanted"
+
   else
+
     RAM_SIZE="max"
+
   fi
 
   return 0
 }
 
 configureMaxMemory() {
-  local wanted
 
   if [[ "${RAM_SIZE,,}" != "max" ]]; then
     return 0
   fi
 
-  # max normally leaves multiple reserve units for the container and host,
-  # but scales that margin down on memory-constrained systems.
+  # max keeps a host reserve when possible, but on very small systems falls back
+  # to half the available memory to avoid starving the container.
   if (( RAM_AVAIL < (RAM_SPARE * 2) )); then
 
-    wanted=$(( RAM_AVAIL / 2 ))
+    local wanted=$(( RAM_AVAIL / 2 ))
 
   else
 
-    wanted=$(( RAM_AVAIL - (RAM_SPARE * 3) ))
+    local wanted=$(( RAM_AVAIL - (RAM_SPARE * 3) ))
 
     if (( wanted < (RAM_SPARE * 6) )); then
       wanted=$(( RAM_AVAIL - RAM_SPARE ))
@@ -86,22 +99,21 @@ configureMaxMemory() {
 
   fi
 
-  wanted=$(( wanted / 1048577 ))
-  RAM_SIZE="${wanted}M"
-
-  info "Allocated $wanted MB of RAM for $(app)."
+  # Divide by one byte more than a MiB to round down
+  local target=$(( wanted / 1048577 ))
+  RAM_SIZE="${target}M"
+  RAM_ALLOCATION="$wanted"
 
   return 0
 }
 
 checkMinimumMemory() {
-  local wanted
 
+  local wanted
   wanted=$(numfmt --from=iec "$RAM_SIZE")
 
   if [ "$wanted" -lt "$RAM_MINIMUM" ]; then
-    wanted=$(( wanted / 1048577 ))
-    error "Not enough memory available, there is only $wanted MB left!"
+    error "$(app) requires at least $(formatBytes "$RAM_MINIMUM") of RAM, but only $(formatBytes "$wanted") can be allocated."
     exit 16
   fi
 
@@ -114,5 +126,8 @@ checkConfiguredMemory
 configureHalfMemory
 configureMaxMemory
 checkMinimumMemory
+
+[ -n "$RAM_WARNING" ] && warn "$RAM_WARNING"
+[ -n "$RAM_ALLOCATION" ] && info "Allocated $(formatBytes "$RAM_ALLOCATION") of RAM for $(app)."
 
 return 0
