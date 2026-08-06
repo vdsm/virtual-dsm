@@ -61,7 +61,7 @@ buildArguments() {
   return 0
 }
 
-checkMemory "Y"
+finalizeMemory
 
 configureMemory
 configureMonitor
