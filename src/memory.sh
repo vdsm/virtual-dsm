@@ -191,7 +191,7 @@ checkMinimumMemory() {
   return 0
 }
 
-checkMemory() {
+checkMemoryAllocation() {
 
   local final="${1:-N}"
   local configured
@@ -219,6 +219,13 @@ checkMemory() {
   return 0
 }
 
-checkMemory
+finalizeMemory() {
+
+  checkMemoryAllocation "Y"
+
+  return 0
+}
+
+checkMemoryRequirement
 
 return 0
