@@ -158,53 +158,6 @@ checkHost() {
   return 0
 }
 
-checkRam() {
-
-  # Read host and container memory limits.
-  getMemoryInfo
-
-  RAM_SPARE=500000000
-  RAM_MINIMUM="${RAM_MINIMUM:-1073741824}"
-
-  RAM_MINIMUM=$(strip "$RAM_MINIMUM")
-  RAM_MINIMUM="${RAM_MINIMUM// /}"
-  RAM_MINIMUM=$(echo "${RAM_MINIMUM^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
-  numfmt --from=iec "$RAM_MINIMUM" &>/dev/null || {
-    error "Invalid RAM_MINIMUM: $RAM_MINIMUM"
-    exit 16
-  }
-  RAM_MINIMUM=$(numfmt --from=iec "$RAM_MINIMUM")
-
-  RAM_SIZE=$(strip "$RAM_SIZE")
-  RAM_SIZE="${RAM_SIZE// /}"
-  [ -z "$RAM_SIZE" ] && RAM_SIZE="2G"
-
-  if [[ "${RAM_SIZE,,}" != "max" && "${RAM_SIZE,,}" != "half" ]]; then
-
-    # Bare values below 130 are interpreted as GiB for convenience; larger bare
-    # values are treated as MiB to preserve historical configurations.
-    if [ -z "${RAM_SIZE//[0-9. ]}" ]; then
-      [ "${RAM_SIZE%%.*}" -lt "130" ] && RAM_SIZE="${RAM_SIZE}G" || RAM_SIZE="${RAM_SIZE}M"
-    fi
-
-    RAM_SIZE=$(echo "${RAM_SIZE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
-    numfmt --from=iec "$RAM_SIZE" &>/dev/null || {
-      error "Invalid RAM_SIZE: $RAM_SIZE"
-      exit 16
-    }
-
-    wanted=$(numfmt --from=iec "$RAM_SIZE")
-
-    if [ "$wanted" -lt "$RAM_MINIMUM" ]; then
-      error "$(app) requires at least $(formatBytes "$RAM_MINIMUM") of RAM, but RAM_SIZE is set to $(formatBytes "$wanted")."
-      exit 16
-    fi
-
-  fi
-
-  return 0
-}
-
 checkKvm() {
 
   # Check KVM support
@@ -311,7 +264,7 @@ IFS=. read -r KERNEL MINOR _ <<< "$SYS"
 checkSockets
 checkCores
 checkStorage
-checkRam
+getMemoryInfo
 
 # Print system info
 SYS="${SYS/-generic/}"
