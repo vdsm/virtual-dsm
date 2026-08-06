@@ -402,4 +402,6 @@ enableTrap() {
   return 0
 }
 
+[ -n "${QEMU_TIMEOUT:-}" ] && TIMEOUT="$QEMU_TIMEOUT"
+
 return 0
