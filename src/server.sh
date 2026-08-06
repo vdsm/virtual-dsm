@@ -70,10 +70,11 @@ configureNginx() {
 
 configureWebServer() {
 
+  configureNginx || return 1
+
   mkdir -p /etc/nginx/sites-enabled
   cp /etc/nginx/default.conf /etc/nginx/sites-enabled/web.conf
 
-  configureNginx || return 1
   configureWebPorts || return 1
   configureIpv6Listen || return 1
 
