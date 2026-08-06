@@ -45,6 +45,8 @@ normalizeMemory() {
       exit 16
     fi
 
+    RAM_SIZE="$(( wanted / 1048576 ))M"
+
   fi
 
   return 0
