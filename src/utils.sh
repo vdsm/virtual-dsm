@@ -290,6 +290,76 @@ makeDir() {
   return 0
 }
 
+app() {
+
+  local name="$APP"
+
+  if [[ "$name" == "QEMU" ]]; then
+    name="the virtual machine"
+  fi
+
+  echo "$name"
+  return 0
+}
+
+finiteMemoryLimit() {
+
+  local limit="$1"
+  # cgroup v1 commonly reports this enormous sentinel for an unlimited memory
+  # limit; compare as decimal strings to avoid shell integer overflow.
+  local sentinel="4611686018427387904"
+  local i
+
+  [[ "$limit" =~ ^[0-9]+$ ]] || return 1
+
+  (( ${#limit} < ${#sentinel} )) && return 0
+  (( ${#limit} > ${#sentinel} )) && return 1
+
+  for (( i=0; i<${#sentinel}; i++ )); do
+    local left="${limit:i:1}"
+    local right="${sentinel:i:1}"
+
+    (( left < right )) && return 0
+    (( left > right )) && return 1
+  done
+
+  return 1
+}
+
+getMemoryInfo() {
+
+  local host_total
+  local host_avail
+  local limit=""
+  local current=""
+
+  host_total=$(free -b | awk '/^Mem:/ {print $2; exit}')
+  host_avail=$(free -b | awk '/^Mem:/ {print $7; exit}')
+
+  RAM_TOTAL="$host_total"
+  RAM_AVAIL="$host_avail"
+
+  if [ -r /sys/fs/cgroup/memory.max ] && [ -r /sys/fs/cgroup/memory.current ]; then
+    limit=$(< /sys/fs/cgroup/memory.max)
+    current=$(< /sys/fs/cgroup/memory.current)
+  elif [ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ] && [ -r /sys/fs/cgroup/memory/memory.usage_in_bytes ]; then
+    limit=$(< /sys/fs/cgroup/memory/memory.limit_in_bytes)
+    current=$(< /sys/fs/cgroup/memory/memory.usage_in_bytes)
+  fi
+
+  # Use the tighter of host availability and the container's remaining cgroup
+  # allowance so RAM sizing cannot exceed either boundary.
+  if finiteMemoryLimit "$limit" && [[ "$current" =~ ^[0-9]+$ ]]; then
+    (( limit < RAM_TOTAL )) && RAM_TOTAL="$limit"
+
+    local available=$(( limit - current ))
+    (( available < 0 )) && available=0
+    (( available < RAM_AVAIL )) && RAM_AVAIL="$available"
+  fi
+
+  return 0
+}
+
 stateFile() {
 
   local name="$1"
