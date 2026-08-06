@@ -4,10 +4,55 @@ set -Eeuo pipefail
 msg="Checking memory..."
 enabled "$DEBUG" && echo "$msg"
 
-RAM_WARNING=""
-RAM_ALLOCATION=""
+normalizeMemory() {
+
+  local wanted
+
+  RAM_SPARE=500000000
+  RAM_MINIMUM="${RAM_MINIMUM:-1073741824}"
+
+  RAM_MINIMUM=$(strip "$RAM_MINIMUM")
+  RAM_MINIMUM="${RAM_MINIMUM// /}"
+  RAM_MINIMUM=$(echo "${RAM_MINIMUM^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
+  numfmt --from=iec "$RAM_MINIMUM" &>/dev/null || {
+    error "Invalid RAM_MINIMUM: $RAM_MINIMUM"
+    exit 16
+  }
+  RAM_MINIMUM=$(numfmt --from=iec "$RAM_MINIMUM")
+
+  RAM_SIZE=$(strip "$RAM_SIZE")
+  RAM_SIZE="${RAM_SIZE// /}"
+  [ -z "$RAM_SIZE" ] && RAM_SIZE="2G"
+
+  if [[ "${RAM_SIZE,,}" != "max" && "${RAM_SIZE,,}" != "half" ]]; then
+
+    # Bare values below 130 are interpreted as GiB for convenience; larger bare
+    # values are treated as MiB to preserve historical configurations.
+    if [ -z "${RAM_SIZE//[0-9. ]}" ]; then
+      [ "${RAM_SIZE%%.*}" -lt "130" ] && RAM_SIZE="${RAM_SIZE}G" || RAM_SIZE="${RAM_SIZE}M"
+    fi
+
+    RAM_SIZE=$(echo "${RAM_SIZE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
+    numfmt --from=iec "$RAM_SIZE" &>/dev/null || {
+      error "Invalid RAM_SIZE: $RAM_SIZE"
+      exit 16
+    }
+
+    wanted=$(numfmt --from=iec "$RAM_SIZE")
+
+    if [ "$wanted" -lt "$RAM_MINIMUM" ]; then
+      error "$(app) requires at least $(formatBytes "$RAM_MINIMUM") of RAM, but RAM_SIZE is set to $(formatBytes "$wanted")."
+      exit 16
+    fi
+
+  fi
+
+  return 0
+}
 
 checkConfiguredMemory() {
+
+  local final="$1"
 
   if disabled "$RAM_CHECK" || [[ "${RAM_SIZE,,}" == "max" || "${RAM_SIZE,,}" == "half" ]]; then
     return 0
@@ -25,7 +70,7 @@ checkConfiguredMemory() {
     # heuristic remains informational instead of rewriting RAM_SIZE.
     if [[ "${FS,,}" == "zfs" ]]; then
 
-      info "$msg but since ZFS is active this will be ignored."
+      enabled "$final" && info "$msg but since ZFS is active this will be ignored."
 
     else
 
@@ -41,9 +86,9 @@ checkConfiguredMemory() {
       local msg="your configured RAM_SIZE of ${RAM_SIZE/G/ GB} is very close to the $avail_mem of free memory available,"
 
       if [[ "${FS,,}" == "zfs" ]]; then
-        info "$msg but since ZFS is active this will be ignored."
+        enabled "$final" && info "$msg but since ZFS is active this will be ignored."
       else
-        warn "$msg please consider a lower amount."
+        enabled "$final" && warn "$msg please consider a lower amount."
       fi
 
     fi
@@ -107,6 +152,23 @@ configureMaxMemory() {
   return 0
 }
 
+showMemoryLimitHint() {
+
+  local kernel
+  kernel=$(uname -r)
+
+  if [[ "${kernel,,}" == *-wsl2* ]]; then
+    echo
+    info "Docker Desktop (WSL2) is detected, follow these instructions:"
+    info ""
+    info "Increase the memory limit in \"%UserProfile%\\.wslconfig\" by setting \"memory=<size>\" under \"[wsl2]\"."
+    info "Then run \"wsl --shutdown\" in PowerShell and restart Docker Desktop for the new limit to take effect."
+    echo
+  fi
+
+  return 0
+}
+
 checkMinimumMemory() {
 
   local wanted
@@ -115,7 +177,7 @@ checkMinimumMemory() {
   if [ "$wanted" -lt "$RAM_MINIMUM" ]; then
 
     error "$(app) requires at least $(formatBytes "$RAM_MINIMUM") of RAM, but only $(formatBytes "$wanted") can be allocated."
-    echo
+
     showMemoryLimitHint
 
     exit 16
@@ -124,14 +186,34 @@ checkMinimumMemory() {
   return 0
 }
 
-getMemoryInfo
+checkMemory() {
 
-checkConfiguredMemory
-configureHalfMemory
-configureMaxMemory
-checkMinimumMemory
+  local final="${1:-N}"
+  local configured
 
-[ -n "$RAM_WARNING" ] && warn "$RAM_WARNING"
-[ -n "$RAM_ALLOCATION" ] && info "Allocated $(formatBytes "$RAM_ALLOCATION") of RAM for $(app)."
+  normalizeMemory
+  configured="$RAM_SIZE"
+
+  RAM_WARNING=""
+  RAM_ALLOCATION=""
+
+  getMemoryInfo
+  checkConfiguredMemory "$final"
+
+  configureHalfMemory
+  configureMaxMemory
+  checkMinimumMemory
+
+  if enabled "$final"; then
+    [ -n "$RAM_WARNING" ] && warn "$RAM_WARNING"
+    [ -n "$RAM_ALLOCATION" ] && info "Allocated $(formatBytes "$RAM_ALLOCATION") of RAM for $(app)."
+  else
+    RAM_SIZE="$configured"
+  fi
+
+  return 0
+}
+
+checkMemory
 
 return 0
