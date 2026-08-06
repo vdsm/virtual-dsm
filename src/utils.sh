@@ -7,6 +7,12 @@ info () { printf "%b%s%b" "\E[1;34m❯ \E[1;36m" "${1:-}" "\E[0m\n"; }
 error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: ${1:-}" "\E[0m\n" >&2; }
 warn () { printf "%b%s%b" "\E[1;31m❯ " "Warning: ${1:-}" "\E[0m\n" >&2; }
 
+app() {
+
+  echo "Virtual DSM"
+  return 0
+}
+
 readPidFile() {
 
   local -n _pid="$1"
@@ -307,12 +313,6 @@ makeDir() {
   return 0
 }
 
-app() {
-
-  echo "Virtual DSM"
-  return 0
-}
-
 finiteMemoryLimit() {
 
   local limit="$1"
@@ -366,19 +366,6 @@ getMemoryInfo() {
     local available=$(( limit - current ))
     (( available < 0 )) && available=0
     (( available < RAM_AVAIL )) && RAM_AVAIL="$available"
-  fi
-
-  return 0
-}
-
-showMemoryLimitHint() {
-
-  local kernel
-  kernel=$(uname -r)
-
-  if [[ "${kernel,,}" == *microsoft-standard-wsl2* ]]; then
-    info "WSL2 detected. Increase its memory limit in \"%UserProfile%\\.wslconfig\" by setting \"memory=<size>\" under \"[wsl2]\"."
-    info "Then close Docker Desktop, run \"wsl --shutdown\" in PowerShell and restart Docker Desktop for the new limit to take effect."
   fi
 
   return 0
