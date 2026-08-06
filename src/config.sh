@@ -61,6 +61,8 @@ buildArguments() {
   return 0
 }
 
+checkMemory "Y"
+
 configureMemory
 configureMonitor
 configureMachine
