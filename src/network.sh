@@ -571,7 +571,7 @@ getReservedPorts() {
   # allowing WEB_PORT (normally 5000) to be handed over to DSM.
 
   normalizePorts "$list" "$mode"
-return $?
+  return $?
 }
 
 getCustomHostPorts() {
@@ -589,7 +589,7 @@ getCustomHostPorts() {
   done
 
   normalizePorts "$ports" "$mode"
-  return 0
+  return $?
 }
 
 getHostPorts() {
@@ -602,8 +602,7 @@ getHostPorts() {
   reserved=$(getReservedPorts "all")
   custom=$(getCustomHostPorts "all")
   normalizePorts "$reserved,$custom" "$mode"
-
-  return 0
+  return $?
 }
 
 getUserPorts() {

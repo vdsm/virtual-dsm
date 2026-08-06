@@ -79,18 +79,32 @@ checkPrivileged() {
   return 0
 }
 
-normalizeCpuCores() {
+checkCores() {
 
   CPU_CORES=$(strip "$CPU_CORES")
   [ -z "$CPU_CORES" ] && CPU_CORES=2
   [[ "${CPU_CORES,,}" == "max" ]] && CPU_CORES="$CORES"
   [[ "${CPU_CORES,,}" == "half" ]] && CPU_CORES=$(( CORES / 2 ))
   [ -z "${CPU_CORES##*[!0-9]*}" ] && error "Invalid amount of CPU_CORES: $CPU_CORES" && exit 15
-
   [ "$CPU_CORES" -lt "1" ] && CPU_CORES=1
+
   if [ "$CPU_CORES" -gt "$CORES" ]; then
     warn "The amount for CPU_CORES (${CPU_CORES}) exceeds the amount of logical cores available (${CORES}) and will be limited."
     CPU_CORES="$CORES"
+  fi
+
+  return 0
+}
+
+checkSockets() {
+
+  local lscpu_out
+  lscpu_out=$(lscpu 2>/dev/null || true)
+
+  if grep -qi "socket(s)" <<< "$lscpu_out"; then
+    SOCKETS=$(grep -m 1 -i 'socket(s)' <<< "$lscpu_out" | awk '{print $2}')
+    [ -z "${SOCKETS##*[!0-9]*}" ] && SOCKETS=1
+    [ "$SOCKETS" -lt "1" ] && SOCKETS=1
   fi
 
   return 0
@@ -100,13 +114,13 @@ checkStorage() {
 
   # Check system
 
-  # Runtime sockets, pidfiles, and status files live in shared memory so they
-  # are fast, ephemeral, and visible to helper processes.
   QEMU_DIR="/run/shm"
 
   if [ ! -d "/dev/shm" ]; then
     error "Directory /dev/shm not found!" && exit 14
   else
+    # Keep runtime sockets and PID files on shared memory even on images where
+    # /run/shm is absent but /dev/shm is available.
     [ ! -d "$QEMU_DIR" ] && ln -s /dev/shm "$QEMU_DIR"
   fi
 
@@ -115,7 +129,9 @@ checkStorage() {
   # Check folder
 
   if [[ "${STORAGE,,}" != "/storage" ]]; then
-    mkdir -p "$STORAGE"
+    if ! mkdir -p -- "$STORAGE"; then
+      error "Cannot create storage folder ($STORAGE)!" && exit 13
+    fi
   fi
 
   if [ ! -d "$STORAGE" ]; then
@@ -131,11 +147,9 @@ checkStorage() {
   return 0
 }
 
-checkFilesystem() {
+checkHost() {
 
   # Check filesystem
-  FS=$(stat -f -c %T "$STORAGE")
-
   if [[ "${FS,,}" == "ecryptfs" || "${FS,,}" == "tmpfs" ]]; then
     DISK_IO="threads"
     DISK_CACHE="writeback"
@@ -144,69 +158,22 @@ checkFilesystem() {
   return 0
 }
 
-finiteMemoryLimit() {
-
-  local limit="$1"
-  # cgroup v1 commonly reports an enormous sentinel instead of an unlimited
-  # marker; compare as decimal text to avoid shell integer overflow.
-  local sentinel="4611686018427387904"
-  local i
-
-  [[ "$limit" =~ ^[0-9]+$ ]] || return 1
-
-  (( ${#limit} < ${#sentinel} )) && return 0
-  (( ${#limit} > ${#sentinel} )) && return 1
-
-  for (( i=0; i<${#sentinel}; i++ )); do
-    local left="${limit:i:1}"
-    local right="${sentinel:i:1}"
-
-    (( left < right )) && return 0
-    (( left > right )) && return 1
-  done
-
-  return 1
-}
-
-getMemoryInfo() {
-
-  local limit="" current=""
-  local host_total host_avail
-
-  host_total=$(free -b | awk '/^Mem:/ {print $2; exit}')
-  host_avail=$(free -b | awk '/^Mem:/ {print $7; exit}')
-
-  RAM_TOTAL="$host_total"
-  RAM_AVAIL="$host_avail"
-
-  if [ -r /sys/fs/cgroup/memory.max ] && [ -r /sys/fs/cgroup/memory.current ]; then
-    limit=$(< /sys/fs/cgroup/memory.max)
-    current=$(< /sys/fs/cgroup/memory.current)
-  elif [ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ] && [ -r /sys/fs/cgroup/memory/memory.usage_in_bytes ]; then
-    limit=$(< /sys/fs/cgroup/memory/memory.limit_in_bytes)
-    current=$(< /sys/fs/cgroup/memory/memory.usage_in_bytes)
-  fi
-
-  # Use the tighter of host availability and the container's remaining cgroup
-  # allowance so RAM sizing works in both limited and unlimited containers.
-  if finiteMemoryLimit "$limit" && [[ "$current" =~ ^[0-9]+$ ]]; then
-    (( limit < RAM_TOTAL )) && RAM_TOTAL="$limit"
-
-    local available=$(( limit - current ))
-    (( available < 0 )) && available=0
-    (( available < RAM_AVAIL )) && RAM_AVAIL="$available"
-  fi
-
-  return 0
-}
-
-normalizeRamSize() {
+checkRam() {
 
   # Read host and container memory limits.
   getMemoryInfo
 
   RAM_SPARE=500000000
-  RAM_MINIMUM=136314880
+  RAM_MINIMUM="${RAM_MINIMUM:-1073741824}"
+
+  RAM_MINIMUM=$(strip "$RAM_MINIMUM")
+  RAM_MINIMUM="${RAM_MINIMUM// /}"
+  RAM_MINIMUM=$(echo "${RAM_MINIMUM^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
+  numfmt --from=iec "$RAM_MINIMUM" &>/dev/null || {
+    error "Invalid RAM_MINIMUM: $RAM_MINIMUM"
+    exit 16
+  }
+  RAM_MINIMUM=$(numfmt --from=iec "$RAM_MINIMUM")
 
   RAM_SIZE=$(strip "$RAM_SIZE")
   RAM_SIZE="${RAM_SIZE// /}"
@@ -214,16 +181,24 @@ normalizeRamSize() {
 
   if [[ "${RAM_SIZE,,}" != "max" && "${RAM_SIZE,,}" != "half" ]]; then
 
-    # Preserve the historical shorthand: small bare numbers mean GiB, while
-    # values of 130 or more are interpreted as MiB.
+    # Bare values below 130 are interpreted as GiB for convenience; larger bare
+    # values are treated as MiB to preserve historical configurations.
     if [ -z "${RAM_SIZE//[0-9. ]}" ]; then
       [ "${RAM_SIZE%%.*}" -lt "130" ] && RAM_SIZE="${RAM_SIZE}G" || RAM_SIZE="${RAM_SIZE}M"
     fi
 
     RAM_SIZE=$(echo "${RAM_SIZE^^}" | sed 's/MB/M/g;s/GB/G/g;s/TB/T/g')
-    numfmt --from=iec "$RAM_SIZE" &>/dev/null || { error "Invalid RAM_SIZE: $RAM_SIZE" && exit 16; }
+    numfmt --from=iec "$RAM_SIZE" &>/dev/null || {
+      error "Invalid RAM_SIZE: $RAM_SIZE"
+      exit 16
+    }
+
     wanted=$(numfmt --from=iec "$RAM_SIZE")
-    [ "$wanted" -lt "$RAM_MINIMUM" ] && error "RAM_SIZE is too low: $RAM_SIZE" && exit 16
+
+    if [ "$wanted" -lt "$RAM_MINIMUM" ]; then
+      error "$(app) requires at least $(formatBytes "$RAM_MINIMUM") of RAM, but RAM_SIZE is set to $(formatBytes "$wanted")."
+      exit 16
+    fi
 
   fi
 
@@ -302,6 +277,7 @@ checkKvm() {
 TZ=$(strip "$TZ")
 STORAGE=$(strip "$STORAGE")
 COUNTRY=$(strip "$COUNTRY")
+MACHINE=$(strip "${MACHINE,,}")
 DISK_SIZE=$(strip "$DISK_SIZE")
 
 # Helper variables
@@ -329,22 +305,17 @@ SOCKETS=1
 CPU=$(cpu)
 SYS=$(uname -r)
 ARCH=$(dpkg --print-architecture)
-IFS=. read -r KERNEL MINOR _ <<< "$SYS"
 CORES=$(grep -c '^processor' /proc/cpuinfo)
+IFS=. read -r KERNEL MINOR _ <<< "$SYS"
 
-if grep -qi "socket(s)" <<< "$(lscpu)"; then
-  SOCKETS=$(lscpu | grep -m 1 -i 'socket(s)' | awk '{print $2}')
-  [ -z "${SOCKETS##*[!0-9]*}" ] && SOCKETS=1
-  [ "$SOCKETS" -lt "1" ] && SOCKETS=1
-fi
-
-normalizeCpuCores
+checkSockets
+checkCores
 checkStorage
-checkFilesystem
-normalizeRamSize
+checkRam
 
 # Print system info
 SYS="${SYS/-generic/}"
+FS=$(stat -f -c %T "$STORAGE")
 FS="${FS/UNKNOWN //}"
 FS="${FS/ext2\/ext3/ext4}"
 FS=$(echo "$FS" | sed 's/[)(]//g')
@@ -356,6 +327,7 @@ TOTAL_MEM=$(formatBytes "$RAM_TOTAL" "up")
 echo "❯ CPU: ${CPU} | RAM: ${AVAIL_MEM/ GB/}/$TOTAL_MEM | DISK: $SPACE_GB (${FS}) | KERNEL: ${SYS}"
 echo
 
+checkHost
 checkKvm
 
 # Runtime state is intentionally discarded at each container start; persistent
