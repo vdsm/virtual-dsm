@@ -55,10 +55,7 @@ configureNginx() {
 
   rm -f /etc/nginx/sites-enabled/default || return 1
 
-  # TODO: Use setfacl to grant www-data access to QEMU's Unix socket
-  # and restore unprivileged nginx workers.
   if ! sed -i \
-    -e 's/^user .*/user root;/' \
     -e 's/^worker_processes.*/worker_processes 1;/' \
     /etc/nginx/nginx.conf; then
     error "Failed to configure nginx!"
