@@ -41,9 +41,12 @@ configureMachine() {
 
 configureVirtioDevices() {
 
-  DEV_OPTS="-device virtio-balloon-pci,id=balloon0,bus=pcie.0,addr=0x4"
+  local bus
+  bus=$(getPciBus)
+
+  DEV_OPTS="-device virtio-balloon-pci,id=balloon0,bus=$bus,addr=0x4"
   DEV_OPTS+=" -object rng-random,id=objrng0,filename=/dev/urandom"
-  DEV_OPTS+=" -device virtio-rng-pci,rng=objrng0,id=rng0,bus=pcie.0,addr=0x1c"
+  DEV_OPTS+=" -device virtio-rng-pci,rng=objrng0,id=rng0,bus=$bus,addr=0x1c"
 
   return 0
 }

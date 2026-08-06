@@ -111,6 +111,9 @@ waitForSocket() {
 
 configureSerialPorts() {
 
+  local bus
+  bus=$(getPciBus)
+
   # Managed interactive mode separates the console and QEMU monitor into
   # reconnecting sockets; other runs keep the simple combined stdio monitor.
   if enabled "${SHUTDOWN:-Y}" && interactive; then
@@ -130,7 +133,7 @@ configureSerialPorts() {
   fi
 
   SERIAL_OPTS+=" \
-        -device virtio-serial-pci,id=virtio-serial0,bus=pcie.0,addr=0x3 \
+        -device virtio-serial-pci,id=virtio-serial0,bus=$bus,addr=0x3 \
         -chardev socket,id=charchannel0,path=$HOST_AGENT_SOCKET,reconnect-ms=1000 \
         -device virtserialport,bus=virtio-serial0.0,nr=1,chardev=charchannel0,id=channel0,name=vchannel"
 
