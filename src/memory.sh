@@ -113,7 +113,17 @@ checkMinimumMemory() {
   wanted=$(numfmt --from=iec "$RAM_SIZE")
 
   if [ "$wanted" -lt "$RAM_MINIMUM" ]; then
+
     error "$(app) requires at least $(formatBytes "$RAM_MINIMUM") of RAM, but only $(formatBytes "$wanted") can be allocated."
+
+    local kernel
+    kernel=$(uname -r)
+
+    if [[ "${kernel,,}" == *microsoft-standard-wsl2* ]]; then
+      info "WSL2 detected. Increase its memory limit in \"%UserProfile%\\.wslconfig\" by setting \"memory=<size>\" under \"[wsl2]\"."
+      info "Then close Docker Desktop, run \"wsl --shutdown\" in PowerShell and restart Docker Desktop for the new limit to take effect."
+    fi
+
     exit 16
   fi
 
