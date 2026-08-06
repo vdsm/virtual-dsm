@@ -387,13 +387,19 @@ graceful_shutdown() {
   finish "$code"
 }
 
-enabled "$SHUTDOWN" || return 0
-[ -n "${QEMU_TIMEOUT:-}" ] && TIMEOUT="$QEMU_TIMEOUT"
+enableTrap() {
 
-if interactive; then
-  _trap graceful_shutdown SIGINT
-fi
+  enabled "$SHUTDOWN" || return 0
 
-_trap graceful_shutdown SIGTERM SIGHUP SIGABRT SIGQUIT
+  # Keep Ctrl-C available to interactive users without installing an unnecessary
+  # SIGINT handler for background/container execution.
+  if interactive; then
+    _trap gracefulShutdown SIGINT
+  fi
+
+  _trap gracefulShutdown SIGTERM SIGHUP SIGABRT SIGQUIT
+
+  return 0
+}
 
 return 0
