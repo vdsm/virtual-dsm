@@ -219,6 +219,13 @@ checkMemoryAllocation() {
   return 0
 }
 
+checkMemoryRequirement() {
+
+  checkMemoryAllocation "N"
+
+  return 0
+}
+
 finalizeMemory() {
 
   checkMemoryAllocation "Y"
