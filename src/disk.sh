@@ -518,11 +518,9 @@ createDevice () {
   local diskCache="$7"
   local diskSerial="$8"
   local diskSectors="$9"
-  local bus="${PCI_BUS:-pcie.0}"
 
-  # q35 uses pcie.0, while legacy pc/i440fx machines expose their devices on
-  # pci.0 unless the caller supplied an explicit bus.
-  [[ -z "${PCI_BUS:-}" && ( "${MACHINE,,}" == pc || "${MACHINE,,}" == pc-i440fx* ) ]] && bus="pci.0"
+  local bus
+  bus=$(getPciBus)
 
   local options=""
   [ -n "$DISK_OPTIONS" ] && options=",${DISK_OPTIONS#,}"
