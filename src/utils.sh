@@ -292,13 +292,7 @@ makeDir() {
 
 app() {
 
-  local name="$APP"
-
-  if [[ "$name" == "QEMU" ]]; then
-    name="the virtual machine"
-  fi
-
-  echo "$name"
+  echo "Virtual DSM"
   return 0
 }
 
