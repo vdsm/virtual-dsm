@@ -136,23 +136,32 @@ startWebsocketServer() {
     return 1
   fi
 
-  # Keep the sidecar alive briefly before accepting startup as successful,
-  # surfacing immediate bind or script failures with its captured log.
   local i
-  for (( i = 1; i <= 5; i++ )); do
+  for (( i = 1; i <= 50; i++ )); do
 
     if ! isAlive "$pid"; then
-      rm -f -- "$WSD_PID"
+      rm -f -- "$WSD_PID" "$WSD_SOCKET"
       [ -s "$WSD_LOG" ] && cat "$WSD_LOG" >&2
       error "Failed to start websocket server!"
       return 1
     fi
 
+    [ -S "$WSD_SOCKET" ] && return 0
+
     sleep 0.1
 
   done
 
-  return 0
+  pKill "$pid" 2
+
+  if isAlive "$pid"; then
+    kill -9 -- "$pid" 2>/dev/null || :
+  fi
+
+  rm -f -- "$WSD_PID" "$WSD_SOCKET"
+  [ -s "$WSD_LOG" ] && cat "$WSD_LOG" >&2
+  error "Websocket server did not create its socket!"
+  return 1
 }
 
 prepareWebFiles
