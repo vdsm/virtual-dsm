@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-msg="Checking memory..."
-enabled "$DEBUG" && echo "$msg"
-
 normalizeMemory() {
 
   local wanted
