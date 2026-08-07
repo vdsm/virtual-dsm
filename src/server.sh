@@ -54,7 +54,10 @@ configureNginx() {
   mkdir -p /etc/nginx/sites-enabled || return 1
   rm -f /etc/nginx/sites-enabled/default || return 1
 
+  # TODO: Use setfacl to grant www-data access to the Unix sockets
+  # and restore unprivileged nginx workers.
   if ! sed -i \
+    -e 's/^user .*/user root;/' \
     -e 's/^worker_processes.*/worker_processes 1;/' \
     /etc/nginx/nginx.conf; then
     error "Failed to configure nginx!"
