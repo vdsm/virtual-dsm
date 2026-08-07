@@ -53,6 +53,7 @@ configureIpv6Listen() {
 
 configureNginx() {
 
+  mkdir -p /etc/nginx/sites-enabled || return 1
   rm -f /etc/nginx/sites-enabled/default || return 1
 
   if ! sed -i \
@@ -62,16 +63,14 @@ configureNginx() {
     return 1
   fi
 
+  cp /etc/nginx/default.conf /etc/nginx/sites-enabled/web.conf
+
   return 0
 }
 
 configureWebServer() {
 
   configureNginx || return 1
-
-  mkdir -p /etc/nginx/sites-enabled
-  cp /etc/nginx/default.conf /etc/nginx/sites-enabled/web.conf
-
   configureWebPorts || return 1
   configureIpv6Listen || return 1
 
