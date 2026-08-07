@@ -64,7 +64,10 @@ configureNginx() {
     return 1
   fi
 
-  cp /etc/nginx/default.conf /etc/nginx/sites-enabled/web.conf
+  if ! cp /etc/nginx/default.conf /etc/nginx/sites-enabled/web.conf; then
+    error "Failed to copy nginx config!"
+    return 1
+  fi
 
   return 0
 }
