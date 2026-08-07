@@ -307,6 +307,27 @@ containerID() {
   return 0
 }
 
+canBindPrivilegedPort() {
+
+  local port="$1"
+  local proto="${2:-tcp}"
+  local start="1024"
+  local rc=1
+
+  [ -r /proc/sys/net/ipv4/ip_unprivileged_port_start ] &&
+    start=$(< /proc/sys/net/ipv4/ip_unprivileged_port_start)
+
+  (( port >= start )) && return 0
+
+  if [[ "$proto" == "udp" ]]; then
+    { timeout 0.1 nc -4 -n -d -u -l 127.0.0.1 "$port" > /dev/null 2>&1; rc=$?; } || :
+  else
+    { timeout 0.1 nc -4 -n -d -l 127.0.0.1 "$port" > /dev/null 2>&1; rc=$?; } || :
+  fi
+
+  (( rc == 124 ))
+}
+
 disableIPv6() {
 
   local dev="$1"
@@ -645,8 +666,14 @@ getUserPorts() {
 
     done
 
-    [ -n "$num" ] && ports+="$num/$proto,"
+    [ -z "$num" ] && continue
 
+    if ! canBindPrivilegedPort "$num" "$proto"; then
+      warn "Could not assign port $num/$proto to \"USER_PORTS\" because it cannot be bound by the current user!"
+      continue
+    fi
+
+    ports+="$num/$proto,"
   done
 
   # Remove duplicates
@@ -903,6 +930,7 @@ configurePasst() {
 
   PASST_OPTS+=" -H $HOST"
   PASST_OPTS+=" -M $GATEWAY_MAC"
+  PASST_OPTS+=" --runas $EUID:$(id -g)"
   PASST_OPTS+=" -P $PASST_PID"
   PASST_OPTS+=" -s $PASST_SOCKET"
   PASST_OPTS+=" -l $log"
