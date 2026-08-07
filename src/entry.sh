@@ -9,7 +9,8 @@ cd /run
 
 . start.sh      # Startup hook
 . utils.sh      # Load functions
-. reset.sh      # Initialize system
+. init.sh       # Initialize system
+. memory.sh     # Check memory
 . server.sh     # Start webserver
 . install.sh    # Run installation
 . disk.sh       # Initialize disks
@@ -18,7 +19,6 @@ cd /run
 . proc.sh       # Initialize processor
 . serial.sh     # Initialize serialport
 . power.sh      # Configure shutdown
-. memory.sh     # Check available memory
 . config.sh     # Configure arguments
 . finish.sh     # Finish initialization
 

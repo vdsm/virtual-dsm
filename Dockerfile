@@ -29,10 +29,6 @@ RUN <<EOF
     procps \
     ipcalc \
     ethtool \
-    python3 \
-    python3-pip \
-    python3-msgpack \
-    python3-pysodium \
     xz-utils \
     iptables \
     iproute2 \
@@ -48,7 +44,11 @@ RUN <<EOF
     inotify-tools \
     ca-certificates \
     netcat-openbsd \
-    qemu-system-x86
+    qemu-system-x86 \
+    python3 \
+    python3-pip \
+    python3-msgpack \
+    python3-pysodium
 
   # Install Passt package
   wget "https://github.com/qemus/passt/releases/download/v${VERSION_PASST}/passt_${VERSION_PASST}_${TARGETARCH}.deb" -O /tmp/passt.deb -q --timeout=10
@@ -58,14 +58,6 @@ RUN <<EOF
 
   # Install Python dependencies
   pip3 install --no-cache-dir --break-system-packages --root-user-action=ignore "dissect.cstruct==$VERSION_CSTRUCT"
-
-  # Configure QEMU
-  mkdir -p /etc/qemu
-  echo "allow br0" > /etc/qemu/bridge.conf
-
-  # Configure nginx
-  unlink /etc/nginx/sites-enabled/default
-  sed -i 's/^worker_processes.*/worker_processes 1;/' /etc/nginx/nginx.conf
 
   # Set version file
   echo "$VERSION_ARG" > /etc/version

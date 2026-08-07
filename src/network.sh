@@ -968,6 +968,17 @@ configurePasst() {
   return 0
 }
 
+configureBridge() {
+
+  local file="/etc/qemu/bridge.conf"
+
+  [ -e "$file" ] && return 0
+  mkdir -p "${file%/*}" || return 0
+  echo "allow br0" > "$file" || return 0
+
+  return 0
+}
+
 createBridge() {
 
   local gateway="$1"
@@ -2137,6 +2148,7 @@ showHostInfo() {
     echo "❯ DNS: $nameservers"
   fi
 
+  enabled "$DEBUG" && echo
   return 0
 }
 
@@ -2191,6 +2203,7 @@ initializeNetwork() {
 
   configureMTU
   configureMAC
+  configureBridge
 
   showHostInfo
 

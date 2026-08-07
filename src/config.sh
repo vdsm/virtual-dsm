@@ -61,6 +61,8 @@ buildArguments() {
   return 0
 }
 
+finalizeMemory
+
 configureMemory
 configureMonitor
 configureMachine

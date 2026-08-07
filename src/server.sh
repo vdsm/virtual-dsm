@@ -51,11 +51,26 @@ configureIpv6Listen() {
   return 0
 }
 
-configureWebServer() {
+configureNginx() {
 
-  mkdir -p /etc/nginx/sites-enabled
+  mkdir -p /etc/nginx/sites-enabled || return 1
+  rm -f /etc/nginx/sites-enabled/default || return 1
+
+  if ! sed -i \
+    -e 's/^worker_processes.*/worker_processes 1;/' \
+    /etc/nginx/nginx.conf; then
+    error "Failed to configure nginx!"
+    return 1
+  fi
+
   cp /etc/nginx/default.conf /etc/nginx/sites-enabled/web.conf
 
+  return 0
+}
+
+configureWebServer() {
+
+  configureNginx || return 1
   configureWebPorts || return 1
   configureIpv6Listen || return 1
 

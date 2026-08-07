@@ -7,6 +7,12 @@ info () { printf "%b%s%b" "\E[1;34m❯ \E[1;36m" "${1:-}" "\E[0m\n"; }
 error () { printf "%b%s%b" "\E[1;31m❯ " "ERROR: ${1:-}" "\E[0m\n" >&2; }
 warn () { printf "%b%s%b" "\E[1;31m❯ " "Warning: ${1:-}" "\E[0m\n" >&2; }
 
+app() {
+
+  echo "Virtual DSM"
+  return 0
+}
+
 readPidFile() {
 
   local -n _pid="$1"
@@ -304,12 +310,6 @@ makeDir() {
     return 0
   fi
 
-  return 0
-}
-
-app() {
-
-  echo "Virtual DSM"
   return 0
 }
 
