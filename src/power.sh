@@ -335,7 +335,7 @@ waitForShutdown() {
   return 0
 }
 
-graceful_shutdown() {
+gracefulShutdown() {
 
   local sig="$1"
   local pid code
