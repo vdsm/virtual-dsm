@@ -2,20 +2,19 @@
 set -Eeuo pipefail
 
 : "${WEB_PORT:="5000"}"    # Webserver port
-: "${WSD_PORT:="8004"}"    # Websockets port
 
 # Sanitize port variables
 WEB_PORT=$(strip "$WEB_PORT")
-WSD_PORT=$(strip "$WSD_PORT")
 
 WEB_PID="/run/nginx.pid"
 WSD_LOG="/var/log/websocketd.log"
 WSD_PID="$QEMU_DIR/websocketd.pid"
+WSD_SOCKET="$QEMU_DIR/status-ws.sock"
 
 prepareWebFiles() {
 
   cp -r /var/www/* "$QEMU_DIR" || return 1
-  rm -f -- "$WSD_PID" "$WEB_PID" "$WSD_LOG" || return 1
+  rm -f -- "$WSD_PID" "$WSD_SOCKET" "$WEB_PID" "$WSD_LOG" || return 1
 
   return 0
 }
@@ -24,9 +23,8 @@ configureWebPorts() {
 
   if ! sed -i \
     -e "s|listen 5000 default_server;|listen $WEB_PORT default_server;|g" \
-    -e "s|proxy_pass http://127.0.0.1:8004/;|proxy_pass http://127.0.0.1:$WSD_PORT/;|g" \
     /etc/nginx/sites-enabled/web.conf; then
-    error "Failed to configure webserver ports!"
+    error "Failed to configure webserver port!"
     return 1
   fi
 
@@ -115,7 +113,7 @@ stopWebsocketServer() {
     fi
   fi
 
-  rm -f -- "$WSD_PID"
+  rm -f -- "$WSD_PID" "$WSD_SOCKET"
   return 0
 }
 
@@ -123,8 +121,7 @@ startWebsocketServer() {
 
   # Start websocket server
   websocketd \
-    --address 127.0.0.1 \
-    --port="$WSD_PORT" \
+    --unixsocket="$WSD_SOCKET" \
     /run/socket.sh \
     >"$WSD_LOG" 2>&1 &
 
