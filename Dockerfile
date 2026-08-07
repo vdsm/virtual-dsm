@@ -7,6 +7,7 @@ ARG TARGETARCH
 ARG TARGETPLATFORM
 
 ARG VERSION_ARG="0.0"
+ARG VERSION_WSD="0.4.2"
 ARG VERSION_CSTRUCT="4.7"
 ARG VERSION_PASST="2026_07_28"
 
@@ -39,7 +40,6 @@ RUN <<EOF
     e2fsprogs \
     diffutils \
     qemu-utils \
-    websocketd \
     iputils-ping \
     inotify-tools \
     ca-certificates \
@@ -53,6 +53,10 @@ RUN <<EOF
   # Install Passt package
   wget "https://github.com/qemus/passt/releases/download/v${VERSION_PASST}/passt_${VERSION_PASST}_${TARGETARCH}.deb" -O /tmp/passt.deb -q --timeout=10
   dpkg -i /tmp/passt.deb
+
+  # Install Websocketd package
+  wget "https://github.com/qemus/websocketd/releases/download/v${VERSION_WSD}/websocketd-${VERSION_WSD}_${TARGETARCH}.deb" -O /tmp/wsd.deb -q --timeout=10
+  dpkg -i /tmp/wsd.deb
 
   apt-get clean
 

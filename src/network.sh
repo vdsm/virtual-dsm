@@ -566,10 +566,6 @@ getReservedPorts() {
     list+="53/tcp,53/udp,"
   fi
 
-  # WEB_PORT and WSD_PORT are intentionally not reserved. In non-DHCP modes,
-  # closeWeb() releases both before NAT or user-mode forwarding is configured,
-  # allowing WEB_PORT (normally 5000) to be handed over to DSM.
-
   normalizePorts "$list" "$mode"
   return $?
 }
