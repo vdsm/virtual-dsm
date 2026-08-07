@@ -68,8 +68,8 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
 - Docker or Podman on a Linux host with KVM support.
 - Docker Desktop or Podman (Desktop) on Windows 11 with nested virtualization enabled.
-- At least 2 GB of available RAM.
-- At least 32 GB of free disk space.
+- At least 1 GB of available RAM.
+- At least 16 GB of free disk space.
 
 > [!NOTE]
 > Docker Desktop on Linux, macOS, and Windows 10 does not currently provide KVM access to containers and is therefore not supported.
