@@ -200,22 +200,6 @@ normalizeSize() {
   return 0
 }
 
-baseDir() {
-
-  local path="${1%/}"
-
-  [[ -z "$path" || "$path" == "/" ]] && {
-    echo "/"
-    return 0
-  }
-
-  path="${path#/}"
-  path="${path%%/*}"
-
-  echo "/$path"
-  return 0
-}
-
 freeSpace() {
 
   local path="$1"
