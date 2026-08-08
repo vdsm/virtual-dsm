@@ -217,7 +217,7 @@ finish() {
     failed=1
   fi
 
-  touch "$QEMU_END"
+  touch "$QEMU_END" || :
 
   forceKillQemu "$reason"
   cleanupHelpers
