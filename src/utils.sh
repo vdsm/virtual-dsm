@@ -123,32 +123,6 @@ disabled() {
   esac
 }
 
-formatBytes() {
-
-  local result
-
-  if ! result=$(numfmt --to=iec --suffix=B "$1" | sed -r 's/([A-Z])/ \1/' | sed 's/ B/ bytes/g;'); then
-    return 1
-  fi
-
-  local unit="${result//[0-9. ]}"
-  result="${result//[a-zA-Z ]/}"
-
-  if [[ "${2:-}" == "up" ]]; then
-    if [[ "$result" == *"."* ]]; then
-      result="${result%%.*}"
-      result=$((result+1))
-    fi
-  else
-    if [[ "${2:-}" == "down" ]]; then
-      result="${result%%.*}"
-    fi
-  fi
-
-  echo "$result $unit"
-  return 0
-}
-
 isAlive() {
 
   local pid="$1"
@@ -272,47 +246,6 @@ mKill() {
   return 0
 }
 
-setOwner() {
-
-  local file="$1"
-  local dir uid gid
-
-  [ ! -f "$file" ] && return 1
-
-  # Match generated files to the owner of their bind-mounted parent directory
-  # instead of assuming a fixed container or host UID.
-  dir=$(dirname -- "$file")
-  uid=$(stat -c '%u' "$dir") || return 1
-  gid=$(stat -c '%g' "$dir") || return 1
-
-  chown "$uid:$gid" "$file" || return 1
-
-  return 0
-}
-
-makeDir() {
-
-  local path="$1"
-  local dir uid gid
-
-  [ -d "$path" ] && return 0
-  mkdir -p "$path" || return 1
-
-  dir=$(dirname -- "$path")
-
-  if ! uid=$(stat -c '%u' "$dir") || ! gid=$(stat -c '%g' "$dir"); then
-    warn "failed to determine the owner for \"$path\"."
-    return 0
-  fi
-
-  if ! chown "$uid:$gid" "$path"; then
-    warn "failed to set the owner for \"$path\"."
-    return 0
-  fi
-
-  return 0
-}
-
 finiteMemoryLimit() {
 
   local limit="$1"
@@ -366,6 +299,89 @@ getMemoryInfo() {
     local available=$(( limit - current ))
     (( available < 0 )) && available=0
     (( available < RAM_AVAIL )) && RAM_AVAIL="$available"
+  fi
+
+  return 0
+}
+
+baseDir() {
+
+  local path="${1%/}"
+
+  [[ -z "$path" || "$path" == "/" ]] && {
+    echo "/"
+    return 0
+  }
+
+  path="${path#/}"
+  path="${path%%/*}"
+
+  echo "/$path"
+  return 0
+}
+
+formatBytes() {
+
+  local result
+
+  if ! result=$(numfmt --to=iec --suffix=B "$1" | sed -r 's/([A-Z])/ \1/' | sed 's/ B/ bytes/g;'); then
+    return 1
+  fi
+
+  local unit="${result//[0-9. ]}"
+  result="${result//[a-zA-Z ]/}"
+
+  if [[ "${2:-}" == "up" ]]; then
+    if [[ "$result" == *"."* ]]; then
+      result="${result%%.*}"
+      result=$((result+1))
+    fi
+  else
+    if [[ "${2:-}" == "down" ]]; then
+      result="${result%%.*}"
+    fi
+  fi
+
+  echo "$result $unit"
+  return 0
+}
+
+setOwner() {
+
+  local file="$1"
+  local dir uid gid
+
+  [ ! -f "$file" ] && return 1
+
+  # Match generated files to the owner of their bind-mounted parent directory
+  # instead of assuming a fixed container or host UID.
+  dir=$(dirname -- "$file")
+  uid=$(stat -c '%u' "$dir") || return 1
+  gid=$(stat -c '%g' "$dir") || return 1
+
+  chown "$uid:$gid" "$file" || return 1
+
+  return 0
+}
+
+makeDir() {
+
+  local path="$1"
+  local dir uid gid
+
+  [ -d "$path" ] && return 0
+  mkdir -p "$path" || return 1
+
+  dir=$(dirname -- "$path")
+
+  if ! uid=$(stat -c '%u' "$dir") || ! gid=$(stat -c '%g' "$dir"); then
+    warn "failed to determine the owner for \"$path\"."
+    return 0
+  fi
+
+  if ! chown "$uid:$gid" "$path"; then
+    warn "failed to set the owner for \"$path\"."
+    return 0
   fi
 
   return 0
