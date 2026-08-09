@@ -2,7 +2,9 @@
 set -Eeuo pipefail
 
 : "${PLATFORM:="x64"}"
+: "${DISPLAY:="none"}"
 : "${APP:="Virtual DSM"}"
+: "${BOOT_MODE:="legacy"}"
 : "${SUPPORT:="https://github.com/vdsm/virtual-dsm"}"
 
 cd /run
@@ -15,10 +17,13 @@ cd /run
 . install.sh    # Run installation
 . disk.sh       # Initialize disks
 . display.sh    # Initialize graphics
+#. audio.sh      # Initialize audio
 . network.sh    # Initialize network
+#. boot.sh       # Configure boot
 . proc.sh       # Initialize processor
 . serial.sh     # Initialize serialport
 . power.sh      # Configure shutdown
+#. balloon.sh    # Initialize ballooning
 . config.sh     # Configure arguments
 . finish.sh     # Finish initialization
 
