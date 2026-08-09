@@ -3,6 +3,8 @@ var request;
 var failureTimer;
 var navigationTimer;
 var booting = false;
+var portal = false;
+var portalUrl = "";
 var interval = 1000;
 var lastStatus = "";
 var stopped = "The container has stopped. Check the container logs for details.";
@@ -34,13 +36,15 @@ function clearFailure() {
 
 function connectionLost() {
 
-    if (booting || document.hidden || failureTimer) {
+    if (booting || (portal && portalUrl.length == 0) ||
+        document.hidden || failureTimer) {
         return false;
     }
 
     failureTimer = setTimeout(function() {
 
-        if (booting || document.hidden) {
+        if (booting || (portal && portalUrl.length == 0) ||
+            document.hidden) {
             failureTimer = null;
             return;
         }
@@ -109,7 +113,6 @@ function getURL() {
 function redirect(url) {
 
     if (document.hidden) {
-        schedule();
         return false;
     }
 
@@ -123,20 +126,43 @@ function redirect(url) {
     return true;
 }
 
+function beginPortal(url) {
+
+    portal = true;
+    portalUrl = url || "";
+    booting = false;
+
+    clearFailure();
+    setInfo("Connecting to web portal", true);
+
+    if (portalUrl.length > 0) {
+        redirect(portalUrl);
+    } else {
+        schedule();
+    }
+
+    return true;
+}
+
+function processCommand(msg) {
+
+    if (msg == "portal") {
+        return beginPortal("");
+    }
+
+    if (msg.indexOf("portal ") == 0) {
+        return beginPortal(msg.substring(7));
+    }
+
+    console.warn("Unknown command: " + msg);
+    return false;
+}
+
 function processMsg(msg) {
 
     rememberStatus(msg);
-
-    if (msg.toLowerCase().indexOf("href=") !== -1) {
-        booting = false;
-
-        var div = document.createElement("div");
-        div.innerHTML = msg;
-        var url = div.querySelector("a").href;
-        redirect(url);
-    }
-
     setInfo(msg);
+
     return true;
 }
 
@@ -173,9 +199,14 @@ function processInfo() {
             } else {
                 clearFailure();
                 processMsg(msg);
-                if (msg.toLowerCase().indexOf("href=") == -1) {
+
+                if (portalUrl.length > 0) {
+                    setInfo("Connecting to web portal", true);
+                    redirect(portalUrl);
+                } else {
                     schedule();
                 }
+
                 return true;
             }
         }
@@ -184,7 +215,14 @@ function processInfo() {
             clearFailure();
             booting = false;
             setInfo("Connecting to web portal", true);
-            reload();
+
+            if (portalUrl.length > 0) {
+                redirect(portalUrl);
+            } else {
+                portal = true;
+                reload();
+            }
+
             return true;
         }
 
@@ -292,7 +330,6 @@ function schedule() {
 function reload() {
 
     if (document.hidden) {
-        schedule();
         return false;
     }
 
@@ -312,7 +349,12 @@ function connect() {
     var ws = new WebSocket(wsUrl);
 
     ws.onopen = function(e) {
+
         clearFailure();
+
+        if (portalUrl.length > 0) {
+            redirect(portalUrl);
+        }
     };
 
     ws.onmessage = function(e) {
@@ -326,15 +368,17 @@ function connect() {
         switch (cmd) {
             case "s":
 
-                var aborted = abortRequest();
-
-                processMsg(msg);
-
-                if (aborted &&
-                    msg.toLowerCase().indexOf("href=") == -1) {
+                if (abortRequest()) {
                     schedule();
                 }
 
+                processMsg(msg);
+                break;
+
+            case "c":
+
+                abortRequest();
+                processCommand(msg);
                 break;
 
             case "e":
@@ -354,7 +398,17 @@ function connect() {
     };
 
     ws.onclose = function(e) {
+
+        if (portalUrl.length > 0) {
+            clearNavigation();
+        }
+
         connectionLost();
+
+        if (portal && portalUrl.length == 0) {
+            return;
+        }
+
         setTimeout(function() {
             connect();
         }, interval);
