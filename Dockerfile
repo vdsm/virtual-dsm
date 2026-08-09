@@ -20,6 +20,7 @@ RUN <<EOF
 
   apt-get update
   apt-get --no-install-recommends -y install \
+    samba \
     jq \
     tini \
     curl \
