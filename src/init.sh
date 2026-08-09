@@ -9,18 +9,21 @@ enabled "${TRACE:-}" && set -o functrace && trap 'echo "# $BASH_COMMAND" >&2' DE
 
 # Docker environment variables
 
-: "${TZ:=""}"              # System timezone
 : "${KVM:="Y"}"            # KVM acceleration
-: "${DEBUG:="N"}"          # Disable debugging mode
-: "${COUNTRY:=""}"         # Country code for mirror
-: "${MACHINE:="q35"}"      # Machine type selection
+: "${BOOT:=""}"            # Path of ISO file
+: "${AUDIO:="N"}"          # Stream guest audio
+: "${DEBUG:="N"}"          # Disable debugging
+: "${MACHINE:="q35"}"      # Machine selection
 : "${ALLOCATE:=""}"        # Preallocate diskspace
 : "${ARGUMENTS:=""}"       # Extra QEMU parameters
 : "${CPU_CORES:="2"}"      # Amount of CPU cores
 : "${RAM_SIZE:="2G"}"      # Maximum RAM amount
 : "${RAM_CHECK:="Y"}"      # Check available RAM
-: "${DISK_SIZE:="16G"}"    # Initial data disk size
+: "${DISK_SIZE:="64G"}"    # Initial data disk size
+: "${BOOT_MODE:=""}"       # Boot system with UEFI
+: "${BOOT_INDEX:="9"}"     # Boot index of CD drive
 : "${STORAGE:="/storage"}" # Storage folder location
+: "${CONNECTIONS:="4"}"    # Download connection count
 
 detectEngine() {
 
@@ -43,10 +46,10 @@ detectRootless() {
 
   local uid_map
 
-  # A full identity UID map indicates a rootful container; any remapping is
-  # treated as rootless even though the process itself runs as UID 0.
   uid_map=$(awk '{$1=$1; print}' /proc/self/uid_map 2>/dev/null || true)
 
+  # An identity UID mapping means real container root; any remapped range is a
+  # rootless/user-namespace environment.
   if [[ "$uid_map" == "0 0 4294967295" ]]; then
     ROOTLESS="N"
   else
@@ -68,10 +71,10 @@ checkPrivileged() {
   last_cap=$(cat /proc/sys/kernel/cap_last_cap)
 
   # Calculate the maximum capability value
-  # Compare the bounding set with every capability supported by this kernel;
-  # checking only a few known capabilities would misclassify newer kernels.
   local max_cap=$(((1 << (last_cap + 1)) - 1))
 
+  # A privileged container exposes the complete kernel capability bounding set,
+  # not merely the smaller set Docker grants by default.
   if [ "$cap_bnd" -eq "$max_cap" ]; then
     PRIVILEGED="Y"
   fi
@@ -105,6 +108,22 @@ checkSockets() {
     SOCKETS=$(grep -m 1 -i 'socket(s)' <<< "$lscpu_out" | awk '{print $2}')
     [ -z "${SOCKETS##*[!0-9]*}" ] && SOCKETS=1
     [ "$SOCKETS" -lt "1" ] && SOCKETS=1
+  fi
+
+  return 0
+}
+
+checkHost() {
+
+  if [[ "${FS,,}" == "ecryptfs" || "${FS,,}" == "tmpfs" ]]; then
+    DISK_IO="threads"
+    DISK_CACHE="writeback"
+  fi
+
+  if [[ "${BOOT_MODE:-}" == "windows"* ]]; then
+    if [[ "${FS,,}" == "btrfs" ]]; then
+      warn "you are using the BTRFS filesystem for /storage, this might introduce issues with Windows Setup!"
+    fi
   fi
 
   return 0
@@ -147,17 +166,6 @@ checkStorage() {
   return 0
 }
 
-checkHost() {
-
-  # Check filesystem
-  if [[ "${FS,,}" == "ecryptfs" || "${FS,,}" == "tmpfs" ]]; then
-    DISK_IO="threads"
-    DISK_CACHE="writeback"
-  fi
-
-  return 0
-}
-
 checkKvm() {
 
   # Check KVM support
@@ -171,8 +179,6 @@ checkKvm() {
   if disabled "$KVM"; then
     warn "KVM acceleration is disabled, this will cause the machine to run about 10 times slower!"
   else
-    # KVM accelerates only matching host and guest instruction sets; cross-
-    # architecture execution must fall back to software emulation.
     if [[ "${ARCH,,}" != "$TARGET" ]]; then
       KVM="N"
       warn "your CPU architecture is ${ARCH^^} and cannot provide KVM acceleration for ${PLATFORM^^} instructions, so the machine will run about 10 times slower."
@@ -194,10 +200,6 @@ checkKvm() {
           if ! grep -qw "vmx\|svm" <<< "$flags"; then
             KVM_ERR="(not enabled in BIOS)"
           fi
-          if ! grep -qw "sse4_2" <<< "$flags"; then
-            error "Your CPU does not have the SSE4 instruction set that Virtual DSM requires!"
-            enabled "$DEBUG" || exit 88
-          fi
         fi
       fi
     fi
@@ -217,6 +219,8 @@ checkKvm() {
             error "KVM acceleration is not available $KVM_ERR, this will cause the machine to run about 10 times slower."
             error "See the FAQ for possible causes, or disable acceleration by adding the \"KVM=N\" variable (not recommended)." ;;
         esac
+        # DEBUG mode deliberately permits a slow TCG fallback so diagnostics can
+        # continue even when KVM setup is broken.
         enabled "$DEBUG" || exit 88
       fi
     fi
@@ -227,11 +231,12 @@ checkKvm() {
 }
 
 # Sanitize variables
-TZ=$(strip "$TZ")
 STORAGE=$(strip "$STORAGE")
-COUNTRY=$(strip "$COUNTRY")
 MACHINE=$(strip "${MACHINE,,}")
 DISK_SIZE=$(strip "$DISK_SIZE")
+BOOT_INDEX=$(strip "$BOOT_INDEX")
+BOOT_MODE=$(strip "${BOOT_MODE,,}")
+CONNECTIONS=$(strip "$CONNECTIONS")
 
 # Helper variables
 ROOTLESS="N"
@@ -240,6 +245,7 @@ ENGINE="Docker"
 PROCESS="${APP,,}"
 PROCESS="${PROCESS// /-}"
 
+# Detect runtime
 detectEngine
 detectRootless
 
@@ -280,17 +286,30 @@ TOTAL_MEM=$(formatBytes "$RAM_TOTAL" "up")
 echo "❯ CPU: ${CPU} | RAM: ${AVAIL_MEM/ GB/}/$TOTAL_MEM | DISK: $SPACE_GB (${FS}) | KERNEL: ${SYS}"
 echo
 
+# Check compatibility
+
 checkHost
 checkKvm
 
-# Runtime state is intentionally discarded at each container start; persistent
-# machine and disk identity lives under STORAGE instead.
+# Cleanup dirs
+rm -rf "$STORAGE/tmp"
+
 # Cleanup files
-rm -f "$QEMU_DIR"/dsm.url
 rm -f "$QEMU_DIR"/{qemu.*,*.{pid,sock,pipe}}
 
-# Cleanup dirs
-rm -rf /tmp/dsm
-rm -rf "$STORAGE/tmp"
+# Helper processes terminated during shutdown
+# Store variable names rather than current values because many helper PID paths
+# are assigned later during startup and resolved only during cleanup.
+HELPER_PIDS=(
+  TPM_PID
+  WSD_PID
+  AUX_PID
+  WEB_PID
+  AUDIO_PID
+  PASST_PID
+  DNSMASQ_PID
+  CONSOLE_PID
+  BALLOONING_PID
+)
 
 return 0
