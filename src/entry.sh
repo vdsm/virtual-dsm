@@ -8,7 +8,6 @@ set -Eeuo pipefail
 : "${USB:="N"}"
 : "${AUDIO:="N"}"
 : "${VGA:="none"}"
-: "${TIMEOUT:="105"}"
 : "${DISPLAY:="none"}"
 : "${WEB_PORT:="5000"}"
 : "${DISK_OFFSET:="2"}"
@@ -27,14 +26,13 @@ cd /run
 . install.sh    # Run installation
 . disk.sh       # Initialize disks
 . display.sh    # Initialize graphics
-#. audio.sh      # Initialize audio
 . prepare.sh    # Prepare for launch
 . network.sh    # Initialize network
 . boot.sh       # Configure boot
 . proc.sh       # Initialize processor
 . serial.sh     # Initialize serialport
 . power.sh      # Configure shutdown
-#. balloon.sh    # Initialize ballooning
+. balloon.sh    # Initialize ballooning
 . config.sh     # Configure arguments
 . finish.sh     # Finish initialization
 
