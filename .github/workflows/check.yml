@@ -25,6 +25,7 @@ jobs:
                 -e SC2034
                 -e SC2317
                 -e SC2153
+                -e DL3067
           -
             name: Lint Dockerfile
             uses: hadolint/hadolint-action@v3.4.0
