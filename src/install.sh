@@ -57,6 +57,22 @@ checkDsmSpace() {
   return 0
 }
 
+downloadFile() {
+
+  local url="$1"
+  local pat="$2"
+  local msg="$3"
+  local connections="${4:-1}"
+
+  downloadToFile \
+    "$url" \
+    "$pat" \
+    "$msg" \
+    "0" \
+    "$connections" \
+    "Y"
+}
+
 downloadPat() {
 
   local pat="$1"
@@ -66,16 +82,9 @@ downloadPat() {
     msg="Copying DSM"
     err="Failed to copy ${URL:7}"
     info "Install: Copying installation image..."
-  else
-    msg="Downloading DSM"
-    err="Failed to download $URL"
-    info "Install: Downloading $BASE.pat..."
-  fi
+    html "$msg..." || return $?
 
-  html "$msg..." || return $?
-  rm -f "$pat" || return $?
-
-  if [[ "$URL" == "file://"* ]]; then
+    rm -f "$pat" || return $?
 
     if [ ! -f "${URL:7}" ]; then
       error "File '${URL:7}' does not exist!"
@@ -85,58 +94,19 @@ downloadPat() {
     cp "${URL:7}" "$pat" || return $?
 
   else
+    msg="Downloading DSM"
+    err="Failed to download $URL"
+    info "Install: Downloading $BASE.pat..."
 
-    local size=0
-    local reason=""
-    local output=""
-    local log rc
-    local -a progress=()
-
-    log=$(mktemp) || return $?
-
-    [[ "${URL,,}" == *"_72806.pat" ]] && size=361010261
-    [[ "${URL,,}" == *"_69057.pat" ]] && size=363837333
-    [[ "${URL,,}" == *"_42218.pat" ]] && size=379637760
-
-    # Use Wget's progress bar in a terminal and progress.sh in container logs.
-    if [ -t 1 ]; then
-      progress=( --show-progress --progress=bar:noscroll )
-    else
-      output="log"
-    fi
-
-    /run/progress.sh "$pat" "$size" "$msg ([P])..." "$output" 52428800 &
-
-    {
-      LC_ALL=C wget "$URL" -O "$pat" --no-verbose --no-check-certificate \
-        --timeout=30 --no-http-keep-alive "${progress[@]}" \
-        --output-file="$log"
-      rc=$?
-    } || :
-
-    fKill "progress.sh"
-
-    if (( rc != 0 )); then
-      reason=$(sed -n \
-        -e 's/^wget: //p' \
-        -e 's/^[0-9-]\{10\} [0-9:]\{8\} ERROR //p' \
-        "$log" | tail -n 1) || return $?
-    fi
-
-    rm -f "$log" || return $?
-
-    if (( rc == 3 )); then
-      error "$err because the file could not be written (disk full?)."
-      return 69
-    elif (( rc != 0 )); then
-      if [ -n "$reason" ]; then
-        error "$err: ${reason%.}."
-      else
-        error "$err with exit status $rc."
-      fi
-      return 69
-    fi
-
+    downloadRetry \
+      "$pat" \
+      "$CONNECTIONS" \
+      "5" \
+      "$BASE.pat" \
+      "0" \
+      "$URL" \
+      "$pat" \
+      "$msg" || return 69
   fi
 
   if [ ! -s "$pat" ]; then
