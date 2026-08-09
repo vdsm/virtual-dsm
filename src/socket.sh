@@ -2,31 +2,52 @@
 set -Eeuo pipefail
 
 lastmsg=""
-path="/run/shm/msg.html"
-dir=$(dirname -- "$path")
-name=$(basename -- "$path")
+lastcmd=""
+status="/run/shm/msg.html"
+command="/run/shm/status.cmd"
+dir=$(dirname -- "$status")
+status_name=$(basename -- "$status")
+command_name=$(basename -- "$command")
 
-refresh() {
+# websocketd clients use s: for status updates and c: for control commands.
+refreshStatus() {
 
-  [ ! -f "$path" ] && return 0
-  [ ! -s "$path" ] && return 0
+  [ ! -f "$status" ] && return 0
+  [ ! -s "$status" ] && return 0
 
-  msg=$(< "$path") || return 0
+  msg=$(< "$status") || return 0
   msg="${msg%$'\n'}"
 
   [ -z "$msg" ] && return 0
   [[ "$msg" == "$lastmsg" ]] && return 0
 
   lastmsg="$msg"
-  # websocketd clients interpret s: as a status update and c: as a command;
-  # suppress unchanged status to avoid redundant browser work.
   echo "s: $msg"
 
   return 0
 }
 
-refresh
+refreshCommand() {
 
+  [ ! -f "$command" ] && return 0
+  [ ! -s "$command" ] && return 0
+
+  cmd=$(< "$command") || return 0
+  cmd="${cmd%$'\n'}"
+
+  [ -z "$cmd" ] && return 0
+  [[ "$cmd" == "$lastcmd" ]] && return 0
+
+  lastcmd="$cmd"
+  echo "c: $cmd"
+
+  return 0
+}
+
+refreshStatus
+refreshCommand
+
+# Watch the directory because status and command updates use atomic rename.
 inotifywait \
   -m -q \
   -e close_write,moved_to \
@@ -34,11 +55,17 @@ inotifywait \
   "$dir" |
   while read -r event file; do
 
-    [[ "$file" == "$name" ]] || continue
-
-    case "${event,,}" in
-      "close_write"* | "moved_to"* )
-        refresh ;;
+    case "$file" in
+      "$status_name" )
+        case "${event,,}" in
+          "close_write"* | "moved_to"* )
+            refreshStatus ;;
+        esac ;;
+      "$command_name" )
+        case "${event,,}" in
+          "close_write"* | "moved_to"* )
+            refreshCommand ;;
+        esac ;;
     esac
 
   done
