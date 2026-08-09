@@ -14,6 +14,7 @@ set -Eeuo pipefail
 : "${DISK_OFFSET:="2"}"
 : "${DISK_SIZE:="256G"}"
 : "${RAM_MINIMUM:="1G"}"
+: "${DISK_MINIMUM:="6G"}"
 : "${BOOT_MODE:="legacy"}"
 
 cd /run
