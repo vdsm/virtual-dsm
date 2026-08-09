@@ -56,7 +56,7 @@ An empty default means the variable is unset and its value is determined automat
 | `DEV` | `eth0` | Container network interface used as the uplink. |
 | `MTU` |  | MTU assigned to the guest network interface. |
 | `MASK` | `255.255.255.0` | IPv4 netmask for guest network. |
-| `TAP` | `dsm` | TAP or macvtap interface name. |
+| `TAP` | `qemu` | TAP or macvtap interface name. |
 | `BRIDGE` | `docker` | Bridge name used for NAT networking. |
 | `HOST_PORTS` |  | Ports excluded from guest forwarding. |
 | `USER_PORTS` |  | Additional ports to forward to DSM when using user-mode networking. |
