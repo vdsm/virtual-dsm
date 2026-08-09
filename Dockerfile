@@ -24,6 +24,7 @@ RUN <<EOF
     tini \
     curl \
     wget \
+    aria2 \
     fdisk \
     unzip \
     nginx \
