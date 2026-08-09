@@ -19,7 +19,12 @@ CPU_VENDOR=$(lscpu | awk '/Vendor ID/{print $3}')
 
 closeWebserver() {
 
-  if disabled "${NETWORK:-Y}" || enabled "${DHCP:-N}" || disabled "${WEB:-}"; then
+  disabled "${NETWORK:-Y}" && return 0
+
+  MSG="Booting DSM instance..."
+  html "$MSG" || return $?
+
+  if enabled "${DHCP:-N}" || disabled "${WEB:-}"; then
     return 0
   fi
 
