@@ -1,7 +1,13 @@
 var timer;
 var request;
+var failureTimer;
+var navigationTimer;
 var booting = false;
+var portal = false;
+var portalUrl = "";
 var interval = 1000;
+var lastStatus = "";
+var stopped = "The container has stopped. Check the container logs for details.";
 
 function abortRequest() {
 
@@ -13,6 +19,64 @@ function abortRequest() {
     request.abort();
     request = null;
 
+    return true;
+}
+
+function clearFailure() {
+
+    if (!failureTimer) {
+        return false;
+    }
+
+    clearTimeout(failureTimer);
+    failureTimer = null;
+
+    return true;
+}
+
+function connectionLost() {
+
+    if (booting || (portal && portalUrl.length == 0) ||
+        document.hidden || failureTimer) {
+        return false;
+    }
+
+    failureTimer = setTimeout(function() {
+
+        if (booting || (portal && portalUrl.length == 0) ||
+            document.hidden) {
+            failureTimer = null;
+            return;
+        }
+
+        setStopped();
+    }, interval * 3);
+
+    return true;
+}
+
+function clearNavigation() {
+
+    if (!navigationTimer) {
+        return false;
+    }
+
+    clearTimeout(navigationTimer);
+    navigationTimer = null;
+
+    return true;
+}
+
+function visibilityChanged() {
+
+    clearFailure();
+    clearNavigation();
+
+    if (document.hidden) {
+        return false;
+    }
+
+    getInfo();
     return true;
 }
 
@@ -46,18 +110,56 @@ function getURL() {
     return protocol + "//" + window.location.host + path;
 }
 
-function processMsg(msg) {
+function redirect(url) {
 
-    if (msg.toLowerCase().indexOf("href=") !== -1) {
-        var div = document.createElement("div");
-        div.innerHTML = msg;
-        var url = div.querySelector("a").href;
-        setTimeout(() => {
-            window.location.assign(url);
-        }, 3000);
+    if (document.hidden || navigationTimer) {
+        return false;
     }
 
+    navigationTimer = setTimeout(function() {
+        navigationTimer = null;
+        window.location.assign(url);
+    }, 3000);
+
+    return true;
+}
+
+function beginPortal(url) {
+
+    portal = true;
+    portalUrl = url || "";
+    booting = false;
+
+    clearFailure();
+    setInfo("Connecting to web portal", true);
+    schedule();
+
+    if (portalUrl.length > 0) {
+        redirect(portalUrl);
+    }
+
+    return true;
+}
+
+function processCommand(msg) {
+
+    if (msg == "portal") {
+        return beginPortal("");
+    }
+
+    if (msg.indexOf("portal ") == 0) {
+        return beginPortal(msg.substring(7));
+    }
+
+    console.warn("Unknown command: " + msg);
+    return false;
+}
+
+function processMsg(msg) {
+
+    rememberStatus(msg);
     setInfo(msg);
+
     return true;
 }
 
@@ -74,19 +176,15 @@ function processInfo() {
         var status = response.status;
 
         if (status == 502 || status == 503 || status == 504) {
+            connectionLost();
             schedule();
             return true;
         }
 
         var msg = response.responseText;
         if (msg == null || msg.length == 0) {
-
-            if (booting) {
-                schedule();
-                return true;
-            }
-
-            window.location.reload();
+            connectionLost();
+            schedule();
             return false;
         }
 
@@ -96,17 +194,32 @@ function processInfo() {
             if (msg.toLowerCase().indexOf("<html>") !== -1) {
                 notFound = true;
             } else {
+                clearFailure();
                 processMsg(msg);
-                if (msg.toLowerCase().indexOf("href=") == -1) {
+
+                if (portalUrl.length > 0) {
+                    setInfo("Connecting to web portal", true);
+                    redirect(portalUrl);
+                } else {
                     schedule();
                 }
+
                 return true;
             }
         }
 
         if (notFound) {
+            clearFailure();
+            booting = false;
             setInfo("Connecting to web portal", true);
-            reload();
+
+            if (portalUrl.length > 0) {
+                redirect(portalUrl);
+            } else {
+                portal = true;
+                reload();
+            }
+
             return true;
         }
 
@@ -125,15 +238,32 @@ function extractContent(s) {
     return span.textContent || span.innerText;
 };
 
+function escapeContent(s) {
+    var span = document.createElement('span');
+    span.textContent = s;
+    return span.innerHTML;
+}
+
+function rememberStatus(msg) {
+
+    var text = extractContent(msg).trim();
+    if (text.length == 0) {
+        return false;
+    }
+
+    if (text.includes("Booting ")) {
+        booting = true;
+    }
+
+    lastStatus = text;
+    return true;
+}
+
 function setInfo(msg, loading, error) {
     try {
 
         if (msg == null || msg.length == 0) {
             return false;
-        }
-
-        if (msg.includes("Booting ")) {
-            booting = true;
         }
 
         var el = document.getElementById("info");
@@ -178,6 +308,16 @@ function setError(text) {
     return setInfo(text, false, true);
 }
 
+function setStopped() {
+
+    var msg = stopped;
+    if (lastStatus.length > 0) {
+        msg += "<br>(Last status: " + escapeContent(lastStatus) + ")";
+    }
+
+    return setError(msg);
+}
+
 function schedule() {
 
     clearTimeout(timer);
@@ -185,9 +325,19 @@ function schedule() {
 }
 
 function reload() {
-    setTimeout(() => {
+
+    if (document.hidden) {
+        return false;
+    }
+
+    clearNavigation();
+
+    navigationTimer = setTimeout(function() {
+        navigationTimer = null;
         window.location.reload();
     }, 3000);
+
+    return true;
 }
 
 function connect() {
@@ -195,7 +345,18 @@ function connect() {
     var wsUrl = getURL() + "/status";
     var ws = new WebSocket(wsUrl);
 
+    ws.onopen = function(e) {
+
+        clearFailure();
+
+        if (portalUrl.length > 0) {
+            redirect(portalUrl);
+        }
+    };
+
     ws.onmessage = function(e) {
+
+        clearFailure();
 
         var pos = e.data.indexOf(":");
         var cmd = e.data.substring(0, pos);
@@ -204,15 +365,17 @@ function connect() {
         switch (cmd) {
             case "s":
 
-                var aborted = abortRequest();
-
-                processMsg(msg);
-
-                if (aborted &&
-                    msg.toLowerCase().indexOf("href=") == -1) {
+                if (abortRequest()) {
                     schedule();
                 }
 
+                processMsg(msg);
+                break;
+
+            case "c":
+
+                abortRequest();
+                processCommand(msg);
                 break;
 
             case "e":
@@ -221,6 +384,7 @@ function connect() {
                     schedule();
                 }
 
+                rememberStatus(msg);
                 setError(msg);
                 break;
 
@@ -231,18 +395,26 @@ function connect() {
     };
 
     ws.onclose = function(e) {
+
+        connectionLost();
+
+        if (portal && portalUrl.length == 0) {
+            return;
+        }
+
         setTimeout(function() {
             connect();
         }, interval);
     };
 
     ws.onerror = function(e) {
+        connectionLost();
         ws.close();
-        if (!booting) {
-            window.location.reload();
-        }
     };
 }
+
+document.addEventListener("visibilitychange", visibilityChanged);
+rememberStatus(document.getElementById("info").innerHTML);
 
 schedule();
 connect();
