@@ -98,3 +98,5 @@ An empty default means the variable is unset and its value is determined automat
 | `DEBUG` | `N` | Enables verbose debug output. |
 | `TRACE` | `N` | Enables shell command tracing. |
 | `HOST_DEBUG` | `N` | Enables debug output for the DSM host helper. |
+| `MONITOR` |  | QEMU monitor configuration. |
+| `QMP` |  | QEMU Machine Protocol configuration. |
