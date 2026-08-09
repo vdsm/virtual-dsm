@@ -20,6 +20,7 @@ driver="/run/shm/qemu.nic"
 page="/run/shm/index.html"
 address="/run/shm/qemu.ip"
 shutdown="/run/shm/qemu.end"
+command="/run/shm/status.cmd"
 socket="/run/shm/qemu-host-api.sock"
 template="/var/www/index.html"
 url="http://localhost/read?command=10"
@@ -175,6 +176,7 @@ writeDhcpPage() {
 
   echo "$html" > "$page"
   echo "$body" > "$msgs"
+  writeAtomic "$command" "portal http://$location"
 
   return 0
 }
