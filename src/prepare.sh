@@ -12,8 +12,8 @@ addSystemDisks() {
   setOwner "$boot" || warn "failed to set the owner for \"$boot\" !"
   setOwner "$system" || warn "failed to set the owner for \"$system\" !"
 
-  DISK_OPTS+=$(createDevice "$boot" "$DISK_TYPE" "1" "0xa" "raw" "$DISK_IO" "$DISK_CACHE" "" "")
-  DISK_OPTS+=$(createDevice "$system" "$DISK_TYPE" "2" "0xb" "raw" "$DISK_IO" "$DISK_CACHE" "" "")
+  DISK_OPTS+=$(createDevice "$boot" "$DISK_TYPE" "1" "0xa" "raw" "$DISK_IO" "$DISK_CACHE" "" "" "synoboot")
+  DISK_OPTS+=$(createDevice "$system" "$DISK_TYPE" "2" "0xb" "raw" "$DISK_IO" "$DISK_CACHE" "" "" "synosys")
 
   return 0
 }
