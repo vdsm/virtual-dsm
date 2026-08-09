@@ -16,7 +16,7 @@ cd /run
 disabled "$NETWORK" && echo "Networking is disabled." && exit 0
 
 file="/run/shm/dsm.url"
-address="/run/shm/qemu.ip"
+address="/run/shm/qemu.host"
 gateway="/run/shm/qemu.gw"
 
 # dsm.url is written only after the guest agent reports both the DSM
