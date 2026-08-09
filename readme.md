@@ -214,6 +214,12 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 > [!NOTE]
 > This can be used to enable the facial recognition function in Synology Photos, but does not provide hardware transcoding for video.
 
+### How do I enable dynamic memory allocation?
+
+  By default, the DSM is allocated the full amount of RAM configured via `RAM_SIZE` for its entire lifetime.
+
+  However, you can enable [memory ballooning](https://github.com/qemus/qemu/blob/master/docs/ballooning.md) if you want the container to dynamically reclaim unused guest RAM based on host memory pressure.
+
 ### How do I install a specific version of vDSM?
 
   By default, version 7.2 will be installed, but if you prefer an older version, you can add the download URL of the `.pat` file to your compose file as follows:
