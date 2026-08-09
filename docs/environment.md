@@ -76,12 +76,23 @@ An empty default means the variable is unset and its value is determined automat
 | `GPU` | `N` | Enables Intel iGPU acceleration. |
 | `RENDERNODE` | `/dev/dri/renderD128` | Render node used for GPU acceleration. |
 
-## ⚙️ System
+## 🎈 Memory Ballooning
+
+Also see [Dynamic memory allocation](https://github.com/qemus/qemu/blob/master/docs/ballooning.md) for usage instructions and important caveats.
 
 | Variable | Default | Description |
 |---|---|---|
-| `MACHINE` | `q35` | QEMU machine type. |
-| `ARGUMENTS` |  | Additional raw arguments appended to the QEMU command line. |
+| `BALLOONING` | `N` | Enables dynamic memory ballooning. |
+| `BALLOONING_MIN_MEM` | `33%` | Minimum amount of memory retained by the VM. |
+| `BALLOONING_RAM_THRESHOLD` | `80.0` | Host RAM usage percentage at which ballooning begins adjusting memory. |
+| `BALLOONING_RAM_THRESHOLD_HARD` | `90.0` | Host RAM usage percentage at which ballooning becomes more aggressive. |
+| `BALLOONING_PSI_PRESSURE` | `10.0` | PSI memory pressure level at which ballooning becomes more aggressive. |
+| `BALLOONING_PSI_PRESSURE_MAX` | `50.0` | PSI memory pressure level at which ballooning reaches its strongest response. |
+| `BALLOONING_HYSTERESIS` | `128M` | Minimum memory change before the balloon target is updated. |
+| `BALLOONING_KP` | `0.5` | Proportional gain used by the ballooning controller. |
+| `BALLOONING_KI` | `0.05` | Integral gain used by the ballooning controller. |
+| `BALLOONING_INTERVAL` | `5` | Polling interval in seconds. |
+| `BALLOONING_DEBUG` | `N` | Enables debug output for the ballooning monitor. |
 
 ## 🔌 Shutdown
 
@@ -100,3 +111,4 @@ An empty default means the variable is unset and its value is determined automat
 | `HOST_DEBUG` | `N` | Enables debug output for the DSM host helper. |
 | `MONITOR` |  | QEMU monitor configuration. |
 | `QMP` |  | QEMU Machine Protocol configuration. |
+| `ARGUMENTS` |  | Additional raw arguments appended to the QEMU command line. |
