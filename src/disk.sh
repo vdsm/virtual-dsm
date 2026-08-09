@@ -531,7 +531,7 @@ createDevice () {
   [ -n "$DISK_OPTIONS" ] && options=",${DISK_OPTIONS#,}"
 
   local bootIndex=""
-  local diskId="data$diskIndex"
+  local diskId="${10:-data$diskIndex}"
   [ -n "$diskIndex" ] && bootIndex=",bootindex=$diskIndex"
   local result=" -drive file=$diskFile,id=$diskId,format=$diskFmt,cache=$diskCache,aio=$diskIo,discard=$DISK_DISCARD,detect-zeroes=on"
 
@@ -563,8 +563,8 @@ createDevice () {
       ;;
     "scsi" | "virtio-scsi" )
       result+=",if=none \
-      -device virtio-scsi-pci,id=${diskId}b,bus=$bus,addr=$diskAddress${IOTHREAD_OPT},hotplug=off \
-      -device scsi-hd,drive=${diskId},bus=${diskId}b.0,channel=0,scsi-id=0,lun=0,rotation_rate=$DISK_ROTATION${bootIndex}${diskSerial}${diskSectors}${options}"
+      -device virtio-scsi-pci,id=${diskId},bus=$bus,addr=$diskAddress${IOTHREAD_OPT},hotplug=off \
+      -device scsi-hd,drive=${diskId},bus=${diskId}.0,channel=0,scsi-id=0,lun=0,rotation_rate=$DISK_ROTATION${bootIndex}${diskSerial}${diskSectors}${options}"
       echo "$result"
       ;;
   esac
@@ -647,8 +647,8 @@ addMedia () {
 
         "scsi" | "virtio-scsi" )
           result+=",if=none \
-          -device virtio-scsi-pci,id=${mediaId}b,bus=$bus${address}${IOTHREAD_OPT},hotplug=off \
-          -device scsi-cd,drive=${mediaId},bus=${mediaId}b.0${bootIndex}"
+          -device virtio-scsi-pci,id=${mediaId},bus=$bus${address}${IOTHREAD_OPT},hotplug=off \
+          -device scsi-cd,drive=${mediaId},bus=${mediaId}.0${bootIndex}"
           echo "$result" ;;
       esac
 
@@ -1001,9 +1001,9 @@ if [ -s "$BOOT" ]; then
           DISK_OPTS+=$(addMedia "$BOOT" "$MEDIA_TYPE" "boot" "$BOOT_INDEX" "0x5")
         fi ;;
     *".img" | *".raw" )
-        DISK_OPTS+=$(createDevice "$BOOT" "$DISK_TYPE" "$BOOT_INDEX" "0x5" "raw" "$DISK_IO" "$DISK_CACHE" "" "") ;;
+        DISK_OPTS+=$(createDevice "$BOOT" "$DISK_TYPE" "$BOOT_INDEX" "0x5" "raw" "$DISK_IO" "$DISK_CACHE" "" "" "boot") ;;
     *".qcow2" )
-        DISK_OPTS+=$(createDevice "$BOOT" "$DISK_TYPE" "$BOOT_INDEX" "0x5" "qcow2" "$DISK_IO" "$DISK_CACHE" "" "") ;;
+        DISK_OPTS+=$(createDevice "$BOOT" "$DISK_TYPE" "$BOOT_INDEX" "0x5" "qcow2" "$DISK_IO" "$DISK_CACHE" "" "" "boot") ;;
     * )
         error "Invalid BOOT image specified, extension \".${BOOT/*./}\" is not recognized!" && exit 80 ;;
   esac
