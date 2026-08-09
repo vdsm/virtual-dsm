@@ -164,72 +164,66 @@ function processMsg(msg) {
 }
 
 function processInfo() {
-    try {
 
-        if (request.readyState != 4) {
-            return true;
-        }
+    if (request.readyState != 4) {
+        return true;
+    }
 
-        var response = request;
-        request = null;
+    var response = request;
+    request = null;
 
-        var status = response.status;
+    var status = response.status;
 
-        if (status == 502 || status == 503 || status == 504) {
-            connectionLost();
-            schedule();
-            return true;
-        }
+    if (status == 502 || status == 503 || status == 504) {
+        connectionLost();
+        schedule();
+        return true;
+    }
 
-        var msg = response.responseText;
-        if (msg == null || msg.length == 0) {
-            connectionLost();
-            schedule();
-            return false;
-        }
-
-        var notFound = (status == 404);
-
-        if (status == 200) {
-            if (msg.toLowerCase().indexOf("<html>") !== -1) {
-                notFound = true;
-            } else {
-                clearFailure();
-                processMsg(msg);
-
-                if (portalUrl.length > 0) {
-                    setInfo("Connecting to web portal", true);
-                    redirect(portalUrl);
-                } else {
-                    schedule();
-                }
-
-                return true;
-            }
-        }
-
-        if (notFound) {
-            clearFailure();
-            booting = false;
-            setInfo("Connecting to web portal", true);
-
-            if (portalUrl.length > 0) {
-                redirect(portalUrl);
-            } else {
-                portal = true;
-                reload();
-            }
-
-            return true;
-        }
-
-        setError("Error: Received statuscode " + status);
-        return false;
-
-    } catch (e) {
-        setError("Error: " + e.message);
+    var msg = response.responseText;
+    if (msg == null || msg.length == 0) {
+        connectionLost();
+        schedule();
         return false;
     }
+
+    var notFound = (status == 404);
+
+    if (status == 200) {
+        if (msg.toLowerCase().indexOf("<html>") !== -1) {
+            notFound = true;
+        } else {
+            clearFailure();
+            processMsg(msg);
+
+            if (portalUrl.length > 0) {
+                setInfo("Connecting to web portal", true);
+                redirect(portalUrl);
+            } else {
+                schedule();
+            }
+
+            return true;
+        }
+    }
+
+    if (notFound) {
+        clearFailure();
+        booting = false;
+        setInfo("Connecting to web portal", true);
+
+        if (portalUrl.length > 0) {
+            redirect(portalUrl);
+        } else {
+            portal = true;
+            reload();
+        }
+
+        return true;
+    }
+
+    setError("Error: Received statuscode " + status);
+    return false;
 }
 
 function extractContent(s) {
@@ -464,57 +458,51 @@ function setProgress(value, size) {
 }
 
 function setInfo(msg, loading, error) {
-    try {
 
-        if (msg == null || msg.length == 0) {
-            return false;
-        }
-
-        var parsed = parseProgress(msg);
-        msg = parsed.message;
-        setProgress(parsed.progress, parsed.size);
-
-        var el = document.getElementById("info");
-
-        if (el.innerText == msg || el.innerHTML == msg) {
-            var progressEl = document.getElementById("progress");
-            if (progressEl && !progressEl.hidden && !progressEl.style.width) {
-                resizeProgress();
-            }
-            return true;
-        }
-
-        var spin = document.getElementById("spinner");
-
-        error = !!error;
-        if (!error) {
-            spin.style.visibility = 'visible';
-        } else {
-            spin.style.visibility = 'hidden';
-        }
-
-        var p = "<p class=\"loading\">";
-        loading = !!loading;
-        if (loading) {
-            msg = p + msg + "</p>";
-        }
-
-        if (msg.includes(p)) {
-            if (el.innerHTML.includes(p)) {
-                el.getElementsByClassName('loading')[0].textContent = extractContent(msg);
-                resizeProgress();
-                return true;
-            }
-        }
-
-        el.innerHTML = msg;
-        resizeProgress();
-        return true;
-
-    } catch (e) {
-        console.log("Error: " + e.message);
+    if (msg == null || msg.length == 0) {
         return false;
     }
+
+    var parsed = parseProgress(msg);
+    msg = parsed.message;
+    setProgress(parsed.progress, parsed.size);
+
+    var el = document.getElementById("info");
+
+    if (el.innerText == msg || el.innerHTML == msg) {
+        var progressEl = document.getElementById("progress");
+        if (progressEl && !progressEl.hidden && !progressEl.style.width) {
+            resizeProgress();
+        }
+        return true;
+    }
+
+    var spin = document.getElementById("spinner");
+
+    error = !!error;
+    if (!error) {
+        spin.style.visibility = 'visible';
+    } else {
+        spin.style.visibility = 'hidden';
+    }
+
+    var p = "<p class=\"loading\">";
+    loading = !!loading;
+    if (loading) {
+        msg = p + msg + "</p>";
+    }
+
+    if (msg.includes(p)) {
+        if (el.innerHTML.includes(p)) {
+            el.getElementsByClassName('loading')[0].textContent = extractContent(msg);
+            resizeProgress();
+            return true;
+        }
+    }
+
+    el.innerHTML = msg;
+    resizeProgress();
+    return true;
 }
 
 function setError(text) {
