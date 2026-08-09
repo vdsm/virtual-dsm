@@ -5,8 +5,6 @@ FROM scratch
 
 COPY --from=qemux/qemu:7.45 / /
 
-ARG TARGETARCH
-
 ARG VERSION_ARG="0.0"
 ARG VERSION_CSTRUCT="4.7"
 
