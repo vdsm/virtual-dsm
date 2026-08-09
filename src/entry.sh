@@ -11,6 +11,7 @@ set -Eeuo pipefail
 : "${TIMEOUT:="105"}"
 : "${DISPLAY:="none"}"
 : "${WEB_PORT:="5000"}"
+: "${DISK_OFFSET:="2"}"
 : "${DISK_SIZE:="256G"}"
 : "${RAM_MINIMUM:="1G"}"
 : "${BOOT_MODE:="legacy"}"
