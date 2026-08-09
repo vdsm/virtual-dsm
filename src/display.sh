@@ -67,7 +67,7 @@ fi
 
 # Install acceleration packages lazily so non-GPU deployments keep the base
 # image small and do not require OpenGL modules.
-addPackage "xserver-xorg-video-intel" "Intel GPU drivers"
-addPackage "qemu-system-modules-opengl" "OpenGL module"
+addDsmPackage "xserver-xorg-video-intel" "Intel GPU drivers"
+addDsmPackage "qemu-system-modules-opengl" "OpenGL module"
 
 return 0
