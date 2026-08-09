@@ -29,7 +29,7 @@ refresh
 
 inotifywait \
   -m -q \
-  -e close_write,moved_to,delete \
+  -e close_write,moved_to \
   --format '%e %f' \
   "$dir" |
   while read -r event file; do
@@ -37,10 +37,6 @@ inotifywait \
     [[ "$file" == "$name" ]] || continue
 
     case "${event,,}" in
-      "delete"* )
-        echo "c: vnc" ;;
-      # moved_to covers the atomic replacement used by html()/writeAtomic(),
-      # while close_write handles direct writers.
       "close_write"* | "moved_to"* )
         refresh ;;
     esac
