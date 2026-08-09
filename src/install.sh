@@ -356,7 +356,7 @@ reservePorts() {
 
   # NAT can fall back to user-mode networking after this point,
   # so always add the DSM web interface ports for non-DHCP networking.
-  USER_PORTS="${USER_PORTS:+$USER_PORTS,}5000/tcp,5001/tcp"
+  USER_PORTS="${USER_PORTS:+$USER_PORTS,}5000/tcp,5001/tcp,80/tcp,443/tcp,445/tcp"
 
   return 0
 }
