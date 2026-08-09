@@ -94,6 +94,7 @@ downloadPat() {
     cp "${URL:7}" "$pat" || return $?
 
   else
+
     msg="Downloading DSM"
     err="Failed to download $URL"
     info "Install: Downloading $BASE.pat..."
@@ -335,8 +336,26 @@ sanitizePatBase() {
 
 reservePorts() {
 
+  local port ports=""
+  local hostPorts="${HOST_PORTS:-}"
+
+  # Older configurations may reserve DSM's web ports for the container.
+  # They now need to be forwarded to the guest instead.
+  for port in ${hostPorts//,/ }; do
+
+    case "${port,,}" in
+      5000|5000/tcp|5001|5001/tcp)
+        continue ;;
+    esac
+
+    ports+="${ports:+,}$port"
+
+  done
+
+  HOST_PORTS="$ports"
+
   # NAT can fall back to user-mode networking after this point,
-  # so always add the web interface ports for non-DHCP networking.
+  # so always add the DSM web interface ports for non-DHCP networking.
   USER_PORTS="${USER_PORTS:+$USER_PORTS,}5000/tcp,5001/tcp"
 
   return 0
