@@ -11,38 +11,6 @@ HOST_CPU=$(strip "$HOST_CPU")
 CPU_FLAGS=$(strip "$CPU_FLAGS")
 CPU_MODEL=$(strip "$CPU_MODEL")
 
-selectClocksource() {
-
-  CLOCKSOURCE="tsc"
-  [[ "${ARCH,,}" == "arm64" ]] && CLOCKSOURCE="arch_sys_counter"
-  CLOCK="/sys/devices/system/clocksource/clocksource0/current_clocksource"
-
-  return 0
-}
-
-checkClocksource() {
-
-  local result
-
-  if [ ! -f "$CLOCK" ]; then
-    warn "file \"$CLOCK\" cannot be found?"
-    return 0
-  fi
-
-  result=$(<"$CLOCK")
-  result="${result//[![:print:]]/}"
-
-  case "${result,,}" in
-    "${CLOCKSOURCE,,}" ) ;;
-    "kvm-clock" ) info "Nested KVM virtualization detected.." ;;
-    "hyperv_clocksource_tsc_page" ) info "Nested Hyper-V virtualization detected.." ;;
-    "hpet" ) warn "unsupported clock source ﻿detected﻿: '$result'. Please﻿ ﻿set host clock source to '$CLOCKSOURCE'." ;;
-    *) warn "unexpected clock source ﻿detected﻿: '$result'. Please﻿ ﻿set host clock source to '$CLOCKSOURCE'." ;;
-  esac
-
-  return 0
-}
-
 checkSse42() {
 
   if ! hasFlag "sse4_2"; then
@@ -192,9 +160,6 @@ configureHostCpuName() {
 
   return 0
 }
-
-selectClocksource
-checkClocksource
 
 if ! disabled "$KVM"; then
   configureKvm
