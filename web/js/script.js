@@ -134,11 +134,10 @@ function beginPortal(url) {
 
     clearFailure();
     setInfo("Connecting to web portal", true);
+    schedule();
 
     if (portalUrl.length > 0) {
         redirect(portalUrl);
-    } else {
-        schedule();
     }
 
     return true;
@@ -398,10 +397,6 @@ function connect() {
     };
 
     ws.onclose = function(e) {
-
-        if (portalUrl.length > 0) {
-            clearNavigation();
-        }
 
         connectionLost();
 
