@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-: "${PLATFORM:="x64"}"
+: "${AUDIO:="N"}"
 : "${DISPLAY:="none"}"
+: "${PLATFORM:="x64"}"
 : "${APP:="Virtual DSM"}"
 : "${BOOT_MODE:="legacy"}"
 : "${SUPPORT:="https://github.com/vdsm/virtual-dsm"}"
