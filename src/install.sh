@@ -8,32 +8,6 @@ set -Eeuo pipefail
 TZ=$(strip "$TZ")
 COUNTRY=$(strip "$COUNTRY")
 
-checkSse42() {
-
-  if disabled "$KVM" || [[ "${PLATFORM,,}" != "x64" ]]; then
-    return 0
-  fi
-
-  if ! hasFlag "sse4_2"; then
-    error "Your CPU does not have the SSE4 instruction set that Virtual DSM requires!"
-    enabled "$DEBUG" || return 88
-  fi
-
-  return 0
-}
-
-sanitizePatBase() {
-
-  local source="$1"
-  local base
-
-  base=$(basename "${source%%\?*}" .pat) || return 1
-  printf -v base '%b' "${base//%/\\x}" || return 1
-  base="${base//[!A-Za-z0-9._-]/_}"
-
-  printf '%s' "$base"
-}
-
 checkDsmFilesystem() {
 
   local fs="$1"
@@ -365,6 +339,32 @@ installSystemPartition() {
 
   rm -rf "$mount" || return $?
   return 0
+}
+
+checkSse42() {
+
+  if disabled "$KVM" || [[ "${PLATFORM,,}" != "x64" ]]; then
+    return 0
+  fi
+
+  if ! hasFlag "sse4_2"; then
+    error "Your CPU does not have the SSE4 instruction set that Virtual DSM requires!"
+    enabled "$DEBUG" || return 88
+  fi
+
+  return 0
+}
+
+sanitizePatBase() {
+
+  local source="$1"
+  local base
+
+  base=$(basename "${source%%\?*}" .pat) || return 1
+  printf -v base '%b' "${base//%/\\x}" || return 1
+  base="${base//[!A-Za-z0-9._-]/_}"
+
+  printf '%s' "$base"
 }
 
 finishDsmInstall() {
