@@ -314,7 +314,7 @@ checkSse42() {
   fi
 
   if ! hasFlag "sse4_2"; then
-    error "Your CPU does not have the SSE4 instruction set that Virtual DSM requires!"
+    error "Your CPU does not have the SSE4.2 instruction set that Virtual DSM requires!"
     enabled "$DEBUG" || return 88
   fi
 
