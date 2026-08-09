@@ -378,6 +378,25 @@ interactive() {
 
 }
 
+containerID() {
+
+  local id
+  id=$(hostname -s 2>/dev/null || true)
+
+  if [ -z "$id" ] && [ -s /etc/machine-id ]; then
+    id=$(< /etc/machine-id)
+  fi
+
+  if [ -z "$id" ] && [ -r /proc/sys/kernel/random/boot_id ]; then
+    id=$(< /proc/sys/kernel/random/boot_id)
+  fi
+
+  [ -z "$id" ] && id="unknown"
+
+  echo "$id"
+  return 0
+}
+
 strip() {
 
   local value="${1:-}"
