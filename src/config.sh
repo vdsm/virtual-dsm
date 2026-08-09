@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+: "${QMP:=""}"
+: "${MONITOR:=""}"
+
 DEF_OPTS="-nodefaults -boot strict=on"
 DEV_OPTS=""
 
@@ -23,8 +26,13 @@ configureMemory() {
 
 configureMonitor() {
 
-  MON_OPTS="-name $PROCESS,process=$PROCESS,debug-threads=on"
+  MON_OPTS=""
+  [ -n "$QMP" ] && MON_OPTS+=" -qmp $QMP"
+  [ -n "$MONITOR" ] && MON_OPTS+=" -monitor $MONITOR"
+
+  MON_OPTS+=" -name $PROCESS,process=$PROCESS,debug-threads=on"
   MON_OPTS+=" -pidfile $QEMU_PID"
+  MON_OPTS="${MON_OPTS# }"
 
   return 0
 }
