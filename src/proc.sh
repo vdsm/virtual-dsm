@@ -3,19 +3,31 @@ set -Eeuo pipefail
 
 # Docker environment variables
 
-: "${HOST_CPU:=""}"
-: "${CPU_FLAGS:=""}"
-: "${CPU_MODEL:=""}"
+: "${CPU_MODEL:=""}"    # QEMU CPU mode
+: "${CPU_FLAGS:=""}"    # Additional QEMU CPU flags
+: "${HV:=""}"           # Enables Hyper-V enlightenments for Windows guests
+: "${VMX:=""}"          # Exposes Intel VMX virtualization extensions to the guest
 
-HOST_CPU=$(strip "$HOST_CPU")
+enabled "$DEBUG" && echo "Configuring KVM..."
+
+# Sanitize variables
 CPU_FLAGS=$(strip "$CPU_FLAGS")
 CPU_MODEL=$(strip "$CPU_MODEL")
 
-checkSse42() {
+isWindowsBoot() {
 
-  if ! hasFlag "sse4_2"; then
-    error "Your CPU does not have the SSE4 instruction set that Virtual DSM requires!"
-    enabled "$DEBUG" || exit 88
+  [[ "${BOOT_MODE,,}" == "windows"* ]]
+
+}
+
+appendCpuFeature() {
+
+  local feature="$1"
+
+  if [ -z "$CPU_FEATURES" ]; then
+    CPU_FEATURES="$feature"
+  else
+    CPU_FEATURES+=",$feature"
   fi
 
   return 0
@@ -34,10 +46,10 @@ trimSpaces() {
 
 removeCpuArgument() {
 
-  # CPU configuration has dedicated variables. Remove raw -cpu arguments so
-  # option ordering cannot silently override the validated model and flags.
   local args=" ${ARGUMENTS:-} "
 
+  # Remove every raw -cpu argument because QEMU accepts only one effective CPU
+  # definition and an extra user argument could silently override this logic.
   while [[ "$args" =~ [[:space:]]-cpu([[:space:]][^[:space:]]+|=[^[:space:]]+)? ]]; do
     local cpu="${BASH_REMATCH[0]}"
     args="${args/$cpu/ }"
@@ -55,35 +67,77 @@ configureKvmCpuModel() {
   KVM_OPTS=",accel=kvm -enable-kvm -global kvm-pit.lost_tick_policy=discard"
 
   if [ -z "$CPU_MODEL" ]; then
+    # Host passthrough is intentionally non-migratable so QEMU exposes the full
+    # local CPU feature set instead of a migration-safe subset.
     CPU_MODEL="host"
     CPU_FEATURES+=",migratable=no"
+  fi
+
+  if disabled "$VMX"; then
+    CPU_FEATURES+=",-vmx"
   fi
 
   return 0
 }
 
-appendKvmInvtscFeature() {
+configureKvmAmdFeatures() {
 
-  # invtsc is safe only when the active accelerator can scale the host TSC;
-  # AMD and Intel expose that capability through different host flags.
-  if hasFlag "svm"; then
+  # AMD processor
+  if hasFlag "tsc_scale"; then
+    CPU_FEATURES+=",+invtsc"
+  fi
+
+  if isWindowsBoot; then
+    CPU_FEATURES+=",arch_capabilities=off"
+  fi
+
+  return 0
+}
+
+configureKvmIntelFeatures() {
+
+  # Intel processor
+  vmx=$(sed -ne '/^vmx flags/s/^.*: //p' /proc/cpuinfo)
+
+  if grep -qw "tsc_scaling" <<< "$vmx"; then
+    CPU_FEATURES+=",+invtsc"
+  fi
+
+  return 0
+}
+
+configureHyperVFeatures() {
+
+  disabled "$HV" && return 0
+
+  # Start with Hyper-V passthrough, then remove enlightenments the host cannot
+  # accelerate safely on the detected CPU/vendor combination.
+  HV_FEATURES="hv_passthrough"
+
+  if isAmdCpu; then
 
     # AMD processor
-    if hasFlag "tsc_scale"; then
-      CPU_FEATURES+=",+invtsc"
+    if ! hasFlag "avic"; then
+      HV_FEATURES+=",-hv-avic"
     fi
+
+    HV_FEATURES+=",-hv-evmcs"
 
   else
 
     # Intel processor
-    local vmx
-    vmx=$(sed -ne '/^vmx flags/s/^.*: //p' /proc/cpuinfo)
-
-    if grep -qw "tsc_scaling" <<< "$vmx"; then
-      CPU_FEATURES+=",+invtsc"
+    if ! grep -qw "apicv" <<< "$vmx"; then
+      HV_FEATURES+=",-hv-apicv,-hv-evmcs"
+    else
+      if [[ "$CPU" == "Intel Atom "* || "$CPU" == "Intel Celeron "* || "$CPU" == "Intel Pentium "* ]]; then
+        # Prevent eVMCS version range error on budget CPU's
+        HV_FEATURES+=",-hv-evmcs"
+      fi
     fi
 
   fi
+
+  appendCpuFeature "$HV_FEATURES"
 
   return 0
 }
@@ -91,8 +145,33 @@ appendKvmInvtscFeature() {
 configureKvm() {
 
   configureKvmCpuModel
-  checkSse42
-  appendKvmInvtscFeature
+
+  if isAmdCpu; then
+    configureKvmAmdFeatures
+  else
+    configureKvmIntelFeatures
+  fi
+
+  configureHyperVFeatures
+
+  return 0
+}
+
+configureTcgAmd64WindowsModel() {
+
+  if isAmdCpu; then
+
+    # AMD processor
+    CPU_MODEL="EPYC"
+    CPU_FEATURES+=",svm=off,arch_capabilities=off,-fxsr-opt,-misalignsse,-osvw,-topoext,-nrip-save,-xsavec,check"
+
+  else
+
+    # Intel processor
+    CPU_MODEL="Skylake-Client-v4"
+    CPU_FEATURES+=",vmx=off,-pcid,-tsc-deadline,-invpcid,-spec-ctrl,-xsavec,-xsaves,check"
+
+  fi
 
   return 0
 }
@@ -103,13 +182,25 @@ configureTcgCpuModel() {
     return 0
   fi
 
-  # TCG uses the broad max model on native x86, but qemu64 is the compatible
-  # cross-architecture fallback.
+  # TCG can use max for general amd64 guests, but Windows needs conservative
+  # vendor-specific models with known-problematic features disabled.
   if [[ "$ARCH" == "amd64" ]]; then
-    CPU_MODEL="max"
-    CPU_FEATURES+=",migratable=no"
+
+    if ! isWindowsBoot; then
+
+      CPU_MODEL="max"
+      CPU_FEATURES+=",migratable=no"
+
+    else
+      configureTcgAmd64WindowsModel
+    fi
+
   else
-    CPU_MODEL="qemu64"
+
+    # Intel processor
+    CPU_MODEL="Skylake-Client-v4"
+    CPU_FEATURES+=",vmx=off,-pcid,-tsc-deadline,-invpcid,-spec-ctrl,-xsavec,-xsaves,check"
+
   fi
 
   return 0
@@ -125,50 +216,47 @@ configureTcg() {
   fi
 
   configureTcgCpuModel
-  CPU_FEATURES+=",+ssse3,+sse4.1,+sse4.2"
 
   return 0
 }
 
 composeCpuFlags() {
 
-  # Compose one -cpu value in precedence order: model, required features,
-  # then user-provided overrides.
   CPU_FLAGS="${CPU_MODEL}${CPU_FEATURES:+,$CPU_FEATURES}${CPU_FLAGS:+,$CPU_FLAGS}"
 
   return 0
 }
 
-configureHostCpuName() {
+removeCpuArgument
 
-  if [ -z "$HOST_CPU" ]; then
-    [[ "${CPU,,}" != "unknown" ]] && HOST_CPU="$CPU"
+if [ -z "$HV" ]; then
+
+  HV="N"
+  isWindowsBoot && HV="Y"
+
+fi
+
+if [ -z "$VMX" ]; then
+
+  VMX="Y"
+
+  if isWindowsBoot; then
+
+    # Turn off nested virtualization by default to
+    # prevent a crash caused by a recent Windows update
+
+    VMX="N"
+
   fi
 
-  if [ -n "$HOST_CPU" ]; then
-    # qemu-host expects a comma-separated CPU description with empty family
-    # and suffix fields, not QEMU's -cpu syntax.
-    HOST_CPU="${HOST_CPU%%,*},,"
-  else
-    HOST_CPU="QEMU, Virtual CPU,"
-    if [ "$ARCH" == "amd64" ]; then
-      HOST_CPU+=" X86_64"
-    else
-      HOST_CPU+=" $ARCH"
-    fi
-  fi
+fi
 
-  return 0
-}
-
-if ! disabled "$KVM"; then
+if ! disabled "${KVM:-}"; then
   configureKvm
 else
   configureTcg
 fi
 
-removeCpuArgument
 composeCpuFlags
-configureHostCpuName
 
 return 0
