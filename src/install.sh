@@ -178,7 +178,7 @@ createSystemImage() {
     return 67
   fi
 
-  7z x -y -o"$TMP" "$DSM_BOOT" >/dev/null || return $?
+  7z x -y -o"$tmp" "$DSM_BOOT" >/dev/null || return $?
   DSM_BOOT="${DSM_BOOT%.zip}"
 
   SYSTEM="$STORAGE/$BASE.system.img"
