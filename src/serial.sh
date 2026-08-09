@@ -4,6 +4,7 @@ set -Eeuo pipefail
 # Docker environment variables
 
 : "${HOST_MAC:=""}"
+: "${HOST_CPU:=""}"
 : "${HOST_DEBUG:=""}"
 : "${HOST_MODEL:=""}"
 : "${HOST_SERIAL:=""}"
@@ -11,6 +12,7 @@ set -Eeuo pipefail
 
 # Sanitize variables
 HOST_MAC=$(strip "$HOST_MAC")
+HOST_CPU=$(strip "$HOST_CPU")
 HOST_MODEL=$(strip "$HOST_MODEL")
 HOST_SERIAL=$(strip "$HOST_SERIAL")
 GUEST_SERIAL=$(strip "$GUEST_SERIAL")
@@ -35,6 +37,28 @@ validateHostMac() {
   if [[ ${#HOST_MAC} != 17 ]]; then
     error "Invalid HOST_MAC address: '$HOST_MAC', should be 12 or 17 digits long!"
     exit 28
+  fi
+
+  return 0
+}
+
+configureHostCpuName() {
+
+  if [ -z "$HOST_CPU" ]; then
+    [[ "${CPU,,}" != "unknown" ]] && HOST_CPU="$CPU"
+  fi
+
+  if [ -n "$HOST_CPU" ]; then
+    # qemu-host expects a comma-separated CPU description with empty family
+    # and suffix fields, not QEMU's -cpu syntax.
+    HOST_CPU="${HOST_CPU%%,*},,"
+  else
+    HOST_CPU="QEMU, Virtual CPU,"
+    if [ "$ARCH" == "amd64" ]; then
+      HOST_CPU+=" X86_64"
+    else
+      HOST_CPU+=" $ARCH"
+    fi
   fi
 
   return 0
@@ -141,6 +165,7 @@ configureSerialPorts() {
 }
 
 validateHostMac
+configureHostCpuName
 
 buildHostArguments
 startHostBinary
