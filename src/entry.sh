@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+: "${PLATFORM:="x64"}"
 : "${APP:="Virtual DSM"}"
 : "${SUPPORT:="https://github.com/vdsm/virtual-dsm"}"
 
+: "${USB:="N"}"
 : "${AUDIO:="N"}"
+: "${VGA:="none"}"
+: "${TIMEOUT:="105"}"
 : "${DISPLAY:="none"}"
-: "${PLATFORM:="x64"}"
-: "${RAM_MINIMUM:="1G"}
+: "${WEB_PORT:="5000"}"
+: "${DISK_SIZE:="256G"}"
+: "${RAM_MINIMUM:="1G"}"
 : "${BOOT_MODE:="legacy"}"
 
 cd /run
