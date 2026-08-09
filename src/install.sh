@@ -227,6 +227,8 @@ fi
 MSG="Extracting installation image..."
 info "Install: $MSG" && html "$MSG"
 
+/run/progress.sh "$TMP" "$SIZE" "$MSG ([P])..." &
+
 # Newer PAT files are normal tar archives; older encrypted/proprietary forms
 # require the bundled extractor as a compatibility fallback.
 if { tar tf "$PAT"; } >/dev/null 2>&1; then
@@ -238,11 +240,14 @@ else
   { (cd "$TMP" && python3 /run/extract.py -i "$PAT" -d 2>/run/extract.log); rc=$?; } || :
 
   if (( rc != 0 )); then
+    fKill "progress.sh"
     cat /run/extract.log
     error "Failed to extract PAT file, reason $rc" && exit 63
   fi
 
 fi
+
+fKill "progress.sh"
 
 MSG="Preparing system partition..."
 info "Install: $MSG" && html "$MSG"
