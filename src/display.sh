@@ -29,6 +29,8 @@ closeWebserver() {
   local pids=( "${WEB_PID:-}" "${WSD_PID:-}" )
   mKill "${pids[@]}"
 
+  WEB="N"
+
   return 0
 }
 
