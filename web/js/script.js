@@ -112,11 +112,9 @@ function getURL() {
 
 function redirect(url) {
 
-    if (document.hidden) {
+    if (document.hidden || navigationTimer) {
         return false;
     }
-
-    clearNavigation();
 
     navigationTimer = setTimeout(function() {
         navigationTimer = null;
