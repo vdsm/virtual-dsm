@@ -8,13 +8,14 @@ WEB_PORT=$(strip "$WEB_PORT")
 
 WEB_PID="/run/nginx.pid"
 WSD_LOG="/var/log/websocketd.log"
+WSD_COMMAND="$QEMU_DIR/status.cmd"
 WSD_PID="$QEMU_DIR/websocketd.pid"
 WSD_SOCKET="$QEMU_DIR/status-ws.sock"
 
 prepareWebFiles() {
 
   cp -r /var/www/* "$QEMU_DIR" || return 1
-  rm -f -- "$WSD_PID" "$WSD_SOCKET" "$WEB_PID" "$WSD_LOG" || return 1
+  rm -f -- "$WSD_PID" "$WSD_SOCKET" "$WSD_COMMAND" "$WEB_PID" "$WSD_LOG" || return 1
 
   return 0
 }
