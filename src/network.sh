@@ -7,12 +7,13 @@ set -Eeuo pipefail
 : "${NETWORK:="Y"}"
 : "${HOST_PORTS:=""}"
 : "${USER_PORTS:=""}"
+: "${CHECK_PORT:="80"}"
 : "${ADAPTER:="virtio-net-pci"}"
 
 : "${IP:="${VM_NET_IP:-}"}"
 : "${DEV:="${VM_NET_DEV:-}"}"
 : "${MTU:="${VM_NET_MTU:-}"}"
-: "${TAP:="${VM_NET_TAP:-dsm}"}"
+: "${TAP:="${VM_NET_TAP:-qemu}"}"
 : "${HOST:="${VM_NET_HOST:-$APP}"}"
 : "${MAC:="${VM_NET_MAC:-${MAC:-}}"}"
 : "${BRIDGE:="${VM_NET_BRIDGE:-docker}"}"
@@ -42,6 +43,7 @@ ADAPTER=$(strip "$ADAPTER")
 NETWORK=$(strip "$NETWORK")
 HOST_PORTS=$(strip "$HOST_PORTS")
 USER_PORTS=$(strip "$USER_PORTS")
+CHECK_PORT=$(strip "$CHECK_PORT")
 
 ADD_ERR="Please add the following setting to your container:"
 
@@ -117,6 +119,8 @@ gatewayMAC() {
 
   local mac="$1"
 
+  # Derive a stable locally administered gateway MAC from the guest MAC so the
+  # guest does not discover a different router on every start.
   echo "$mac" | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:\1:\2:\3:\4:\5/'
 }
 
@@ -191,6 +195,8 @@ upstreamIP() {
 
   last="${broadcast##*.}"
 
+  # Reserve a high unused address for system.lan, avoiding the guest and bridge
+  # gateway addresses at the bottom of the subnet.
   for (( last--; last>=2; last-- )); do
     candidate="${broadcast%.*}.$last"
     [[ "$candidate" == "$guest" || "$candidate" == "$gateway" ]] && continue
@@ -287,26 +293,6 @@ detectAdapter() {
   return 0
 }
 
-containerID() {
-
-  local id
-
-  id=$(hostname -s 2>/dev/null || true)
-
-  if [ -z "$id" ] && [ -s /etc/machine-id ]; then
-    id=$(< /etc/machine-id)
-  fi
-
-  if [ -z "$id" ] && [ -r /proc/sys/kernel/random/boot_id ]; then
-    id=$(< /proc/sys/kernel/random/boot_id)
-  fi
-
-  [ -z "$id" ] && id="unknown"
-
-  echo "$id"
-  return 0
-}
-
 canBindPrivilegedPort() {
 
   local port="$1"
@@ -392,8 +378,8 @@ natGuestIP() {
     local start="30"
   fi
 
-  # Scan adjacent 172.30/31 through 172.254 subnets to avoid Docker routes
-  # while retaining the original third octet and guest host number.
+  # Rotate through 172.30.0.0/16 to 172.254.0.0/16 and reject any candidate that
+  # overlaps an existing route inside the container.
   for (( second=start; second<=254; second++ )); do
     guest=$(guestIP "172.$second.$third.0" 2)
     subnet=$(networkCIDR "$guest") || return 1
@@ -444,8 +430,8 @@ configureDNS() {
   local arguments="$DNSMASQ_OPTS"
   local pid
 
-  if ! echo "$gateway" > /run/shm/qemu.gw; then
-    error "Failed to write gateway file."
+  if ! echo "$gateway" > "$QEMU_DIR/qemu.gw"; then
+    error "Failed to write QEMU gateway file!"
     return 1
   fi
 
@@ -581,10 +567,21 @@ getReservedPorts() {
 
   local list=""
   local mode="${1:-tcp}"
+  local display="${DISPLAY:-}"
 
   # Reserve the DNS port while the internal dnsmasq resolver is active.
   if ! enabled "${DNSMASQ_DISABLE:-}" && ! isNAT; then
     list+="53/tcp,53/udp,"
+  fi
+
+  # Reserve ports used directly by the configured QEMU display.
+  if [[ "${display,,}" == "vnc" || "${display,,}" == "web" ]]; then
+    [ -n "${VNC_PORT:-}" ] && list+="$VNC_PORT/tcp,"
+  fi
+
+  # Reserve the public web server port.
+  if ! disabled "${WEB:-}" && [ -n "${WEB_PORT:-}" ]; then
+    list+="$WEB_PORT/tcp,"
   fi
 
   normalizePorts "$list" "$mode"
@@ -618,15 +615,17 @@ getHostPorts() {
   # User entries already covered by an internal reservation are silently ignored.
   reserved=$(getReservedPorts "all")
   custom=$(getCustomHostPorts "all")
+
   normalizePorts "$reserved,$custom" "$mode"
   return $?
 }
 
 getUserPorts() {
 
-  # User-mode networking forwards DSM management and SSH ports by default;
-  # internal container reservations and HOST_PORTS are removed below.
-  local defaults="22/tcp,5000/tcp,5001/tcp"
+  # User-mode networking exposes SSH by default, or RDP over both TCP and UDP for
+  # Windows, while excluding ports already owned by the container.
+  local defaults="22"
+  [[ "${BOOT_MODE:-}" == "windows"* ]] && defaults="3389/tcp,3389/udp"
   local list="$defaults,${USER_PORTS// /},"
 
   local ports=""
@@ -656,7 +655,7 @@ getUserPorts() {
 
         if [[ ",$reserved," == *",$hostport,"* ]]; then
           warn "Could not assign port $hostport to \"USER_PORTS\" because it is reserved by the container!"
-        elif [[ "$hostport" != "${WEB_PORT:-}/tcp" ]]; then
+        else
           warn "Could not assign port $hostport to \"USER_PORTS\" because it is already in \"HOST_PORTS\"!"
         fi
 
@@ -793,7 +792,7 @@ configureVTAP() {
 
   while ! ip link set "$TAP" up; do
     info "Waiting for MAC address $MAC to become available..."
-    info "If you cloned this machine, please delete the 'dsm.mac' file to generate a different MAC address."
+    info "If you cloned this machine, please delete the '$PROCESS.mac' file to generate a different MAC address."
     sleep 2
   done
 
@@ -832,6 +831,8 @@ configureVTAP() {
     (( rc != 0 )) && error "Cannot mknod: $TAP_PATH ($rc)" && return 1
   fi
 
+  # Keep the macvtap and vhost file descriptors open in this shell so QEMU can
+  # inherit them by their fixed descriptor numbers.
   { exec 30>>"$TAP_PATH"; rc=$?; } 2>/dev/null || :
 
   if (( rc != 0 )); then
@@ -862,6 +863,9 @@ configureSlirp() {
   local subnet
   subnet=$(networkCIDR "$ip") || return 1
 
+  # Backwards compatibility
+  compat "$gateway" "$DEV" || :
+
   local ipv6="ipv6=off,"
   [ -n "$IP6" ] && ipv6="ipv6=on,"
 
@@ -872,11 +876,13 @@ configureSlirp() {
   [ -n "$forward" ] && NET_OPTS+=",$forward"
 
   if enabled "${DNSMASQ_DISABLE:-}"; then
-    if ! echo "$gateway" > /run/shm/qemu.gw; then
-      error "Failed to write gateway file."
+    if ! echo "$gateway" > "$QEMU_DIR/qemu.gw"; then
+      error "Failed to write QEMU gateway file!"
       return 1
     fi
   else
+    # Preserve the original resolver, then point the container at local dnsmasq so
+    # host.lan resolves consistently for both the guest and helper processes.
     if [ ! -f /etc/resolv.dnsmasq ] && ! cp /etc/resolv.conf /etc/resolv.dnsmasq; then
       error "Failed to backup /etc/resolv.conf."
       return 1
@@ -910,6 +916,9 @@ configurePasst() {
 
   ip=$(guestIP "$ip" 2)
   local gateway="${ip%.*}.1"
+
+  # Backwards compatibility
+  compat "$gateway" "$DEV" || :
 
   # passt configuration:
   [ -z "$IP6" ] && PASST_OPTS+=" -4"
@@ -959,6 +968,8 @@ configurePasst() {
 
   [ ! -f "$PASST" ] && cp /usr/bin/passt* /run
 
+  # Try passt quietly first; on failure rerun without quiet mode to capture a
+  # useful diagnostic before deciding whether to fall back to slirp.
   if ! "$PASST" ${PASST_OPTS:+$PASST_OPTS} >/dev/null 2>&1; then
 
     rm -f "$log"
@@ -1032,6 +1043,9 @@ createBridge() {
   if ! ip address add "$gateway/$PREFIX" dev "$BRIDGE"; then
     warn "failed to add IP address pool!" && return 1
   fi
+
+  # Backwards compatibility
+  compat "$gateway" "$BRIDGE" || :
 
   while ! ip link set "$BRIDGE" up; do
     info "Waiting for IP address to become available..."
@@ -1730,6 +1744,8 @@ addUpstream() {
   [ -n "$upstream" ] || return 1
   [ -n "$GATEWAY" ] || return 1
 
+  # system.lan is a synthetic /32 on the VM bridge and is DNATed to the real
+  # container gateway, avoiding a route through the guest itself.
   if ! ip address add "$upstream/32" dev "$BRIDGE"; then
     if ! enabled "$ROOTLESS" || enabled "$DEBUG"; then
       warn "failed to add the system.lan address; access through that name will be unavailable."
@@ -1883,12 +1899,14 @@ closeWeb() {
 
 closeNetwork() {
 
-  if ! disabled "${WEB:-}" && enabled "$DHCP"; then
+  if ! disabled "${WEB:-}"; then
     closeWeb
   fi
 
   disabled "$NETWORK" && return 0
 
+  # Tear down artifacts from an earlier initialization before selecting and
+  # configuring the current network mode.
   closeInterfaces
 
   return 0
@@ -1897,6 +1915,54 @@ closeNetwork() {
 # ######################################
 #  Detection
 # ######################################
+
+compat() {
+
+  local gateway="$1"
+  local interface="$2"
+  local samba="20.20.20.1"
+  local label="compat"
+  local err="failed to configure IP alias for backwards compatibility."
+
+  [[ "$samba" == "$gateway" ]] && return 0
+  [[ "${APP,,}" != "windows" ]] && return 0
+
+  if (( ${#interface} > 8 )); then
+    label="c"
+    if (( ${#interface} > 13 )); then
+      warn "$err Interface name \"$interface\" is too long for an alias label!"
+      return 0
+    fi
+  fi
+
+  # Preserve the legacy 20.20.20.1 host.lan address used by older guest hosts-file entries.
+  local msg
+  { msg=$(ip address add dev "$interface" "$samba/24" label "$interface:$label" 2>&1); local rc=$?; } || :
+
+  if (( rc == 0 )); then
+    SAMBA_INTERFACE="$samba"
+    return 0
+  fi
+
+  case "${msg,,}" in
+    *"address already assigned"* | *"file exists"* )
+      SAMBA_INTERFACE="$samba"
+      return 0 ;;
+  esac
+
+  if ! enabled "$ROOTLESS" || enabled "$DEBUG"; then
+    [ -n "$msg" ] && echo "$msg" >&2
+
+    case "${msg,,}" in
+      *"operation not permitted"* | *"permission denied"* )
+        warn "$err Please add the NET_ADMIN capability." ;;
+      * )
+        warn "$err" ;;
+    esac
+  fi
+
+  return 0
+}
 
 checkOS() {
 
@@ -2060,22 +2126,18 @@ configureMAC() {
 
   if [ -z "$MAC" ]; then
 
-    local file="$STORAGE/dsm.mac"
-
-    if [ -s "$file" ]; then
-      if ! MAC=$(readFile "$file"); then
-        error "Failed to read MAC address from \"$file\" !"
-        exit 28
-      fi
+    if ! restoreState MAC "mac"; then
+      error "Failed to read MAC address from \"$STORAGE/$PROCESS.mac\" !"
+      exit 28
     fi
 
     if [ -z "$MAC" ]; then
 
-      # Generate a Synology-style MAC address based on a stable container identifier when possible.
-      MAC=$(echo "$container" | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:11:32:\3:\4:\5/')
+      # Generate a MAC address based on a stable container identifier when possible.
+      MAC=$(echo "$container" | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:\1:\2:\3:\4:\5/')
 
-      if ! writeFile "${MAC^^}" "$file"; then
-        error "Failed to write MAC address to \"$file\" !"
+      if ! writeState "mac" "${MAC^^}"; then
+        error "Failed to write MAC address to \"$STORAGE/$PROCESS.mac\" !"
         exit 28
       fi
 
@@ -2095,7 +2157,8 @@ configureMAC() {
     exit 28
   fi
 
-  # Keep the guest-facing gateway MAC stable across runs.
+  # Keep the guest-facing gateway MAC stable across runs, otherwise Windows guests
+  # may detect a new network every boot.
   GATEWAY_MAC=$(gatewayMAC "$MAC")
 
   return 0
@@ -2231,10 +2294,6 @@ initializeNetwork() {
 
   showHostInfo
 
-  if [[ "$UPLINK" == "172.17."* ]]; then
-    warn "your container IP starts with 172.17.* which will cause conflicts when you install the Container Manager package inside DSM!"
-  fi
-
   closeInterfaces
 
   # Clean up old files
@@ -2259,9 +2318,6 @@ enabled "$DEBUG" && echo "$msg"
 
 initializeNetwork
 
-MSG="Booting DSM instance..."
-html "$MSG"
-
 if enabled "$DHCP"; then
 
   # Configure for macvtap interface
@@ -2270,20 +2326,15 @@ if enabled "$DHCP"; then
 
 else
 
-  if ! disabled "${WEB:-}"; then
-    writeAtomic "$WSD_COMMAND" "portal"
-    sleep 1.2
-    closeWeb
-  fi
-
   if isNAT; then
 
     # Configure tap interface
     if ! configureNAT; then
 
-      closeInterfaces
       # NAT setup failure is recoverable: tear down partial interfaces and
       # continue with the default user-mode backend.
+
+      closeInterfaces
       NETWORK="user"
 
       if ! enabled "$ROOTLESS" || enabled "$DEBUG"; then
@@ -2325,14 +2376,14 @@ else
 
   showGuestInfo
 
-  if isUserMode && [ -z "$USER_PORTS" ]; then
-    info "Notice: because user-mode networking is active, when you need to forward custom ports to DSM, add them to the \"USER_PORTS\" variable."
+  if isUserMode && { [ -z "$USER_PORTS" ] || [[ "$USER_PORTS" == "5000/tcp,5001/tcp" ]]; }; then
+    desc="$APP"
+    [[ "${desc,,}" == "qemu" ]] && desc="the VM"
+    info "Notice: because user-mode networking is active, when you need to forward custom ports to $desc, add them to the \"USER_PORTS\" variable."
   fi
 
 fi
 
-# Suppress the adapter option ROM because firmware network boot is unused and
-# would otherwise alter boot order and startup timing.
 NET_OPTS+=" -device $ADAPTER,id=net0,netdev=hostnet0,romfile=,mac=$MAC"
 
 if [[ "$GUEST_MTU" != "0" && "$GUEST_MTU" != "1500" ]]; then
@@ -2343,16 +2394,28 @@ if [[ "$GUEST_MTU" != "0" && "$GUEST_MTU" != "1500" ]]; then
   fi
 fi
 
-# Publish the container address and detected driver for the healthcheck and
-# post-boot login-message helper.
-if ! echo "$UPLINK" > "$QEMU_DIR"/qemu.ip; then
-  error "Failed to write QEMU IP file!"
+if ! echo "$UPLINK" > "$QEMU_DIR"/qemu.host; then
+  error "Failed to write QEMU host IP file!"
   exit 24
 fi
 
 if ! echo "$NIC" > "$QEMU_DIR"/qemu.nic; then
   error "Failed to write QEMU NIC file!"
   exit 24
+fi
+
+if [ -n "$IP" ]; then
+
+  if ! echo "$IP" > "$QEMU_DIR"/qemu.ip; then
+    error "Failed to write QEMU IP file!"
+    exit 24
+  fi
+
+  if ! echo "http://$IP:$CHECK_PORT" > "$QEMU_DIR"/qemu.url; then
+    error "Failed to write QEMU URL file!"
+    exit 24
+  fi
+
 fi
 
 return 0
