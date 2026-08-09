@@ -166,20 +166,20 @@ createSystemImage() {
 
   # The PAT boot archive becomes the persistent QEMU boot disk after its
   # companion system partition has been assembled.
-  BOOT=$(find "$tmp" -name "*.bin.zip" -print -quit) || return $?
+  DSM_BOOT=$(find "$tmp" -name "*.bin.zip" -print -quit) || return $?
 
-  if [ -z "$BOOT" ]; then
+  if [ -z "$DSM_BOOT" ]; then
     error "The PAT file contains no boot image."
     return 67
   fi
 
-  if [ ! -s "$BOOT" ]; then
+  if [ ! -s "$DSM_BOOT" ]; then
     error "The PAT boot image archive is empty."
     return 67
   fi
 
-  unzip -q -o "$BOOT" -d "$tmp" || return $?
-  BOOT="${BOOT%.zip}"
+  unzip -q -o "$DSM_BOOT" -d "$tmp" || return $?
+  DSM_BOOT="${DSM_BOOT%.zip}"
 
   SYSTEM="$STORAGE/$BASE.system.img"
   rm -f "$SYSTEM" || return $?
@@ -451,7 +451,7 @@ finishDsmInstall() {
     setOwner "$STORAGE/$BASE.pat" || warn "failed to set the owner for \"$STORAGE/$BASE.pat\" !"
   fi
 
-  mv -f "$BOOT" "$STORAGE/$BASE.boot.img" || return $?
+  mv -f "$DSM_BOOT" "$STORAGE/$BASE.boot.img" || return $?
   setOwner "$STORAGE/$BASE.boot.img" || warn "failed to set the owner for \"$STORAGE/$BASE.boot.img\" !"
 
   rm -rf "$tmp" || return $?
