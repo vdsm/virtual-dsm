@@ -17,28 +17,6 @@ RENDERNODE=$(strip "$RENDERNODE")
 
 CPU_VENDOR=$(lscpu | awk '/Vendor ID/{print $3}')
 
-closeWebserver() {
-
-  disabled "${NETWORK:-Y}" && return 0
-
-  MSG="Booting DSM instance..."
-  html "$MSG" || return $?
-
-  if enabled "${DHCP:-N}" || disabled "${WEB:-}"; then
-    return 0
-  fi
-
-  writeAtomic "$WSD_COMMAND" "portal" || return $?
-  sleep 1.2
-
-  local pids=( "${WEB_PID:-}" "${WSD_PID:-}" )
-  mKill "${pids[@]}"
-
-  WEB="N"
-
-  return 0
-}
-
 # The accelerated Intel render-node path is restricted to x86 Intel hosts;
 # other platforms retain the normal QEMU display backend.
 if ! enabled "$GPU" || isAmdCpu || [[ "$ARCH" != "amd64" ]]; then
@@ -52,7 +30,6 @@ if ! enabled "$GPU" || isAmdCpu || [[ "$ARCH" != "amd64" ]]; then
   fi
 
   DISPLAY_OPTS="-display ${DISPLAY} -vga ${VGA}"
-  closeWebserver || return $?
   return 0
 
 fi
@@ -111,5 +88,4 @@ addDsmPackage() {
 addDsmPackage "xserver-xorg-video-intel" "Intel GPU drivers"
 addDsmPackage "qemu-system-modules-opengl" "OpenGL module"
 
-closeWebserver || return $?
 return 0
