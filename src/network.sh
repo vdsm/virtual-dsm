@@ -2271,6 +2271,7 @@ if enabled "$DHCP"; then
 else
 
   if ! disabled "${WEB:-}"; then
+    writeAtomic "$WSD_COMMAND" "portal"
     sleep 1.2
     closeWeb
   fi
