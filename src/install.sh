@@ -336,8 +336,8 @@ sanitizePatBase() {
 reservePorts() {
 
   # NAT can fall back to user-mode networking after this point,
-  # so always add the SSL user port for non-DHCP networking.
-  USER_PORTS="${USER_PORTS:+$USER_PORTS,}5001/tcp"
+  # so always add the web interface ports for non-DHCP networking.
+  USER_PORTS="${USER_PORTS:+$USER_PORTS,}${WEB_PORT}/tcp,5001/tcp"
 
   return 0
 }
