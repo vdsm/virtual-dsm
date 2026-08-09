@@ -1,7 +1,38 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-: "${URL:=""}"    # URL of the PAT file to be downloaded.
+: "${TZ:=""}"         # System timezone
+: "${COUNTRY:=""}"    # Country code for mirror
+: "${URL:=""}"        # URL of the PAT file to be downloaded.
+
+TZ=$(strip "$TZ")
+COUNTRY=$(strip "$COUNTRY")
+
+checkSse42() {
+
+  if disabled "$KVM" || [[ "${PLATFORM,,}" != "x64" ]]; then
+    return 0
+  fi
+
+  if ! hasFlag "sse4_2"; then
+    error "Your CPU does not have the SSE4 instruction set that Virtual DSM requires!"
+    enabled "$DEBUG" || return 88
+  fi
+
+  return 0
+}
+
+sanitizePatBase() {
+
+  local source="$1"
+  local base
+
+  base=$(basename "${source%%\?*}" .pat) || return 1
+  printf -v base '%b' "${base//%/\\x}" || return 1
+  base="${base//[!A-Za-z0-9._-]/_}"
+
+  printf '%s' "$base"
+}
 
 checkDsmFilesystem() {
 
@@ -249,8 +280,9 @@ createSystemImage() {
   # Recreate Synology's expected DOS partition layout inside the fixed 10 GiB
   # system image before populating the ext4 root partition.
   local part="$tmp/partition.fdisk"
+  local rc
 
-  {
+  if {
     echo "label: dos"
     echo "label-id: 0x6f9ee2e9"
     echo "device: $SYSTEM"
@@ -259,7 +291,12 @@ createSystemImage() {
     echo ""
     echo "${SYSTEM}1 : start=        2048, size=    16777216, type=83"
     echo "${SYSTEM}2 : start=    16779264, size=     4194304, type=82"
-  } > "$part" || return $?
+  } > "$part"; then
+    :
+  else
+    rc=$?
+    return "$rc"
+  fi
 
   sfdisk -q "$SYSTEM" < "$part" || return $?
 
@@ -309,16 +346,22 @@ installSystemPartition() {
   local label="1.44.1-42218"
   local offset="1048576"    # 2048 * 512
   local numBlocks="2097152" # (16777216 * 512) / 4096
+  local rc
   msg="Installing system partition..."
 
   # Build the ext4 filesystem directly from the extracted tree under fakeroot,
   # preserving archive ownership without mounting a loop device.
-  fakeroot -- bash -c "set -Eeu;\
+  if fakeroot -- bash -c "set -Eeu;\
     [ -s $hdp.txz ] && tar xpfJ $hdp.txz --absolute-names -C $mount/;\
     [ -s $idb.txz ] && tar xpfJ $idb.txz --absolute-names -C $indexDb/;\
     tar xpfJ $hda.txz --absolute-names --skip-old-files -C $mount/;\
     printf '%b%s%b' '\E[1;34m❯ \E[1;36m' 'Install: $msg' '\E[0m\n';\
-    mke2fs -q -t ext4 -b 4096 -d $mount/ -L $label -F -E offset=$offset $SYSTEM $numBlocks" || return $?
+    mke2fs -q -t ext4 -b 4096 -d $mount/ -L $label -F -E offset=$offset $SYSTEM $numBlocks"; then
+    :
+  else
+    rc=$?
+    return "$rc"
+  fi
 
   rm -rf "$mount" || return $?
   return 0
@@ -351,19 +394,12 @@ finishDsmInstall() {
   return 0
 }
 
-sanitizePatBase() {
-
-  local source="$1"
-  local base
-
-  base=$(basename "${source%%\?*}" .pat) || return 1
-  printf -v base '%b' "${base//%/\\x}" || return 1
-  base="${base//[!A-Za-z0-9._-]/_}"
-
-  printf '%s' "$base"
-}
-
 installDSM() {
+
+  checkSse42 || return $?
+
+  rm -f "$QEMU_DIR/dsm.url" || return $?
+  rm -rf /tmp/dsm || return $?
 
   local patName="boot.pat"
   local patDir patFile
