@@ -333,6 +333,15 @@ sanitizePatBase() {
   printf '%s' "$base"
 }
 
+reservePorts() {
+
+  # NAT can fall back to user-mode networking after this point,
+  # so always add the SSL user port for non-DHCP networking.
+  USER_PORTS="${USER_PORTS:+$USER_PORTS,}5001/tcp"
+
+  return 0
+}
+
 getCountry() {
 
   local url=$1
@@ -403,10 +412,11 @@ finishDsmInstall() {
 
 installDSM() {
 
-  checkSse42 || return $?
-
-  rm -f "$QEMU_DIR/dsm.url" || return $?
   rm -rf /tmp/dsm || return $?
+  rm -f "$QEMU_DIR/dsm.url" || return $?
+
+  checkSse42 || return $?
+  reservePorts || return $?
 
   local patName="boot.pat"
   local patDir patFile
