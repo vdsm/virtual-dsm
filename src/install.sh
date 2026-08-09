@@ -254,9 +254,8 @@ createSystemImage() {
   # Recreate Synology's expected DOS partition layout inside the fixed 10 GiB
   # system image before populating the ext4 root partition.
   local part="$tmp/partition.fdisk"
-  local rc
 
-  if {
+  if ! {
     echo "label: dos"
     echo "label-id: 0x6f9ee2e9"
     echo "device: $SYSTEM"
@@ -266,10 +265,7 @@ createSystemImage() {
     echo "${SYSTEM}1 : start=        2048, size=    16777216, type=83"
     echo "${SYSTEM}2 : start=    16779264, size=     4194304, type=82"
   } > "$part"; then
-    :
-  else
-    rc=$?
-    return "$rc"
+    return 1
   fi
 
   sfdisk -q "$SYSTEM" < "$part" || return $?
@@ -372,7 +368,7 @@ finishDsmInstall() {
   local pat="$1"
   local tmp="$2"
 
-  echo "$BASE" > "$STORAGE/dsm.ver" || return $?
+  echo "$BASE" > "$STORAGE/dsm.ver" || return 1
   setOwner "$STORAGE/dsm.ver" || warn "failed to set the owner for \"$STORAGE/dsm.ver\" !"
 
   # Do not keep a second copy when the source PAT already lives in storage;
