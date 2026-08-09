@@ -28,7 +28,7 @@ closeWebserver() {
     return 0
   fi
 
-  writeAtomic "$WSD_COMMAND" "portal"
+  writeAtomic "$WSD_COMMAND" "portal" || return $?
   sleep 1.2
 
   local pids=( "${WEB_PID:-}" "${WSD_PID:-}" )
