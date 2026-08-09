@@ -27,6 +27,7 @@ cd /run
 . disk.sh       # Initialize disks
 . display.sh    # Initialize graphics
 #. audio.sh      # Initialize audio
+. prepare.sh    # Prepare for launch
 . network.sh    # Initialize network
 . boot.sh       # Configure boot
 . proc.sh       # Initialize processor
