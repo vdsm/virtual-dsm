@@ -337,7 +337,7 @@ reservePorts() {
 
   # NAT can fall back to user-mode networking after this point,
   # so always add the web interface ports for non-DHCP networking.
-  USER_PORTS="${USER_PORTS:+$USER_PORTS,}${WEB_PORT}/tcp,5001/tcp"
+  USER_PORTS="${USER_PORTS:+$USER_PORTS,}5000/tcp,5001/tcp"
 
   return 0
 }
