@@ -88,7 +88,7 @@ An empty default means the variable is unset and its value is determined automat
 | Variable | Default | Description |
 |---|---|---|
 | `SHUTDOWN` | `Y` | Enables graceful shutdown. |
-| `TIMEOUT` | `115` | Maximum time, in seconds, to wait before forcing DSM to stop. |
+| `TIMEOUT` | `105` | Maximum time, in seconds, to wait before forcing DSM to stop. |
 | `API_TIMEOUT` | `90` | Maximum time, in seconds, to wait for the shutdown API call. |
 
 ## 🐞 Debugging
