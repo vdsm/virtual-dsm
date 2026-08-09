@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+: "${APP:="Virtual DSM"}"
+: "${SUPPORT:="https://github.com/vdsm/virtual-dsm"}"
+
 : "${AUDIO:="N"}"
 : "${DISPLAY:="none"}"
 : "${PLATFORM:="x64"}"
-: "${APP:="Virtual DSM"}"
+: "${RAM_MINIMUM:="1G"}
 : "${BOOT_MODE:="legacy"}"
-: "${SUPPORT:="https://github.com/vdsm/virtual-dsm"}"
 
 cd /run
 
