@@ -19,7 +19,7 @@ cd /run
 . display.sh    # Initialize graphics
 #. audio.sh      # Initialize audio
 . network.sh    # Initialize network
-#. boot.sh       # Configure boot
+. boot.sh       # Configure boot
 . proc.sh       # Initialize processor
 . serial.sh     # Initialize serialport
 . power.sh      # Configure shutdown
