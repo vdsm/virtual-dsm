@@ -29,14 +29,15 @@ finish() {
 
   forceKillQemu "$reason"
   cleanupHelpers "$HOST_PID"
+  
   fKill "print.sh"
-
   rm -f -- "$HOST_API_SOCKET" "$HOST_AGENT_SOCKET"
 
   if ! waitQemuExit 10; then
     warn "Timed out while waiting for $(app) to exit!"
   fi
 
+  stopConsole
   echo
 
   if (( failed == 0 )); then
