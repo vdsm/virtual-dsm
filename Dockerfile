@@ -1,15 +1,12 @@
 # syntax=docker/dockerfile:1
 
-FROM qemux/qemu-host:2.06 AS builder
-FROM debian:trixie-slim
+FROM qemux/qemu-host:2.06 AS host
+FROM scratch
 
-ARG TARGETARCH
-ARG TARGETPLATFORM
+COPY --from=qemux/qemu:7.45 / /
 
 ARG VERSION_ARG="0.0"
-ARG VERSION_WSD="0.4.2"
 ARG VERSION_CSTRUCT="4.7"
-ARG VERSION_PASST="2026_07_28"
 
 ARG DEBCONF_NOWARNINGS="yes"
 ARG DEBIAN_FRONTEND="noninteractive"
@@ -20,43 +17,9 @@ RUN <<EOF
 
   apt-get update
   apt-get --no-install-recommends -y install \
-    jq \
-    tini \
-    curl \
-    wget \
-    fdisk \
-    unzip \
-    nginx \
-    procps \
-    ipcalc \
-    ethtool \
-    xz-utils \
-    iptables \
-    iproute2 \
-    dnsmasq \
     fakeroot \
-    apt-utils \
-    net-tools \
-    e2fsprogs \
-    diffutils \
-    qemu-utils \
-    iputils-ping \
-    inotify-tools \
-    ca-certificates \
-    netcat-openbsd \
-    qemu-system-x86 \
-    python3 \
-    python3-pip \
     python3-msgpack \
     python3-pysodium
-
-  # Install Passt package
-  wget "https://github.com/qemus/passt/releases/download/v${VERSION_PASST}/passt_${VERSION_PASST}_${TARGETARCH}.deb" -O /tmp/passt.deb -q --timeout=10
-  dpkg -i /tmp/passt.deb
-
-  # Install Websocketd package
-  wget "https://github.com/qemus/websocketd/releases/download/v${VERSION_WSD}/websocketd-${VERSION_WSD}_${TARGETARCH}.deb" -O /tmp/wsd.deb -q --timeout=10
-  dpkg -i /tmp/wsd.deb
 
   apt-get clean
 
@@ -71,12 +34,12 @@ EOF
 
 COPY --chmod=755 ./src /run/
 COPY --chmod=755 ./web /var/www/
-COPY --chmod=755 --from=builder /qemu-host.bin /run/host.bin
+COPY --chmod=755 --from=host /qemu-host.bin /run/host.bin
 COPY --chmod=744 ./web/conf/nginx.conf /etc/nginx/default.conf
 ADD --chmod=775 https://raw.githubusercontent.com/sud0woodo/patology/refs/heads/main/patology.py /run/extract.py
 
 VOLUME /storage
-EXPOSE 22 139 445 5000
+EXPOSE 445 5000
 
 ENV RAM_SIZE="2G"
 ENV CPU_CORES="2"
