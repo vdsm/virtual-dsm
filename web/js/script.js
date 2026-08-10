@@ -7,7 +7,6 @@ var portal = false;
 var portalUrl = "";
 var interval = 1000;
 var lastStatus = "";
-var stopped = "The container has stopped. Check the container logs for details.";
 
 function abortRequest() {
 
@@ -512,11 +511,11 @@ function setError(text) {
 
 function setStopped() {
 
-    var msg = "<span style=\"display:block\">" + stopped + "</span>";
-    msg += "<span style=\"display:block; margin-top:1em\">Check the container logs for more details.</span>";
+    var msg = "<span style=\"display:block\">The container has stopped.</span>";
+    msg += "<span style=\"display:block; margin-top:1em; font-size:0.85em; font-weight:normal\">Check the container log for more details.</span>";
 
     if (lastStatus.length > 0) {
-        msg += "<span style=\"display:block; margin-top:1em\">(Last status: " + escapeContent(lastStatus) + ")</span>";
+        msg += "<span style=\"display:block; margin-top:1em; font-size:0.75em; font-weight:normal; color:rgba(255,255,255,0.65)\">[ Last status: " + escapeContent(lastStatus) + " ]</span>";
     }
 
     return setError(msg);
