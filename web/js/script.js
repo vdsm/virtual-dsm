@@ -512,9 +512,11 @@ function setError(text) {
 
 function setStopped() {
 
-    var msg = stopped;
+    var msg = "<span style=\"display:block\">" + stopped + "</span>";
+    msg += "<span style=\"display:block; margin-top:1em\">Check the container logs for more details.</span>";
+
     if (lastStatus.length > 0) {
-        msg += "<br>(Last status: " + escapeContent(lastStatus) + ")";
+        msg += "<span style=\"display:block; margin-top:1em\">(Last status: " + escapeContent(lastStatus) + ")</span>";
     }
 
     return setError(msg);
