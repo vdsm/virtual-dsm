@@ -35,6 +35,7 @@ if ! enabled "$GPU" || isAmdCpu || [[ "$ARCH" != "amd64" ]]; then
 fi
 
 msg="Configuring display drivers..."
+
 html "$msg"
 enabled "$DEBUG" && echo "$msg"
 
@@ -64,28 +65,5 @@ fi
 if [ ! -c "$RENDERNODE" ] || [ ! -r "$RENDERNODE" ] || [ ! -w "$RENDERNODE" ]; then
   warn "render device '${RENDERNODE}' is unavailable or inaccessible."
 fi
-
-addDsmPackage() {
-
-  local pkg=$1
-  local desc=$2
-
-  if ! apt-mark showinstall | grep -qx "$pkg"; then
-    [ -z "$COUNTRY" ] && setCountry
-
-    # Use a mainland mirror only for on-demand package installation, avoiding
-    # slow or inaccessible Debian endpoints in that region.
-    if [[ "${COUNTRY^^}" == "CN" ]]; then
-      sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debian.sources
-    fi
-  fi
-
-  addPackage "$pkg" "$desc"
-}
-
-# Install acceleration packages lazily so non-GPU deployments keep the base
-# image small and do not require OpenGL modules.
-addDsmPackage "xserver-xorg-video-intel" "Intel GPU drivers"
-addDsmPackage "qemu-system-modules-opengl" "OpenGL module"
 
 return 0
