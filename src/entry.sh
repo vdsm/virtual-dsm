@@ -23,6 +23,7 @@ cd /run
 . init.sh       # Initialize system
 . memory.sh     # Check memory
 . server.sh     # Start webserver
+. download.sh   # Load functions
 . install.sh    # Run installation
 . disk.sh       # Initialize disks
 . display.sh    # Initialize graphics
