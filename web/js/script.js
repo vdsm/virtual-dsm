@@ -296,14 +296,14 @@ function estimateProgress(bytes) {
     }
 
     if (previousBoundary === 0) {
-        return Math.min(bytes / boundary * 100, 100);
+        return Math.min(bytes / boundary * 100, 99.9);
     }
 
     var rangeProgress =
         (bytes - previousBoundary) /
         (boundary - previousBoundary);
 
-    return 30 + Math.pow(rangeProgress, 2) * 70;
+    return Math.min(30 + Math.pow(rangeProgress, 2) * 70, 99.9);
 }
 
 function parseProgress(msg) {
