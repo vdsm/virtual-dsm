@@ -178,8 +178,35 @@ createSystemImage() {
     return 67
   fi
 
-  7z x -y -o"$tmp" "$DSM_BOOT" >/dev/null || return $?
-  DSM_BOOT="${DSM_BOOT%.zip}"
+  local bootTmp="$tmp/boot" bootBase
+  bootBase="$(basename "${DSM_BOOT%.zip}")"
+
+  rm -rf "$bootTmp" || return $?
+
+  if ! makeDir "$bootTmp"; then
+    error "Failed to create directory \"$bootTmp\" !"
+    return 93
+  fi
+
+  if [[ "${fs,,}" == "btrfs" ]]; then
+    { chattr +C "$bootTmp"; } || :
+  fi
+
+  7z x -y -o"$bootTmp" "$DSM_BOOT" >/dev/null || return $?
+  DSM_BOOT="$bootTmp/$bootBase"
+
+  if [ ! -s "$DSM_BOOT" ]; then
+    error "The PAT boot image could not be extracted."
+    return 67
+  fi
+
+  if [[ "${fs,,}" == "btrfs" ]]; then
+    local attrs
+    attrs=$(lsattr "$DSM_BOOT") || return $?
+    if [[ "$attrs" != *"C"* ]]; then
+      error "Failed to disable COW for boot image $DSM_BOOT on ${fs^^} filesystem."
+    fi
+  fi
 
   SYSTEM="$STORAGE/$BASE.system.img"
   rm -f "$SYSTEM" || return $?
