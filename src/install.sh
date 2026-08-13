@@ -178,8 +178,8 @@ createSystemImage() {
     return 67
   fi
 
-  local bootTmp="$tmp/boot"
-  local bootBase="$(basename "${DSM_BOOT%.zip}")"
+  local bootTmp="$tmp/boot" bootBase
+  bootBase="$(basename "${DSM_BOOT%.zip}")"
 
   rm -rf "$bootTmp" || return $?
 
