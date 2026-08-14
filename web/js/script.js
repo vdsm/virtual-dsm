@@ -537,7 +537,7 @@ function reload() {
 
     navigationTimer = setTimeout(function() {
         navigationTimer = null;
-        window.location.reload();
+        window.location.replace(window.location.href);
     }, 3000);
 
     return true;
