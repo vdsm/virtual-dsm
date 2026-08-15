@@ -159,6 +159,12 @@ function processMsg(msg) {
     rememberStatus(msg);
     setInfo(msg);
 
+    if (msg.toLowerCase().indexOf("href=") !== -1) {
+        var div = document.createElement("div");
+        div.innerHTML = msg;
+        return beginPortal(div.querySelector("a").href);
+    }
+
     return true;
 }
 
