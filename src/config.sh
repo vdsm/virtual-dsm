@@ -29,7 +29,8 @@ configureMonitor() {
   [ -n "$QMP" ] && MON_OPTS+=" -qmp $QMP"
   [ -n "$MONITOR" ] && MON_OPTS+=" -monitor $MONITOR"
 
-  MON_OPTS+=" -name $PROCESS,process=$PROCESS,debug-threads=on"
+  local name="${APP}// /-}"
+  MON_OPTS+=" -name $name,process=$PROCESS,debug-threads=on"
   MON_OPTS+=" -pidfile $QEMU_PID"
   MON_OPTS="${MON_OPTS# }"
 
