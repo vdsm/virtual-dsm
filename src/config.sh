@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+: "${RNG:=""}"
 : "${QMP:=""}"
 : "${UUID:=""}"
 : "${MONITOR:=""}"
-
-DEF_OPTS="-nodefaults -boot strict=on"
-DEV_OPTS=""
 
 configureProcessor() {
 
@@ -60,24 +58,31 @@ configureVirtioDevices() {
   local bus
   bus=$(getPciBus)
 
+  DEV_OPTS=""
+
+  if ! disabled "$RNG"; then
+    DEV_OPTS+=" -object rng-random,id=objrng0,filename=/dev/urandom"
+    DEV_OPTS+=" -device virtio-rng-pci,rng=objrng0,id=rng0,bus=$bus,addr=0x1c"
+  fi
+
   # Keep the existing balloon device by default. When dynamic ballooning is
   # enabled, expose guest statistics and a dedicated QMP control socket.
   if ! enabled "${BALLOONING:-}"; then
-    DEV_OPTS="-device virtio-balloon-pci,id=balloon0,bus=$bus,addr=0x4"
+    DEV_OPTS+=" -device virtio-balloon-pci,id=balloon0,bus=$bus,addr=0x4"
   else
     MON_OPTS+=" -qmp unix:${BALLOONING_SOCKET},server=on,wait=off"
-    DEV_OPTS="-device virtio-balloon-pci,free-page-reporting=on,guest-stats-polling-interval=1,id=balloon0,bus=$bus,addr=0x4"
+    DEV_OPTS+=" -device virtio-balloon-pci,free-page-reporting=on,guest-stats-polling-interval=1,id=balloon0,bus=$bus,addr=0x4"
   fi
 
-  DEV_OPTS+=" -object rng-random,id=objrng0,filename=/dev/urandom"
-  DEV_OPTS+=" -device virtio-rng-pci,rng=objrng0,id=rng0,bus=$bus,addr=0x1c"
+  DEV_OPTS="${DEV_OPTS# }"
 
   return 0
 }
 
 buildArguments() {
 
-  ARGS="$DEF_OPTS $CPU_OPTS $RAM_OPTS $MAC_OPTS $DISPLAY_OPTS $MON_OPTS $SERIAL_OPTS $NET_OPTS $DISK_OPTS $BOOT_OPTS $DEV_OPTS $ARGUMENTS"
+  local default="-nodefaults -boot strict=on"
+  ARGS="$default $CPU_OPTS $RAM_OPTS $MAC_OPTS $DISPLAY_OPTS $MON_OPTS $SERIAL_OPTS $NET_OPTS $DISK_OPTS $BOOT_OPTS $DEV_OPTS $ARGUMENTS"
 
   # Collapse whitespace after optional argument groups are assembled so empty
   # features cannot leave malformed spacing in the final QEMU command.
