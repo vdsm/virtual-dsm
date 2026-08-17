@@ -28,11 +28,11 @@ configureMonitor() {
   MON_OPTS=""
   [ -n "$QMP" ] && MON_OPTS+=" -qmp $QMP"
   [ -n "$MONITOR" ] && MON_OPTS+=" -monitor $MONITOR"
+  MON_OPTS="${MON_OPTS# }"
 
   local name="${APP// /-}"
-  MON_OPTS+=" -name $name,process=$PROCESS,debug-threads=on"
-  MON_OPTS+=" -pidfile $QEMU_PID"
-  MON_OPTS="${MON_OPTS# }"
+  ID_OPTS="-name $name,process=$PROCESS,debug-threads=on"
+  PID_OPTS="-pidfile $QEMU_PID"
 
   return 0
 }
@@ -48,8 +48,8 @@ configureMachine() {
   MAC_OPTS+=",vmport=off,dump-guest-core=off,hpet=off${KVM_OPTS}"
 
   UUID=$(strip "$UUID")
-  [ -n "$UUID" ] && MAC_OPTS+=" -uuid $UUID"
-  [ -n "${SM_BIOS:-}" ] && MAC_OPTS+=" $SM_BIOS"
+  [ -n "$UUID" ] && ID_OPTS+=" -uuid $UUID"
+  [ -n "${SM_BIOS:-}" ] && ID_OPTS+=" $SM_BIOS"
 
   return 0
 }
@@ -82,8 +82,10 @@ configureVirtioDevices() {
 
 buildArguments() {
 
-  local default="-nodefaults -boot strict=on"
-  ARGS="$default $CPU_OPTS $RAM_OPTS $MAC_OPTS $DISPLAY_OPTS $MON_OPTS $SERIAL_OPTS $NET_OPTS $DISK_OPTS $BOOT_OPTS $DEV_OPTS $ARGUMENTS"
+  local default="-nodefaults"
+  local boot="-boot strict=on"
+
+  ARGS="$default $MAC_OPTS $CPU_OPTS $RAM_OPTS $ID_OPTS $PID_OPTS $DISPLAY_OPTS $MON_OPTS $SERIAL_OPTS $NET_OPTS $DISK_OPTS $boot $BOOT_OPTS $DEV_OPTS $ARGUMENTS"
 
   # Collapse whitespace after optional argument groups are assembled so empty
   # features cannot leave malformed spacing in the final QEMU command.
