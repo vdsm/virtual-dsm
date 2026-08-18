@@ -54,7 +54,7 @@ configureMachine() {
   return 0
 }
 
-configureVirtioDevices() {
+configureDevices() {
 
   local bus
   bus=$(getPciBus)
@@ -100,7 +100,7 @@ configureMemory
 configureMonitor
 configureMachine
 configureProcessor
-configureVirtioDevices
+configureDevices
 
 buildArguments
 
