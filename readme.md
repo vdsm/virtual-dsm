@@ -203,7 +203,7 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
 ### How do I enable GPU acceleration?
 
-  To enable hardware-accelerated graphics using an Intel or AMD GPU, add the following lines to your compose file:
+  To enable hardware-accelerated graphics, add the following lines to your compose file:
 
   ```yaml
   environment:
