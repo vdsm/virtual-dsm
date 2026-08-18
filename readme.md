@@ -201,9 +201,9 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
     - 'c *:* rwm'
   ```
 
-### How do I pass through the GPU?
+### How do I enable GPU acceleration?
 
-  To pass through an Intel or AMD GPU, add the following lines to your compose file:
+  To enable hardware-accelerated graphics using an Intel or AMD GPU, add the following lines to your compose file:
 
   ```yaml
   environment:
@@ -212,8 +212,7 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
     - /dev/dri
   ```
 
-> [!NOTE]
-> This can be used to enable the facial recognition function in Synology Photos, but does not provide hardware transcoding for video.
+  This can be used to enable the facial recognition function in Synology Photos, but does not provide hardware transcoding for video.
 
 ### How do I enable dynamic memory allocation?
 
