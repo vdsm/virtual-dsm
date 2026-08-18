@@ -6,6 +6,14 @@ set -Eeuo pipefail
 : "${UUID:=""}"
 : "${MONITOR:=""}"
 
+msg="Configuring QEMU..."
+enabled "$DEBUG" && echo "$msg"
+
+# Sanitize variables
+QMP=$(strip "$QMP")
+UUID=$(strip "$UUID")
+MONITOR=$(strip "$MONITOR")
+
 configureProcessor() {
 
   # Expose one thread per core in a single socket; DSM licensing and topology
@@ -47,7 +55,6 @@ configureMachine() {
   MAC_OPTS="-machine type=$MACHINE,smm=$smm,usb=off"
   MAC_OPTS+=",vmport=off,dump-guest-core=off,hpet=off${KVM_OPTS}"
 
-  UUID=$(strip "$UUID")
   [ -n "$UUID" ] && ID_OPTS+=" -uuid $UUID"
   [ -n "${SM_BIOS:-}" ] && ID_OPTS+=" $SM_BIOS"
 
