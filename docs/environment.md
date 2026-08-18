@@ -72,7 +72,7 @@ An empty default means the variable is unset and its value is determined automat
 |---|---|---|
 | `DISPLAY` | `none` | Display backend, such as `vnc`, `disabled`, or `none`. |
 | `VGA` | `none` | QEMU video adapter model. |
-| `GPU` | `N` | Enables Intel iGPU acceleration. |
+| `GPU` | `N` | Enables experimental GPU acceleration. |
 | `RENDERNODE` | `/dev/dri/renderD128` | Render node used for GPU acceleration. |
 
 ## 🎈 Memory Ballooning
