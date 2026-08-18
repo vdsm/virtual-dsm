@@ -203,7 +203,7 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
 ### How do I pass through the GPU?
 
-  To pass through your Intel GPU, add the following lines to your compose file:
+  To pass through an Intel or AMD GPU, add the following lines to your compose file:
 
   ```yaml
   environment:
