@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 # Docker environment variables
 
-: "${GPU:="N"}"         # GPU passthrough
+: "${GPU:="N"}"         # GPU acceleration
 : "${VGA:="virtio"}"    # VGA adaptor
 : "${DISPLAY:="none"}"  # Display type
 : "${LOSSY:="N"}"       # Lossy VNC compression
@@ -13,43 +13,67 @@ set -Eeuo pipefail
 VGA=$(strip "$VGA")
 LOSSY=$(strip "$LOSSY")
 DISPLAY=$(strip "$DISPLAY")
+VNC_PORT=$(strip "$VNC_PORT")
 RENDERNODE=$(strip "$RENDERNODE")
 
-CPU_VENDOR=$(lscpu | awk '/Vendor ID/{print $3}')
+port=$(( VNC_PORT - 5900 ))
 
-# The accelerated Intel render-node path is restricted to x86 Intel hosts;
-# other platforms retain the normal QEMU display backend.
-if ! enabled "$GPU" || isAmdCpu || [[ "$ARCH" != "amd64" ]]; then
+LOSSY_OPT=""
+enabled "$LOSSY" && LOSSY_OPT=",lossy=on"
 
-  # A disabled frontend also removes the emulated VGA device to keep the guest
-  # hardware layout headless.
-  [[ "${DISPLAY,,}" == "none" ]] && VGA="none"
+case "${DISPLAY,,}" in
 
-  if enabled "$LOSSY" && [[ "${DISPLAY,,}" == vnc=* ]]; then
-    DISPLAY+=",lossy=on"
-  fi
+  "vnc" )
+    DISPLAY_OPTS="-display vnc=:${port}${LOSSY_OPT} -vga ${VGA}" ;;
+  "disabled" )
+    DISPLAY_OPTS="-display none -vga ${VGA}" ;;
+  "none" )
+    DISPLAY_OPTS="-display none -vga none" ;;
+  *)
+    DISPLAY_OPTS="-display ${DISPLAY} -vga ${VGA}" ;;
 
-  DISPLAY_OPTS="-display ${DISPLAY} -vga ${VGA}"
-  return 0
+esac
 
-fi
+enabled "$GPU" || return 0
 
 msg="Configuring display drivers..."
-
-html "$msg"
 enabled "$DEBUG" && echo "$msg"
 
-DISPLAY_OPTS="-display egl-headless,rendernode=${RENDERNODE}"
-DISPLAY_OPTS+=" -vga $VGA"
+if [[ "$ARCH" != "amd64" ]]; then
+  warn "GPU acceleration is only supported for the AMD64 platform, ignoring GPU=Y."
+  return 0
+fi
+
+RENDER_NAME="${RENDERNODE##*/}"
+
+if [[ ! "$RENDER_NAME" =~ ^renderD([0-9]+)$ ]]; then
+  warn "invalid render node '$RENDERNODE', ignoring GPU=Y."
+  return 0
+fi
+
+CARD_NUMBER="${BASH_REMATCH[1]}"
+VENDOR_FILE="/sys/class/drm/${RENDER_NAME}/device/vendor"
+
+if [ ! -r "$VENDOR_FILE" ]; then
+  warn "cannot determine the GPU vendor for '$RENDERNODE', ignoring GPU=Y."
+  return 0
+fi
+
+GPU_VENDOR=$(< "$VENDOR_FILE")
+case "${GPU_VENDOR,,}" in
+  "0x8086" | "0x1002" ) ;;
+  * )
+    warn "GPU acceleration is only supported for Intel and AMD GPUs, ignoring GPU=Y."
+    return 0 ;;
+esac
 
 [ ! -d /dev/dri ] && mkdir -m 755 /dev/dri
 
-# Extract the card number from the render node
-# Linux renderD128 corresponds to card0; derive both device minors because
-# container device bindings may expose only the render node.
-CARD_NUMBER=$(echo "$RENDERNODE" | grep -oP '(?<=renderD)\d+')
+# Derive the matching DRM card from the validated render node number.
 CARD_DEVICE="/dev/dri/card$((CARD_NUMBER - 128))"
 
+# Containers normally have no udev, so reconstruct the matching DRM card and
+# render character devices from the render-node minor number when necessary.
 if [ ! -c "$CARD_DEVICE" ]; then
   if mknod "$CARD_DEVICE" c 226 $((CARD_NUMBER - 128)); then
     chmod 666 "$CARD_DEVICE"
@@ -63,7 +87,15 @@ if [ ! -c "$RENDERNODE" ]; then
 fi
 
 if [ ! -c "$RENDERNODE" ] || [ ! -r "$RENDERNODE" ] || [ ! -w "$RENDERNODE" ]; then
-  warn "render device '${RENDERNODE}' is unavailable or inaccessible."
+  warn "render device '$RENDERNODE' is unavailable or inaccessible, ignoring GPU=Y."
+  return 0
 fi
+
+[[ "${VGA,,}" == "virtio" ]] && VGA="virtio-vga-gl"
+
+DISPLAY_OPTS="-display egl-headless,rendernode=$RENDERNODE"
+DISPLAY_OPTS+=" -device $VGA"
+
+[[ "${DISPLAY,,}" == "vnc" ]] && DISPLAY_OPTS+=" -vnc :${port}${LOSSY_OPT}"
 
 return 0
