@@ -3,7 +3,7 @@
 FROM qemux/qemu-host:2.06 AS host
 FROM scratch
 
-COPY --from=qemux/qemu:7.47 / /
+COPY --from=qemux/qemu:7.48 / /
 
 ARG VERSION_ARG="0.0"
 ARG VERSION_CSTRUCT="4.7"
