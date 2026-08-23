@@ -25,6 +25,7 @@ An empty default means the variable is unset and its value is determined automat
 | `HOST_CPU` |  | CPU name reported to DSM. Selected automatically when unset. |
 | `KVM` | `Y` | Enables KVM hardware acceleration. |
 | `RAM_SIZE` | `2G` | Amount of RAM assigned to DSM, such as `2G`, `4G`, `half`, or `max`. |
+| `RAM_BACKEND` |  | Guest RAM backing mechanism, set `memfd` for memfd-backed memory. |
 | `RAM_CHECK` | `Y` | Checks whether enough host memory is available before starting DSM. |
 
 ## 💾 Storage
@@ -72,7 +73,7 @@ An empty default means the variable is unset and its value is determined automat
 |---|---|---|
 | `DISPLAY` | `none` | Display backend, such as `vnc`, `disabled`, or `none`. |
 | `VGA` | `none` | QEMU video adapter model. |
-| `GPU` | `N` | Enables experimental GPU acceleration. |
+| `GPU` | `N` | Enables GPU acceleration. |
 | `RENDERNODE` | `/dev/dri/renderD128` | Render node used for GPU acceleration. |
 
 ## 🎈 Memory Ballooning
