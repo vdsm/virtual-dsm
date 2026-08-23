@@ -203,7 +203,7 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
 ### How do I enable GPU acceleration?
 
-  To enable hardware-accelerated graphics, add the following lines to your compose file:
+  To enable GPU acceleration using an Intel or AMD GPU, add the following lines to your compose file:
 
   ```yaml
   environment:
@@ -212,7 +212,24 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
     - /dev/dri
   ```
 
-  This can be used to enable the facial recognition function in Synology Photos, but does not provide hardware transcoding for video.
+  For NVIDIA GPUs, the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) must be installed on the host and the GPU must be exposed to the container:
+
+  ```yaml
+  environment:
+    GPU: "Y"
+    NVIDIA_DRIVER_CAPABILITIES: "all"
+
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: all
+            capabilities:
+              - gpu
+  ```
+
+  GPU acceleration can be used to enable the facial recognition function in Synology Photos, but currently does not provide hardware transcoding for video yet.
 
 ### How do I enable dynamic memory allocation?
 
