@@ -1,6 +1,5 @@
 # syntax=docker/dockerfile:1
 
-FROM qemux/qemu-host:2.06 AS host
 FROM scratch
 
 COPY --from=qemux/qemu:7.49 / /
@@ -34,8 +33,8 @@ EOF
 
 COPY --chmod=755 ./src /run/
 COPY --chmod=755 ./web /var/www/
-COPY --chmod=755 --from=host /qemu-host.bin /run/host.bin
 COPY --chmod=744 ./web/conf/nginx.conf /etc/nginx/default.conf
+COPY --chmod=755 --from=qemux/qemu-host:2.06 /qemu-host.bin /run/host.bin
 ADD --chmod=775 https://raw.githubusercontent.com/sud0woodo/patology/refs/heads/main/patology.py /run/extract.py
 
 VOLUME /storage
