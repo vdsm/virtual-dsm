@@ -112,5 +112,4 @@ Also see [Dynamic memory allocation](https://github.com/qemus/qemu/blob/master/d
 | `HOST_DEBUG` | `N` | Enables debug output for the DSM host helper. |
 | `MONITOR` |  | QEMU monitor, such as `/storage/monitor.sock` or `4444`. |
 | `QMP` |  | QEMU Machine Protocol, such as `/storage/qmp.sock` or `4444`. |
-| `QGA` |  | QEMU Guest Agent, such as `/storage/qga.sock` or `4444`. |
 | `ARGUMENTS` |  | Additional raw arguments appended to the QEMU command line. |
