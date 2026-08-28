@@ -110,6 +110,6 @@ Also see [Dynamic memory allocation](https://github.com/qemus/qemu/blob/master/d
 | `DEBUG` | `N` | Enables verbose debug output. |
 | `TRACE` | `N` | Enables shell command tracing. |
 | `HOST_DEBUG` | `N` | Enables debug output for the DSM host helper. |
-| `MONITOR` |  | QEMU monitor configuration. |
-| `QMP` |  | QEMU Machine Protocol configuration. |
+| `MONITOR` |  | QEMU monitor, such as `/storage/monitor.sock` or `4444`. |
+| `QMP` |  | QEMU Machine Protocol, such as `/storage/qmp.sock` or `4444`. |
 | `ARGUMENTS` |  | Additional raw arguments appended to the QEMU command line. |

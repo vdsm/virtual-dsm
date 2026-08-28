@@ -31,17 +31,54 @@ configureMemory() {
   return 0
 }
 
+normalizeSocket() {
+
+  local value="$1"
+  local backend="${value%%,*}"
+
+  if [[ "$backend" == *.sock && "$backend" != *:* ]]; then
+    value="unix:$value"
+    [[ ",$value," == *,server=* ]] || value+=",server=on"
+    if [[ ",$value," != *,wait=* ]] && [[ ",$value," != *,server=off,* ]]; then
+      value+=",wait=off"
+    fi
+  fi
+
+  echo "$value"
+}
+
+normalizePort() {
+
+  local value="$1"
+  local protocol="$2"
+
+  if [[ "$value" =~ ^[0-9]+$ ]]; then
+    value="$protocol:0.0.0.0:$value,server=on,wait=off"
+  fi
+
+  echo "$value"
+}
+
 configureMonitor() {
 
   MON_OPTS=""
-  [ -n "$QMP" ] && MON_OPTS+=" -qmp $QMP"
-  [ -n "$MONITOR" ] && MON_OPTS+=" -monitor $MONITOR"
-  MON_OPTS="${MON_OPTS# }"
 
-  local name="${APP// /-}"
-  ID_OPTS="-name $name,process=$PROCESS,debug-threads=on"
+  if [ -n "$MONITOR" ]; then
+    MONITOR=$(normalizePort "$MONITOR" "telnet")
+    MONITOR=$(normalizeSocket "$MONITOR")
+    MON_OPTS+=" -monitor $MONITOR"
+  fi
+
+  if [ -n "$QMP" ]; then
+    QMP=$(normalizePort "$QMP" "tcp")
+    QMP=$(normalizeSocket "$QMP")
+    MON_OPTS+=" -qmp $QMP"
+  fi
+
+  ID_OPTS="-name ${APP// /-},process=$PROCESS"
   PID_OPTS="-pidfile $QEMU_PID"
 
+  MON_OPTS="${MON_OPTS# }"
   return 0
 }
 
