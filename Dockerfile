@@ -2,7 +2,7 @@
 
 FROM scratch
 
-COPY --from=qemux/qemu:7.49 / /
+COPY --from=qemux/qemu:7.50 / /
 
 ARG VERSION_ARG="0.0"
 ARG VERSION_CSTRUCT="4.7"
