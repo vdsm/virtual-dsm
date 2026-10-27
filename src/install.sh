@@ -585,7 +585,7 @@ installDSM() {
   fi
 
   if [ -z "$URL" ]; then
-    URL="$mirror/release/7.2.2/72806/DSM_VirtualDSM_72806.pat"
+    URL="$mirror/release/7.4.1/90080/DSM_VirtualDSM_90080.pat"
   fi
 
   if [ ! -s "$patFile" ]; then
