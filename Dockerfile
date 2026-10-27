@@ -15,6 +15,7 @@ RUN <<EOF
   set -eu
 
   apt-get update
+  apt-get -y upgrade
   apt-get --no-install-recommends -y install \
     fakeroot \
     python3-msgpack \
