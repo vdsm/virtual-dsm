@@ -33,7 +33,7 @@ Virtual DSM in a Docker container.
 services:
   dsm:
     container_name: dsm
-    image: vdsm/virtual-dsm
+    image: ghcr.io/vdsm/virtual-dsm
     environment:
       DISK_SIZE: "256G"
     devices:
@@ -52,7 +52,7 @@ services:
 ##### Docker CLI:
 
 ```bash
-docker run -it --rm --name dsm -e "DISK_SIZE=256G" -p 5000:5000 --device=/dev/kvm --device=/dev/net/tun --cap-add NET_ADMIN -v "${PWD:-.}/dsm:/storage" --stop-timeout 120 docker.io/vdsm/virtual-dsm
+docker run -it --rm --name dsm -e "DISK_SIZE=256G" -p 5000:5000 --device=/dev/kvm --device=/dev/net/tun --cap-add NET_ADMIN -v "${PWD:-.}/dsm:/storage" --stop-timeout 120 ghcr.io/vdsm/virtual-dsm
 ```
 
 ##### Kubernetes:
