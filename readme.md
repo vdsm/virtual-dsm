@@ -238,7 +238,9 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
 ### How do I install a specific version of vDSM?
 
-  By default, version 7.2 will be installed, but if you prefer an older version, you can add the download URL of the `.pat` file to your compose file as follows:
+  By default, version 7.0.1 will be installed, but you can upgrade to a newer version from the DSM control panel after installation is finished.
+  
+  If you prefer an older version, you can add the download URL of the `.pat` file to your compose file as follows:
 
   ```yaml
   environment:
