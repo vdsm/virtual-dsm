@@ -293,9 +293,28 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 
   If `kvm-ok` succeeds but the container still reports that KVM is unavailable, you can temporarily add `privileged: true` to your Compose file to rule out a permission or device-access issue.
 
+### How do I use the licenses linked to my Synology NAS?
+
+  Synology ties DSM and package licenses, such as Surveillance Station camera licenses, to the serial number of the system. To retrieve or transfer them after signing in with your Synology Account, Virtual DSM has to report a valid host and guest identity, which you can set by adding the following lines to your compose file:
+
+  ```yaml
+  environment:
+    HOST_MODEL: "DS920+"
+    HOST_SERIAL: "XXXXXXXXXXXXX"
+    HOST_MAC: "00:11:32:XX:XX:XX"
+    GUEST_SERIAL: "XXXXXXXXXXXXX"
+    MAC: "02:11:32:XX:XX:XX"
+  ```
+
+  The `HOST_*` values are the model, serial number and MAC address of your physical Synology NAS, as printed on its label or shown under `Control Panel` > `Info Center`.
+
+  The `GUEST_SERIAL` and `MAC` values belong to a Virtual DSM instance. Synology's Virtual Machine Manager includes one free Virtual DSM license per host. Create a Virtual DSM in Virtual Machine Manager on your NAS, and copy its serial number and MAC address from its own `Control Panel` > `Info Center`.
+
+  Keep these values the same for the lifetime of the installation, and never run two instances with the same serial number on one network.
+
 ### What are the differences compared to the standard DSM?
 
-  There are only two minor differences: the Virtual Machine Manager package is not available, and Surveillance Station will not include any free licenses.
+  There are only two minor differences: the Virtual Machine Manager package is not available, and Surveillance Station will not include any free licenses. Purchased licenses can still be transferred, see [above](#how-do-i-use-the-licenses-linked-to-my-synology-nas).
 
 ### Is this project legal?
 
