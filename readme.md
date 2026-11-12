@@ -8,7 +8,6 @@
 [![Version]][tag_url]
 [![Size]][tag_url]
 [![Package]][pkg_url]
-[![Pulls]][hub_url]
 
 </div></h1>
 
@@ -33,7 +32,7 @@ Virtual DSM in a Docker container.
 services:
   dsm:
     container_name: dsm
-    image: vdsm/virtual-dsm
+    image: ghcr.io/vdsm/virtual-dsm
     environment:
       DISK_SIZE: "256G"
     devices:
@@ -52,7 +51,7 @@ services:
 ##### Docker CLI:
 
 ```bash
-docker run -it --rm --name dsm -e "DISK_SIZE=256G" -p 5000:5000 --device=/dev/kvm --device=/dev/net/tun --cap-add NET_ADMIN -v "${PWD:-.}/dsm:/storage" --stop-timeout 120 docker.io/vdsm/virtual-dsm
+docker run -it --rm --name dsm -e "DISK_SIZE=256G" -p 5000:5000 --device=/dev/kvm --device=/dev/net/tun --cap-add NET_ADMIN -v "${PWD:-.}/dsm:/storage" --stop-timeout 120 ghcr.io/vdsm/virtual-dsm
 ```
 
 ##### Kubernetes:
@@ -310,12 +309,10 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 *Only run this container on Synology hardware, any other use is not permitted by their EULA. The product names, logos, brands, and other trademarks referred to within this project are the property of their respective trademark holders. This project is not affiliated, sponsored, or endorsed by Synology, Inc.*
 
 [build_url]: https://github.com/vdsm/virtual-dsm/
-[hub_url]: https://hub.docker.com/r/vdsm/virtual-dsm
 [tag_url]: https://hub.docker.com/r/vdsm/virtual-dsm/tags
 [pkg_url]: https://github.com/vdsm/virtual-dsm/pkgs/container/virtual-dsm
 
 [Build]: https://github.com/vdsm/virtual-dsm/actions/workflows/build.yml/badge.svg
 [Size]: https://img.shields.io/docker/image-size/vdsm/virtual-dsm/latest?color=066da5&label=size
-[Pulls]: https://img.shields.io/docker/pulls/vdsm/virtual-dsm.svg?style=flat&label=pulls&logo=docker
 [Version]: https://img.shields.io/docker/v/vdsm/virtual-dsm/latest?arch=amd64&sort=semver&color=066da5
 [Package]: https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fipitio.github.io%2Fbackage%2Fvdsm%2Fvirtual-dsm%2Fvirtual-dsm.json&query=%24.downloads&logo=github&style=flat&color=066da5&label=pulls
