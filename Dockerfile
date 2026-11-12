@@ -26,7 +26,7 @@ EOF
 COPY --chmod=755 ./src /run/
 COPY --chmod=755 ./web /var/www/
 COPY --chmod=744 ./web/conf/nginx.conf /etc/nginx/default.conf
-COPY --chmod=755 --from=qemux/qemu-host:2.06 /qemu-host.bin /run/host.bin
+COPY --chmod=755 --from=ghcr.io/qemus/qemu-host:2.06 /qemu-host.bin /run/host.bin
 
 VOLUME /storage
 EXPOSE 445 5000
