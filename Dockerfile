@@ -5,7 +5,6 @@ FROM scratch
 COPY --from=qemux/qemu:7.50 / /
 
 ARG VERSION_ARG="0.0"
-ARG VERSION_CSTRUCT="4.7"
 
 ARG DEBCONF_NOWARNINGS="yes"
 ARG DEBIAN_FRONTEND="noninteractive"
@@ -15,15 +14,8 @@ RUN <<EOF
   set -eu
 
   apt-get update
-  apt-get --no-install-recommends -y install \
-    fakeroot \
-    python3-msgpack \
-    python3-pysodium
-
+  apt-get --no-install-recommends -y install fakeroot
   apt-get clean
-
-  # Install Python dependencies
-  pip3 install --no-cache-dir --break-system-packages --root-user-action=ignore "dissect.cstruct==$VERSION_CSTRUCT"
 
   # Set version file
   echo "$VERSION_ARG" > /etc/version
@@ -35,7 +27,6 @@ COPY --chmod=755 ./src /run/
 COPY --chmod=755 ./web /var/www/
 COPY --chmod=744 ./web/conf/nginx.conf /etc/nginx/default.conf
 COPY --chmod=755 --from=qemux/qemu-host:2.06 /qemu-host.bin /run/host.bin
-ADD --chmod=775 https://raw.githubusercontent.com/sud0woodo/patology/refs/heads/main/patology.py /run/extract.py
 
 VOLUME /storage
 EXPOSE 445 5000

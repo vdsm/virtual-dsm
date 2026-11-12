@@ -127,30 +127,19 @@ extractPat() {
   local rc
 
   info "Install: $msg" && html "$msg" || return $?
+
+  if ! tar tf "$pat" >/dev/null 2>&1; then
+    error "The PAT file is encrypted or not a valid TAR archive. Please use Virtual DSM 7.0.1-42218 or lower."
+    return 63
+  fi
+
   /run/progress.sh "$tmp" "$size" "$msg ([P])..." &
 
-  # Newer PAT files are normal tar archives; older encrypted/proprietary forms
-  # require the bundled extractor as a compatibility fallback.
-  if { tar tf "$pat"; } >/dev/null 2>&1; then
-
-    tar xpf "$pat" -C "$tmp/." || {
-      rc=$?
-      fKill "progress.sh"
-      return "$rc"
-    }
-
-  else
-
-    { (cd "$tmp" && python3 /run/extract.py -i "$pat" -d 2>/run/extract.log); rc=$?; } || :
-
-    if (( rc != 0 )); then
-      fKill "progress.sh"
-      cat /run/extract.log
-      error "Failed to extract PAT file, reason $rc"
-      return 63
-    fi
-
-  fi
+  tar xpf "$pat" -C "$tmp/." || {
+    rc=$?
+    fKill "progress.sh"
+    return "$rc"
+  }
 
   fKill "progress.sh"
   return 0
@@ -585,7 +574,7 @@ installDSM() {
   fi
 
   if [ -z "$URL" ]; then
-    URL="$mirror/release/7.2.2/72806/DSM_VirtualDSM_72806.pat"
+    URL="$mirror/release/7.0.1/42218/DSM_VirtualDSM_42218.pat"
   fi
 
   if [ ! -s "$patFile" ]; then
