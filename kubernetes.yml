@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
       - name: dsm
-        image: vdsm/virtual-dsm
+        image: ghcr.io/vdsm/virtual-dsm
         env:
         - name: DISK_SIZE
           value: "256G"
