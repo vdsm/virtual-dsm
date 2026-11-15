@@ -313,5 +313,5 @@ kubectl apply -f https://raw.githubusercontent.com/vdsm/virtual-dsm/refs/heads/m
 [pkg_url]: https://github.com/vdsm/virtual-dsm/pkgs/container/virtual-dsm
 
 [Build]: https://github.com/vdsm/virtual-dsm/actions/workflows/build.yml/badge.svg
-[Version]: https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Fvdsm%2Fvirtual-dsm%2Freleases%2Flatest&query=%24.tag_name&label=version&color=066da5
+[Version]: https://img.shields.io/github/v/release/vdsm/virtual-dsm?display_name=tag&sort=date&label=version&color=066da5
 [Package]: https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fipitio.github.io%2Fbackage%2Fvdsm%2Fvirtual-dsm%2Fvirtual-dsm.json&query=%24.downloads&logo=github&style=flat&color=066da5&label=pulls
